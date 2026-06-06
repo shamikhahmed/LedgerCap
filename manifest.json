@@ -2,7 +2,7 @@
   "name": "StundsOS",
   "short_name": "StundsOS",
   "description": "Personal Wealth Operating System",
-  "start_url": "/",
+  "start_url": "/StundsOS/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0B0E11",
