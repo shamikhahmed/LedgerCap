@@ -82,6 +82,20 @@ const App = (() => {
     if (cur === 'funds')  Funds.render();
   }
 
+  async function fetchViaProxy(yahooUrl) {
+    const proxies = [
+      `https://corsproxy.io/?${yahooUrl}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`
+    ];
+    for (const proxyUrl of proxies) {
+      try {
+        const res = await fetch(proxyUrl);
+        if (res.ok) return res;
+      } catch {}
+    }
+    throw new Error('all proxies failed');
+  }
+
   async function fetchYahooPrices() {
     showToast('Fetching prices from Yahoo Finance...', 'info', 4000);
     const stocks  = State.get('stocks') || [];
@@ -91,9 +105,8 @@ const App = (() => {
 
     for (const symbol of symbols) {
       try {
-        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}.KA?interval=1d&range=1d`;
-        const res = await fetch(url, { mode: 'cors' });
-        if (!res.ok) throw new Error('not ok');
+        const yahooUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}.KA?interval=1d&range=1d`;
+        const res = await fetchViaProxy(yahooUrl);
         const data = await res.json();
         const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
         if (price && price > 0) {
@@ -107,7 +120,7 @@ const App = (() => {
     }
 
     try {
-      const kseRes = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/%5EKMEX?interval=1d&range=1d', { mode: 'cors' });
+      const kseRes = await fetchViaProxy('https://query2.finance.yahoo.com/v8/finance/chart/%5EKMEX?interval=1d&range=1d');
       if (kseRes.ok) {
         const kseData = await kseRes.json();
         const meta = kseData?.chart?.result?.[0]?.meta;
@@ -127,7 +140,7 @@ const App = (() => {
       Overview.render();
       if (Navigation.getCurrent() === 'stocks') Stocks.render();
     } else {
-      showToast('CORS blocked — please update prices manually', 'error', 4000);
+      showToast('Could not fetch prices — please update manually', 'error', 4000);
     }
     if (failed > 0) showToast(failed + ' symbols not found on Yahoo', 'info');
   }
