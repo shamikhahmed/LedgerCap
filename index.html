@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StundsOS">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="description" content="Personal Portfolio Management OS for Pakistani Investor">
+  <title>StundsOS</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app">
+    <div id="screens">
+
+      <!-- Overview Screen -->
+      <div class="screen" id="screen-overview"></div>
+
+      <!-- Stocks Screen -->
+      <div class="screen" id="screen-stocks"></div>
+
+      <!-- Funds Screen -->
+      <div class="screen" id="screen-funds"></div>
+
+      <!-- Watchlist Screen -->
+      <div class="screen" id="screen-watchlist"></div>
+
+      <!-- You Screen -->
+      <div class="screen" id="screen-you"></div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav id="nav"></nav>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-wrap"></div>
+
+  <!-- Price Update Modal -->
+  <div class="modal-overlay" id="price-modal-overlay" onclick="if(event.target===this)App.closePriceModal()">
+    <div class="modal-sheet" id="price-modal-sheet"></div>
+  </div>
+
+  <!-- Stock Detail Modal -->
+  <div class="modal-overlay" id="stock-detail-overlay" onclick="if(event.target===this)Stocks.closeDetail()">
+    <div class="modal-sheet" id="stock-detail-sheet"></div>
+  </div>
+
+  <!-- Stock Edit Form Modal -->
+  <div class="modal-overlay" id="edit-form-overlay" onclick="if(event.target===this)Stocks.closeEdit()">
+    <div class="modal-sheet" id="edit-form-sheet"></div>
+  </div>
+
+  <!-- Stock Add Form Modal -->
+  <div class="modal-overlay" id="add-form-overlay" onclick="if(event.target===this)Stocks.closeAdd()">
+    <div class="modal-sheet" id="add-form-sheet"></div>
+  </div>
+
+  <!-- Fund Edit Modal -->
+  <div class="modal-overlay" id="fund-edit-overlay" onclick="if(event.target===this)Funds.closeEdit()">
+    <div class="modal-sheet" id="fund-edit-sheet"></div>
+  </div>
+
+  <!-- SIP Log Modal -->
+  <div class="modal-overlay" id="sip-log-overlay" onclick="if(event.target===this)Funds.closeSipLog()">
+    <div class="modal-sheet" id="sip-log-sheet"></div>
+  </div>
+
+  <!-- Watchlist Add Modal -->
+  <div class="modal-overlay" id="watchlist-add-overlay" onclick="if(event.target===this)Watchlist.closeAdd()">
+    <div class="modal-sheet" id="watchlist-add-sheet"></div>
+  </div>
+
+  <!-- Memo Add Modal -->
+  <div class="modal-overlay" id="memo-add-overlay" onclick="if(event.target===this)Watchlist.closeMemo()">
+    <div class="modal-sheet" id="memo-add-sheet"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data/holdings.js"></script>
+  <script src="js/modules/state.js"></script>
+  <script src="js/ui/charts.js"></script>
+  <script src="js/modules/overview.js"></script>
+  <script src="js/modules/stocks.js"></script>
+  <script src="js/modules/funds.js"></script>
+  <script src="js/modules/watchlist.js"></script>
+  <script src="js/modules/you.js"></script>
+  <script src="js/ui/navigation.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
