@@ -1,457 +1,405 @@
 'use strict';
 const Stocks = (() => {
-  let _filter = 'All';
-  let _sort = 'value';
-  let _search = '';
-  let _detailStock = null;
+  let currentFilter = 'all';
+  let currentSort = 'value';
+  let searchQuery = '';
 
-  function fmtPKR(n) {
-    if (!n || isNaN(n)) return '₨0';
-    if (n >= 1e7) return '₨' + (n/1e7).toFixed(2) + 'Cr';
-    if (n >= 1e5) return '₨' + (n/1e5).toFixed(1) + 'L';
-    if (n >= 1e3) return '₨' + (n/1e3).toFixed(0) + 'K';
-    return '₨' + Math.round(n).toLocaleString();
+  function fmt(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    if (Math.abs(n) >= 100000) return '₨' + (n / 100000).toFixed(2) + 'L';
+    return '₨' + Math.round(n).toLocaleString('en-PK');
   }
+
+  function fmtPrice(n) {
+    if (!n || n === 0) return '—';
+    return '₨' + n.toFixed(2);
+  }
+
+  function fmtPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+  }
+
+  function pnlClass(n) { return n >= 0 ? 't-gain' : 't-loss'; }
 
   function ratingClass(r) {
     if (!r) return '';
-    if (r === 'STRONG BUY') return 'rating-strong-buy';
-    if (r === 'BUY') return 'rating-buy';
-    if (r === 'HOLD') return 'rating-hold';
-    if (r === 'WEAK HOLD') return 'rating-weak-hold';
-    if (r === 'SPECULATIVE') return 'rating-speculative';
-    return '';
+    const map = {
+      'STRONG BUY': 'rating-strong-buy',
+      'BUY': 'rating-buy',
+      'HOLD': 'rating-hold',
+      'WEAK HOLD': 'rating-weak-hold',
+      'SPECULATIVE': 'rating-speculative',
+    };
+    return map[r] || 'rating-hold';
   }
 
-  function getFiltered(stocks) {
-    let list = stocks.filter(s => !s.units && s.units !== 0 ? true : !s.units);
-    // Only show equities (not funds)
-    list = stocks.filter(s => s.shares !== undefined);
-
-    if (_search) {
-      const q = _search.toLowerCase();
-      list = list.filter(s => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
-    }
-
-    if (_filter === 'Rafi') list = list.filter(s => s.broker === 'Rafi');
-    else if (_filter === 'AKD') list = list.filter(s => s.broker === 'AKD');
-    else if (_filter === 'Shariah') list = list.filter(s => s.isShariah);
-    else if (_filter === 'Held') list = list.filter(s => s.shares > 0);
-    else if (_filter === 'Top Gainers') {
-      list = list.filter(s => s.shares > 0 && s.currentPrice > 0 && s.avgCost > 0);
-      list.sort((a, b) => ((b.currentPrice - b.avgCost)/b.avgCost) - ((a.currentPrice - a.avgCost)/a.avgCost));
-      return list.slice(0, 10);
-    } else if (_filter === 'Top Losers') {
-      list = list.filter(s => s.shares > 0 && s.currentPrice > 0 && s.avgCost > 0);
-      list.sort((a, b) => ((a.currentPrice - a.avgCost)/a.avgCost) - ((b.currentPrice - b.avgCost)/b.avgCost));
-      return list.slice(0, 10);
-    }
-
-    if (_sort === 'value') {
-      list.sort((a, b) => (b.shares*b.currentPrice) - (a.shares*a.currentPrice));
-    } else if (_sort === 'pnl') {
-      list.sort((a, b) => {
-        const pa = a.avgCost > 0 ? (a.currentPrice - a.avgCost)/a.avgCost : 0;
-        const pb = b.avgCost > 0 ? (b.currentPrice - b.avgCost)/b.avgCost : 0;
-        return pb - pa;
-      });
-    } else if (_sort === 'name') {
-      list.sort((a, b) => a.symbol.localeCompare(b.symbol));
-    }
-
-    return list;
+  function brokerClass(b) {
+    return b === 'Rafi' ? 'broker-rafi' : 'broker-akd';
   }
 
-  function renderRow(s) {
-    const val = s.shares * (s.currentPrice || 0);
-    const cost = s.shares * (s.avgCost || 0);
-    const pnl = val - cost;
-    const pnlPct = cost > 0 ? (pnl / cost * 100) : 0;
-    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const rating = (window.ADVISOR_RATINGS || {})[s.symbol];
-    const brokerBadge = s.broker === 'Rafi' ? 'badge-rafi' : 'badge-akd';
+  function getFilteredStocks() {
+    let stocks = State.get('stocks') || [];
+    const settings = State.get('settings') || {};
 
-    return `
-      <div class="holding-row card-press" onclick="Stocks.openDetail('${s.id}')">
-        <div class="holding-left">
-          <div class="row" style="gap:6px;margin-bottom:3px">
-            <span class="holding-name">${s.symbol}</span>
-            <span class="badge ${brokerBadge}">${s.broker}</span>
-            ${rating ? `<span class="rating-badge ${ratingClass(rating.rating)}">${rating.rating}</span>` : ''}
-          </div>
-          <div class="holding-sub">${s.name}</div>
-          <div class="holding-sub" style="margin-top:1px">${s.shares > 0 ? s.shares + ' × ₨' + (s.avgCost||0).toFixed(0) : 'Not held'}</div>
-        </div>
-        <div class="holding-right">
-          ${s.shares > 0 ? `
-            <div class="holding-value">${fmtPKR(val)}</div>
-            <div class="holding-pnl" style="color:${pnlColor}">${pnl>=0?'+':''}${fmtPKR(Math.abs(pnl))} (${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%)</div>
-          ` : `<div class="holding-value" style="color:var(--text3)">Watch</div>`}
-          <div style="font-size:0.7rem;color:var(--text3);text-align:right;margin-top:2px">${s.currentPrice ? '₨' + s.currentPrice.toFixed(2) : '—'}</div>
-        </div>
-      </div>
-    `;
+    if (settings.showShariah) stocks = stocks.filter(s => s.isShariah);
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      stocks = stocks.filter(s =>
+        s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)
+      );
+    }
+
+    switch (currentFilter) {
+      case 'rafi':    stocks = stocks.filter(s => s.broker === 'Rafi'); break;
+      case 'akd':     stocks = stocks.filter(s => s.broker === 'AKD'); break;
+      case 'shariah': stocks = stocks.filter(s => s.isShariah); break;
+      case 'gainers': stocks = stocks.filter(s => s.currentPrice > 0 && s.currentPrice > s.avgCost); break;
+      case 'losers':  stocks = stocks.filter(s => s.currentPrice > 0 && s.currentPrice < s.avgCost); break;
+    }
+
+    switch (currentSort) {
+      case 'value':
+        stocks = stocks.sort((a, b) => (b.shares * b.currentPrice) - (a.shares * a.currentPrice));
+        break;
+      case 'pnl':
+        stocks = stocks.sort((a, b) => {
+          const aPct = a.currentPrice > 0 ? ((a.currentPrice - a.avgCost) / a.avgCost) : -999;
+          const bPct = b.currentPrice > 0 ? ((b.currentPrice - b.avgCost) / b.avgCost) : -999;
+          return bPct - aPct;
+        });
+        break;
+      case 'name':
+        stocks = stocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
+        break;
+    }
+
+    return stocks;
   }
 
   function render() {
-    const el = document.getElementById('screen-stocks');
-    if (!el) return;
+    const screen = document.getElementById('screen-stocks');
+    if (!screen) return;
 
     const stocks = State.get('stocks') || [];
-    const filtered = getFiltered(stocks);
-    const heldCount = stocks.filter(s => s.shares > 0).length;
-    const totalVal = State.calcStocksValue();
+    const totalCost = stocks.reduce((a, s) => a + s.shares * s.avgCost, 0);
+    const totalValue = stocks.reduce((a, s) => a + s.shares * (s.currentPrice || 0), 0);
+    const totalPnl = totalValue - totalCost;
+    const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+    const priced = stocks.filter(s => s.currentPrice > 0).length;
 
-    el.innerHTML = `
-      <div class="screen-header">
-        <div class="row-between">
-          <div>
-            <div class="screen-title">Stocks</div>
-            <div class="screen-subtitle">${heldCount} positions · ${Charts.fmtPKR(totalVal)}</div>
-          </div>
-          <button class="btn btn-icon" onclick="Stocks.openAddForm()" title="Add stock">+</button>
-        </div>
-      </div>
-
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="search-input" id="stock-search" placeholder="Search symbol or name…" value="${_search}"
-          oninput="Stocks._onSearch(this.value)">
-      </div>
-
-      <div class="chips-wrap" id="filter-chips">
-        ${['All','Held','Rafi','AKD','Shariah','Top Gainers','Top Losers'].map(f =>
-          `<div class="chip${_filter===f?' active':''}" onclick="Stocks._setFilter('${f}')">${f}</div>`
-        ).join('')}
-      </div>
-
-      <div style="padding:4px 18px 8px;display:flex;gap:8px;align-items:center">
-        <span style="font-size:0.72rem;color:var(--text3)">Sort:</span>
-        ${[['value','By Value'],['pnl','By P&L%'],['name','A-Z']].map(([v,l]) =>
-          `<span class="chip${_sort===v?' active':''}" onclick="Stocks._setSort('${v}')" style="padding:4px 10px;font-size:0.7rem">${l}</span>`
-        ).join('')}
-      </div>
-
-      <div style="padding:0 18px">
-        <div class="card" style="padding:0 18px">
-          <div id="stocks-list">
-            ${filtered.length ? filtered.map(renderRow).join('') : '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">No stocks match filter</div></div>'}
-          </div>
-        </div>
-      </div>
-
-      <div style="padding:18px;display:flex;gap:8px">
-        <button class="btn btn-ghost" style="flex:1" onclick="App.openPriceModal()">↻ Update Prices</button>
-        <button class="btn btn-ghost-orange" style="flex:1" onclick="Stocks.fetchYahoo()">☁ Yahoo Finance</button>
-      </div>
-    `;
-  }
-
-  function _setFilter(f) {
-    _filter = f;
-    render();
-  }
-
-  function _setSort(s) {
-    _sort = s;
-    render();
-  }
-
-  function _onSearch(v) {
-    _search = v;
-    render();
-  }
-
-  function openDetail(id) {
-    const stocks = State.get('stocks') || [];
-    const s = stocks.find(x => x.id === id);
-    if (!s) return;
-    _detailStock = s;
-
-    const val = s.shares * (s.currentPrice || 0);
-    const cost = s.shares * (s.avgCost || 0);
-    const pnl = val - cost;
-    const pnlPct = cost > 0 ? (pnl / cost * 100) : 0;
-    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const rating = (window.ADVISOR_RATINGS || {})[s.symbol];
-    const brokerBadge = s.broker === 'Rafi' ? 'badge-rafi' : 'badge-akd';
-
-    let convictionDots = '';
-    if (rating) {
-      for (let i = 1; i <= 10; i++) {
-        convictionDots += `<div class="conviction-dot${i <= rating.conviction ? ' filled' : ''}"></div>`;
-      }
-    }
-
-    const html = `
-      <div class="modal-handle"></div>
-      <div class="modal-header">
+    screen.innerHTML = `
+    <div style="padding:calc(env(safe-area-inset-top,20px) + 12px) 16px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div>
-          <div class="modal-title">${s.symbol}</div>
-          <div style="font-size:0.78rem;color:var(--text3)">${s.name}</div>
+          <div class="t-label">Stocks Portfolio</div>
+          <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px;">${fmt(totalValue)}</div>
+          <div class="${pnlClass(totalPnl)}" style="font-size:0.8rem;font-weight:700;">${fmtPct(totalPnlPct)} · ${fmt(totalPnl)}</div>
         </div>
-        <button class="modal-close" onclick="Stocks.closeDetail()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span class="badge ${brokerBadge}">${s.broker}</span>
-            <span class="badge badge-${s.sector.toLowerCase().replace(/[^a-z]/g,'')}" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text2)">${s.sector}</span>
-            ${s.isShariah ? '<span class="badge badge-shariah">☪ Shariah</span>' : ''}
-            ${rating ? `<span class="rating-badge ${ratingClass(rating.rating)}">${rating.rating}</span>` : ''}
-          </div>
-        </div>
-
-        ${s.currentPrice ? `<div class="detail-price">₨${s.currentPrice.toFixed(2)}</div>` : '<div style="color:var(--text3);font-size:0.85rem">No price set — tap Update Price</div>'}
-
-        ${s.shares > 0 ? `
-          <div class="card" style="margin-top:14px">
-            <div class="row-between"><span class="t-sub">Shares</span><span class="bold">${s.shares.toLocaleString()}</span></div>
-            <div class="divider" style="margin:10px 0"></div>
-            <div class="row-between"><span class="t-sub">Avg cost</span><span class="bold">₨${(s.avgCost||0).toFixed(2)}</span></div>
-            <div class="divider" style="margin:10px 0"></div>
-            <div class="row-between"><span class="t-sub">Market value</span><span class="bold">${Charts.fmtPKR(val)}</span></div>
-            <div class="divider" style="margin:10px 0"></div>
-            <div class="row-between"><span class="t-sub">P&L</span><span class="bold" style="color:${pnlColor}">${pnl>=0?'+':''}${Charts.fmtPKR(Math.abs(pnl))} (${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%)</span></div>
-          </div>
-        ` : ''}
-
-        ${rating ? `
-          <div class="card" style="margin-top:12px">
-            <div class="t-label" style="margin-bottom:8px">Advisor Analysis</div>
-            <div class="row-between" style="margin-bottom:8px">
-              <span class="rating-badge ${ratingClass(rating.rating)}">${rating.rating}</span>
-              ${rating.target ? `<span class="dividend-chip">Target ₨${rating.target}</span>` : ''}
-            </div>
-            <div style="font-size:0.78rem;color:var(--text2);line-height:1.6">${rating.thesis}</div>
-            <div style="margin-top:10px">
-              <div style="font-size:0.68rem;color:var(--text3);margin-bottom:4px">Conviction ${rating.conviction}/10</div>
-              <div class="conviction-bar">${convictionDots}</div>
-            </div>
-          </div>
-        ` : ''}
-
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-ghost" onclick="Stocks.openEditForm('${s.id}')">Edit shares / avg cost</button>
-          <button class="btn btn-ghost-orange" onclick="Stocks.quickPrice('${s.id}')">Update price</button>
+        <div style="text-align:right;">
+          <div class="t-caption">${priced}/${stocks.length} priced</div>
+          <button class="btn-ghost btn-sm" style="margin-top:6px;" onclick="App.fetchYahooPrices()">⟳ Yahoo</button>
         </div>
       </div>
-    `;
-
-    const overlay = document.getElementById('stock-detail-overlay');
-    const sheet = document.getElementById('stock-detail-sheet');
-    if (!overlay || !sheet) return;
-    sheet.innerHTML = html;
-    overlay.classList.add('active');
-  }
-
-  function closeDetail() {
-    const overlay = document.getElementById('stock-detail-overlay');
-    if (overlay) overlay.classList.remove('active');
-  }
-
-  function openEditForm(id) {
-    const stocks = State.get('stocks') || [];
-    const s = stocks.find(x => x.id === id);
-    if (!s) return;
-
-    const html = `
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title">Edit ${s.symbol}</div>
-        <button class="modal-close" onclick="Stocks.closeEdit()">✕</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-ghost btn-sm" style="flex:1;" onclick="App.openPriceModal()">Update Prices</button>
+        <button class="btn-ghost btn-sm" style="flex:1;" onclick="Stocks.showAddForm()">+ Add Stock</button>
       </div>
-      <div class="modal-body">
-        <div class="input-group">
-          <label class="input-label">Shares</label>
-          <input class="input-field" id="edit-shares" type="number" value="${s.shares || 0}" placeholder="0">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Average Cost (₨)</label>
-          <input class="input-field" id="edit-avgcost" type="number" step="0.01" value="${s.avgCost || 0}" placeholder="0.00">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Current Price (₨)</label>
-          <input class="input-field" id="edit-price" type="number" step="0.01" value="${s.currentPrice || 0}" placeholder="0.00">
-        </div>
-        <button class="btn btn-primary" onclick="Stocks.saveEdit('${s.id}')">Save Changes</button>
+    </div>
+
+    <div style="padding:10px 16px 0;">
+      <div class="search-wrap" style="padding:0 0 8px;">
+        <input class="search-input" type="text" placeholder="Search symbol or name..." id="stocks-search" value="${searchQuery}">
       </div>
-    `;
 
-    const overlay = document.getElementById('edit-form-overlay');
-    const sheet = document.getElementById('edit-form-sheet');
-    if (!overlay || !sheet) return;
-    sheet.innerHTML = html;
-    overlay.classList.add('active');
-    closeDetail();
-  }
+      <div class="filter-row" style="padding:0;margin-bottom:8px;">
+        ${['all','rafi','akd','shariah','gainers','losers'].map(f =>
+          `<div class="filter-chip${currentFilter===f?' active':''}" data-filter="${f}">${f.charAt(0).toUpperCase()+f.slice(1)}</div>`
+        ).join('')}
+      </div>
 
-  function closeEdit() {
-    const overlay = document.getElementById('edit-form-overlay');
-    if (overlay) overlay.classList.remove('active');
-  }
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        ${[['value','Value ↓'],['pnl','P&L%'],['name','Name']].map(([k,l]) =>
+          `<div class="filter-chip${currentSort===k?' active':''}" data-sort="${k}" style="padding:4px 10px;font-size:0.7rem;">${l}</div>`
+        ).join('')}
+      </div>
+    </div>
 
-  function saveEdit(id) {
-    const shares = parseFloat(document.getElementById('edit-shares')?.value) || 0;
-    const avgCost = parseFloat(document.getElementById('edit-avgcost')?.value) || 0;
-    const price = parseFloat(document.getElementById('edit-price')?.value) || 0;
+    <div class="holdings-list" id="stocks-list">
+      ${renderList()}
+    </div>`;
 
-    State.update(s => {
-      const stock = s.stocks.find(x => x.id === id);
-      if (!stock) return;
-      stock.shares = shares;
-      stock.avgCost = avgCost;
-      if (price > 0) {
-        stock.currentPrice = price;
-        s.prices[stock.symbol] = price;
-      }
+    screen.querySelector('#stocks-search').addEventListener('input', e => {
+      searchQuery = e.target.value;
+      document.getElementById('stocks-list').innerHTML = renderList();
+      bindListEvents();
     });
 
-    closeEdit();
-    render();
-    App.showToast('Position updated', 'success');
+    screen.querySelectorAll('[data-filter]').forEach(el => {
+      el.addEventListener('click', () => {
+        currentFilter = el.dataset.filter;
+        screen.querySelectorAll('[data-filter]').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('stocks-list').innerHTML = renderList();
+        bindListEvents();
+      });
+    });
+
+    screen.querySelectorAll('[data-sort]').forEach(el => {
+      el.addEventListener('click', () => {
+        currentSort = el.dataset.sort;
+        screen.querySelectorAll('[data-sort]').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('stocks-list').innerHTML = renderList();
+        bindListEvents();
+      });
+    });
+
+    bindListEvents();
   }
 
-  function quickPrice(id) {
+  function renderList() {
+    const filtered = getFilteredStocks();
+    if (filtered.length === 0) {
+      return `<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-text">No stocks match your filter.</div></div>`;
+    }
+    return filtered.map(s => {
+      const value = s.shares * (s.currentPrice || 0);
+      const cost = s.shares * s.avgCost;
+      const pnl = value - cost;
+      const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+      const hasPrice = s.currentPrice > 0;
+      const rating = (window.ADVISOR_RATINGS || {})[s.symbol];
+      const iconColor = s.broker === 'Rafi' ? '#1890FF' : '#FF6B35';
+
+      return `<div class="holding-row" data-symbol="${s.symbol}" data-broker="${s.broker}">
+        <div class="holding-icon" style="border-color:${iconColor}22;color:${iconColor};">
+          ${s.symbol.slice(0, 3)}
+        </div>
+        <div class="holding-left">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="holding-symbol">${s.symbol}</span>
+            <span class="broker-badge ${brokerClass(s.broker)}">${s.broker.toUpperCase()}</span>
+            ${s.isShariah ? '<span class="shariah-badge">☾</span>' : ''}
+            ${rating ? `<span class="rating-badge ${ratingClass(rating.rating)}" style="font-size:0.55rem;">${rating.rating}</span>` : ''}
+          </div>
+          <div class="holding-name">${s.name}</div>
+          <div class="holding-shares">${s.shares} shares · avg ₨${s.avgCost.toFixed(2)}</div>
+        </div>
+        <div class="holding-right">
+          <div class="holding-value ${hasPrice ? '' : 't-dim'}">${hasPrice ? fmt(value) : '—'}</div>
+          <div class="holding-pnl ${hasPrice ? pnlClass(pnl) : 't-dim'}">
+            ${hasPrice ? (pnl >= 0 ? '+' : '') + fmtPct(pnlPct) : fmtPrice(s.currentPrice)}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function bindListEvents() {
+    document.querySelectorAll('.holding-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const symbol = row.dataset.symbol;
+        const broker = row.dataset.broker;
+        showDetail(symbol, broker);
+      });
+    });
+  }
+
+  function showDetail(symbol, broker) {
     const stocks = State.get('stocks') || [];
-    const s = stocks.find(x => x.id === id);
+    const allWithSymbol = stocks.filter(s => s.symbol === symbol);
+    const s = allWithSymbol.find(s => s.broker === broker) || allWithSymbol[0];
     if (!s) return;
 
-    const price = prompt(`Enter current price for ${s.symbol} (₨):`);
-    if (price === null) return;
-    const p = parseFloat(price);
-    if (isNaN(p) || p <= 0) { App.showToast('Invalid price', 'error'); return; }
+    const value = s.shares * (s.currentPrice || 0);
+    const cost = s.shares * s.avgCost;
+    const pnl = value - cost;
+    const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+    const hasPrice = s.currentPrice > 0;
+    const rating = (window.ADVISOR_RATINGS || {})[s.symbol];
 
-    State.updatePrice(s.symbol, p);
-    closeDetail();
-    render();
-    App.showToast(`${s.symbol} updated to ₨${p.toFixed(2)}`, 'success');
+    const sheet = document.getElementById('detail-sheet');
+    const content = document.getElementById('detail-content');
+    const header = sheet.querySelector('.detail-header');
+
+    header.innerHTML = `
+      <button class="btn-ghost btn-sm" onclick="document.getElementById('detail-sheet').classList.remove('open')">← Back</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="broker-badge ${brokerClass(s.broker)}">${s.broker.toUpperCase()}</span>
+        ${s.isShariah ? '<span class="shariah-badge">☾ Shariah</span>' : ''}
+      </div>`;
+
+    content.innerHTML = `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:1.5rem;font-weight:800;">${s.symbol}</div>
+        <div style="font-size:0.85rem;color:var(--text3);margin-top:2px;">${s.name}</div>
+      </div>
+
+      <div class="detail-pnl-block ${hasPrice ? '' : ''}">
+        <div class="detail-pnl-amount ${hasPrice ? pnlClass(pnl) : 't-dim'}">${hasPrice ? (pnl >= 0 ? '+' : '') + fmt(Math.abs(pnl)) : 'No price yet'}</div>
+        <div class="detail-pnl-pct ${hasPrice ? pnlClass(pnl) : 't-dim'}">${hasPrice ? fmtPct(pnlPct) : 'Update price to see P&L'}</div>
+      </div>
+
+      <div class="detail-info-row">
+        <span class="detail-info-label">Shares Held</span>
+        <span class="detail-info-val">${s.shares.toLocaleString()}</span>
+      </div>
+      <div class="detail-info-row">
+        <span class="detail-info-label">Avg Buy Price</span>
+        <span class="detail-info-val">₨${s.avgCost.toFixed(2)}</span>
+      </div>
+      <div class="detail-info-row">
+        <span class="detail-info-label">Current Price</span>
+        <span class="detail-info-val" id="current-price-display">${hasPrice ? '₨'+s.currentPrice.toFixed(2) : '—'}</span>
+      </div>
+      <div class="detail-info-row">
+        <span class="detail-info-label">Cost Basis</span>
+        <span class="detail-info-val">₨${cost.toLocaleString('en-PK', {maximumFractionDigits:0})}</span>
+      </div>
+      <div class="detail-info-row">
+        <span class="detail-info-label">Market Value</span>
+        <span class="detail-info-val ${hasPrice ? pnlClass(pnl) : ''}">${hasPrice ? fmt(value) : '—'}</span>
+      </div>
+      <div class="detail-info-row">
+        <span class="detail-info-label">Sector</span>
+        <span class="detail-info-val">${s.sector}</span>
+      </div>
+
+      <div style="display:flex;gap:8px;margin:16px 0;">
+        <button class="btn-ghost btn-sm" style="flex:1;" onclick="Stocks.editPrice('${s.symbol}', '${s.broker}')">Edit Price</button>
+        <button class="btn-ghost btn-sm" style="flex:1;" onclick="Stocks.addToWatchlist('${s.symbol}', '${s.name}')">+ Watchlist</button>
+      </div>
+
+      ${rating ? `
+      <div style="margin-top:16px;">
+        <div class="t-label" style="margin-bottom:10px;">Advisor Rating</div>
+        <div class="card-dark" style="padding:14px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span class="rating-badge ${ratingClass(rating.rating)}">${rating.rating}</span>
+            <span class="t-dim" style="font-size:0.75rem;">Conviction: ${rating.conviction}/10</span>
+          </div>
+          <div class="conviction-bar">
+            <div class="conviction-fill" style="width:${rating.conviction*10}%;background:var(--orange);"></div>
+          </div>
+          ${rating.target ? `<div class="t-caption" style="margin-top:8px;">Price Target: ₨${rating.target}</div>` : ''}
+          <div style="margin-top:10px;font-size:0.82rem;color:var(--text2);line-height:1.6;">${rating.thesis}</div>
+        </div>
+      </div>` : ''}`;
+
+    sheet.classList.add('open');
   }
 
-  function openAddForm() {
-    const html = `
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title">Add Stock</div>
-        <button class="modal-close" onclick="Stocks.closeAdd()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="input-group">
-          <label class="input-label">Symbol</label>
-          <input class="input-field" id="add-symbol" placeholder="e.g. ENGRO" style="text-transform:uppercase">
+  function editPrice(symbol, broker) {
+    const stocks = State.get('stocks') || [];
+    const s = stocks.find(s => s.symbol === symbol && s.broker === broker);
+    if (!s) return;
+
+    const display = document.getElementById('current-price-display');
+    if (!display) return;
+
+    display.innerHTML = `<div style="display:flex;align-items:center;gap:6px;">
+      <input class="inline-price-input" type="number" step="0.01" min="0" id="inline-price-inp" value="${s.currentPrice > 0 ? s.currentPrice : ''}" placeholder="0.00">
+      <button class="btn-ghost btn-sm" onclick="Stocks.saveInlinePrice('${symbol}', '${broker}')">Save</button>
+    </div>`;
+
+    const inp = document.getElementById('inline-price-inp');
+    if (inp) inp.focus();
+  }
+
+  function saveInlinePrice(symbol, broker) {
+    const inp = document.getElementById('inline-price-inp');
+    if (!inp) return;
+    const val = parseFloat(inp.value);
+    if (!val || val <= 0) { App.showToast('Invalid price', 'error'); return; }
+    State.updateStockPrice(symbol, val);
+    App.showToast(`${symbol} updated to ₨${val.toFixed(2)}`, 'success');
+    document.getElementById('detail-sheet').classList.remove('open');
+    render();
+    Overview.render();
+  }
+
+  function addToWatchlist(symbol, name) {
+    App.showToast(`${symbol} noted — check Advisor tab`, 'info');
+  }
+
+  function showAddForm() {
+    const sheet = document.getElementById('detail-sheet');
+    const content = document.getElementById('detail-content');
+    const header = sheet.querySelector('.detail-header');
+
+    header.innerHTML = `
+      <button class="btn-ghost btn-sm" onclick="document.getElementById('detail-sheet').classList.remove('open')">← Back</button>
+      <div style="font-size:0.95rem;font-weight:700;">Add Stock</div>`;
+
+    content.innerHTML = `
+      <div class="add-form">
+        <div class="form-field">
+          <label class="form-label">Symbol</label>
+          <input class="form-input" type="text" id="af-symbol" placeholder="e.g. MEBL" style="text-transform:uppercase;">
         </div>
-        <div class="input-group">
-          <label class="input-label">Company Name</label>
-          <input class="input-field" id="add-name" placeholder="e.g. Engro Corporation">
+        <div class="form-field">
+          <label class="form-label">Company Name</label>
+          <input class="form-input" type="text" id="af-name" placeholder="e.g. Meezan Bank">
         </div>
-        <div class="input-group">
-          <label class="input-label">Broker</label>
-          <select class="input-field" id="add-broker">
+        <div class="form-field">
+          <label class="form-label">Shares</label>
+          <input class="form-input" type="number" id="af-shares" placeholder="100">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Avg Buy Price (₨)</label>
+          <input class="form-input" type="number" step="0.01" id="af-cost" placeholder="491.59">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Broker</label>
+          <select class="form-select" id="af-broker">
             <option value="Rafi">Rafi</option>
             <option value="AKD">AKD</option>
           </select>
         </div>
-        <div class="input-group">
-          <label class="input-label">Sector</label>
-          <input class="input-field" id="add-sector" placeholder="e.g. Cement">
+        <div class="form-field">
+          <label class="form-label">Sector</label>
+          <input class="form-input" type="text" id="af-sector" placeholder="e.g. Banking">
         </div>
-        <div class="input-group">
-          <label class="input-label">Shares</label>
-          <input class="input-field" id="add-shares" type="number" placeholder="0">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Average Cost (₨)</label>
-          <input class="input-field" id="add-cost" type="number" step="0.01" placeholder="0.00">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Shariah Compliant?</label>
-          <select class="input-field" id="add-shariah">
+        <div class="form-field">
+          <label class="form-label">Shariah Compliant?</label>
+          <select class="form-select" id="af-shariah">
             <option value="false">No</option>
             <option value="true">Yes</option>
           </select>
         </div>
-        <button class="btn btn-primary" onclick="Stocks.saveAdd()">Add Stock</button>
-      </div>
-    `;
+        <button class="btn-primary" style="margin-top:8px;" onclick="Stocks.saveNewStock()">Add Stock</button>
+      </div>`;
 
-    const overlay = document.getElementById('add-form-overlay');
-    const sheet = document.getElementById('add-form-sheet');
-    if (!overlay || !sheet) return;
-    sheet.innerHTML = html;
-    overlay.classList.add('active');
+    sheet.classList.add('open');
   }
 
-  function closeAdd() {
-    const overlay = document.getElementById('add-form-overlay');
-    if (overlay) overlay.classList.remove('active');
-  }
+  function saveNewStock() {
+    const sym = (document.getElementById('af-symbol')?.value || '').trim().toUpperCase();
+    const name = (document.getElementById('af-name')?.value || '').trim();
+    const shares = parseFloat(document.getElementById('af-shares')?.value || 0);
+    const cost = parseFloat(document.getElementById('af-cost')?.value || 0);
+    const broker = document.getElementById('af-broker')?.value || 'Rafi';
+    const sector = (document.getElementById('af-sector')?.value || '').trim() || 'Other';
+    const isShariah = document.getElementById('af-shariah')?.value === 'true';
 
-  function saveAdd() {
-    const symbol = document.getElementById('add-symbol')?.value.trim().toUpperCase();
-    const name = document.getElementById('add-name')?.value.trim();
-    const broker = document.getElementById('add-broker')?.value;
-    const sector = document.getElementById('add-sector')?.value.trim() || 'Other';
-    const shares = parseFloat(document.getElementById('add-shares')?.value) || 0;
-    const avgCost = parseFloat(document.getElementById('add-cost')?.value) || 0;
-    const isShariah = document.getElementById('add-shariah')?.value === 'true';
-
-    if (!symbol || !name) { App.showToast('Symbol and name required', 'error'); return; }
+    if (!sym || !shares || !cost) { App.showToast('Fill all required fields', 'error'); return; }
 
     State.update(s => {
       s.stocks.push({
-        id: 'custom_' + symbol.toLowerCase() + '_' + Date.now(),
-        symbol, name, broker, sector, shares, avgCost, isShariah,
-        currentPrice: 0,
+        id: 'custom_' + sym + '_' + Date.now(),
+        symbol: sym, name: name || sym,
+        shares, avgCost: cost, currentPrice: 0,
+        broker, sector, isShariah
       });
     });
 
-    closeAdd();
+    App.showToast(`${sym} added`, 'success');
+    document.getElementById('detail-sheet').classList.remove('open');
     render();
-    App.showToast(`${symbol} added`, 'success');
   }
 
-  async function fetchYahoo() {
-    const stocks = State.get('stocks') || [];
-    const held = stocks.filter(s => s.shares > 0);
-    if (!held.length) { App.showToast('No holdings to update', 'info'); return; }
-
-    App.showToast('Fetching prices…', 'info');
-    let updated = 0;
-    let failed = 0;
-
-    for (const s of held) {
-      try {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${s.symbol}.KA?interval=1d&range=1d`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price && price > 0) {
-          State.updatePrice(s.symbol, price);
-          updated++;
-        } else {
-          failed++;
-        }
-      } catch(e) {
-        console.warn('Yahoo fetch failed for', s.symbol, e.message);
-        failed++;
-      }
-    }
-
-    render();
-    if (Nav.current() === 'overview') Overview.render();
-
-    if (updated > 0) App.showToast(`Updated ${updated} prices${failed > 0 ? `, ${failed} failed (CORS)` : ''}`, updated > 0 ? 'success' : 'error');
-    else App.showToast('Yahoo Finance blocked by CORS — use manual price update', 'error');
-  }
-
-  return {
-    render, _setFilter, _setSort, _onSearch,
-    openDetail, closeDetail,
-    openEditForm, closeEdit, saveEdit,
-    quickPrice,
-    openAddForm, closeAdd, saveAdd,
-    fetchYahoo,
-  };
+  return { render, showDetail, editPrice, saveInlinePrice, addToWatchlist, showAddForm, saveNewStock };
 })();
 window.Stocks = Stocks;

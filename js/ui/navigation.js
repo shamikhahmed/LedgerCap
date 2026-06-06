@@ -1,51 +1,44 @@
 'use strict';
-const Nav = (() => {
-  const TABS = [
-    { id:'overview',  label:'Overview', icon:'📊' },
-    { id:'stocks',    label:'Stocks',   icon:'📈' },
-    { id:'funds',     label:'Funds',    icon:'💰' },
-    { id:'watchlist', label:'Watchlist',icon:'🎯' },
-    { id:'you',       label:'You',      icon:'👤' },
-  ];
+const Navigation = (() => {
+  const RENDERERS = {
+    overview: () => Overview && Overview.render(),
+    stocks:   () => Stocks   && Stocks.render(),
+    funds:    () => Funds    && Funds.render(),
+    advisor:  () => Advisor  && Advisor.render(),
+    you:      () => You      && You.render(),
+  };
 
-  let _current = null;
+  let current = null;
 
-  function init() {
-    const nav = document.getElementById('nav');
-    if (!nav) return;
-    nav.innerHTML = TABS.map(t => `
-      <div class="nav-tab" data-tab="${t.id}" onclick="Nav.go('${t.id}')">
-        <div class="nav-icon">${t.icon}</div>
-        <div class="nav-label">${t.label}</div>
-      </div>
-    `).join('');
+  function go(tabId) {
+    if (!RENDERERS[tabId]) return;
 
-    const saved = sessionStorage.getItem('stundsOS_tab') || 'overview';
-    go(saved);
-  }
-
-  function go(id) {
+    // Hide all screens
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    // Deactivate all tabs
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
 
-    const screen = document.getElementById('screen-' + id);
-    const tab = document.querySelector(`.nav-tab[data-tab="${id}"]`);
-
+    const screen = document.getElementById('screen-' + tabId);
     if (screen) screen.classList.add('active');
+
+    const tab = document.querySelector(`.nav-tab[data-tab="${tabId}"]`);
     if (tab) tab.classList.add('active');
 
-    _current = id;
-    sessionStorage.setItem('stundsOS_tab', id);
+    current = tabId;
+    try { sessionStorage.setItem('stundsOS_tab', tabId); } catch {}
 
-    if (id === 'overview' && window.Overview) Overview.render();
-    if (id === 'stocks' && window.Stocks) Stocks.render();
-    if (id === 'funds' && window.Funds) Funds.render();
-    if (id === 'watchlist' && window.Watchlist) Watchlist.render();
-    if (id === 'you' && window.You) You.render();
+    // Render the tab
+    RENDERERS[tabId]();
   }
 
-  function current() { return _current; }
+  function getCurrent() { return current; }
 
-  return { init, go, current };
+  function restoreLast() {
+    let last = 'overview';
+    try { last = sessionStorage.getItem('stundsOS_tab') || 'overview'; } catch {}
+    go(last);
+  }
+
+  return { go, getCurrent, restoreLast };
 })();
-window.Nav = Nav;
+window.Navigation = Navigation;

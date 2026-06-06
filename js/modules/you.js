@@ -1,194 +1,148 @@
 'use strict';
 const You = (() => {
-
-  function fmtPKR(n) {
-    if (!n || isNaN(n)) return '₨0';
-    if (n >= 1e7) return '₨' + (n/1e7).toFixed(2) + 'Cr';
-    if (n >= 1e5) return '₨' + (n/1e5).toFixed(1) + 'L';
-    if (n >= 1e3) return '₨' + (n/1e3).toFixed(0) + 'K';
-    return '₨' + Math.round(n).toLocaleString();
+  function fmt(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    if (Math.abs(n) >= 100000) return '₨' + (n / 100000).toFixed(2) + 'L';
+    return '₨' + Math.round(n).toLocaleString('en-PK');
   }
 
+  function fmtPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+  }
+
+  function pnlClass(n) { return n >= 0 ? 't-gain' : 't-loss'; }
+
   function render() {
-    const el = document.getElementById('screen-you');
-    if (!el) return;
+    const screen = document.getElementById('screen-you');
+    if (!screen) return;
 
+    const stocks = State.get('stocks') || [];
+    const funds = State.get('funds') || [];
     const settings = State.get('settings') || {};
-    const lastUpdate = State.get('lastPriceUpdate');
-    const totalVal = State.calcTotalValue();
-    const netCash = State.get('netCash') || 0;
-    const netWorth = totalVal + netCash;
-    const sipLog = State.get('sipLog') || [];
-    const totalSipInvested = sipLog.reduce((s, l) => s + (l.amount || 0), 0);
 
-    const plan = window.SIP_PLAN || [];
-    const totalSipMonthly = plan.reduce((s, p) => s + p.amount, 0);
-
-    el.innerHTML = `
-      <div class="screen-header">
-        <div class="screen-title">You</div>
-        <div class="screen-subtitle">Investor Profile</div>
-      </div>
-
-      <!-- Profile -->
-      <div style="padding:0 18px">
-        <div class="card">
-          <div class="profile-info-row">
-            <div class="profile-avatar">S</div>
-            <div>
-              <div style="font-size:1.2rem;font-weight:700">Shamikh Ahmed</div>
-              <div style="font-size:0.78rem;color:var(--text3);margin-top:2px">26 · Single · Karachi</div>
-              <div style="font-size:0.78rem;color:var(--orange);margin-top:2px;font-weight:600">Passive Income + Wealth Building</div>
-            </div>
-          </div>
-          <div class="divider" style="margin:14px 0"></div>
-          <div class="row-between">
-            <span class="t-sub">Monthly salary</span>
-            <span class="bold">₨150,000</span>
-          </div>
-          <div class="row-between" style="margin-top:8px">
-            <span class="t-sub">Monthly investment</span>
-            <span class="bold" style="color:var(--orange)">₨${(totalSipMonthly/1000).toFixed(0)}K (50%)</span>
-          </div>
-          <div class="row-between" style="margin-top:8px">
-            <span class="t-sub">Total SIP invested</span>
-            <span class="bold" style="color:var(--green)">${fmtPKR(totalSipInvested)}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Net Worth -->
-      <div class="section-header">
-        <span class="section-label">Net Worth</span>
-        <button class="section-action" onclick="You.editCash()">Edit Cash</button>
-      </div>
-      <div style="padding:0 18px">
-        <div class="card-hero">
-          <div class="t-label">Estimated Net Worth</div>
-          <div class="networth-num" style="margin-top:8px">${fmtPKR(netWorth)}</div>
-          <div style="margin-top:10px;display:flex;gap:20px">
-            <div>
-              <div style="font-size:0.7rem;color:var(--text3)">Portfolio</div>
-              <div style="font-size:0.92rem;font-weight:700">${fmtPKR(totalVal)}</div>
-            </div>
-            <div>
-              <div style="font-size:0.7rem;color:var(--text3)">Cash / Bank</div>
-              <div style="font-size:0.92rem;font-weight:700">${fmtPKR(netCash)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SIP Allocation -->
-      <div class="section-header"><span class="section-label">Monthly SIP Allocation</span></div>
-      <div style="padding:0 18px">
-        <div class="card">
-          ${(plan || []).map(p => `
-            <div class="sip-item">
-              <div class="sip-dot" style="background:${p.color}"></div>
-              <div style="flex:1">
-                <div style="font-size:0.85rem;font-weight:600">${p.label}</div>
-                <div style="font-size:0.7rem;color:var(--text3)">${p.note}</div>
-              </div>
-              <div style="text-align:right">
-                <div style="font-size:0.9rem;font-weight:700">₨${(p.amount/1000).toFixed(0)}K</div>
-                <div style="font-size:0.68rem;color:var(--text3)">${(p.amount/totalSipMonthly*100).toFixed(0)}%</div>
-              </div>
-            </div>
-          `).join('')}
-          <div class="divider" style="margin:8px 0"></div>
-          <div class="row-between">
-            <span style="font-weight:700">Total Monthly</span>
-            <span style="font-weight:700;color:var(--orange)">₨${(totalSipMonthly/1000).toFixed(0)}K</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Settings -->
-      <div class="section-header"><span class="section-label">Settings</span></div>
-      <div style="padding:0 18px">
-        <div class="card" style="padding:0 18px">
-          <div class="settings-row">
-            <div>
-              <div class="settings-label">Shariah Filter</div>
-              <div class="settings-value">Show only Shariah-compliant</div>
-            </div>
-            <button class="toggle${settings.showShariah ? ' on' : ''}" id="shariah-toggle" onclick="You.toggleShariah()"></button>
-          </div>
-          <div class="settings-row">
-            <div>
-              <div class="settings-label">Currency</div>
-              <div class="settings-value">Pakistani Rupee</div>
-            </div>
-            <span class="settings-value">PKR</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Data Management -->
-      <div class="section-header"><span class="section-label">Data</span></div>
-      <div style="padding:0 18px;display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-ghost" onclick="You.exportData()">Export Data (JSON)</button>
-        <button class="btn btn-ghost" onclick="You.importData()">Import Data (JSON)</button>
-        <button class="btn btn-danger" onclick="You.resetData()">Reset All Data</button>
-      </div>
-
-      <!-- About -->
-      <div class="version-info" style="margin-top:24px">
-        <div style="font-size:0.85rem;font-weight:700;margin-bottom:4px">StundsOS v1.0</div>
-        <div>Offline-first · PWA · All data stored locally</div>
-        <div style="margin-top:4px">Last price update: ${lastUpdate ? new Date(lastUpdate).toLocaleString() : 'Never'}</div>
-        <div style="margin-top:4px">
-          <span id="offline-status" style="color:var(--green)">● Online</span>
-        </div>
-      </div>
-
-      <div style="height:24px"></div>
-    `;
-
-    window.addEventListener('online', () => {
-      const s = document.getElementById('offline-status');
-      if (s) { s.textContent = '● Online'; s.style.color = 'var(--green)'; }
-    });
-    window.addEventListener('offline', () => {
-      const s = document.getElementById('offline-status');
-      if (s) { s.textContent = '● Offline'; s.style.color = 'var(--text3)'; }
-    });
-
-    if (!navigator.onLine) {
-      const s = document.getElementById('offline-status');
-      if (s) { s.textContent = '● Offline'; s.style.color = 'var(--text3)'; }
+    const pricedStocks = stocks.filter(s => s.currentPrice > 0);
+    let best = null, worst = null;
+    if (pricedStocks.length > 0) {
+      pricedStocks.forEach(s => {
+        const pct = ((s.currentPrice - s.avgCost) / s.avgCost) * 100;
+        if (!best || pct > best.pct) best = { ...s, pct };
+        if (!worst || pct < worst.pct) worst = { ...s, pct };
+      });
     }
+
+    const fundsValue = funds.reduce((a, f) => a + (f.currentValue || 0), 0);
+    const stocksValue = stocks.reduce((a, s) => a + s.shares * (s.currentPrice || 0), 0);
+
+    screen.innerHTML = `
+    <div style="padding:calc(env(safe-area-inset-top,20px) + 16px) 0 0;">
+
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="profile-avatar">SA</div>
+      <div class="profile-name">Shamikh Ahmed</div>
+      <div class="profile-sub">26 · Karachi · Salaried Professional</div>
+      <div class="profile-stat-row">
+        <div class="profile-stat">
+          <div class="profile-stat-val">₨1.5L</div>
+          <div class="profile-stat-label">Monthly Income</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val t-orange">₨75K</div>
+          <div class="profile-stat-label">Monthly SIP</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val">50%</div>
+          <div class="profile-stat-label">Savings Rate</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
+        <div class="t-caption" style="line-height:1.6;">Goal: Build passive income through KSE stocks + Meezan mutual funds. Long-term wealth creation via consistent SIP + selective stock picking.</div>
+      </div>
+    </div>
+
+    <!-- Portfolio Summary -->
+    <div class="sec-head"><span class="sec-title">Portfolio Summary</span></div>
+    <div class="stat-grid" style="margin-bottom:16px;">
+      <div class="stat-card">
+        <div class="stat-val">${stocks.length}</div>
+        <div class="stat-label">Total Stocks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${fmt(fundsValue)}</div>
+        <div class="stat-label">Funds Value</div>
+      </div>
+      <div class="stat-card ${best ? '' : ''}">
+        <div class="stat-val t-gain" style="font-size:1rem;">${best ? best.symbol : '—'}</div>
+        <div class="stat-label">Best Stock</div>
+        ${best ? `<div class="t-gain" style="font-size:0.75rem;">${fmtPct(best.pct)}</div>` : ''}
+      </div>
+      <div class="stat-card">
+        <div class="stat-val t-loss" style="font-size:1rem;">${worst ? worst.symbol : '—'}</div>
+        <div class="stat-label">Worst Stock</div>
+        ${worst ? `<div class="t-loss" style="font-size:0.75rem;">${fmtPct(worst.pct)}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Quick Nav -->
+    <div class="sec-head"><span class="sec-title">Quick Access</span></div>
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <button class="btn-secondary" onclick="Navigation.go('stocks')">📈 View All Stocks →</button>
+      <button class="btn-secondary" onclick="Navigation.go('funds')">💰 Meezan Funds & SIP →</button>
+      <button class="btn-secondary" onclick="Navigation.go('advisor')">🎯 Advisor & Watchlist →</button>
+    </div>
+
+    <!-- Settings -->
+    <div class="sec-head"><span class="sec-title">Settings</span></div>
+    <div style="margin:0 16px;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);overflow:hidden;margin-bottom:16px;">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Shariah Filter</div>
+          <div class="settings-sub">Only show Shariah-compliant stocks</div>
+        </div>
+        <div class="toggle ${settings.showShariah ? 'on' : ''}" id="shariah-toggle" onclick="You.toggleShariah()">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Actions -->
+    <div class="sec-head"><span class="sec-title">Data</span></div>
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <button class="btn-ghost" onclick="You.exportData()">Export Portfolio JSON</button>
+      <button class="btn-ghost" onclick="You.importData()">Import Portfolio JSON</button>
+      <button class="btn-ghost" style="color:var(--red);border-color:rgba(246,70,93,0.3);" onclick="You.confirmReset()">Reset All Data</button>
+    </div>
+
+    <!-- App Info -->
+    <div style="padding:16px;margin:0 16px 24px;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);text-align:center;">
+      <div style="font-size:0.9rem;font-weight:800;color:var(--orange);">StundsOS v1.0</div>
+      <div class="t-caption" style="margin-top:4px;">Offline-first PWA · Personal portfolio tracker</div>
+      <div class="t-caption" style="margin-top:2px;">Prices: Manual + Yahoo Finance (delayed)</div>
+      <div class="t-caption" style="margin-top:2px;">All data stored locally on device</div>
+    </div>
+
+    </div>`;
   }
 
   function toggleShariah() {
-    State.update(s => { s.settings.showShariah = !s.settings.showShariah; });
+    const settings = State.get('settings') || {};
+    const newVal = !settings.showShariah;
+    State.set('settings', { ...settings, showShariah: newVal });
+    App.showToast(`Shariah filter ${newVal ? 'ON' : 'OFF'}`, 'info');
     render();
-  }
-
-  function editCash() {
-    const current = State.get('netCash') || 0;
-    const val = prompt('Enter cash / bank balance (₨):', current);
-    if (val === null) return;
-    const n = parseFloat(val);
-    if (isNaN(n)) { App.showToast('Invalid amount', 'error'); return; }
-    State.set('netCash', n);
-    render();
-    App.showToast('Cash balance updated', 'success');
   }
 
   function exportData() {
     const json = State.exportJSON();
-    const blob = new Blob([json], { type:'application/json' });
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `stundsOS_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    App.showToast('Data exported', 'success');
+    App.showToast('Portfolio exported', 'success');
   }
 
   function importData() {
@@ -201,23 +155,28 @@ const You = (() => {
       const reader = new FileReader();
       reader.onload = ev => {
         const ok = State.importJSON(ev.target.result);
-        if (ok) { render(); App.showToast('Data imported successfully', 'success'); }
-        else { App.showToast('Import failed — invalid file', 'error'); }
+        if (ok) {
+          App.showToast('Portfolio imported', 'success');
+          Overview.render();
+          render();
+        } else {
+          App.showToast('Invalid backup file', 'error');
+        }
       };
       reader.readAsText(file);
     };
-    document.body.appendChild(input);
     input.click();
-    document.body.removeChild(input);
   }
 
-  function resetData() {
-    if (!confirm('Reset all data? This cannot be undone.')) return;
-    State.reset();
-    render();
-    App.showToast('Data reset', 'info');
+  function confirmReset() {
+    if (confirm('Reset ALL data? This cannot be undone.')) {
+      State.reset();
+      App.showToast('Data reset', 'info');
+      Overview.render();
+      render();
+    }
   }
 
-  return { render, toggleShariah, editCash, exportData, importData, resetData };
+  return { render, toggleShariah, exportData, importData, confirmReset };
 })();
 window.You = You;

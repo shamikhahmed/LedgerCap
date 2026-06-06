@@ -1,264 +1,223 @@
 'use strict';
 const Overview = (() => {
-
-  function fmtPKR(n) {
-    if (!n || isNaN(n)) return '₨0';
-    if (n >= 1e7) return '₨' + (n/1e7).toFixed(2) + 'Cr';
-    if (n >= 1e5) return '₨' + (n/1e5).toFixed(1) + 'L';
-    if (n >= 1e3) return '₨' + (n/1e3).toFixed(1) + 'K';
-    return '₨' + Math.round(n).toLocaleString();
+  function fmt(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    if (Math.abs(n) >= 10000000) return '₨' + (n / 10000000).toFixed(2) + 'cr';
+    if (Math.abs(n) >= 100000) return '₨' + (n / 100000).toFixed(2) + 'L';
+    return '₨' + Math.round(n).toLocaleString('en-PK');
   }
 
   function fmtPct(n) {
-    if (!n || isNaN(n)) return '0.00%';
+    if (n === null || n === undefined || isNaN(n)) return '—';
     return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
   }
 
-  function greet() {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
-
-  function dateStr() {
-    return new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-  }
-
-  function ruleOfDay() {
-    const rules = window.ADVISOR_RULES || [];
-    if (!rules.length) return '';
-    const idx = new Date().getDate() % rules.length;
-    return rules[idx];
-  }
-
-  function getSectorBreakdown(stocks) {
-    const map = {};
-    stocks.forEach(s => {
-      if (!s.shares || !s.currentPrice) return;
-      const val = s.shares * s.currentPrice;
-      if (!map[s.sector]) map[s.sector] = 0;
-      map[s.sector] += val;
-    });
-    return Object.entries(map)
-      .map(([sector, value]) => ({ sector, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6);
-  }
-
-  function getShariahPct(stocks, funds) {
-    const shariahVal = [...stocks, ...funds].reduce((sum, h) => {
-      if (!h.isShariah) return sum;
-      const qty = h.shares || h.units || 0;
-      const price = h.currentPrice || h.currentNav || 0;
-      return sum + qty * price;
-    }, 0);
-    const total = State.calcTotalValue();
-    return total > 0 ? (shariahVal / total * 100) : 0;
-  }
+  function pnlClass(n) { return n >= 0 ? 't-gain' : 't-loss'; }
+  function pnlSign(n) { return n >= 0 ? '+' : ''; }
 
   function render() {
-    const el = document.getElementById('screen-overview');
-    if (!el) return;
+    const screen = document.getElementById('screen-overview');
+    if (!screen) return;
 
-    const stocks = State.get('stocks') || [];
-    const funds = State.get('funds') || [];
-    const priceHistory = State.get('priceHistory') || [];
-    const lastUpdate = State.get('lastPriceUpdate');
-
-    const totalVal = State.calcTotalValue();
+    const totalValue = State.calcTotalValue();
     const totalCost = State.calcTotalCost();
-    const pnl = totalVal - totalCost;
-    const pnlPct = totalCost > 0 ? (pnl / totalCost * 100) : 0;
-    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const totalPnl = totalValue - totalCost;
+    const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
 
-    const rafiVal  = State.calcBrokerValue('Rafi');
-    const rafiCost = State.calcBrokerCost('Rafi');
-    const akdVal   = State.calcBrokerValue('AKD');
-    const akdCost  = State.calcBrokerCost('AKD');
-    const meezanVal  = State.calcBrokerValue('Meezan');
-    const meezanCost = State.calcBrokerCost('Meezan');
+    const stocksValue = State.calcStocksValue();
+    const stocksCost = State.calcStocksCost();
+    const stocksPnl = stocksValue - stocksCost;
+    const stocksPnlPct = stocksCost > 0 ? (stocksPnl / stocksCost) * 100 : 0;
 
-    const rafiPnl   = rafiVal - rafiCost;
-    const akdPnl    = akdVal - akdCost;
-    const meezanPnl = meezanVal - meezanCost;
+    const fundsValue = State.calcFundsValue();
+    const fundsCost = State.calcFundsCost();
+    const fundsPnl = fundsValue - fundsCost;
+    const fundsPnlPct = fundsCost > 0 ? (fundsPnl / fundsCost) * 100 : 0;
 
-    const stocksVal = State.calcStocksValue();
-    const fundsVal  = State.calcFundsValue();
+    const rafiValue = (State.get('stocks') || []).filter(s => s.broker === 'Rafi').reduce((a, s) => a + (s.shares || 0) * (s.currentPrice || 0), 0);
+    const akdValue  = (State.get('stocks') || []).filter(s => s.broker === 'AKD').reduce((a, s) => a + (s.shares || 0) * (s.currentPrice || 0), 0);
 
-    const sectors = getSectorBreakdown(stocks);
-    const shariahPct = getShariahPct(stocks, funds);
+    const lastUpdate = State.get('lastPriceUpdate');
+    const lastUpdateStr = lastUpdate
+      ? 'Updated ' + new Date(lastUpdate).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
+      : 'Prices not updated';
 
-    const heldStocks = stocks.filter(s => s.shares > 0 && s.currentPrice > 0);
-    const greenPositions = stocks.filter(s => s.shares > 0 && s.currentPrice > 0 && (s.currentPrice - s.avgCost) > 0).length;
-    const uniqueSectors = new Set(stocks.filter(s => s.shares > 0).map(s => s.sector)).size;
-    const heldFunds = funds.filter(f => f.units > 0);
+    const totalForAlloc = totalValue || 1;
+    const rafiPct    = ((rafiValue / totalForAlloc) * 100).toFixed(1);
+    const akdPct     = ((akdValue / totalForAlloc) * 100).toFixed(1);
+    const meezanPct  = ((fundsValue / totalForAlloc) * 100).toFixed(1);
 
-    const updatedStr = lastUpdate
-      ? 'Updated ' + new Date(lastUpdate).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
-      : 'Prices not updated yet';
+    const sectorMap = {};
+    (State.get('stocks') || []).forEach(s => {
+      const val = (s.shares || 0) * (s.currentPrice || 0);
+      if (val > 0) sectorMap[s.sector] = (sectorMap[s.sector] || 0) + val;
+    });
+    const topSectors = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-    el.innerHTML = `
-      <div class="screen-header">
-        <div style="font-size:0.75rem;color:var(--text3)">${dateStr()}</div>
-        <div class="screen-title">${greet()}, Shamikh 👋</div>
+    const sharahStocksVal = (State.get('stocks') || []).filter(s => s.isShariah).reduce((a, s) => a + (s.shares || 0) * (s.currentPrice || 0), 0);
+    const sharahFundsVal  = (State.get('funds') || []).reduce((a, f) => a + (f.currentValue || 0), 0);
+    const sharahTotal = sharahStocksVal + sharahFundsVal;
+    const sharahPct   = totalValue > 0 ? ((sharahTotal / totalValue) * 100).toFixed(0) : 0;
+
+    const sipMonthly   = 75000;
+    const annualReturn = 0.18;
+
+    const kse = State.get('kseIndex') || {};
+    const history = State.get('priceHistory') || [];
+
+    screen.innerHTML = `
+    <div class="market-bar">
+      <div class="market-bar-left">
+        <span class="kse-label">KSE-100</span>
+        <span class="kse-value">${kse.value ? Number(kse.value).toLocaleString('en-PK') : '—'}</span>
+        ${kse.changeP !== null && kse.changeP !== undefined
+          ? `<span class="kse-change ${kse.changeP >= 0 ? 't-gain' : 't-loss'}">${fmtPct(kse.changeP)}</span>`
+          : ''}
       </div>
+      <span class="last-updated">${lastUpdateStr}</span>
+    </div>
 
-      <!-- Portfolio Hero -->
-      <div style="padding:0 18px">
-        <div class="card-hero">
-          <div class="t-label" style="margin-bottom:8px">Total Portfolio</div>
-          <div class="networth-num">${fmtPKR(totalVal)}</div>
-          <div style="margin-top:4px;font-size:0.78rem;color:var(--text3)">Cost basis: ${fmtPKR(totalCost)}</div>
-          <div style="margin-top:10px;display:flex;align-items:center;gap:16px">
-            <div>
-              <div style="font-size:1.1rem;font-weight:700;color:${pnlColor}">${pnl >= 0 ? '+' : ''}${fmtPKR(Math.abs(pnl))}</div>
-              <div style="font-size:0.72rem;color:${pnlColor}">${fmtPct(pnlPct)} total return</div>
-            </div>
-            <div style="flex:1;text-align:right">
-              <div style="font-size:0.68rem;color:var(--text3)">${updatedStr}</div>
-            </div>
+    <div class="portfolio-hero">
+      <div class="portfolio-label">Total Portfolio Value</div>
+      <div class="portfolio-value">${fmt(totalValue)}</div>
+      <div class="portfolio-pnl-row">
+        <span class="pnl-badge ${totalPnl >= 0 ? 'gain' : 'loss'}">
+          ${pnlSign(totalPnl)}${fmt(Math.abs(totalPnl))} (${fmtPct(totalPnlPct)})
+        </span>
+        <span class="portfolio-meta">Invested: ${fmt(totalCost)}</span>
+      </div>
+      <button class="btn-primary" style="margin-top:16px;padding:12px;" onclick="App.openPriceModal()">⟳ Update Prices</button>
+    </div>
+
+    <div style="padding:0 16px 16px;">
+      <div class="t-label" style="margin-bottom:10px;">Portfolio Allocation</div>
+      <div class="alloc-bar">
+        <div class="alloc-seg" style="width:${rafiPct}%;background:#1890FF;"></div>
+        <div class="alloc-seg" style="width:${akdPct}%;background:#FF6B35;"></div>
+        <div class="alloc-seg" style="width:${meezanPct}%;background:#0ECB81;"></div>
+      </div>
+      <div class="alloc-legend">
+        <div class="alloc-item">
+          <div class="alloc-dot" style="background:#1890FF;"></div>
+          Rafi <span class="alloc-val" style="margin-left:6px;">${fmt(rafiValue)} (${rafiPct}%)</span>
+        </div>
+        <div class="alloc-item">
+          <div class="alloc-dot" style="background:#FF6B35;"></div>
+          AKD <span class="alloc-val" style="margin-left:6px;">${fmt(akdValue)} (${akdPct}%)</span>
+        </div>
+        <div class="alloc-item">
+          <div class="alloc-dot" style="background:#0ECB81;"></div>
+          Meezan <span class="alloc-val" style="margin-left:6px;">${fmt(fundsValue)} (${meezanPct}%)</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px;margin-bottom:16px;">
+      <div class="card-dark" style="padding:12px;text-align:center;">
+        <div class="t-label" style="color:#1890FF;margin-bottom:6px;">RAFI</div>
+        <div style="font-size:0.85rem;font-weight:700;font-variant-numeric:tabular-nums;">${fmt(rafiValue)}</div>
+        <div class="${pnlClass(stocksPnlPct)}" style="font-size:0.7rem;">${fmtPct(stocksPnlPct)}</div>
+      </div>
+      <div class="card-dark" style="padding:12px;text-align:center;">
+        <div class="t-label" style="color:var(--orange);margin-bottom:6px;">AKD</div>
+        <div style="font-size:0.85rem;font-weight:700;font-variant-numeric:tabular-nums;">${fmt(akdValue)}</div>
+      </div>
+      <div class="card-dark" style="padding:12px;text-align:center;">
+        <div class="t-label" style="color:var(--green);margin-bottom:6px;">MEEZAN</div>
+        <div style="font-size:0.85rem;font-weight:700;font-variant-numeric:tabular-nums;">${fmt(fundsValue)}</div>
+        <div class="${pnlClass(fundsPnlPct)}" style="font-size:0.7rem;">${fmtPct(fundsPnlPct)}</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:16px;">
+      <div class="stat-card">
+        <div class="stat-val">${(State.get('stocks') || []).length}</div>
+        <div class="stat-label">Total Stocks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${(State.get('funds') || []).length}</div>
+        <div class="stat-label">Meezan Funds</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val t-gain">${sharahPct}%</div>
+        <div class="stat-label">Shariah</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${topSectors.length}</div>
+        <div class="stat-label">Sectors</div>
+      </div>
+    </div>
+
+    ${history.length > 1 ? `
+    <div class="chart-card">
+      <div class="chart-title">Portfolio Value History</div>
+      <div id="portfolio-chart"></div>
+    </div>` : ''}
+
+    ${topSectors.length > 0 ? `
+    <div class="sec-head"><span class="sec-title">Sector Concentration</span></div>
+    <div style="padding:0 16px;margin-bottom:16px;">
+      ${topSectors.map(([sector, val]) => {
+        const pct = ((val / totalValue) * 100).toFixed(1);
+        return `<div class="sector-row">
+          <div class="sector-row-head">
+            <span class="t-caption">${sector}</span>
+            <span class="t-caption t-mono">${fmt(val)} (${pct}%)</span>
           </div>
-          <button class="btn btn-primary-sm" style="margin-top:14px;width:100%" onclick="App.openPriceModal()">
-            ↻ Update Prices
-          </button>
-        </div>
+          <div class="sip-bar"><div class="sip-fill" style="width:${pct}%;"></div></div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="sec-head"><span class="sec-title">Wealth Projection</span></div>
+    <div class="projection-card">
+      <div class="t-caption" style="margin-bottom:12px;">Based on ₨75,000/month SIP + 18% annual return</div>
+      <div class="proj-years-row" id="proj-years">
+        ${[5, 10, 15, 20].map((y, i) => `<div class="proj-year-btn${i === 1 ? ' active' : ''}" data-years="${y}">${y}Y</div>`).join('')}
       </div>
-
-      <!-- Quick Stats -->
-      <div class="section-header"><span class="section-label">Portfolio Overview</span></div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">${heldStocks.length}</div>
-          <div class="stat-label">Stocks held</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${heldFunds.length}</div>
-          <div class="stat-label">Funds held</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${uniqueSectors}</div>
-          <div class="stat-label">Sectors</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color:var(--green)">${greenPositions}</div>
-          <div class="stat-label">Green positions</div>
-        </div>
+      <div class="proj-result" id="proj-result">
+        ${buildProjection(totalValue, 10, sipMonthly, annualReturn)}
       </div>
+    </div>
 
-      <!-- Allocation Bar -->
-      <div class="section-header"><span class="section-label">Broker Allocation</span></div>
-      <div style="padding:0 18px">
-        <div class="card">
-          <div id="alloc-bar-container"></div>
+    <div class="sec-head" style="margin-top:8px;"><span class="sec-title">Shariah Compliance</span></div>
+    <div style="padding:0 16px 20px;">
+      <div class="card-dark" style="padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span class="t-body">Shariah-compliant holdings</span>
+          <span class="t-gain" style="font-weight:700;">${sharahPct}%</span>
         </div>
+        <div class="sip-bar"><div class="sip-fill" style="width:${sharahPct}%;background:var(--green);"></div></div>
+        <div class="t-caption" style="margin-top:8px;">${fmt(sharahTotal)} of ${fmt(totalValue)} is Shariah-compliant. All Meezan funds are Shariah. Some Rafi/AKD stocks (EFERT, HUBC, PSO, SSGC, OGDC etc.) are non-compliant.</div>
       </div>
+    </div>`;
 
-      <!-- Broker Cards -->
-      <div class="section-header"><span class="section-label">By Broker</span></div>
-      <div class="broker-cards">
-        <div class="broker-card">
-          <div class="broker-card-name" style="color:var(--blue)">Rafi</div>
-          <div class="broker-card-value">${fmtPKR(rafiVal)}</div>
-          <div class="broker-card-pnl" style="color:${rafiPnl>=0?'var(--green)':'var(--red)'}">${rafiPnl>=0?'+':''}${fmtPKR(Math.abs(rafiPnl))}</div>
-        </div>
-        <div class="broker-card">
-          <div class="broker-card-name" style="color:var(--orange)">AKD</div>
-          <div class="broker-card-value">${fmtPKR(akdVal)}</div>
-          <div class="broker-card-pnl" style="color:${akdPnl>=0?'var(--green)':'var(--red)'}">${akdPnl>=0?'+':''}${fmtPKR(Math.abs(akdPnl))}</div>
-        </div>
-        <div class="broker-card">
-          <div class="broker-card-name" style="color:var(--green)">Meezan</div>
-          <div class="broker-card-value">${fmtPKR(meezanVal)}</div>
-          <div class="broker-card-pnl" style="color:${meezanPnl>=0?'var(--green)':'var(--red)'}">${meezanPnl>=0?'+':''}${fmtPKR(Math.abs(meezanPnl))}</div>
-        </div>
-      </div>
-
-      <!-- Asset Class -->
-      <div class="section-header"><span class="section-label">Asset Class</span></div>
-      <div style="padding:0 18px">
-        <div class="card">
-          <div class="row-between" style="margin-bottom:10px">
-            <div>
-              <div style="font-size:0.78rem;color:var(--text3)">Equities</div>
-              <div style="font-size:1.1rem;font-weight:700">${fmtPKR(stocksVal)}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:0.78rem;color:var(--text3)">Funds & ETFs</div>
-              <div style="font-size:1.1rem;font-weight:700">${fmtPKR(fundsVal)}</div>
-            </div>
-          </div>
-          <div class="alloc-bar">
-            <div class="alloc-segment" style="width:${totalVal>0?(stocksVal/totalVal*100).toFixed(1):50}%;background:var(--blue);min-width:4px"></div>
-            <div class="alloc-segment" style="width:${totalVal>0?(fundsVal/totalVal*100).toFixed(1):50}%;background:var(--green);min-width:4px"></div>
-          </div>
-          <div class="alloc-legend" style="margin-top:8px">
-            <div class="alloc-legend-item"><div class="alloc-dot" style="background:var(--blue)"></div>Equities ${totalVal>0?(stocksVal/totalVal*100).toFixed(1):0}%</div>
-            <div class="alloc-legend-item"><div class="alloc-dot" style="background:var(--green)"></div>Funds ${totalVal>0?(fundsVal/totalVal*100).toFixed(1):0}%</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sector Breakdown -->
-      <div class="section-header"><span class="section-label">Sector Concentration</span></div>
-      <div style="padding:0 18px">
-        <div class="card">
-          <div id="sector-bars-container"></div>
-        </div>
-      </div>
-
-      <!-- Shariah -->
-      <div class="section-header"><span class="section-label">Shariah Compliance</span></div>
-      <div style="padding:0 18px">
-        <div class="card">
-          <div class="row-between">
-            <div>
-              <div style="font-size:0.78rem;color:var(--text3)">Shariah-compliant</div>
-              <div style="font-size:1.4rem;font-weight:700;color:var(--green)">${shariahPct.toFixed(0)}%</div>
-            </div>
-            <div style="font-size:2rem">☪️</div>
-          </div>
-          <div class="progress-bar-wrap" style="margin-top:10px">
-            <div class="progress-bar-fill" style="width:${shariahPct.toFixed(0)}%;background:var(--green)"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Portfolio Chart -->
-      <div class="section-header"><span class="section-label">Portfolio Value</span></div>
-      <div style="padding:0 18px">
-        <div class="card">
-          <div id="portfolio-chart"></div>
-        </div>
-      </div>
-
-      <!-- Advisor Note -->
-      <div class="section-header"><span class="section-label">Advisor Note</span></div>
-      <div class="advisor-note">
-        <div class="advisor-note-label">Rule of the Day</div>
-        <div class="advisor-note-text">${ruleOfDay()}</div>
-      </div>
-
-      <div style="height:24px"></div>
-    `;
-
-    // Render allocation bar
-    const allocContainer = el.querySelector('#alloc-bar-container');
-    if (allocContainer) {
-      Charts.allocationBar(allocContainer, [
-        { label:'Rafi', value:rafiVal, color:'var(--blue)' },
-        { label:'AKD', value:akdVal, color:'var(--orange)' },
-        { label:'Meezan', value:meezanVal, color:'var(--green)' },
-      ]);
+    if (history.length > 1) {
+      const chartEl = document.getElementById('portfolio-chart');
+      if (chartEl && window.Charts) {
+        chartEl.innerHTML = Charts.lineChart(history.map(h => h.value), { color: '#FF6B35', height: 120, fill: true });
+      }
     }
 
-    // Render sector bars
-    const sectorContainer = el.querySelector('#sector-bars-container');
-    if (sectorContainer) Charts.sectorBars(sectorContainer, sectors);
+    document.querySelectorAll('.proj-year-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.proj-year-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const years = parseInt(btn.dataset.years);
+        document.getElementById('proj-result').innerHTML = buildProjection(totalValue, years, sipMonthly, annualReturn);
+      });
+    });
+  }
 
-    // Render chart
-    const chartContainer = el.querySelector('#portfolio-chart');
-    if (chartContainer) Charts.lineChart(chartContainer, priceHistory);
+  function buildProjection(currentValue, years, sipMonthly, annualReturn) {
+    const monthlyRate = annualReturn / 12;
+    const months = years * 12;
+    const futurePortfolio = currentValue * Math.pow(1 + annualReturn, years);
+    const futureSIP = sipMonthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+    const total = futurePortfolio + futureSIP;
+    return `<div class="proj-amount">${fmt(total)}</div>
+      <div class="t-label" style="margin-top:6px;">Projected in ${years} years</div>
+      <div class="t-caption" style="margin-top:4px;">Portfolio ${fmt(futurePortfolio)} + SIP corpus ${fmt(futureSIP)}</div>`;
   }
 
   return { render };

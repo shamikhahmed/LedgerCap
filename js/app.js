@@ -1,131 +1,156 @@
 'use strict';
 const App = (() => {
+  function launch() {
+    document.getElementById('nav').classList.remove('hidden');
+    Navigation.restoreLast();
+  }
 
-  function showToast(msg, type = 'info') {
+  function showToast(msg, type, duration) {
+    duration = duration || 2500;
     const wrap = document.getElementById('toast-wrap');
     if (!wrap) return;
     const t = document.createElement('div');
-    t.className = `toast toast-${type}`;
+    t.className = 'toast ' + (type || 'info');
     t.textContent = msg;
     wrap.appendChild(t);
-    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 3200);
+    setTimeout(() => t.remove(), duration);
   }
 
   function openPriceModal() {
+    const modal = document.getElementById('price-modal');
+    if (!modal) return;
     const stocks = State.get('stocks') || [];
     const funds  = State.get('funds')  || [];
-    const prices = State.get('prices') || {};
-    const navs   = State.get('navs')   || {};
+    const list   = document.getElementById('price-modal-list');
 
-    const heldStocks = stocks.filter(s => s.shares > 0);
-    const heldFunds  = funds.filter(f => f.units > 0);
-
-    let stockRows = heldStocks.map(s => `
-      <div class="price-row">
-        <div class="price-symbol">
-          ${s.symbol}
-          <span style="font-size:0.68rem;color:var(--text3);display:block">${s.broker}</span>
-        </div>
-        <input class="price-input" data-symbol="${s.symbol}" data-type="stock"
-          type="number" step="0.01" placeholder="0.00"
-          value="${prices[s.symbol] || s.currentPrice || ''}">
+    if (list) {
+      list.innerHTML = `
+      <div style="padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--bg4);">
+        <div class="t-label">STOCKS (KSE)</div>
       </div>
-    `).join('');
-
-    let fundRows = heldFunds.map(f => `
-      <div class="price-row">
-        <div class="price-symbol">
-          ${f.symbol}
-          <span style="font-size:0.68rem;color:var(--text3);display:block">${f.type}</span>
-        </div>
-        <input class="price-input" data-symbol="${f.symbol}" data-type="fund"
-          type="number" step="0.0001" placeholder="0.0000"
-          value="${navs[f.symbol] || f.currentNav || ''}">
-      </div>
-    `).join('');
-
-    const sheet = document.getElementById('price-modal-sheet');
-    if (!sheet) return;
-
-    sheet.innerHTML = `
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title">Update Prices</div>
-        <button class="modal-close" onclick="App.closePriceModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <button class="btn btn-ghost-orange" style="width:100%;margin-bottom:14px" onclick="Stocks.fetchYahoo().then(()=>App.closePriceModal())">
-          ☁ Fetch from Yahoo Finance
-        </button>
-
-        ${heldStocks.length ? `
-          <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Stocks (PKR)</div>
-          ${stockRows}
-        ` : ''}
-
-        ${heldFunds.length ? `
-          <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin:14px 0 8px">Funds / NAV</div>
-          ${fundRows}
-        ` : ''}
-
-        ${!heldStocks.length && !heldFunds.length ? `
-          <div class="empty-state">
-            <div class="empty-state-icon">📊</div>
-            <div class="empty-state-text">No holdings with shares/units > 0</div>
+      ${stocks.map(s => `
+        <div class="price-input-row">
+          <div>
+            <div class="price-symbol">${s.symbol}</div>
+            <div class="price-last">${s.broker} · Last: ${s.currentPrice > 0 ? '₨' + s.currentPrice.toFixed(2) : 'not set'}</div>
           </div>
-        ` : ''}
-
-        <button class="btn btn-primary" style="margin-top:18px" onclick="App.savePrices()">Save All Prices</button>
+          <input class="price-input" type="number" step="0.01" min="0"
+            data-type="stock" data-symbol="${s.symbol}"
+            placeholder="0.00"
+            value="${s.currentPrice > 0 ? s.currentPrice : ''}">
+        </div>`).join('')}
+      <div style="padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--bg4);margin-top:8px;">
+        <div class="t-label">FUND NAVs (MEEZAN)</div>
       </div>
-    `;
-
-    const overlay = document.getElementById('price-modal-overlay');
-    if (overlay) overlay.classList.add('active');
+      ${funds.map(f => `
+        <div class="price-input-row">
+          <div>
+            <div class="price-symbol">${f.symbol}</div>
+            <div class="price-last">Units: ${f.units.toFixed(4)} · Last NAV: ₨${f.currentNav.toFixed(4)}</div>
+          </div>
+          <input class="price-input" type="number" step="0.0001" min="0"
+            data-type="fund" data-symbol="${f.symbol}"
+            placeholder="0.0000"
+            value="${f.currentNav > 0 ? f.currentNav : ''}">
+        </div>`).join('')}`;
+    }
+    modal.classList.add('open');
   }
 
   function closePriceModal() {
-    const overlay = document.getElementById('price-modal-overlay');
-    if (overlay) overlay.classList.remove('active');
+    document.getElementById('price-modal')?.classList.remove('open');
   }
 
   function savePrices() {
-    const inputs = document.querySelectorAll('#price-modal-sheet .price-input');
-    let count = 0;
-    inputs.forEach(inp => {
-      const symbol = inp.dataset.symbol;
-      const type   = inp.dataset.type;
-      const val    = parseFloat(inp.value);
-      if (!symbol || isNaN(val) || val <= 0) return;
-      if (type === 'stock') State.updatePrice(symbol, val);
-      else State.updateNav(symbol, val);
-      count++;
+    const inputs = document.querySelectorAll('.price-input');
+    let updated = 0;
+    inputs.forEach(input => {
+      const val = parseFloat(input.value);
+      if (!val || val <= 0) return;
+      if (input.dataset.type === 'stock') {
+        State.updateStockPrice(input.dataset.symbol, val);
+      } else {
+        State.updateFundNav(input.dataset.symbol, val);
+      }
+      updated++;
     });
     closePriceModal();
-    if (Nav.current() === 'overview') Overview.render();
-    if (Nav.current() === 'stocks') Stocks.render();
-    if (Nav.current() === 'funds') Funds.render();
-    showToast(`${count} price${count !== 1 ? 's' : ''} updated`, 'success');
+    showToast('Updated ' + updated + ' prices', 'success');
+    Overview.render();
+    const cur = Navigation.getCurrent();
+    if (cur === 'stocks') Stocks.render();
+    if (cur === 'funds')  Funds.render();
   }
 
-  function launch() {
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW:', e));
+  async function fetchYahooPrices() {
+    showToast('Fetching prices from Yahoo Finance...', 'info', 4000);
+    const stocks  = State.get('stocks') || [];
+    const symbols = [...new Set(stocks.map(s => s.symbol))];
+    let updated = 0;
+    let failed  = 0;
+
+    for (const symbol of symbols) {
+      try {
+        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}.KA?interval=1d&range=1d`;
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) throw new Error('not ok');
+        const data = await res.json();
+        const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if (price && price > 0) {
+          State.updateStockPrice(symbol, price);
+          const input = document.querySelector(`input[data-symbol="${symbol}"][data-type="stock"]`);
+          if (input) input.value = price.toFixed(2);
+          updated++;
+        } else { failed++; }
+      } catch { failed++; }
+      await new Promise(r => setTimeout(r, 120));
     }
 
-    // Init navigation — renders first screen
-    Nav.init();
+    try {
+      const kseRes = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/%5EKMEX?interval=1d&range=1d', { mode: 'cors' });
+      if (kseRes.ok) {
+        const kseData = await kseRes.json();
+        const meta = kseData?.chart?.result?.[0]?.meta;
+        if (meta?.regularMarketPrice) {
+          State.set('kseIndex', {
+            value: meta.regularMarketPrice,
+            change: meta.regularMarketChange,
+            changeP: meta.regularMarketChangePercent,
+            updated: new Date().toISOString()
+          });
+        }
+      }
+    } catch {}
 
-    // Refresh overview on app resume
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && Nav.current() === 'overview') Overview.render();
-    });
-
-    console.log('StundsOS launched ✓');
+    if (updated > 0) {
+      showToast('Updated ' + updated + ' prices from Yahoo Finance', 'success');
+      Overview.render();
+      if (Navigation.getCurrent() === 'stocks') Stocks.render();
+    } else {
+      showToast('CORS blocked — please update prices manually', 'error', 4000);
+    }
+    if (failed > 0) showToast(failed + ' symbols not found on Yahoo', 'info');
   }
 
-  return { launch, showToast, openPriceModal, closePriceModal, savePrices };
+  function init() {
+    State.get(); // ensure loaded
+
+    launch();
+
+    document.getElementById('price-modal-save')?.addEventListener('click', savePrices);
+    document.getElementById('price-modal-close')?.addEventListener('click', closePriceModal);
+    document.getElementById('price-modal-yahoo')?.addEventListener('click', fetchYahooPrices);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && Navigation.getCurrent() === 'overview') Overview.render();
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }
+
+  return { init, launch, showToast, openPriceModal, closePriceModal, savePrices, fetchYahooPrices };
 })();
 window.App = App;
-
-document.addEventListener('DOMContentLoaded', () => App.launch());
+document.addEventListener('DOMContentLoaded', App.init);
