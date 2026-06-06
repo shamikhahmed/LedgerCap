@@ -24,6 +24,13 @@ const State = (() => {
     if ((window.INITIAL_TRANSACTIONS || []).length > 0 && !_s.transactions.length) {
       _s.transactions = [...(window.INITIAL_TRANSACTIONS || [])];
     }
+    // Seed fallback prices so dashboard shows real values on first load
+    if (Object.keys(_s.prices).length === 0 && window.Prices?.FALLBACK_PRICES) {
+      const now = Date.now();
+      for (const [sym, price] of Object.entries(window.Prices.FALLBACK_PRICES)) {
+        _s.prices[sym] = { price, prevClose: price, source: 'fallback', ts: now };
+      }
+    }
   }
 
   function load() {
@@ -33,6 +40,7 @@ const State = (() => {
         const parsed = JSON.parse(r);
         _s = { ...DEFAULT, ...parsed };
         _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
+        _seed();
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
         _seed();
