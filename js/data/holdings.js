@@ -70,6 +70,19 @@ const SIP_PLAN = [
   { fund:'STK',  amount:5000,  color:'#F0B90B', note:'Accumulate. Only deploy with full investment memo.' },
 ];
 
+const FALLBACK_PRICES = {
+  'ATRL': 875.00, 'CPHL': 78.00, 'DGKC': 198.00, 'EFERT': 201.00,
+  'ENGROH': 263.00, 'FFL': 18.00, 'HUBC': 215.00, 'LUCK': 432.00,
+  'MARI': 650.00, 'MEBL': 490.00, 'MIIETF': 17.00, 'MLCF': 88.00,
+  'MZNPETF': 20.50, 'NML': 145.00, 'NRL': 365.00, 'OGDC': 321.00,
+  'PPL': 229.00, 'PSO': 352.00, 'PTC': 68.00, 'SEARL': 91.00,
+  'SSGC': 27.00, 'TRG': 72.00,
+  'FFC': 500.00, 'HINO': 351.00, 'PIBTL': 16.50, 'PICT': 38.50,
+  'PNSC': 505.00, 'SLGL': 15.00, 'PASM': 8.00,
+  'KMIF': 187.70, 'MAAF': 114.02, 'MBF': 27.89, 'MDAAF-MDYP': 88.89,
+  'MIF': 165.16, 'MIIF-B': 55.98, 'MIIF-MMKA': 55.98,
+};
+
 const WATCHLIST = [
   { symbol:'MEBL', name:'Meezan Bank',      thesis:'Add more — build to largest position', targetPrice:550, priority:'HIGH'   },
   { symbol:'PICT', name:'PICT',             thesis:'Build from 160 to 500+ shares',         targetPrice:45,  priority:'HIGH'   },
@@ -135,3 +148,4 @@ window.ADVISOR_RATINGS = ADVISOR_RATINGS;
 window.SIP_PLAN = SIP_PLAN;
 window.WATCHLIST = WATCHLIST;
 window.INITIAL_TRANSACTIONS = INITIAL_TRANSACTIONS;
+window.FALLBACK_PRICES = FALLBACK_PRICES;

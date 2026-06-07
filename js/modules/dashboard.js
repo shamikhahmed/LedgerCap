@@ -22,6 +22,32 @@ const Dashboard = (() => {
     return `<span class="pnl-pill ${cls}">${lbl}${sign}${fmt(Math.abs(val))} (${sign}${pct.toFixed(2)}%)</span>`;
   }
 
+  function _generateSyntheticHistory(currentVal, days) {
+    const history = [];
+    const startVal = currentVal * 0.97;
+    for (let i = 0; i <= days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (days - i));
+      const dateStr = d.toISOString().split('T')[0];
+      const t = i / days;
+      const trend = startVal + (currentVal - startVal) * t;
+      const noise = trend * 0.004 * Math.sin(i * 1.7 + 2.3);
+      history.push({ date: dateStr, value: Math.round(trend + noise), synthetic: true });
+    }
+    return history;
+  }
+
+  function _priceStatusText(allPrices) {
+    const livePrices = allPrices.filter(p => p.source === 'yahoo');
+    if (!livePrices.length) return `<span style="font-size:0.68rem;color:var(--gold);">Using seed prices — tap ⟳ Refresh for live data</span>`;
+    const liveTs = Math.max(...livePrices.map(p => p.ts || 0));
+    const diffH = (Date.now() - liveTs) / 3600000;
+    const time = new Date(liveTs).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
+    if (diffH < 8) return `<span style="font-size:0.68rem;color:var(--green);">Prices updated today at ${time}</span>`;
+    if (diffH < 32) return `<span style="font-size:0.68rem;color:var(--gold);">Updated yesterday — tap ⟳ Refresh</span>`;
+    return `<span style="font-size:0.68rem;color:var(--red);">Prices may be outdated — tap ⟳ Refresh</span>`;
+  }
+
   function render() {
     const screen = document.getElementById('screen-dashboard');
     if (!screen) return;
@@ -36,11 +62,17 @@ const Dashboard = (() => {
     const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
     const dailyPnl = State.calcDailyPnl();
 
-    const history = state.priceHistory || [];
+    const allPrices = Object.values(state.prices || {});
+    const allFallback = allPrices.length === 0 || allPrices.every(p => p.source === 'fallback');
+
+    const realHistory = state.priceHistory || [];
+    const isSynthetic = realHistory.length < 4;
+    const history = isSynthetic && totalValue > 0 ? _generateSyntheticHistory(totalValue, 30) : realHistory;
+
     const lastMonthVal = history.length > 20 ? history[history.length - 20]?.value || totalValue : totalValue;
     const monthlyPnl = totalValue - lastMonthVal;
 
-    const ytdEntry = history.find(h => h.date && h.date.startsWith('2026-01'));
+    const ytdEntry = realHistory.find(h => h.date && h.date.startsWith('2026-01'));
     const ytdPnl = ytdEntry ? totalValue - ytdEntry.value : 0;
     const ytdPct = ytdEntry && ytdEntry.value > 0 ? (ytdPnl / ytdEntry.value) * 100 : 0;
 
@@ -60,17 +92,35 @@ const Dashboard = (() => {
     }, 0);
     const total4alloc = totalValue || 1;
 
-    const movers = holdings.map(h => {
+    const movers = allFallback ? [] : holdings.map(h => {
       const curr = State.getPrice(h.symbol);
       const prev = State.getPrevClose(h.symbol);
       if (!curr || !prev || prev === curr) return null;
       return { symbol: h.symbol, changeP: ((curr - prev) / prev) * 100, change: (curr - prev) * h.shares };
     }).filter(Boolean).sort((a, b) => Math.abs(b.changeP) - Math.abs(a.changeP)).slice(0, 4);
 
-    const insights = Insights.generate(state);
+    const stockRows = holdings.map(h => {
+      const curr = State.getPrice(h.symbol) || h.avgCost;
+      const val = h.shares * curr;
+      const pnl = val - h.shares * h.avgCost;
+      const pnlPct = h.avgCost > 0 ? (curr - h.avgCost) / h.avgCost * 100 : 0;
+      return { symbol: h.symbol, val, pnl, pnlPct };
+    });
+    const sortedByPct = [...stockRows].sort((a, b) => b.pnlPct - a.pnlPct);
+    const best = sortedByPct[0];
+    const worst = sortedByPct[sortedByPct.length - 1];
+    const mostVal = [...stockRows].sort((a, b) => b.val - a.val)[0];
+    const totalUnrealisedPnl = stockRows.reduce((s, r) => s + r.pnl, 0);
 
+    const nominalRetPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+    const pkrDepPct = (settings.pkrDepreciationRate || 0.15) * 100;
+    const usdInflation = 3;
+    const realPkr = nominalRetPct - pkrDepPct;
+    const realUsd = realPkr - usdInflation;
+    const usdRate = settings.usdRate || 280;
+
+    const insights = Insights.generate(state);
     const kse = state.kseIndex || {};
-    const allPrices = Object.values(state.prices || {});
     const lastUpdate = allPrices.sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
     const lastUpdateStr = lastUpdate ? Prices.formatTs(lastUpdate.ts) : 'Not updated';
 
@@ -86,9 +136,11 @@ const Dashboard = (() => {
         ${kse.changeP !== undefined ? `<span class="kse-chg ${kse.changeP >= 0 ? 't-gain' : 't-loss'}">${fmtPct(kse.changeP)}</span>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="t-caption">${lastUpdateStr}</span>
         <button class="btn-ghost" onclick="App.refreshPrices()">⟳ Refresh</button>
       </div>
+    </div>
+    <div style="padding:4px 16px 8px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
+      ${_priceStatusText(allPrices)}
     </div>
 
     <div class="dash-hero">
@@ -96,8 +148,8 @@ const Dashboard = (() => {
       <div class="hero-value">${fmt(totalValue)}</div>
       <div class="hero-pnl">
         ${pnlPill(totalPnl, totalPnlPct, 'All time')}
-        ${dailyPnl !== 0 ? `<span class="pnl-pill ${dailyPnl >= 0 ? 'up' : 'down'}">Today ${dailyPnl >= 0 ? '+' : ''}${fmt(Math.abs(dailyPnl))}</span>` : ''}
-        ${monthlyPnl !== 0 ? `<span class="pnl-pill ${monthlyPnl >= 0 ? 'up' : 'down'}">Month ${monthlyPnl >= 0 ? '+' : ''}${fmt(Math.abs(monthlyPnl))}</span>` : ''}
+        ${!allFallback && dailyPnl !== 0 ? `<span class="pnl-pill ${dailyPnl >= 0 ? 'up' : 'down'}">Today ${dailyPnl >= 0 ? '+' : ''}${fmt(Math.abs(dailyPnl))}</span>` : `<span class="pnl-pill" style="background:rgba(255,255,255,0.05);color:var(--text3);font-size:0.7rem;">Daily P&L: refresh prices</span>`}
+        ${!isSynthetic && monthlyPnl !== 0 ? `<span class="pnl-pill ${monthlyPnl >= 0 ? 'up' : 'down'}">Month ${monthlyPnl >= 0 ? '+' : ''}${fmt(Math.abs(monthlyPnl))}</span>` : ''}
       </div>
       <div class="t-dim" style="margin-top:6px;font-size:0.68rem;">Invested ${fmt(totalCost)} · Real return ~${(realRet * 100).toFixed(1)}% pa after ${((settings.inflationRate || 0.20) * 100).toFixed(0)}% inflation</div>
     </div>
@@ -105,8 +157,8 @@ const Dashboard = (() => {
     <div class="metric-grid">
       <div class="metric-tile">
         <div class="metric-label">YTD Gain</div>
-        <div class="metric-value ${ytdPnl >= 0 ? 't-gain' : 't-loss'}">${fmt(Math.abs(ytdPnl))}</div>
-        <div class="metric-sub">${ytdPnl >= 0 ? '▲' : '▼'} ${fmtPct(ytdPct)}</div>
+        <div class="metric-value ${ytdPnl >= 0 ? 't-gain' : 't-loss'}">${ytdPnl !== 0 ? fmt(Math.abs(ytdPnl)) : '—'}</div>
+        <div class="metric-sub">${ytdPnl !== 0 ? (ytdPnl >= 0 ? '▲ ' : '▼ ') + fmtPct(ytdPct) : 'From Jan 2026'}</div>
       </div>
       <div class="metric-tile">
         <div class="metric-label">This Month SIP</div>
@@ -124,6 +176,30 @@ const Dashboard = (() => {
         <div class="metric-sub">${holdings.length} stocks · ${funds.length} funds</div>
       </div>
     </div>
+
+    ${stockRows.length > 0 ? `
+    <div style="padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">BEST</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--green);">${best ? best.symbol : '—'}</div>
+        <div style="font-size:0.65rem;color:var(--green);">${best ? '+' + best.pnlPct.toFixed(1) + '%' : ''}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">WORST</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--red);">${worst ? worst.symbol : '—'}</div>
+        <div style="font-size:0.65rem;color:var(--red);">${worst ? worst.pnlPct.toFixed(1) + '%' : ''}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">LARGEST</div>
+        <div style="font-size:0.78rem;font-weight:700;">${mostVal ? mostVal.symbol : '—'}</div>
+        <div style="font-size:0.65rem;color:var(--text3);">${mostVal ? fmt(mostVal.val) : ''}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">STOCK P&L</div>
+        <div style="font-size:0.78rem;font-weight:700;color:${totalUnrealisedPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${totalUnrealisedPnl >= 0 ? '+' : ''}${fmt(totalUnrealisedPnl)}</div>
+        <div style="font-size:0.65rem;color:var(--text3);">unrealised</div>
+      </div>
+    </div>` : ''}
 
     <div style="padding:14px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -169,13 +245,8 @@ const Dashboard = (() => {
         </div>`).join('')}
     </div>` : ''}
 
-    ${history.length > 3 ? `
-    <div class="sec-head"><span class="sec-title">Net Worth History</span></div>
-    <div class="chart-card"><div id="nw-chart" style="padding:8px 16px 4px;"></div></div>` : `
-    <div style="padding:24px 16px;text-align:center;border-bottom:1px solid var(--bg4);">
-      <div class="t-caption" style="margin-bottom:12px;">Update prices to build your net worth history</div>
-      <button class="btn-primary" style="padding:12px;" onclick="App.refreshPrices()">⟳ Fetch Live Prices</button>
-    </div>`}
+    <div class="sec-head"><span class="sec-title">Net Worth History</span>${isSynthetic ? '<span class="sec-action" style="color:var(--gold);">~Estimated</span>' : ''}</div>
+    <div class="chart-card"><div id="nw-chart" style="padding:8px 16px 4px;"></div></div>
 
     <div class="sec-head" style="margin-top:4px;"><span class="sec-title">Wealth Projection</span></div>
     <div class="proj-card">
@@ -193,11 +264,41 @@ const Dashboard = (() => {
         </div>
       </div>
     </div>
+
+    <div class="sec-head" style="margin-top:4px;"><span class="sec-title">PKR Reality Check</span></div>
+    <div class="proj-card">
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:12px;">Nominal return vs. purchasing power erosion</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <div class="metric-label">Nominal Return</div>
+          <div style="font-size:1.1rem;font-weight:800;color:${nominalRetPct >= 0 ? 'var(--green)' : 'var(--red)'};">${nominalRetPct >= 0 ? '+' : ''}${nominalRetPct.toFixed(1)}%</div>
+          <div style="font-size:0.65rem;color:var(--text3);">On invested capital</div>
+        </div>
+        <div>
+          <div class="metric-label">PKR Depreciation</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--red);">-${pkrDepPct.toFixed(0)}%/yr</div>
+          <div style="font-size:0.65rem;color:var(--text3);">Est. annual (settings)</div>
+        </div>
+        <div>
+          <div class="metric-label">Real Return (PKR)</div>
+          <div style="font-size:1.1rem;font-weight:800;color:${realPkr >= 0 ? 'var(--green)' : 'var(--red)'};">${realPkr >= 0 ? '+' : ''}${realPkr.toFixed(1)}%</div>
+          <div style="font-size:0.65rem;color:var(--text3);">After currency erosion</div>
+        </div>
+        <div>
+          <div class="metric-label">Portfolio in USD</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--orange);">$${Math.round(totalValue / usdRate).toLocaleString()}</div>
+          <div style="font-size:0.65rem;color:var(--text3);">At ₨${usdRate}/USD</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:rgba(255,107,53,0.08);border-radius:var(--r-sm);border:1px solid rgba(255,107,53,0.15);">
+        <div style="font-size:0.75rem;color:var(--text2);">Break-even: You need <strong style="color:var(--orange);">${pkrDepPct.toFixed(0)}%+</strong> nominal return just to preserve purchasing power.</div>
+      </div>
+    </div>
     <div style="height:8px;"></div>`;
 
-    if (history.length > 3) {
-      const chartEl = document.getElementById('nw-chart');
-      if (chartEl) chartEl.innerHTML = Charts.lineChart(history.map(h => h.value), { color: '#FF6B35', height: 120, fill: true });
+    const chartEl = document.getElementById('nw-chart');
+    if (chartEl && history.length > 1) {
+      chartEl.innerHTML = Charts.lineChart(history.map(h => h.value), { color: '#FF6B35', height: 120, fill: true });
     }
 
     document.querySelectorAll('.proj-tab').forEach(tab => {

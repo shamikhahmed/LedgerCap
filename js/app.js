@@ -32,16 +32,18 @@ const App = (() => {
     const holdings = Ledger.calcHoldings(transactions);
     const symbols = [...new Set(holdings.map(h => h.symbol))];
 
-    if (symbols.length === 0 && !navigator.onLine) {
+    if (symbols.length === 0) {
       showToast('No symbols to refresh', 'warning');
       return;
     }
 
     showToast(`Fetching ${symbols.length} prices…`, 'info');
 
-    let ok = 0;
-    const results = await Prices.fetchAll(symbols, (done, total, sym, success) => {
-      if (success) ok++;
+    let yahooOk = 0;
+    let done = 0;
+    const results = await Prices.fetchAll(symbols, (d, total, sym, success, source) => {
+      done = d;
+      if (source === 'yahoo') yahooOk++;
     });
 
     Object.entries(results).forEach(([sym, data]) => {
@@ -51,13 +53,11 @@ const App = (() => {
     const kse = await Prices.fetchKSE100();
     if (kse) State.set('kseIndex', kse);
 
-    const failed = symbols.length - ok;
-    if (failed > 0) {
-      showToast(`Updated ${ok}/${symbols.length} prices (${failed} failed)`, 'warning');
-    } else if (ok > 0) {
-      showToast(`All ${ok} prices updated`, 'success');
+    const skipped = symbols.length - Object.keys(results).length;
+    if (yahooOk > 0) {
+      showToast(`Updated ${yahooOk} live · ${symbols.length - yahooOk} seed prices`, 'success');
     } else {
-      showToast('Price fetch failed — check connection', 'error');
+      showToast('Yahoo unreachable — using seed prices', 'warning');
     }
 
     renderCurrent();
@@ -71,7 +71,8 @@ const App = (() => {
 
     const state = State.get();
     const allPrices = Object.values(state.prices || {});
-    const lastTs = allPrices.length > 0 ? Math.max(...allPrices.map(p => p.ts || 0)) : 0;
+    const livePrices = allPrices.filter(p => p.source === 'yahoo');
+    const lastTs = livePrices.length > 0 ? Math.max(...livePrices.map(p => p.ts || 0)) : 0;
     const staleMins = (Date.now() - lastTs) / 60000;
     if (staleMins > 30 && navigator.onLine) {
       setTimeout(refreshPrices, 1500);
@@ -96,23 +97,27 @@ const App = (() => {
   }
 
   function openAddTransaction(type, symbol, broker) {
+    const txState = State.get();
+    const currentHoldings = Ledger.calcHoldings(txState.transactions || []);
     const allSymbols = [
       ...(window.RAFI_STOCKS || []).map(s => ({ symbol: s.symbol, broker: s.broker })),
       ...(window.AKD_STOCKS || []).map(s => ({ symbol: s.symbol, broker: s.broker })),
+    ];
+    const allWithFunds = [
+      ...allSymbols,
       ...(window.MEEZAN_FUNDS || []).map(f => ({ symbol: f.symbol, broker: 'Meezan' })),
     ];
 
     const typeOpts = ['BUY', 'SELL', 'DIVIDEND', 'SALARY', 'CONTRIBUTION'];
     const selType = type || 'BUY';
-
     const brokers = ['Rafi', 'AKD', 'Meezan', 'Other'];
 
     const content = `
     <div id="tx-form">
       <div class="type-selector">
-        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${t}</div>`).join('')}
+        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${t === 'BUY' ? '📈 BUY' : t === 'SELL' ? '📉 SELL' : t === 'DIVIDEND' ? '💰 DIV' : t === 'SALARY' ? '💼 SALARY' : '🏦 FUND'}</div>`).join('')}
       </div>
-      <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, brokers)}</div>
+      <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings)}</div>
       <button class="btn-primary" onclick="App._submitTransaction()">Add Transaction</button>
     </div>`;
 
@@ -123,29 +128,97 @@ const App = (() => {
         document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const t = btn.dataset.type;
-        document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, brokers);
+        document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings);
+        _bindFieldListeners(t);
       });
     });
+
+    _bindFieldListeners(selType);
   }
 
-  function _txFields(type, symbol, broker, allSymbols, brokers) {
+  function _bindFieldListeners(type) {
+    if (type === 'BUY') {
+      const symSel = document.getElementById('tx-symbol');
+      const priceInput = document.getElementById('tx-price');
+      const sharesInput = document.getElementById('tx-shares');
+      if (symSel) symSel.addEventListener('change', () => {
+        const sym = symSel.value;
+        const p = State.getPrice(sym);
+        if (p && priceInput) priceInput.value = p.toFixed(2);
+        _updateBuyTotal();
+      });
+      if (priceInput) priceInput.addEventListener('input', _updateBuyTotal);
+      if (sharesInput) sharesInput.addEventListener('input', _updateBuyTotal);
+    } else if (type === 'SELL') {
+      const symSel = document.getElementById('tx-symbol');
+      const priceInput = document.getElementById('tx-price');
+      const sharesInput = document.getElementById('tx-shares');
+      if (symSel) symSel.addEventListener('change', () => _onSellSymbolChange());
+      if (priceInput) priceInput.addEventListener('input', _updateSellPnl);
+      if (sharesInput) sharesInput.addEventListener('input', _updateSellPnl);
+    }
+  }
+
+  function _updateBuyTotal() {
+    const shares = parseFloat(document.getElementById('tx-shares')?.value) || 0;
+    const price = parseFloat(document.getElementById('tx-price')?.value) || 0;
+    const el = document.getElementById('tx-total-display');
+    if (el) el.textContent = shares > 0 && price > 0 ? `Total: ₨${Math.round(shares * price).toLocaleString('en-PK')}` : '';
+  }
+
+  function _onSellSymbolChange() {
+    const sel = document.getElementById('tx-symbol');
+    if (!sel) return;
+    const opt = sel.options[sel.selectedIndex];
+    const avgCost = parseFloat(opt?.dataset.avgcost) || 0;
+    const priceInput = document.getElementById('tx-price');
+    const sym = sel.value;
+    const currPrice = State.getPrice(sym);
+    if (currPrice && priceInput) priceInput.value = currPrice.toFixed(2);
+    _updateSellPnl();
+  }
+
+  function _updateSellPnl() {
+    const sel = document.getElementById('tx-symbol');
+    const opt = sel?.options[sel.selectedIndex];
+    const avgCost = parseFloat(opt?.dataset.avgcost) || 0;
+    const sellPrice = parseFloat(document.getElementById('tx-price')?.value) || 0;
+    const shares = parseFloat(document.getElementById('tx-shares')?.value) || 0;
+    const el = document.getElementById('tx-pnl-display');
+    if (el && shares > 0 && sellPrice > 0 && avgCost > 0) {
+      const pnl = (sellPrice - avgCost) * shares;
+      const pct = (sellPrice - avgCost) / avgCost * 100;
+      el.textContent = `P&L: ${pnl >= 0 ? '+' : ''}₨${Math.round(pnl).toLocaleString('en-PK')} (${pnl >= 0 ? '+' : ''}${pct.toFixed(1)}%)`;
+      el.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    } else if (el) {
+      el.textContent = '';
+    }
+  }
+
+  function _txFields(type, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings) {
     const symOpts = allSymbols.map(s => `<option value="${s.symbol}" data-broker="${s.broker}"${symbol === s.symbol ? ' selected' : ''}>${s.symbol} (${s.broker})</option>`).join('');
     const brokerOpts = brokers.map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
     const today = new Date().toISOString().slice(0, 10);
+    const settings = State.get().settings || {};
 
     if (type === 'SALARY') {
       return `
-        <div class="field"><label class="field-label">Amount (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="150000"></div>
+        <div class="field"><label class="field-label">Amount (₨)</label><input class="field-input" id="tx-amount" type="number" value="${settings.salary || 150000}" placeholder="150000"></div>
         <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
         <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
     }
+
     if (type === 'DIVIDEND') {
+      const holdingSymOpts = currentHoldings.length > 0
+        ? currentHoldings.map(h => `<option value="${h.symbol}"${symbol === h.symbol ? ' selected' : ''}>${h.symbol}</option>`).join('')
+        : allWithFunds.map(s => `<option value="${s.symbol}"${symbol === s.symbol ? ' selected' : ''}>${s.symbol}</option>`).join('');
       return `
-        <div class="field"><label class="field-label">Symbol</label><select class="field-select" id="tx-symbol">${symOpts}</select></div>
-        <div class="field"><label class="field-label">Amount (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="5000"></div>
+        <div class="field"><label class="field-label">Symbol</label><select class="field-select" id="tx-symbol">${holdingSymOpts}</select></div>
+        <div class="field"><label class="field-label">Amount Received (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="5000"></div>
         <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
         <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
     }
+
     if (type === 'CONTRIBUTION') {
       const fundOpts = (window.MEEZAN_FUNDS || []).map(f => `<option value="${f.symbol}"${symbol === f.symbol ? ' selected' : ''}>${f.symbol} — ${f.name}</option>`).join('');
       return `
@@ -154,17 +227,38 @@ const App = (() => {
           <div class="field"><label class="field-label">Units</label><input class="field-input" id="tx-units" type="number" step="0.0001" placeholder="0.0000"></div>
           <div class="field"><label class="field-label">NAV (₨)</label><input class="field-input" id="tx-nav" type="number" step="0.01" placeholder="0.00"></div>
         </div>
-        <div class="field"><label class="field-label">Amount (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="40000"></div>
+        <div class="field"><label class="field-label">Amount Invested (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="40000"></div>
         <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
         <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
     }
+
+    if (type === 'SELL') {
+      const sellOpts = currentHoldings.length > 0
+        ? currentHoldings.map(h => `<option value="${h.symbol}" data-broker="${h.broker}" data-shares="${h.shares}" data-avgcost="${h.avgCost.toFixed(2)}"${symbol === h.symbol ? ' selected' : ''}>${h.symbol} (${h.broker}) — ${h.shares} shares</option>`).join('')
+        : '<option value="">No holdings found</option>';
+      const firstH = currentHoldings.find(h => !symbol || h.symbol === symbol) || currentHoldings[0];
+      const defaultPrice = firstH ? (State.getPrice(firstH.symbol) || firstH.avgCost).toFixed(2) : '';
+      return `
+        <div class="field"><label class="field-label">Stock</label><select class="field-select" id="tx-symbol">${sellOpts}</select></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Shares to Sell</label><input class="field-input" id="tx-shares" type="number" placeholder="0" max="${firstH?.shares || ''}"></div>
+          <div class="field"><label class="field-label">Sell Price (₨)</label><input class="field-input" id="tx-price" type="number" step="0.01" value="${defaultPrice}" placeholder="0.00"></div>
+        </div>
+        <div id="tx-pnl-display" style="padding:6px 0;font-size:0.82rem;font-weight:700;min-height:20px;"></div>
+        <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
+        <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
+    }
+
+    // BUY (default)
+    const initialPrice = symbol ? (State.getPrice(symbol) || '') : '';
     return `
       <div class="field"><label class="field-label">Symbol</label><select class="field-select" id="tx-symbol">${symOpts}</select></div>
       <div class="field"><label class="field-label">Broker</label><select class="field-select" id="tx-broker">${brokerOpts}</select></div>
       <div class="field-row">
         <div class="field"><label class="field-label">Shares</label><input class="field-input" id="tx-shares" type="number" placeholder="100"></div>
-        <div class="field"><label class="field-label">Price (₨)</label><input class="field-input" id="tx-price" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label class="field-label">Price (₨)</label><input class="field-input" id="tx-price" type="number" step="0.01" value="${initialPrice ? Number(initialPrice).toFixed(2) : ''}" placeholder="0.00"></div>
       </div>
+      <div id="tx-total-display" style="padding:6px 0;font-size:0.82rem;font-weight:700;color:var(--orange);min-height:20px;"></div>
       <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
       <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
   }
@@ -200,6 +294,18 @@ const App = (() => {
       if (nav) tx.nav = nav;
       tx.amount = amount;
       tx.broker = 'Meezan';
+    } else if (type === 'SELL') {
+      const sel = document.getElementById('tx-symbol');
+      const sym = sel?.value;
+      const broker = sel?.options[sel.selectedIndex]?.dataset.broker || 'Unknown';
+      const shares = parseFloat(g('tx-shares'));
+      const price = parseFloat(g('tx-price'));
+      if (!sym || !shares || !price) { showToast('Fill in symbol, shares, and price', 'error'); return; }
+      tx.symbol = sym;
+      tx.broker = broker;
+      tx.shares = shares;
+      tx.price = price;
+      tx.amount = shares * price;
     } else {
       const sym = g('tx-symbol');
       const broker = g('tx-broker');
@@ -232,7 +338,8 @@ const App = (() => {
   }
 
   return { launch, showToast, refreshPrices, openBottomSheet, closeBottomSheet,
-    openAddTransaction, _submitTransaction, deleteTransaction, renderCurrent };
+    openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
+    deleteTransaction, renderCurrent };
 })();
 window.App = App;
 

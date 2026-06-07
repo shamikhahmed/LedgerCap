@@ -11,6 +11,15 @@ const Portfolio = (() => {
     return '₨' + Math.round(n).toLocaleString('en-PK');
   }
 
+  function fmt2(n) {
+    if (!n && n !== 0) return '—';
+    const abs = Math.abs(n);
+    if (abs >= 10000000) return '₨' + (n / 10000000).toFixed(1) + 'cr';
+    if (abs >= 100000) return '₨' + (n / 100000).toFixed(1) + 'L';
+    if (abs >= 1000) return '₨' + (n / 1000).toFixed(0) + 'k';
+    return '₨' + Math.round(n).toLocaleString();
+  }
+
   function ratingBadge(rating) {
     if (!rating) return '';
     const r = rating.toUpperCase();
@@ -32,6 +41,12 @@ const Portfolio = (() => {
     return `<span class="badge">${broker}</span>`;
   }
 
+  function _priceIndicator(source) {
+    if (source === 'yahoo') return '';
+    if (source === 'manual') return '<span style="font-size:0.6rem;color:#00b8d9;margin-left:2px;" title="Manual price">M</span>';
+    return '<span style="font-size:0.6rem;color:var(--gold);margin-left:2px;" title="Approximate fallback price">~</span>';
+  }
+
   function render() {
     const screen = document.getElementById('screen-portfolio');
     if (!screen) return;
@@ -49,6 +64,11 @@ const Portfolio = (() => {
     const totalCost = State.calcTotalCost();
     const totalPnl = totalValue - totalCost;
     const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+
+    const filteredTotalValue = sorted.reduce((s, r) => s + r.value, 0);
+    const filteredTotalCost = sorted.reduce((s, r) => s + r.cost, 0);
+    const filteredPnl = filteredTotalValue - filteredTotalCost;
+    const filteredPnlPct = filteredTotalCost > 0 ? (filteredPnl / filteredTotalCost) * 100 : 0;
 
     screen.innerHTML = `
     <div class="portfolio-header">
@@ -73,8 +93,9 @@ const Portfolio = (() => {
     <div style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
       <span class="t-dim" style="font-size:0.7rem;">Sort:</span>
       ${['value','pnl','name','broker'].map(s =>
-        `<button class="btn-ghost${_sort === s ? '' : ''}" style="padding:4px 10px;font-size:0.7rem;${_sort === s ? 'border-color:var(--orange);color:var(--orange);' : ''}" data-s="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`
+        `<button class="btn-ghost" style="padding:4px 10px;font-size:0.7rem;${_sort === s ? 'border-color:var(--orange);color:var(--orange);' : ''}" data-s="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`
       ).join('')}
+      <span class="t-dim" style="font-size:0.62rem;margin-left:auto;">~ = estimate, M = manual</span>
     </div>
 
     <div class="holdings-table">
@@ -83,10 +104,21 @@ const Portfolio = (() => {
         <div class="ht-head-cell">Name</div>
         <div class="ht-head-cell">Price</div>
         <div class="ht-head-cell">Value</div>
-        <div class="ht-head-cell">P&amp;L%</div>
+        <div class="ht-head-cell">P&amp;L</div>
       </div>
       ${sorted.length === 0 ? `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No holdings</div><div class="empty-state-sub">Add transactions to see your portfolio</div></div>` : ''}
       ${sorted.map(row => _rowHTML(row)).join('')}
+      ${sorted.length > 0 ? `
+      <div class="ht-row" style="background:var(--bg3);border-top:1px solid var(--bg4);cursor:default;">
+        <div class="ht-icon" style="font-size:0.6rem;background:var(--bg4);">TOT</div>
+        <div><div class="ht-name">Total</div><div class="ht-sub">${sorted.length} positions</div></div>
+        <div class="ht-price" style="font-size:0.72rem;"></div>
+        <div class="ht-value" style="font-weight:800;">${fmt2(filteredTotalValue)}</div>
+        <div class="ht-pnl ${filteredPnl >= 0 ? 't-gain' : 't-loss'}">
+          ${filteredPnl >= 0 ? '+' : ''}${filteredPnlPct.toFixed(1)}%
+          <div style="font-size:0.62rem;">${filteredPnl >= 0 ? '+' : ''}${fmt2(Math.abs(filteredPnl))}</div>
+        </div>
+      </div>` : ''}
     </div>
     <div style="height:8px;"></div>`;
 
@@ -96,15 +128,19 @@ const Portfolio = (() => {
     document.querySelectorAll('[data-s]').forEach(btn => {
       btn.addEventListener('click', () => { _sort = btn.dataset.s; render(); });
     });
-    document.querySelectorAll('.ht-row').forEach(row => {
+    document.querySelectorAll('.ht-row[data-key]').forEach(row => {
       row.addEventListener('click', () => _openDetail(row.dataset.key, row.dataset.type));
     });
   }
 
   function _buildRows(holdings, funds) {
+    const prices = State.get().prices || {};
+
     const stockRows = holdings.map(h => {
-      const curr = State.getPrice(h.symbol);
-      const prev = State.getPrevClose(h.symbol);
+      const priceData = prices[h.symbol];
+      const curr = priceData?.price || 0;
+      const prev = priceData?.prevClose || curr;
+      const priceSource = priceData?.source || 'fallback';
       const price = curr || h.avgCost;
       const value = h.shares * price;
       const cost = h.shares * h.avgCost;
@@ -113,18 +149,20 @@ const Portfolio = (() => {
       const dailyChg = curr && prev ? ((curr - prev) / prev) * 100 : null;
       const advisor = (window.ADVISOR_RATINGS || {})[h.symbol];
       const staticData = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
-      return { key: h.symbol + '_' + h.broker, type: 'stock', symbol: h.symbol, name: staticData?.name || h.symbol, broker: h.broker, shares: h.shares, avgCost: h.avgCost, price, value, cost, pnl, pnlPct, dailyChg, advisor, isShariah: staticData?.isShariah, sector: staticData?.sector };
+      return { key: h.symbol + '_' + h.broker, type: 'stock', symbol: h.symbol, name: staticData?.name || h.symbol, broker: h.broker, shares: h.shares, avgCost: h.avgCost, price, priceSource, value, cost, pnl, pnlPct, dailyChg, advisor, isShariah: staticData?.isShariah, sector: staticData?.sector };
     });
 
     const fundRows = funds.map(f => {
-      const nav = State.getPrice(f.symbol);
+      const priceData = prices[f.symbol];
+      const nav = priceData?.price || 0;
+      const priceSource = priceData?.source || 'fallback';
       const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
       const currentNav = nav || mf?.currentNav || f.avgNav;
       const value = f.units * currentNav;
       const cost = f.totalInvested;
       const pnl = value - cost;
       const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
-      return { key: f.symbol + '_Meezan', type: 'fund', symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan', units: f.units, avgNav: f.avgNav, price: currentNav, value, cost, pnl, pnlPct, dailyChg: null, advisor: null, isShariah: true, sector: mf?.type || 'Fund' };
+      return { key: f.symbol + '_Meezan', type: 'fund', symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan', units: f.units, avgNav: f.avgNav, price: currentNav, priceSource, value, cost, pnl, pnlPct, dailyChg: null, advisor: null, isShariah: true, sector: mf?.type || 'Fund' };
     });
 
     return [...stockRows, ...fundRows];
@@ -154,16 +192,10 @@ const Portfolio = (() => {
   function _rowHTML(row) {
     const pnlClass = row.pnlPct >= 0 ? 't-gain' : 't-loss';
     const sign = row.pnlPct >= 0 ? '+' : '';
-    const priceStr = row.price > 0 ? '₨' + row.price.toLocaleString('en-PK', { maximumFractionDigits: 2 }) : '—';
-
-    function fmt2(n) {
-      if (!n && n !== 0) return '—';
-      const abs = Math.abs(n);
-      if (abs >= 10000000) return '₨' + (n / 10000000).toFixed(1) + 'cr';
-      if (abs >= 100000) return '₨' + (n / 100000).toFixed(1) + 'L';
-      if (abs >= 1000) return '₨' + (n / 1000).toFixed(0) + 'k';
-      return '₨' + Math.round(n).toLocaleString();
-    }
+    const priceNum = row.price > 0 ? '₨' + row.price.toLocaleString('en-PK', { maximumFractionDigits: 2 }) : '—';
+    const priceStr = row.price > 0
+      ? priceNum + _priceIndicator(row.priceSource)
+      : '—';
 
     return `<div class="ht-row" data-key="${row.key}" data-type="${row.type}">
       <div class="ht-icon">${row.symbol.slice(0, 4)}</div>
@@ -173,7 +205,10 @@ const Portfolio = (() => {
       </div>
       <div class="ht-price">${priceStr}</div>
       <div class="ht-value">${fmt2(row.value)}</div>
-      <div class="ht-pnl ${pnlClass}">${sign}${row.pnlPct.toFixed(1)}%</div>
+      <div class="ht-pnl ${pnlClass}">
+        ${sign}${row.pnlPct.toFixed(1)}%
+        <div style="font-size:0.62rem;">${sign}${fmt2(Math.abs(row.pnl))}</div>
+      </div>
     </div>`;
   }
 
@@ -211,7 +246,7 @@ const Portfolio = (() => {
             ['P&L', `<span class="${pnlClass}">${sign}${fmt(Math.abs(row.pnl))} (${sign}${row.pnlPct.toFixed(2)}%)</span>`],
             ['Position', sharesLabel],
             [avgLabel, '₨' + (avgVal || 0).toFixed(2)],
-            ['Current Price', row.price ? '₨' + row.price.toFixed(2) : '—'],
+            ['Current Price', row.price ? '₨' + row.price.toFixed(2) + (row.priceSource !== 'yahoo' ? ' (' + (row.priceSource === 'manual' ? 'manual' : 'est.') + ')' : '') : '—'],
             ['Total Cost', fmt(row.cost)],
           ].map(([l, v]) => `<div style="background:var(--bg2);padding:12px 14px;"><div class="metric-label">${l}</div><div style="font-size:0.92rem;font-weight:700;">${v}</div></div>`).join('')}
         </div>
@@ -224,7 +259,7 @@ const Portfolio = (() => {
             ${advisor.conviction ? `<span style="font-size:0.7rem;color:var(--text3);">Conviction ${advisor.conviction}/10</span>` : ''}
           </div>
           <div style="font-size:0.82rem;color:var(--text2);line-height:1.5;">${advisor.thesis}</div>
-          ${advisor.target ? `<div style="margin-top:8px;font-size:0.78rem;"><span class="t-dim">Target: </span><span class="t-orange font-weight:700;">₨${advisor.target}</span></div>` : ''}
+          ${advisor.target ? `<div style="margin-top:8px;font-size:0.78rem;"><span class="t-dim">Target: </span><span class="t-orange" style="font-weight:700;">₨${advisor.target}</span></div>` : ''}
         </div>` : ''}
 
         <div style="display:flex;gap:8px;margin-bottom:8px;">

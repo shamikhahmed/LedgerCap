@@ -14,22 +14,32 @@ const State = (() => {
       inflationRate: 0.20,
       targetReturn: 0.18,
       freedomTarget: 100000,
+      usdRate: 280,
+      goldPricePerGram: 18000,
+      pkrDepreciationRate: 0.15,
     },
     version: 2,
   };
 
   let _s = null;
 
-  function _seed() {
+  function _seedFallbackPrices() {
+    const fp = window.FALLBACK_PRICES || {};
+    Object.entries(fp).forEach(([symbol, price]) => {
+      if (!_s.prices[symbol]) {
+        _s.prices[symbol] = { price, prevClose: price * 0.998, ts: Date.now() - 86400000, source: 'fallback' };
+      }
+    });
+    (window.MEEZAN_FUNDS || []).forEach(f => {
+      if (!_s.prices[f.symbol] && f.currentNav) {
+        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, ts: Date.now() - 86400000, source: 'fallback' };
+      }
+    });
+  }
+
+  function _seedTransactions() {
     if ((window.INITIAL_TRANSACTIONS || []).length > 0 && !_s.transactions.length) {
       _s.transactions = [...(window.INITIAL_TRANSACTIONS || [])];
-    }
-    // Seed fallback prices so dashboard shows real values on first load
-    if (Object.keys(_s.prices).length === 0 && window.Prices?.FALLBACK_PRICES) {
-      const now = Date.now();
-      for (const [sym, price] of Object.entries(window.Prices.FALLBACK_PRICES)) {
-        _s.prices[sym] = { price, prevClose: price, source: 'fallback', ts: now };
-      }
     }
   }
 
@@ -40,15 +50,14 @@ const State = (() => {
         const parsed = JSON.parse(r);
         _s = { ...DEFAULT, ...parsed };
         _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
-        _seed();
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
-        _seed();
       }
     } catch {
       _s = JSON.parse(JSON.stringify(DEFAULT));
-      _seed();
     }
+    _seedTransactions();
+    _seedFallbackPrices();
   }
 
   function get(k) { if (!_s) load(); return k ? _s[k] : _s; }
@@ -84,6 +93,11 @@ const State = (() => {
   function getPrice(symbol) {
     if (!_s) load();
     return _s.prices[symbol]?.price || 0;
+  }
+
+  function getPriceSource(symbol) {
+    if (!_s) load();
+    return _s.prices[symbol]?.source || null;
   }
 
   function getPrevClose(symbol) {
@@ -139,7 +153,7 @@ const State = (() => {
 
   load();
   return { get, set, update, save, reset, exportJSON, importJSON,
-    addTransaction, deleteTransaction, updatePrice, getPrice, getPrevClose,
+    addTransaction, deleteTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
     calcTotalValue, calcTotalCost, calcDailyPnl };
 })();
 window.State = State;
