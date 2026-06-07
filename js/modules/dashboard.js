@@ -92,10 +92,10 @@ const Dashboard = (() => {
     }, 0);
     const total4alloc = totalValue || 1;
 
-    const movers = allFallback ? [] : holdings.map(h => {
+    const movers = holdings.map(h => {
       const curr = State.getPrice(h.symbol);
       const prev = State.getPrevClose(h.symbol);
-      if (!curr || !prev || prev === curr) return null;
+      if (!curr || !prev || prev === curr || State.getPriceSource(h.symbol) === 'fallback') return null;
       return { symbol: h.symbol, changeP: ((curr - prev) / prev) * 100, change: (curr - prev) * h.shares };
     }).filter(Boolean).sort((a, b) => Math.abs(b.changeP) - Math.abs(a.changeP)).slice(0, 4);
 
@@ -103,12 +103,15 @@ const Dashboard = (() => {
       const curr = State.getPrice(h.symbol) || h.avgCost;
       const val = h.shares * curr;
       const pnl = val - h.shares * h.avgCost;
-      const pnlPct = h.avgCost > 0 ? (curr - h.avgCost) / h.avgCost * 100 : 0;
+      const price = State.getPrice(h.symbol);
+      const pnlPct = (price > 0 && h.avgCost > 0 && h.shares > 0)
+        ? ((price - h.avgCost) / h.avgCost) * 100
+        : null;
       return { symbol: h.symbol, val, pnl, pnlPct };
     });
-    const sortedByPct = [...stockRows].sort((a, b) => b.pnlPct - a.pnlPct);
-    const best = sortedByPct[0];
-    const worst = sortedByPct[sortedByPct.length - 1];
+    const sortedByPct = stockRows.filter(r => r.pnlPct !== null).sort((a, b) => b.pnlPct - a.pnlPct);
+    const best = sortedByPct[0] || null;
+    const worst = sortedByPct.length > 0 ? sortedByPct[sortedByPct.length - 1] : null;
     const mostVal = [...stockRows].sort((a, b) => b.val - a.val)[0];
     const totalUnrealisedPnl = stockRows.reduce((s, r) => s + r.pnl, 0);
 
@@ -237,7 +240,9 @@ const Dashboard = (() => {
           <div class="${m.changeP >= 0 ? 't-gain' : 't-loss'}" style="font-size:0.78rem;font-weight:700;margin-top:3px;">${m.changeP >= 0 ? '+' : ''}${m.changeP.toFixed(2)}%</div>
           <div style="font-size:0.68rem;color:var(--text3);">${m.change >= 0 ? '+' : ''}${fmt(Math.abs(m.change))}</div>
         </div>`).join('')}
-    </div>` : ''}
+    </div>` : allFallback ? `
+    <div class="sec-head"><span class="sec-title">Today's Movers</span></div>
+    <div style="padding:12px 16px;font-size:0.75rem;color:var(--text3);">Update prices to see movers</div>` : ''}
 
     ${insights.length > 0 ? `
     <div class="sec-head"><span class="sec-title">Wealth Insights</span><span class="sec-action">${insights.length} alerts</span></div>
