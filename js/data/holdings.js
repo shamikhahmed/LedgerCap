@@ -37,12 +37,12 @@ const AKD_STOCKS = [
 ];
 
 const MEEZAN_FUNDS = [
-  { id:'m_kmif',      symbol:'KMIF',       name:'KSE Meezan Index Fund',           units:1534.3564, avgNav:160.41, currentNav:187.70, investedValue:276000, currentValue:287999, type:'Index Fund',  isShariah:true },
+  { id:'m_kmif',      symbol:'KMIF',       name:'KSE Meezan Index Fund',           units:1534.3564, avgNav:160.41, currentNav:187.70, investedValue:91000,  currentValue:287999, type:'Index Fund',  isShariah:true },
   { id:'m_maaf',      symbol:'MAAF',       name:'Meezan Asset Allocation Fund',    units:95.1548,   avgNav:103.31, currentNav:114.02, investedValue:10000,  currentValue:10850,  type:'Balanced',    isShariah:true },
-  { id:'m_mbf',       symbol:'MBF',        name:'Meezan Balanced Fund',            units:2118.7307, avgNav:27.37,  currentNav:27.89,  investedValue:58000,  currentValue:59098,  type:'Balanced',    isShariah:true },
+  { id:'m_mbf',       symbol:'MBF',        name:'Meezan Balanced Fund',            units:2118.7307, avgNav:27.37,  currentNav:27.89,  investedValue:50000,  currentValue:59098,  type:'Balanced',    isShariah:true },
   { id:'m_mdaaf',     symbol:'MDAAF-MDYP', name:'Meezan Dividend Yield Plan',      units:129.0669,  avgNav:76.17,  currentNav:88.89,  investedValue:10000,  currentValue:11472,  type:'Equity',      isShariah:true },
-  { id:'m_mif',       symbol:'MIF',        name:'Meezan Islamic Fund',             units:812.9073,  avgNav:148.20, currentNav:165.16, investedValue:129000, currentValue:134263, type:'Equity Fund', isShariah:true },
-  { id:'m_miif_b',    symbol:'MIIF-B',     name:'Meezan Islamic Income Fund (B)',  units:2384.5933, avgNav:54.94,  currentNav:55.98,  investedValue:131000, currentValue:133478, type:'Income Fund', isShariah:true },
+  { id:'m_mif',       symbol:'MIF',        name:'Meezan Islamic Fund',             units:812.9073,  avgNav:148.20, currentNav:165.16, investedValue:49000,  currentValue:134263, type:'Equity Fund', isShariah:true },
+  { id:'m_miif_b',    symbol:'MIIF-B',     name:'Meezan Islamic Income Fund (B)',  units:2384.5933, avgNav:54.94,  currentNav:55.98,  investedValue:404000, currentValue:133478, type:'Income Fund', isShariah:true },
   { id:'m_miif_mmka', symbol:'MIIF-MMKA',  name:'Meezan Islamic Income (MMKA)',    units:377.9407,  avgNav:52.32,  currentNav:55.98,  investedValue:20000,  currentValue:21155,  type:'Income Fund', isShariah:true },
 ];
 
@@ -125,12 +125,12 @@ const INITIAL_TRANSACTIONS = [
   { id:'t_a_slgl',    date:'2024-09-01', type:'BUY',          symbol:'SLGL',       broker:'AKD',    shares:200,  price:15.94,   amount:3188.00,   notes:'Initial position' },
   { id:'t_a_pasm',    date:'2024-09-01', type:'BUY',          symbol:'PASM',       broker:'AKD',    shares:1554, price:8.47,    amount:13162.38,  notes:'Initial position' },
   // Meezan funds
-  { id:'t_m_kmif',    date:'2025-08-19', type:'CONTRIBUTION', symbol:'KMIF',       broker:'Meezan', units:1534.3564, nav:187.70, amount:276000,  notes:'KMIF accumulated' },
+  { id:'t_m_kmif',    date:'2025-08-19', type:'CONTRIBUTION', symbol:'KMIF',       broker:'Meezan', units:1534.3564, nav:187.70, amount:91000,   notes:'KMIF direct purchases (excl. MIIF conversions)' },
   { id:'t_m_maaf',    date:'2025-08-13', type:'CONTRIBUTION', symbol:'MAAF',       broker:'Meezan', units:95.1548,   nav:114.02, amount:10000,   notes:'MAAF initial' },
-  { id:'t_m_mbf',     date:'2025-08-13', type:'CONTRIBUTION', symbol:'MBF',        broker:'Meezan', units:2118.7307, nav:27.89,  amount:58000,   notes:'MBF accumulated (net after conversions)' },
+  { id:'t_m_mbf',     date:'2025-08-13', type:'CONTRIBUTION', symbol:'MBF',        broker:'Meezan', units:2118.7307, nav:27.89,  amount:50000,   notes:'MBF direct purchases (excl. MIIF conversions)' },
   { id:'t_m_mdaaf',   date:'2025-08-13', type:'CONTRIBUTION', symbol:'MDAAF-MDYP', broker:'Meezan', units:129.0669,  nav:88.89,  amount:10000,   notes:'MDYP initial' },
-  { id:'t_m_mif',     date:'2025-08-13', type:'CONTRIBUTION', symbol:'MIF',        broker:'Meezan', units:812.9073,  nav:165.16, amount:129000,  notes:'MIF accumulated' },
-  { id:'t_m_miif_b',  date:'2025-08-13', type:'CONTRIBUTION', symbol:'MIIF-B',     broker:'Meezan', units:2384.5933, nav:55.98,  amount:131000,  notes:'MIIF Growth-B (net after conversions out)' },
+  { id:'t_m_mif',     date:'2025-08-13', type:'CONTRIBUTION', symbol:'MIF',        broker:'Meezan', units:812.9073,  nav:165.16, amount:49000,   notes:'MIF direct purchases (excl. MIIF conversions)' },
+  { id:'t_m_miif_b',  date:'2025-08-13', type:'CONTRIBUTION', symbol:'MIIF-B',     broker:'Meezan', units:2384.5933, nav:55.98,  amount:404000,  notes:'MIIF-B fresh cash invested (source of all conversions)' },
   { id:'t_m_miif_m',  date:'2025-08-11', type:'CONTRIBUTION', symbol:'MIIF-MMKA',  broker:'Meezan', units:377.9407,  nav:55.98,  amount:20000,   notes:'MIIF MMKA' },
   // Salary entries
   { id:'t_sal_1', date:'2026-01-01', type:'SALARY', amount:150000, notes:'January salary' },

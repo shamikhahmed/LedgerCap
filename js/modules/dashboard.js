@@ -115,7 +115,8 @@ const Dashboard = (() => {
       const pnlAbs = (price - h.avgCost) * h.shares;
       return { ...h, price, pnlPct, pnlAbs };
     });
-    const sortedByPct = [...withPnl].sort((a, b) => b.pnlPct - a.pnlPct);
+    const sanityFiltered = withPnl.filter(h => h.avgCost > 5 && Math.abs(h.pnlPct) < 150);
+    const sortedByPct = [...sanityFiltered].sort((a, b) => b.pnlPct - a.pnlPct);
     const best = sortedByPct[0] || null;
     const worst = sortedByPct.length > 0 ? sortedByPct[sortedByPct.length - 1] : null;
 
@@ -379,3 +380,13 @@ const Dashboard = (() => {
   return { render };
 })();
 window.Dashboard = Dashboard;
+
+window._debugHoldings = function() {
+  const state = State.get();
+  const holdings = Ledger.calcHoldings(state.transactions);
+  holdings.forEach(h => {
+    const price = State.getPrice(h.symbol);
+    const pnl = price > 0 ? ((price - h.avgCost) / h.avgCost * 100).toFixed(1) : 'no price';
+    console.log(h.symbol, h.broker, '| shares:', h.shares, '| avgCost:', h.avgCost.toFixed(2), '| price:', price, '| P&L%:', pnl);
+  });
+};

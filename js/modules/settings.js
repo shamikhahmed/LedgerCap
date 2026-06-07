@@ -170,7 +170,13 @@ const Settings = (() => {
       s.settings.usdRate = usdRate;
       s.settings.goldPricePerGram = goldPricePerGram;
     });
-    App.showToast('Profile saved', 'success');
+    const saved = State.get('settings');
+    if (saved.salary === salary && saved.targetSIP === targetSIP) {
+      App.showToast('Profile saved ✓', 'success');
+    } else {
+      console.error('StundsOS: settings save mismatch', { wanted: salary, got: saved.salary });
+      App.showToast('Save failed — storage may be full', 'error');
+    }
     render();
   }
 
@@ -185,7 +191,13 @@ const Settings = (() => {
       s.settings.pkrDepreciationRate = pkrDep;
       s.settings.freedomTarget = freedom;
     });
-    App.showToast('Assumptions saved', 'success');
+    const saved = State.get('settings');
+    if (Math.abs(saved.targetReturn - ret) < 0.001 && saved.freedomTarget === freedom) {
+      App.showToast('Assumptions saved ✓', 'success');
+    } else {
+      console.error('StundsOS: assumptions save mismatch');
+      App.showToast('Save failed — storage may be full', 'error');
+    }
     render();
   }
 

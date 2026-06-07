@@ -76,7 +76,15 @@ const State = (() => {
   function get(k) { if (!_s) load(); return k ? _s[k] : _s; }
   function set(k, v) { if (!_s) load(); _s[k] = v; save(); }
   function update(fn) { if (!_s) load(); fn(_s); save(); }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(_s)); } catch(e) { console.warn(e); } }
+  function save() {
+    try {
+      const json = JSON.stringify(_s);
+      localStorage.setItem(KEY, json);
+      if (!localStorage.getItem(KEY)) console.error('StundsOS: localStorage write failed silently');
+    } catch(e) {
+      console.warn('StundsOS save error:', e.message);
+    }
+  }
   function reset() { localStorage.removeItem(KEY); _s = null; load(); }
   function exportJSON() { if (!_s) load(); return JSON.stringify(_s, null, 2); }
   function importJSON(str) { try { _s = { ...DEFAULT, ...JSON.parse(str) }; _s.settings = { ...DEFAULT.settings, ...(_s.settings || {}) }; save(); return true; } catch { return false; } }
