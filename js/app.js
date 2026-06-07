@@ -3,10 +3,45 @@ const App = (() => {
   let _refreshTimer = null;
   let _activeSheet = null;
 
+  function _validateAndCleanPrices() {
+    const fp = window.FALLBACK_PRICES || {};
+    let cleaned = 0;
+    State.update(s => {
+      Object.keys(s.prices || {}).forEach(sym => {
+        const fallback = fp[sym];
+        const stored = s.prices[sym]?.price;
+        if (fallback > 0 && stored > 0 && (stored > fallback * 3 || stored < fallback * 0.3)) {
+          delete s.prices[sym];
+          cleaned++;
+        }
+      });
+    });
+    if (cleaned > 0) console.log(`Cleared ${cleaned} invalid cached prices on init`);
+  }
+
+  function clearWrongPrices() {
+    const fp = window.FALLBACK_PRICES || {};
+    let cleaned = 0;
+    State.update(s => {
+      Object.keys(s.prices || {}).forEach(sym => {
+        const fallback = fp[sym];
+        const stored = s.prices[sym]?.price;
+        if (fallback && stored && (stored > fallback * 3 || stored < fallback * 0.3)) {
+          console.log(`Clearing bad price for ${sym}: ${stored} (fallback: ${fallback})`);
+          delete s.prices[sym];
+          cleaned++;
+        }
+      });
+    });
+    showToast('Cleared invalid prices — using corrected fallback data', 'info');
+    if (cleaned > 0) renderCurrent();
+  }
+
   function launch() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
+    _validateAndCleanPrices();
     Navigation.init();
     Navigation.go('dashboard');
     _scheduleAutoRefresh();
@@ -39,11 +74,12 @@ const App = (() => {
 
     showToast(`Fetching ${symbols.length} prices…`, 'info');
 
-    let yahooOk = 0;
+    let liveOk = 0;
+    let liveSource = '';
     let done = 0;
     const results = await Prices.fetchAll(symbols, (d, total, sym, success, source) => {
       done = d;
-      if (source === 'yahoo') yahooOk++;
+      if (source === 'psx_live' || source === 'yahoo') { liveOk++; liveSource = source; }
     });
 
     Object.entries(results).forEach(([sym, data]) => {
@@ -53,11 +89,11 @@ const App = (() => {
     const kse = await Prices.fetchKSE100();
     if (kse) State.set('kseIndex', kse);
 
-    const skipped = symbols.length - Object.keys(results).length;
-    if (yahooOk > 0) {
-      showToast(`Updated ${yahooOk} live · ${symbols.length - yahooOk} seed prices`, 'success');
+    if (liveOk > 0) {
+      const src = liveSource === 'psx_live' ? 'PSX Live' : 'Yahoo';
+      showToast(`Updated ${liveOk} prices via ${src}`, 'success');
     } else {
-      showToast('Yahoo unreachable — using seed prices', 'warning');
+      showToast('Auto-update failed — prices unchanged', 'warning');
     }
 
     renderCurrent();
@@ -71,7 +107,7 @@ const App = (() => {
 
     const state = State.get();
     const allPrices = Object.values(state.prices || {});
-    const livePrices = allPrices.filter(p => p.source === 'yahoo');
+    const livePrices = allPrices.filter(p => p.source === 'yahoo' || p.source === 'psx_live');
     const lastTs = livePrices.length > 0 ? Math.max(...livePrices.map(p => p.ts || 0)) : 0;
     const staleMins = (Date.now() - lastTs) / 60000;
     if (staleMins > 30 && navigator.onLine) {
@@ -337,7 +373,7 @@ const App = (() => {
     Navigation.go(Navigation.current(), true);
   }
 
-  return { launch, showToast, refreshPrices, openBottomSheet, closeBottomSheet,
+  return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
     deleteTransaction, renderCurrent };
 })();

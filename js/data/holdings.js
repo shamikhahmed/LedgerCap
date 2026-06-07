@@ -71,13 +71,14 @@ const SIP_PLAN = [
 ];
 
 const FALLBACK_PRICES = {
-  'ATRL': 875.00, 'CPHL': 78.00, 'DGKC': 198.00, 'EFERT': 201.00,
-  'ENGROH': 263.00, 'FFL': 18.00, 'HUBC': 215.00, 'LUCK': 432.00,
-  'MARI': 650.00, 'MEBL': 490.00, 'MIIETF': 17.00, 'MLCF': 88.00,
-  'MZNPETF': 20.50, 'NML': 145.00, 'NRL': 365.00, 'OGDC': 321.00,
-  'PPL': 229.00, 'PSO': 352.00, 'PTC': 68.00, 'SEARL': 91.00,
-  'SSGC': 27.00, 'TRG': 72.00,
-  'FFC': 500.00, 'HINO': 351.00, 'PIBTL': 16.50, 'PICT': 38.50,
+  // PSX official prices — Jun 5-7 2026 (Rafi Vtrade screenshot + PSX portal)
+  'ATRL': 872.46, 'CPHL': 77.75, 'DGKC': 197.20, 'EFERT': 200.40,
+  'ENGROH': 262.21, 'FFL': 17.84, 'HUBC': 214.12, 'LUCK': 431.50,
+  'MARI': 649.67, 'MEBL': 489.31, 'MIIETF': 17.02, 'MLCF': 87.40,
+  'MZNPETF': 20.50, 'NML': 144.23, 'NRL': 364.66, 'OGDC': 320.31,
+  'PPL': 228.73, 'PSO': 351.50, 'PTC': 67.54, 'SEARL': 90.93,
+  'SSGC': 26.83, 'TRG': 71.61,
+  'FFC': 499.00, 'HINO': 351.00, 'PIBTL': 16.50, 'PICT': 38.50,
   'PNSC': 505.00, 'SLGL': 15.00, 'PASM': 8.00,
   'KMIF': 187.70, 'MAAF': 114.02, 'MBF': 27.89, 'MDAAF-MDYP': 88.89,
   'MIF': 165.16, 'MIIF-B': 55.98, 'MIIF-MMKA': 55.98,
