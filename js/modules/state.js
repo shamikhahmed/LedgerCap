@@ -104,8 +104,16 @@ const State = (() => {
 
   function updatePrice(symbol, priceData) {
     if (!_s) load();
+    const price = typeof priceData === 'number' ? priceData : priceData.price;
+    const fallback = (window.FALLBACK_PRICES || {})[symbol];
+    if (fallback && price && price > 0) {
+      if (price > fallback * 3 || price < fallback * 0.3) {
+        console.warn(`Rejected bad price for ${symbol}: ₨${price} (fallback: ₨${fallback})`);
+        return;
+      }
+    }
     _s.prices[symbol] = typeof priceData === 'number'
-      ? { price: priceData, ts: Date.now(), source: 'manual' }
+      ? { price, prevClose: _s.prices[symbol]?.price || price, ts: Date.now(), source: 'manual' }
       : { ...priceData, ts: Date.now() };
     _logPortfolioValue();
     save();

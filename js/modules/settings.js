@@ -164,18 +164,14 @@ const Settings = (() => {
     const targetSIP = parseInt(document.getElementById('s-sip')?.value) || 75000;
     const usdRate = parseInt(document.getElementById('s-usdrate')?.value) || 280;
     const goldPricePerGram = parseInt(document.getElementById('s-goldprice')?.value) || 18000;
-    State.update(s => {
-      s.settings.salary = salary;
-      s.settings.targetSIP = targetSIP;
-      s.settings.usdRate = usdRate;
-      s.settings.goldPricePerGram = goldPricePerGram;
-    });
-    const saved = State.get('settings');
-    if (saved.salary === salary && saved.targetSIP === targetSIP) {
-      App.showToast('Profile saved ✓', 'success');
-    } else {
-      console.error('StundsOS: settings save mismatch', { wanted: salary, got: saved.salary });
-      App.showToast('Save failed — storage may be full', 'error');
+    const currentState = State.get();
+    currentState.settings = { ...currentState.settings, salary, targetSIP, usdRate, goldPricePerGram };
+    try {
+      localStorage.setItem('stundsOS_v2', JSON.stringify(currentState));
+      App.showToast(`Saved: ₨${salary.toLocaleString()}/mo salary`, 'success');
+    } catch(e) {
+      App.showToast('Save failed: ' + e.message, 'error');
+      return;
     }
     render();
   }
@@ -185,18 +181,14 @@ const Settings = (() => {
     const inflation = parseFloat(document.getElementById('s-inflation')?.value) / 100 || 0.20;
     const pkrDep = parseFloat(document.getElementById('s-pkrdep')?.value) / 100 || 0.15;
     const freedom = parseInt(document.getElementById('s-freedom')?.value) || 100000;
-    State.update(s => {
-      s.settings.targetReturn = ret;
-      s.settings.inflationRate = inflation;
-      s.settings.pkrDepreciationRate = pkrDep;
-      s.settings.freedomTarget = freedom;
-    });
-    const saved = State.get('settings');
-    if (Math.abs(saved.targetReturn - ret) < 0.001 && saved.freedomTarget === freedom) {
+    const currentState = State.get();
+    currentState.settings = { ...currentState.settings, targetReturn: ret, inflationRate: inflation, pkrDepreciationRate: pkrDep, freedomTarget: freedom };
+    try {
+      localStorage.setItem('stundsOS_v2', JSON.stringify(currentState));
       App.showToast('Assumptions saved ✓', 'success');
-    } else {
-      console.error('StundsOS: assumptions save mismatch');
-      App.showToast('Save failed — storage may be full', 'error');
+    } catch(e) {
+      App.showToast('Save failed: ' + e.message, 'error');
+      return;
     }
     render();
   }

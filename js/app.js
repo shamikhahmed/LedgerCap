@@ -5,18 +5,22 @@ const App = (() => {
 
   function _validateAndCleanPrices() {
     const fp = window.FALLBACK_PRICES || {};
+    const state = State.get();
     let cleaned = 0;
-    State.update(s => {
-      Object.keys(s.prices || {}).forEach(sym => {
-        const fallback = fp[sym];
-        const stored = s.prices[sym]?.price;
-        if (fallback > 0 && stored > 0 && (stored > fallback * 3 || stored < fallback * 0.3)) {
-          delete s.prices[sym];
-          cleaned++;
-        }
-      });
+    let changed = false;
+    Object.keys(state.prices || {}).forEach(sym => {
+      const fallback = fp[sym];
+      const stored = state.prices[sym]?.price;
+      if (fallback > 0 && stored > 0 && (stored > fallback * 3 || stored < fallback * 0.3)) {
+        delete state.prices[sym];
+        cleaned++;
+        changed = true;
+      }
     });
-    if (cleaned > 0) console.log(`Cleared ${cleaned} invalid cached prices on init`);
+    if (changed) {
+      State.save();
+      console.log(`Cleared ${cleaned} invalid cached prices on init`);
+    }
   }
 
   function clearWrongPrices() {
@@ -104,15 +108,6 @@ const App = (() => {
     _refreshTimer = setTimeout(() => {
       if (!document.hidden && navigator.onLine) refreshPrices();
     }, 30 * 60 * 1000);
-
-    const state = State.get();
-    const allPrices = Object.values(state.prices || {});
-    const livePrices = allPrices.filter(p => p.source === 'yahoo' || p.source === 'psx_live');
-    const lastTs = livePrices.length > 0 ? Math.max(...livePrices.map(p => p.ts || 0)) : 0;
-    const staleMins = (Date.now() - lastTs) / 60000;
-    if (staleMins > 30 && navigator.onLine) {
-      setTimeout(refreshPrices, 1500);
-    }
   }
 
   function openBottomSheet(id, title, content) {
