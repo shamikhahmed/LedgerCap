@@ -129,6 +129,10 @@ const Dashboard = (() => {
     const ffYears = Projections.yearsToFreedom(totalValue, targetSIP, ffCorpus, settings.targetReturn || 0.18);
 
     screen.innerHTML = `
+    ${allFallback ? `<div style="padding:8px 16px;background:rgba(240,185,11,0.08);border-bottom:1px solid rgba(240,185,11,0.2);display:flex;align-items:center;gap:8px;">
+      <span style="color:var(--gold);font-size:0.72rem;">&#9888; Showing approximate prices from last known data &middot; </span>
+      <button onclick="App.refreshPrices()" style="color:var(--orange);font-size:0.72rem;background:none;border:none;cursor:pointer;font-weight:700;">Tap to update &rarr;</button>
+    </div>` : ''}
     <div class="kse-bar">
       <div class="kse-ticker">
         <span class="kse-sym">KSE-100</span>

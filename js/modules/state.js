@@ -38,9 +38,22 @@ const State = (() => {
   }
 
   function _seedTransactions() {
-    if ((window.INITIAL_TRANSACTIONS || []).length > 0 && !_s.transactions.length) {
-      _s.transactions = [...(window.INITIAL_TRANSACTIONS || [])];
+    const init = window.INITIAL_TRANSACTIONS || [];
+    if (!init.length) return;
+    if (!_s.transactions.length) {
+      _s.transactions = [...init];
+      return;
     }
+    // Patch amounts for initial transactions already stored (corrects historical data errors)
+    const initById = {};
+    init.forEach(t => { initById[t.id] = t; });
+    let patched = false;
+    _s.transactions = _s.transactions.map(t => {
+      const src = initById[t.id];
+      if (src && t.amount !== src.amount) { patched = true; return { ...t, amount: src.amount, notes: src.notes }; }
+      return t;
+    });
+    if (patched) save();
   }
 
   function load() {
