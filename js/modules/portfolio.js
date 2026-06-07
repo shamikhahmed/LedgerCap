@@ -4,21 +4,30 @@ const Portfolio = (() => {
   let _sort = 'value';
 
   function fmt(n) {
-    if (!n && n !== 0) return '—';
+    if (n === null || n === undefined || isNaN(n)) return '—';
     const abs = Math.abs(n);
     if (abs >= 10000000) return '₨' + (n / 10000000).toFixed(2) + 'cr';
-    if (abs >= 100000) return '₨' + (n / 100000).toFixed(1) + 'L';
+    if (abs >= 100000) return '₨' + (n / 100000).toFixed(2) + 'L';
     return '₨' + Math.round(n).toLocaleString('en-PK');
   }
 
-  function fmt2(n) {
-    if (!n && n !== 0) return '—';
+  function fmtC(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
     const abs = Math.abs(n);
     if (abs >= 10000000) return '₨' + (n / 10000000).toFixed(1) + 'cr';
     if (abs >= 100000) return '₨' + (n / 100000).toFixed(1) + 'L';
     if (abs >= 1000) return '₨' + (n / 1000).toFixed(0) + 'k';
     return '₨' + Math.round(n).toLocaleString();
   }
+
+  function fmtPrice(n) {
+    if (!n || n <= 0) return '—';
+    if (n >= 100000) return '₨' + (n / 100000).toFixed(2) + 'L';
+    return '₨' + n.toLocaleString('en-PK', { maximumFractionDigits: 2 });
+  }
+
+  function pnlClr(v) { return v >= 0 ? 'var(--green)' : 'var(--red)'; }
+  function sgn(v) { return v >= 0 ? '+' : ''; }
 
   function ratingBadge(rating) {
     if (!rating) return '';
@@ -41,10 +50,26 @@ const Portfolio = (() => {
     return `<span class="badge">${broker}</span>`;
   }
 
-  function _priceIndicator(source) {
+  function fundTypeBadge(type) {
+    if (!type) return '';
+    const t = (type || '').toLowerCase();
+    if (t.includes('index')) return '<span class="badge badge-buy">INDEX</span>';
+    if (t.includes('equity')) return '<span class="badge badge-speculative">EQUITY</span>';
+    if (t.includes('income')) return '<span class="badge badge-hold">INCOME</span>';
+    if (t.includes('balanced')) return '<span class="badge badge-rafi">BALANCED</span>';
+    return `<span class="badge">${type}</span>`;
+  }
+
+  function _priceInd(source) {
     if (source === 'yahoo') return '';
-    if (source === 'manual') return '<span style="font-size:0.6rem;color:#00b8d9;margin-left:2px;" title="Manual price">M</span>';
-    return '<span style="font-size:0.6rem;color:var(--gold);margin-left:2px;" title="Approximate fallback price">~</span>';
+    if (source === 'manual') return '<span class="price-ind" title="Manual price">M</span>';
+    return '<span class="price-ind price-approx" title="Approximate seed price">~</span>';
+  }
+
+  function _priceSourceLabel(source) {
+    if (source === 'yahoo') return 'Live (Yahoo Finance)';
+    if (source === 'manual') return 'Manual (user-entered)';
+    return 'Approximate (seed price)';
   }
 
   function render() {
@@ -56,81 +81,226 @@ const Portfolio = (() => {
     const holdings = Ledger.calcHoldings(transactions);
     const funds = Ledger.calcFundHoldings(transactions);
 
-    const rows = _buildRows(holdings, funds);
-    const filtered = _applyFilter(rows, _filter);
+    const allRows = _buildRows(holdings, funds);
+    const stockRows = allRows.filter(r => r.type === 'stock');
+    const fundRows = allRows.filter(r => r.type === 'fund');
+
+    const totalStockValue = stockRows.reduce((s, r) => s + r.value, 0);
+    const totalStockCost = stockRows.reduce((s, r) => s + r.cost, 0);
+    const totalStockPnl = totalStockValue - totalStockCost;
+    const totalStockPnlPct = totalStockCost > 0 ? (totalStockPnl / totalStockCost) * 100 : 0;
+
+    const totalFundValue = fundRows.reduce((s, r) => s + r.value, 0);
+    const totalFundCost = fundRows.reduce((s, r) => s + r.cost, 0);
+    const totalFundPnl = totalFundValue - totalFundCost;
+    const totalFundPnlPct = totalFundCost > 0 ? (totalFundPnl / totalFundCost) * 100 : 0;
+
+    const grandValue = totalStockValue + totalFundValue;
+    const grandCost = totalStockCost + totalFundCost;
+    const grandPnl = grandValue - grandCost;
+    const grandPnlPct = grandCost > 0 ? (grandPnl / grandCost) * 100 : 0;
+
+    const filtered = _applyFilter(allRows, _filter);
     const sorted = _applySort(filtered, _sort);
-
-    const totalValue = State.calcTotalValue();
-    const totalCost = State.calcTotalCost();
-    const totalPnl = totalValue - totalCost;
-    const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
-
-    const filteredTotalValue = sorted.reduce((s, r) => s + r.value, 0);
-    const filteredTotalCost = sorted.reduce((s, r) => s + r.cost, 0);
-    const filteredPnl = filteredTotalValue - filteredTotalCost;
-    const filteredPnlPct = filteredTotalCost > 0 ? (filteredPnl / filteredTotalCost) * 100 : 0;
+    const filteredStocks = sorted.filter(r => r.type === 'stock');
+    const filteredFunds = sorted.filter(r => r.type === 'fund');
 
     screen.innerHTML = `
     <div class="portfolio-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div class="hero-label">Portfolio</div>
-          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;">${fmt(totalValue)}</div>
+          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;">${fmt(grandValue)}</div>
         </div>
         <div style="text-align:right;">
-          <div class="${totalPnl >= 0 ? 't-gain' : 't-loss'}" style="font-size:0.92rem;font-weight:700;">${totalPnl >= 0 ? '+' : ''}${fmt(Math.abs(totalPnl))}</div>
-          <div class="t-dim" style="font-size:0.72rem;">${totalPnl >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}% all time</div>
+          <div style="font-size:0.92rem;font-weight:700;color:${pnlClr(grandPnl)};">${sgn(grandPnl)}${fmt(Math.abs(grandPnl))}</div>
+          <div class="t-dim" style="font-size:0.72rem;">${sgn(grandPnlPct)}${grandPnlPct.toFixed(2)}% all time</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bg4);">
+      <div style="background:var(--bg2);padding:10px 14px;">
+        <div class="t-label" style="margin-bottom:6px;">STOCKS (${stockRows.length})</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+          <div><div style="font-size:0.58rem;color:var(--text3);">Value</div><div style="font-size:0.78rem;font-weight:700;">${fmtC(totalStockValue)}</div></div>
+          <div><div style="font-size:0.58rem;color:var(--text3);">Cost</div><div style="font-size:0.78rem;">${fmtC(totalStockCost)}</div></div>
+          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalStockPnl)};">${sgn(totalStockPnl)}${fmtC(Math.abs(totalStockPnl))}</div></div>
+          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L%</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalStockPnlPct)};">${sgn(totalStockPnlPct)}${totalStockPnlPct.toFixed(1)}%</div></div>
+        </div>
+      </div>
+      <div style="background:var(--bg2);padding:10px 14px;">
+        <div class="t-label" style="margin-bottom:6px;">FUNDS (${fundRows.length})</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+          <div><div style="font-size:0.58rem;color:var(--text3);">Value</div><div style="font-size:0.78rem;font-weight:700;">${fmtC(totalFundValue)}</div></div>
+          <div><div style="font-size:0.58rem;color:var(--text3);">Invested</div><div style="font-size:0.78rem;">${fmtC(totalFundCost)}</div></div>
+          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalFundPnl)};">${sgn(totalFundPnl)}${fmtC(Math.abs(totalFundPnl))}</div></div>
+          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L%</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalFundPnlPct)};">${sgn(totalFundPnlPct)}${totalFundPnlPct.toFixed(1)}%</div></div>
         </div>
       </div>
     </div>
 
     <div class="filter-tabs" id="portfolio-filters">
-      ${['all','stocks','funds','rafi','akd','meezan','winners','losers','shariah'].map(f =>
+      ${['all','rafi','akd','meezan','winners','losers','shariah'].map(f =>
         `<div class="filter-tab${_filter === f ? ' active' : ''}" data-f="${f}">${f.charAt(0).toUpperCase() + f.slice(1)}</div>`
       ).join('')}
     </div>
 
-    <div style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <span class="t-dim" style="font-size:0.7rem;">Sort:</span>
-      ${['value','pnl','name','broker'].map(s =>
-        `<button class="btn-ghost" style="padding:4px 10px;font-size:0.7rem;${_sort === s ? 'border-color:var(--orange);color:var(--orange);' : ''}" data-s="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
+      <span class="t-dim" style="font-size:0.68rem;">Sort:</span>
+      ${['value','pnl%','name','shares'].map(s =>
+        `<button class="btn-ghost" style="padding:3px 9px;font-size:0.68rem;${_sort === s ? 'border-color:var(--orange);color:var(--orange);' : ''}" data-s="${s}">${s === 'pnl%' ? 'P&L%' : s.charAt(0).toUpperCase() + s.slice(1)}</button>`
       ).join('')}
-      <span class="t-dim" style="font-size:0.62rem;margin-left:auto;">~ = estimate, M = manual</span>
+      <span class="t-dim" style="font-size:0.6rem;margin-left:auto;">~ approx · M manual</span>
     </div>
 
-    <div class="holdings-table">
-      <div class="ht-head">
-        <div class="ht-head-cell"></div>
-        <div class="ht-head-cell">Name</div>
-        <div class="ht-head-cell">Price</div>
-        <div class="ht-head-cell">Value</div>
-        <div class="ht-head-cell">P&amp;L</div>
-      </div>
-      ${sorted.length === 0 ? `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No holdings</div><div class="empty-state-sub">Add transactions to see your portfolio</div></div>` : ''}
-      ${sorted.map(row => _rowHTML(row)).join('')}
-      ${sorted.length > 0 ? `
-      <div class="ht-row" style="background:var(--bg3);border-top:1px solid var(--bg4);cursor:default;">
-        <div class="ht-icon" style="font-size:0.6rem;background:var(--bg4);">TOT</div>
-        <div><div class="ht-name">Total</div><div class="ht-sub">${sorted.length} positions</div></div>
-        <div class="ht-price" style="font-size:0.72rem;"></div>
-        <div class="ht-value" style="font-weight:800;">${fmt2(filteredTotalValue)}</div>
-        <div class="ht-pnl ${filteredPnl >= 0 ? 't-gain' : 't-loss'}">
-          ${filteredPnl >= 0 ? '+' : ''}${filteredPnlPct.toFixed(1)}%
-          <div style="font-size:0.62rem;">${filteredPnl >= 0 ? '+' : ''}${fmt2(Math.abs(filteredPnl))}</div>
-        </div>
-      </div>` : ''}
+    ${filteredStocks.length > 0 ? _renderStocksSection(filteredStocks) : ''}
+    ${filteredFunds.length > 0 ? _renderFundsSection(filteredFunds) : ''}
+    ${filtered.length === 0 ? '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No holdings</div><div class="empty-state-sub">No holdings match this filter</div></div>' : ''}
+
+    <div style="padding:11px 16px;background:var(--bg3);border-top:2px solid var(--bg4);">
+      <span style="font-size:0.62rem;font-weight:700;letter-spacing:0.06em;color:var(--text3);">TOTAL PORTFOLIO</span>
+      <span style="font-size:0.82rem;font-weight:800;"> ${fmt(grandValue)}</span>
+      <span style="font-size:0.72rem;color:var(--text2);"> · invested ${fmt(grandCost)} · </span>
+      <span style="font-size:0.82rem;font-weight:700;color:${pnlClr(grandPnl)};">${sgn(grandPnl)}${fmt(Math.abs(grandPnl))} (${sgn(grandPnlPct)}${grandPnlPct.toFixed(2)}%)</span>
     </div>
     <div style="height:8px;"></div>`;
 
-    document.querySelectorAll('.filter-tab').forEach(tab => {
+    document.querySelectorAll('#portfolio-filters .filter-tab').forEach(tab => {
       tab.addEventListener('click', () => { _filter = tab.dataset.f; render(); });
     });
     document.querySelectorAll('[data-s]').forEach(btn => {
       btn.addEventListener('click', () => { _sort = btn.dataset.s; render(); });
     });
-    document.querySelectorAll('.ht-row[data-key]').forEach(row => {
+    document.querySelectorAll('.pt-row[data-key]').forEach(row => {
       row.addEventListener('click', () => _openDetail(row.dataset.key, row.dataset.type));
     });
+  }
+
+  function _renderStocksSection(rows) {
+    const rafiRows = rows.filter(r => r.broker === 'Rafi');
+    const akdRows = rows.filter(r => r.broker === 'AKD');
+
+    const HEAD = `<div class="pt-head">
+      <div class="pt-hc">Symbol</div>
+      <div class="pt-hc pt-r">Shs</div>
+      <div class="pt-hc pt-r">Avg</div>
+      <div class="pt-hc pt-r">CMP</div>
+      <div class="pt-hc pt-r">Value</div>
+      <div class="pt-hc pt-r">P&amp;L%</div>
+    </div>`;
+
+    let html = '<div class="port-table">' + HEAD;
+
+    if (rafiRows.length > 0) {
+      const rv = rafiRows.reduce((s, r) => s + r.value, 0);
+      const rc = rafiRows.reduce((s, r) => s + r.cost, 0);
+      const rp = rv - rc;
+      html += `<div class="pt-sec-head">
+        <span style="color:#1890FF;">&#9679;</span>
+        RAFI SECURITIES
+        <span class="pt-sec-meta">${rafiRows.length} stocks &middot; ${fmtC(rv)} &middot; <span style="color:${pnlClr(rp)};">${sgn(rp)}${fmtC(Math.abs(rp))}</span></span>
+      </div>`;
+      html += rafiRows.map((r, i) => _stockRow(r, i)).join('');
+      html += _brokerTotal(rafiRows, 'RAFI TOTAL');
+    }
+
+    if (akdRows.length > 0) {
+      const av = akdRows.reduce((s, r) => s + r.value, 0);
+      const ac = akdRows.reduce((s, r) => s + r.cost, 0);
+      const ap = av - ac;
+      html += `<div class="pt-sec-head">
+        <span style="color:var(--orange);">&#9679;</span>
+        AKD SECURITIES
+        <span class="pt-sec-meta">${akdRows.length} stocks &middot; ${fmtC(av)} &middot; <span style="color:${pnlClr(ap)};">${sgn(ap)}${fmtC(Math.abs(ap))}</span></span>
+      </div>`;
+      html += akdRows.map((r, i) => _stockRow(r, i)).join('');
+      html += _brokerTotal(akdRows, 'AKD TOTAL');
+    }
+
+    if (rafiRows.length === 0 && akdRows.length === 0 && rows.length > 0) {
+      html += rows.map((r, i) => _stockRow(r, i)).join('');
+      html += _brokerTotal(rows, 'TOTAL');
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function _renderFundsSection(rows) {
+    const tv = rows.reduce((s, r) => s + r.value, 0);
+    const tc = rows.reduce((s, r) => s + r.cost, 0);
+    const tp = tv - tc;
+
+    const HEAD = `<div class="pt-head">
+      <div class="pt-hc">Fund</div>
+      <div class="pt-hc pt-r">Units</div>
+      <div class="pt-hc pt-r">Avg</div>
+      <div class="pt-hc pt-r">NAV</div>
+      <div class="pt-hc pt-r">Value</div>
+      <div class="pt-hc pt-r">P&amp;L%</div>
+    </div>`;
+
+    let html = '<div class="port-table">' + HEAD;
+    html += `<div class="pt-sec-head">
+      <span style="color:var(--green);">&#9679;</span>
+      AL MEEZAN
+      <span class="pt-sec-meta">${rows.length} funds &middot; ${fmtC(tv)} &middot; <span style="color:${pnlClr(tp)};">${sgn(tp)}${fmtC(Math.abs(tp))}</span></span>
+    </div>`;
+    html += rows.map((r, i) => _fundRow(r, i)).join('');
+    html += _brokerTotal(rows, 'MEEZAN TOTAL');
+    html += '</div>';
+    return html;
+  }
+
+  function _stockRow(row, idx) {
+    const pc = row.pnlPct >= 0 ? 't-gain' : 't-loss';
+    const s = row.pnlPct >= 0 ? '+' : '';
+    const bg = idx % 2 === 1 ? 'background:rgba(255,255,255,0.018);' : '';
+    return `<div class="pt-row" data-key="${row.key}" data-type="${row.type}" style="${bg}">
+      <div class="pt-cell">
+        <div class="pt-sym">${row.symbol}</div>
+        <div class="pt-sym-sub">${row.name.length > 17 ? row.name.slice(0, 15) + '…' : row.name}</div>
+      </div>
+      <div class="pt-cell pt-r">${(row.shares || 0).toLocaleString('en-PK')}</div>
+      <div class="pt-cell pt-r">${fmtPrice(row.avgCost)}</div>
+      <div class="pt-cell pt-r">${fmtPrice(row.price)}${_priceInd(row.priceSource)}</div>
+      <div class="pt-cell pt-r">${fmtC(row.value)}</div>
+      <div class="pt-cell pt-r ${pc}" style="font-weight:700;">${s}${row.pnlPct.toFixed(1)}%</div>
+    </div>`;
+  }
+
+  function _fundRow(row, idx) {
+    const pc = row.pnlPct >= 0 ? 't-gain' : 't-loss';
+    const s = row.pnlPct >= 0 ? '+' : '';
+    const bg = idx % 2 === 1 ? 'background:rgba(255,255,255,0.018);' : '';
+    return `<div class="pt-row" data-key="${row.key}" data-type="${row.type}" style="${bg}">
+      <div class="pt-cell">
+        <div class="pt-sym">${row.symbol}</div>
+        <div class="pt-sym-sub">${row.name.length > 17 ? row.name.slice(0, 15) + '…' : row.name}</div>
+      </div>
+      <div class="pt-cell pt-r" style="font-size:0.65rem;">${(row.units || 0).toFixed(2)}</div>
+      <div class="pt-cell pt-r">${fmtPrice(row.avgNav)}</div>
+      <div class="pt-cell pt-r">${fmtPrice(row.price)}${_priceInd(row.priceSource)}</div>
+      <div class="pt-cell pt-r">${fmtC(row.value)}</div>
+      <div class="pt-cell pt-r ${pc}" style="font-weight:700;">${s}${row.pnlPct.toFixed(1)}%</div>
+    </div>`;
+  }
+
+  function _brokerTotal(rows, label) {
+    const tv = rows.reduce((s, r) => s + r.value, 0);
+    const tc = rows.reduce((s, r) => s + r.cost, 0);
+    const tp = tv - tc;
+    const tpp = tc > 0 ? (tp / tc) * 100 : 0;
+    const s = tp >= 0 ? '+' : '';
+    return `<div class="pt-total">
+      <div class="pt-cell" style="font-size:0.62rem;font-weight:700;color:var(--text3);">${label}</div>
+      <div class="pt-cell pt-r"></div>
+      <div class="pt-cell pt-r" style="font-size:0.7rem;">${fmtC(tc)}</div>
+      <div class="pt-cell pt-r"></div>
+      <div class="pt-cell pt-r" style="font-weight:700;">${fmtC(tv)}</div>
+      <div class="pt-cell pt-r" style="font-weight:700;color:${pnlClr(tp)};">${s}${tpp.toFixed(1)}%</div>
+    </div>`;
   }
 
   function _buildRows(holdings, funds) {
@@ -139,17 +309,21 @@ const Portfolio = (() => {
     const stockRows = holdings.map(h => {
       const priceData = prices[h.symbol];
       const curr = priceData?.price || 0;
-      const prev = priceData?.prevClose || curr;
       const priceSource = priceData?.source || 'fallback';
       const price = curr || h.avgCost;
       const value = h.shares * price;
       const cost = h.shares * h.avgCost;
       const pnl = value - cost;
       const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
-      const dailyChg = curr && prev ? ((curr - prev) / prev) * 100 : null;
       const advisor = (window.ADVISOR_RATINGS || {})[h.symbol];
       const staticData = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
-      return { key: h.symbol + '_' + h.broker, type: 'stock', symbol: h.symbol, name: staticData?.name || h.symbol, broker: h.broker, shares: h.shares, avgCost: h.avgCost, price, priceSource, value, cost, pnl, pnlPct, dailyChg, advisor, isShariah: staticData?.isShariah, sector: staticData?.sector };
+      return {
+        key: h.symbol + '_' + h.broker, type: 'stock',
+        symbol: h.symbol, name: staticData?.name || h.symbol,
+        broker: h.broker, shares: h.shares, avgCost: h.avgCost,
+        price, priceSource, value, cost, pnl, pnlPct,
+        advisor, isShariah: staticData?.isShariah, sector: staticData?.sector,
+      };
     });
 
     const fundRows = funds.map(f => {
@@ -162,7 +336,13 @@ const Portfolio = (() => {
       const cost = f.totalInvested;
       const pnl = value - cost;
       const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
-      return { key: f.symbol + '_Meezan', type: 'fund', symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan', units: f.units, avgNav: f.avgNav, price: currentNav, priceSource, value, cost, pnl, pnlPct, dailyChg: null, advisor: null, isShariah: true, sector: mf?.type || 'Fund' };
+      return {
+        key: f.symbol + '_Meezan', type: 'fund',
+        symbol: f.symbol, name: mf?.name || f.symbol,
+        broker: 'Meezan', units: f.units, avgNav: f.avgNav,
+        price: currentNav, priceSource, value, cost, pnl, pnlPct,
+        advisor: null, isShariah: true, sector: mf?.type || 'Fund',
+      };
     });
 
     return [...stockRows, ...fundRows];
@@ -170,8 +350,6 @@ const Portfolio = (() => {
 
   function _applyFilter(rows, f) {
     if (f === 'all') return rows;
-    if (f === 'stocks') return rows.filter(r => r.type === 'stock');
-    if (f === 'funds') return rows.filter(r => r.type === 'fund');
     if (f === 'rafi') return rows.filter(r => r.broker === 'Rafi');
     if (f === 'akd') return rows.filter(r => r.broker === 'AKD');
     if (f === 'meezan') return rows.filter(r => r.broker === 'Meezan');
@@ -183,33 +361,10 @@ const Portfolio = (() => {
 
   function _applySort(rows, s) {
     if (s === 'value') return rows.slice().sort((a, b) => b.value - a.value);
-    if (s === 'pnl') return rows.slice().sort((a, b) => b.pnlPct - a.pnlPct);
+    if (s === 'pnl%' || s === 'pnl') return rows.slice().sort((a, b) => b.pnlPct - a.pnlPct);
     if (s === 'name') return rows.slice().sort((a, b) => a.symbol.localeCompare(b.symbol));
-    if (s === 'broker') return rows.slice().sort((a, b) => a.broker.localeCompare(b.broker));
+    if (s === 'shares') return rows.slice().sort((a, b) => (b.shares || b.units || 0) - (a.shares || a.units || 0));
     return rows;
-  }
-
-  function _rowHTML(row) {
-    const pnlClass = row.pnlPct >= 0 ? 't-gain' : 't-loss';
-    const sign = row.pnlPct >= 0 ? '+' : '';
-    const priceNum = row.price > 0 ? '₨' + row.price.toLocaleString('en-PK', { maximumFractionDigits: 2 }) : '—';
-    const priceStr = row.price > 0
-      ? priceNum + _priceIndicator(row.priceSource)
-      : '—';
-
-    return `<div class="ht-row" data-key="${row.key}" data-type="${row.type}">
-      <div class="ht-icon">${row.symbol.slice(0, 4)}</div>
-      <div>
-        <div class="ht-name">${row.symbol}</div>
-        <div class="ht-sub">${row.broker}${row.isShariah ? ' · ☪' : ''}</div>
-      </div>
-      <div class="ht-price">${priceStr}</div>
-      <div class="ht-value">${fmt2(row.value)}</div>
-      <div class="ht-pnl ${pnlClass}">
-        ${sign}${row.pnlPct.toFixed(1)}%
-        <div style="font-size:0.62rem;">${sign}${fmt2(Math.abs(row.pnl))}</div>
-      </div>
-    </div>`;
   }
 
   function _openDetail(key, type) {
@@ -224,10 +379,26 @@ const Portfolio = (() => {
     const advisor = row.advisor;
     const pnlClass = row.pnl >= 0 ? 't-gain' : 't-loss';
     const sign = row.pnl >= 0 ? '+' : '';
-
-    const sharesLabel = row.type === 'fund' ? `${row.units.toFixed(4)} units` : `${row.shares} shares`;
+    const posLabel = row.type === 'fund'
+      ? `${(row.units || 0).toFixed(4)} units`
+      : `${(row.shares || 0).toLocaleString('en-PK')} shares`;
     const avgLabel = row.type === 'fund' ? 'Avg NAV' : 'Avg Cost';
     const avgVal = row.type === 'fund' ? row.avgNav : row.avgCost;
+
+    const extraRow = row.type === 'fund'
+      ? [['Units', (row.units || 0).toFixed(4)]]
+      : [['Sector', row.sector || '—']];
+
+    const statRows = [
+      ['Current Value', fmt(row.value)],
+      ['P&L', `<span class="${pnlClass}">${sign}${fmt(Math.abs(row.pnl))} (${sign}${row.pnlPct.toFixed(2)}%)</span>`],
+      ['Position', posLabel],
+      [avgLabel, fmtPrice(avgVal)],
+      ['Current Price', fmtPrice(row.price) + (row.priceSource !== 'yahoo' ? ` <span style="font-size:0.7rem;color:var(--text3);">(${row.priceSource === 'manual' ? 'manual' : 'approx'})</span>` : '')],
+      ['Total Cost', fmt(row.cost)],
+      ['Price Source', _priceSourceLabel(row.priceSource)],
+      ...extraRow,
+    ].map(([l, v]) => `<div style="background:var(--bg2);padding:12px 14px;"><div class="metric-label">${l}</div><div style="font-size:0.88rem;font-weight:600;">${v}</div></div>`).join('');
 
     const content = `
       <div style="padding:16px;">
@@ -236,19 +407,16 @@ const Portfolio = (() => {
           <div>
             <div style="font-size:1.1rem;font-weight:700;">${row.symbol}</div>
             <div style="font-size:0.78rem;color:var(--text3);">${row.name}</div>
-            <div style="display:flex;gap:6px;margin-top:4px;">${brokerBadge(row.broker)}${advisor ? ratingBadge(advisor.rating) : ''}${row.isShariah ? '<span class="badge badge-shariah">☪ SHARIAH</span>' : ''}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+              ${brokerBadge(row.broker)}
+              ${row.type === 'fund' ? fundTypeBadge(row.sector) : (advisor ? ratingBadge(advisor.rating) : '')}
+              ${row.isShariah ? '<span class="badge badge-shariah">&#9775; SHARIAH</span>' : ''}
+            </div>
           </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bg4);border-radius:var(--r);overflow:hidden;margin-bottom:16px;">
-          ${[
-            ['Current Value', fmt(row.value)],
-            ['P&L', `<span class="${pnlClass}">${sign}${fmt(Math.abs(row.pnl))} (${sign}${row.pnlPct.toFixed(2)}%)</span>`],
-            ['Position', sharesLabel],
-            [avgLabel, '₨' + (avgVal || 0).toFixed(2)],
-            ['Current Price', row.price ? '₨' + row.price.toFixed(2) + (row.priceSource !== 'yahoo' ? ' (' + (row.priceSource === 'manual' ? 'manual' : 'est.') + ')' : '') : '—'],
-            ['Total Cost', fmt(row.cost)],
-          ].map(([l, v]) => `<div style="background:var(--bg2);padding:12px 14px;"><div class="metric-label">${l}</div><div style="font-size:0.92rem;font-weight:700;">${v}</div></div>`).join('')}
+          ${statRows}
         </div>
 
         ${advisor ? `
@@ -259,12 +427,12 @@ const Portfolio = (() => {
             ${advisor.conviction ? `<span style="font-size:0.7rem;color:var(--text3);">Conviction ${advisor.conviction}/10</span>` : ''}
           </div>
           <div style="font-size:0.82rem;color:var(--text2);line-height:1.5;">${advisor.thesis}</div>
-          ${advisor.target ? `<div style="margin-top:8px;font-size:0.78rem;"><span class="t-dim">Target: </span><span class="t-orange" style="font-weight:700;">₨${advisor.target}</span></div>` : ''}
+          ${advisor.target ? `<div style="margin-top:8px;font-size:0.78rem;"><span class="t-dim">Target: </span><span class="t-orange" style="font-weight:700;">&#8360;${advisor.target}</span></div>` : ''}
         </div>` : ''}
 
         <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn-primary" style="background:rgba(14,203,129,0.15);color:var(--green);border:1px solid rgba(14,203,129,0.3);" onclick="App.openAddTransaction('BUY','${row.symbol}','${row.broker}')">+ Buy More</button>
-          <button class="btn-primary" style="background:rgba(246,70,93,0.1);color:var(--red);border:1px solid rgba(246,70,93,0.2);" onclick="App.openAddTransaction('SELL','${row.symbol}','${row.broker}')">Sell</button>
+          <button class="btn-primary" style="background:rgba(14,203,129,0.15);color:var(--green);border:1px solid rgba(14,203,129,0.3);" onclick="App.openAddTransaction('BUY','${row.symbol}','${row.broker}')">Log Buy</button>
+          <button class="btn-primary" style="background:rgba(246,70,93,0.1);color:var(--red);border:1px solid rgba(246,70,93,0.2);" onclick="App.openAddTransaction('SELL','${row.symbol}','${row.broker}')">Log Sell</button>
         </div>
       </div>`;
 

@@ -1009,4 +1009,102 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* ── Portfolio Pro Table ── */
+.port-table { width: 100%; border-bottom: 1px solid var(--bg4); }
+
+.pt-head,
+.pt-row,
+.pt-total {
+  display: grid;
+  grid-template-columns: 1fr 42px 56px 56px 62px 50px;
+  gap: 4px;
+  padding: 0 14px;
+  align-items: center;
+}
+.pt-head {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--bg4);
+}
+.pt-hc {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.pt-row {
+  padding-top: 11px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--bg4);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.1s;
+}
+.pt-row:active { background: var(--bg3); }
+.pt-total {
+  padding-top: 9px;
+  padding-bottom: 9px;
+  background: var(--bg3);
+  border-bottom: 2px solid var(--bg4);
+}
+.pt-cell {
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+.pt-r { text-align: right; }
+.pt-sym {
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pt-sym-sub {
+  font-size: 0.6rem;
+  color: var(--text3);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Section header: sticky, cyan left border */
+.pt-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg3);
+  border-left: 3px solid var(--teal);
+  border-bottom: 1px solid var(--bg4);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text2);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.pt-sec-meta {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--text3);
+  font-size: 0.6rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Price source indicators */
+.price-ind {
+  font-size: 0.58rem;
+  color: var(--teal);
+  margin-left: 1px;
+  font-style: normal;
+}
+.price-approx { color: var(--gold); }
+
 .hidden { display: none !important; }

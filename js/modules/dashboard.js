@@ -15,6 +15,12 @@ const Dashboard = (() => {
     return sign + n.toFixed(2) + '%';
   }
 
+  function fmtPrice(n) {
+    if (!n || n <= 0) return '—';
+    if (n >= 100000) return '₨' + (n / 100000).toFixed(2) + 'L';
+    return '₨' + n.toLocaleString('en-PK', { maximumFractionDigits: 2 });
+  }
+
   function pnlPill(val, pct, label) {
     const cls = val >= 0 ? 'up' : 'down';
     const sign = val >= 0 ? '+' : '';
@@ -99,21 +105,41 @@ const Dashboard = (() => {
       return { symbol: h.symbol, changeP: ((curr - prev) / prev) * 100, change: (curr - prev) * h.shares };
     }).filter(Boolean).sort((a, b) => Math.abs(b.changeP) - Math.abs(a.changeP)).slice(0, 4);
 
+    const validForPnl = holdings.filter(h => {
+      const price = State.getPrice(h.symbol);
+      return price > 0 && h.avgCost > 0 && h.shares > 0;
+    });
+    const withPnl = validForPnl.map(h => {
+      const price = State.getPrice(h.symbol);
+      const pnlPct = ((price - h.avgCost) / h.avgCost) * 100;
+      const pnlAbs = (price - h.avgCost) * h.shares;
+      return { ...h, price, pnlPct, pnlAbs };
+    });
+    const sortedByPct = [...withPnl].sort((a, b) => b.pnlPct - a.pnlPct);
+    const best = sortedByPct[0] || null;
+    const worst = sortedByPct.length > 0 ? sortedByPct[sortedByPct.length - 1] : null;
+
     const stockRows = holdings.map(h => {
       const curr = State.getPrice(h.symbol) || h.avgCost;
       const val = h.shares * curr;
       const pnl = val - h.shares * h.avgCost;
-      const price = State.getPrice(h.symbol);
-      const pnlPct = (price > 0 && h.avgCost > 0 && h.shares > 0)
-        ? ((price - h.avgCost) / h.avgCost) * 100
-        : null;
-      return { symbol: h.symbol, val, pnl, pnlPct };
+      return { symbol: h.symbol, val, pnl };
     });
-    const sortedByPct = stockRows.filter(r => r.pnlPct !== null).sort((a, b) => b.pnlPct - a.pnlPct);
-    const best = sortedByPct[0] || null;
-    const worst = sortedByPct.length > 0 ? sortedByPct[sortedByPct.length - 1] : null;
     const mostVal = [...stockRows].sort((a, b) => b.val - a.val)[0];
     const totalUnrealisedPnl = stockRows.reduce((s, r) => s + r.pnl, 0);
+    const stocksValue = stockRows.reduce((s, r) => s + r.val, 0);
+
+    const shariahStockVal = holdings.reduce((sum, h) => {
+      const staticData = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
+      if (!staticData?.isShariah) return sum;
+      return sum + h.shares * (State.getPrice(h.symbol) || h.avgCost);
+    }, 0);
+    const shariahPct = totalValue > 0 ? ((shariahStockVal + meezanVal) / totalValue * 100) : 0;
+    const miifVal = funds.filter(f => f.symbol.startsWith('MIIF')).reduce((sum, f) => {
+      const nav = State.getPrice(f.symbol);
+      const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
+      return sum + f.units * (nav || mf?.currentNav || f.avgNav);
+    }, 0);
 
     const nominalRetPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
     const pkrDepPct = (settings.pkrDepreciationRate || 0.15) * 100;
@@ -185,26 +211,50 @@ const Dashboard = (() => {
     </div>
 
     ${stockRows.length > 0 ? `
-    <div style="padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-      <div style="text-align:center;">
-        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">BEST</div>
-        <div style="font-size:0.78rem;font-weight:700;color:var(--green);">${best ? best.symbol : '—'}</div>
-        <div style="font-size:0.65rem;color:var(--green);">${best ? '+' + best.pnlPct.toFixed(1) + '%' : ''}</div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bg4);">
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">BEST STOCK</div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--green);">${best ? best.symbol : '—'}</div>
+          <div style="font-size:0.62rem;color:var(--green);">${best ? (best.pnlPct >= 0 ? '+' : '') + best.pnlPct.toFixed(1) + '%' : ''}</div>
+        </div>
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">WORST STOCK</div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--red);">${worst ? worst.symbol : '—'}</div>
+          <div style="font-size:0.62rem;color:var(--red);">${worst ? worst.pnlPct.toFixed(1) + '%' : ''}</div>
+        </div>
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">LARGEST</div>
+          <div style="font-size:0.78rem;font-weight:700;">${mostVal ? mostVal.symbol : '—'}</div>
+          <div style="font-size:0.62rem;color:var(--text3);">${mostVal ? fmt(mostVal.val) : ''}</div>
+        </div>
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">TOTAL P&L</div>
+          <div style="font-size:0.78rem;font-weight:700;color:${totalUnrealisedPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${totalUnrealisedPnl >= 0 ? '+' : ''}${fmt(totalUnrealisedPnl)}</div>
+          <div style="font-size:0.62rem;color:var(--text3);">unrealised</div>
+        </div>
       </div>
-      <div style="text-align:center;">
-        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">WORST</div>
-        <div style="font-size:0.78rem;font-weight:700;color:var(--red);">${worst ? worst.symbol : '—'}</div>
-        <div style="font-size:0.65rem;color:var(--red);">${worst ? worst.pnlPct.toFixed(1) + '%' : ''}</div>
-      </div>
-      <div style="text-align:center;">
-        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">LARGEST</div>
-        <div style="font-size:0.78rem;font-weight:700;">${mostVal ? mostVal.symbol : '—'}</div>
-        <div style="font-size:0.65rem;color:var(--text3);">${mostVal ? fmt(mostVal.val) : ''}</div>
-      </div>
-      <div style="text-align:center;">
-        <div style="font-size:0.6rem;color:var(--text3);margin-bottom:3px;">STOCK P&L</div>
-        <div style="font-size:0.78rem;font-weight:700;color:${totalUnrealisedPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${totalUnrealisedPnl >= 0 ? '+' : ''}${fmt(totalUnrealisedPnl)}</div>
-        <div style="font-size:0.65rem;color:var(--text3);">unrealised</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bg4);">
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">TOTAL STOCKS</div>
+          <div style="font-size:0.78rem;font-weight:700;">${holdings.length}</div>
+          <div style="font-size:0.62rem;color:var(--text3);">${fmt(stocksValue)}</div>
+        </div>
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">TOTAL FUNDS</div>
+          <div style="font-size:0.78rem;font-weight:700;">${funds.length}</div>
+          <div style="font-size:0.62rem;color:var(--text3);">${fmt(meezanVal)}</div>
+        </div>
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">SHARIAH</div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--teal);">${shariahPct.toFixed(0)}%</div>
+          <div style="font-size:0.62rem;color:var(--text3);">of portfolio</div>
+        </div>
+        <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
+          <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">CASH EQUIV</div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--blue);">${fmt(miifVal)}</div>
+          <div style="font-size:0.62rem;color:var(--text3);">MIIF liquid</div>
+        </div>
       </div>
     </div>` : ''}
 
@@ -231,8 +281,8 @@ const Dashboard = (() => {
       </div>
     </div>
 
-    ${movers.length > 0 ? `
     <div class="sec-head"><span class="sec-title">Today's Movers</span></div>
+    ${movers.length > 0 ? `
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--bg4);margin-bottom:1px;">
       ${movers.map(m => `
         <div style="background:var(--bg2);padding:12px 14px;">
@@ -240,9 +290,8 @@ const Dashboard = (() => {
           <div class="${m.changeP >= 0 ? 't-gain' : 't-loss'}" style="font-size:0.78rem;font-weight:700;margin-top:3px;">${m.changeP >= 0 ? '+' : ''}${m.changeP.toFixed(2)}%</div>
           <div style="font-size:0.68rem;color:var(--text3);">${m.change >= 0 ? '+' : ''}${fmt(Math.abs(m.change))}</div>
         </div>`).join('')}
-    </div>` : allFallback ? `
-    <div class="sec-head"><span class="sec-title">Today's Movers</span></div>
-    <div style="padding:12px 16px;font-size:0.75rem;color:var(--text3);">Update prices to see movers</div>` : ''}
+    </div>` : `
+    <div style="padding:12px 16px;font-size:0.75rem;color:var(--text3);">Tap ⟳ Refresh to see today's movers</div>`}
 
     ${insights.length > 0 ? `
     <div class="sec-head"><span class="sec-title">Wealth Insights</span><span class="sec-action">${insights.length} alerts</span></div>
