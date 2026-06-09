@@ -1,11 +1,11 @@
 'use strict';
-const CACHE = 'stundsOS-v5';
+const CACHE = 'stundsOS-v6';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/app.css',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './js/data/holdings.js', './js/data/config.js', './js/engines/ledger.js', './js/engines/prices.js',
   './js/engines/insights.js', './js/engines/projections.js',
-  './js/modules/state.js', './js/modules/onboarding.js', './js/modules/reports.js', './js/modules/dashboard.js', './js/modules/portfolio.js',
+  './js/modules/state.js', './js/modules/onboarding.js', './js/modules/reports.js', './js/modules/investment.js', './js/modules/dashboard.js', './js/modules/portfolio.js',
   './js/modules/transactions.js', './js/modules/income.js', './js/modules/settings.js',
   './js/ui/charts.js', './js/ui/navigation.js', './js/app.js'
 ];

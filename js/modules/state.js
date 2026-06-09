@@ -66,8 +66,11 @@ const State = (() => {
         const parsed = JSON.parse(r);
         _s = { ...DEFAULT, ...parsed };
         _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
-        if (_s.settings.onboardingDone === false && parsed.transactions?.length > 0 && parsed.settings?.onboardingDone === undefined) {
+        if (parsed.transactions?.length > 0 && !_s.settings.onboardingDone) {
           _s.settings.onboardingDone = true;
+        }
+        if (!_s.settings.psxProxyUrl && window.STUNDS_CONFIG?.psxProxyUrl) {
+          _s.settings.psxProxyUrl = window.STUNDS_CONFIG.psxProxyUrl;
         }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
@@ -111,9 +114,11 @@ const State = (() => {
   function updatePrice(symbol, priceData) {
     if (!_s) load();
     const price = typeof priceData === 'number' ? priceData : priceData.price;
+    const source = typeof priceData === 'object' ? priceData.source : 'manual';
+    const trusted = ['psx_live', 'psx_symbol', 'psx_eod', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
-    if (fallback && price && price > 0) {
-      if (price > fallback * 3 || price < fallback * 0.3) {
+    if (!trusted && fallback && price && price > 0) {
+      if (price > fallback * 2.5 || price < fallback * 0.4) {
         console.warn(`Rejected bad price for ${symbol}: ₨${price} (fallback: ₨${fallback})`);
         return;
       }

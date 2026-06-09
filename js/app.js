@@ -69,7 +69,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=6').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     const cfg = State.get('settings')?.psxProxyUrl;
@@ -79,6 +79,8 @@ const App = (() => {
     Navigation.go('dashboard');
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();
+    const hasProxy = State.get('settings')?.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl;
+    if (hasProxy) setTimeout(() => refreshPrices(), 1200);
     _maybeInstallHint();
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) _scheduleAutoRefresh();

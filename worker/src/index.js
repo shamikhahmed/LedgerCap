@@ -16,6 +16,9 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.pathname === '/health') {
+      return json({ ok: true, service: 'stunds-psx-proxy' });
+    }
     const target = url.searchParams.get('url');
     const path = url.pathname.replace(/^\//, '');
 

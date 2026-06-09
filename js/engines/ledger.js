@@ -94,9 +94,50 @@ const Ledger = (() => {
       .reduce((sum, t) => sum + (t.amount || 0), 0);
   }
 
+  function investmentTimeline(transactions) {
+    const txs = (transactions || [])
+      .filter(t => ['BUY', 'CONTRIBUTION'].includes(t.type) && t.amount > 0)
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    let cumulative = 0;
+    const byMonth = {};
+    const points = [];
+    txs.forEach(t => {
+      cumulative += t.amount || 0;
+      const m = (t.date || '').slice(0, 7);
+      if (m) byMonth[m] = cumulative;
+      points.push({
+        date: t.date,
+        month: m,
+        amount: t.amount,
+        cumulative,
+        type: t.type,
+        symbol: t.symbol || '',
+        broker: t.broker || ''
+      });
+    });
+    return { points, byMonth, total: cumulative, count: txs.length };
+  }
+
+  function monthlyInvestmentBars(byMonth, months = 12) {
+    const keys = [];
+    const now = new Date();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      keys.push(d.toISOString().slice(0, 7));
+    }
+    let prev = 0;
+    return keys.map(m => {
+      const cum = byMonth[m] || prev;
+      const added = cum - prev;
+      prev = cum;
+      return { month: m, added, cumulative: cum };
+    });
+  }
+
   function newId() { return 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
 
   return { calcHoldings, calcFundHoldings, monthlyContributions, monthlySalary,
-    totalInvested, totalDividends, realisedPnl, currentMonthContribution, newId };
+    totalInvested, totalDividends, realisedPnl, currentMonthContribution,
+    investmentTimeline, monthlyInvestmentBars, newId };
 })();
 window.Ledger = Ledger;

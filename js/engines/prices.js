@@ -25,12 +25,21 @@ const Prices = (() => {
     const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
     const base = (fromState || window.STUNDS_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
     if (!base) return null;
-    try {
-      const res = await fetch(`${base}?url=${encodeURIComponent(url)}`);
-      if (!res.ok) return null;
-      const text = await res.text();
-      try { return JSON.parse(text); } catch { return null; }
-    } catch { return null; }
+    const path = url.replace('https://dps.psx.com.pk/', '');
+    const tries = [
+      `${base}/${path}`,
+      `${base}?url=${encodeURIComponent(url)}`,
+    ];
+    for (const u of tries) {
+      try {
+        const res = await fetch(u, { headers: { Accept: 'application/json' } });
+        if (!res.ok) continue;
+        const text = await res.text();
+        if (text.startsWith('{') && text.includes('"error"')) continue;
+        try { return JSON.parse(text); } catch { continue; }
+      } catch { continue; }
+    }
+    return null;
   }
 
   async function _fetchRaw(url) {
@@ -63,8 +72,9 @@ const Prices = (() => {
     if (!item) return null;
     const price = parseFloat(
       item.current || item.CURRENT || item.close || item.CLOSE ||
-      item.last || item.price || item.ldcp || item.LDCP ||
-      item.regularMarketPrice || item.nav || item.NAV || 0
+      item.last || item.price || item.Last || item.Price ||
+      item.regularMarketPrice || item.nav || item.NAV ||
+      item['Last Day Close Price'] || item.ldcp || item.LDCP || 0
     );
     const prevClose = parseFloat(
       item.ldcp || item.LDCP || item.prevClose || item.previousClose ||

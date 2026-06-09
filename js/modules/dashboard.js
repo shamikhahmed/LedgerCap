@@ -70,7 +70,9 @@ const Dashboard = (() => {
     const dailyPnl = State.calcDailyPnl();
 
     const allPrices = Object.values(state.prices || {});
-    const allFallback = allPrices.length === 0 || allPrices.every(p => p.source === 'fallback');
+    const LIVE_SRC = ['yahoo', 'psx_live', 'psx_symbol', 'psx_eod', 'manual'];
+    const allFallback = allPrices.length === 0 || !allPrices.some(p => LIVE_SRC.includes(p.source));
+    const proxyUrl = settings.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl || '';
 
     const realHistory = state.priceHistory || [];
     const isSynthetic = realHistory.length < 4;
@@ -174,8 +176,9 @@ const Dashboard = (() => {
         <button class="btn-ghost" onclick="App.refreshPrices()">⟳ Refresh</button>
       </div>
     </div>
-    <div style="padding:4px 16px 8px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
+    <div style="padding:4px 16px 8px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
       ${_priceStatusText(allPrices)}
+      ${proxyUrl ? `<span style="font-size:0.62rem;color:var(--green);font-weight:600;">● Proxy on</span>` : ''}
     </div>
 
     <div class="dash-hero">
@@ -186,8 +189,14 @@ const Dashboard = (() => {
         ${!allFallback && dailyPnl !== 0 ? `<span class="pnl-pill ${dailyPnl >= 0 ? 'up' : 'down'}">Today ${dailyPnl >= 0 ? '+' : ''}${fmt(Math.abs(dailyPnl))}</span>` : `<span class="pnl-pill" style="background:rgba(255,255,255,0.05);color:var(--text3);font-size:0.7rem;">Daily P&L: refresh prices</span>`}
         ${!isSynthetic && monthlyPnl !== 0 ? `<span class="pnl-pill ${monthlyPnl >= 0 ? 'up' : 'down'}">Month ${monthlyPnl >= 0 ? '+' : ''}${fmt(Math.abs(monthlyPnl))}</span>` : ''}
       </div>
-      <div class="t-dim" style="margin-top:6px;font-size:0.68rem;">Invested ${fmt(totalCost)} · Real return ~${(realRet * 100).toFixed(1)}% pa after ${((settings.inflationRate || 0.20) * 100).toFixed(0)}% inflation</div>
+      <div class="hero-invest-row">
+        <span><strong>${fmt(totalCost)}</strong> invested</span>
+        <span class="${totalPnl >= 0 ? 't-gain' : 't-loss'}">${totalPnl >= 0 ? '+' : ''}${fmt(totalPnl)} gain</span>
+        <span class="t-dim">~${(realRet * 100).toFixed(1)}% real</span>
+      </div>
     </div>
+
+    ${typeof Investment !== 'undefined' ? Investment.render(transactions, totalValue) : ''}
 
     <div class="metric-grid">
       <div class="metric-tile">

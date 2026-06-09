@@ -3,85 +3,118 @@ const Onboarding = (() => {
   let step = 1;
 
   function isDone() {
-    return !!State.get('settings')?.onboardingDone;
+    const s = State.get('settings') || {};
+    if (s.onboardingDone) return true;
+    if ((State.get('transactions') || []).length > 0) return true;
+    return false;
+  }
+
+  function _dots(n) {
+    return [1, 2, 3].map(i =>
+      `<span class="ob-dot${i === n ? ' on' : ''}"></span>`
+    ).join('');
   }
 
   function mount() {
     if (isDone()) return;
-    const existing = document.getElementById('onboarding');
-    if (existing) existing.remove();
+    document.getElementById('onboarding')?.remove();
 
+    const s = State.get('settings') || {};
     const el = document.createElement('div');
     el.id = 'onboarding';
-    el.className = 'onboarding-overlay';
+    el.className = 'ob-overlay';
     el.innerHTML = `
-      <div class="onboarding-card">
-        <div class="onboarding-steps" id="ob-steps">1 / 3</div>
-        <div id="ob-panel-1">
-          <div class="onboarding-icon">₨</div>
-          <h2>Welcome to StundsOS</h2>
-          <p>Your personal PK portfolio — PSX stocks, Meezan funds, SIP planning, and freedom math in one place.</p>
-          <p class="onboarding-note">Your existing data is safe. This setup only adjusts preferences.</p>
-          <button class="btn-primary" onclick="Onboarding.next()">Get started →</button>
-          <button class="btn-ghost ob-skip" onclick="Onboarding.skip()">Skip for now</button>
+      <div class="ob-shell">
+        <div class="ob-top">
+          <div class="ob-brand">Stunds<span>OS</span></div>
+          <button class="ob-skip-top" onclick="Onboarding.skip()">Skip</button>
         </div>
-        <div id="ob-panel-2" class="hidden">
-          <h2>Income & SIP</h2>
-          <label>Monthly salary (PKR)</label>
-          <input type="number" id="ob-salary" class="inp" value="${State.get('settings').salary}">
-          <label>Target monthly SIP (PKR)</label>
-          <input type="number" id="ob-sip" class="inp" value="${State.get('settings').targetSIP}">
-          <label>Financial freedom target (monthly PKR)</label>
-          <input type="number" id="ob-freedom" class="inp" value="${State.get('settings').freedomTarget}">
-          <div class="ob-row">
-            <button class="btn-ghost" onclick="Onboarding.back()">← Back</button>
-            <button class="btn-primary" onclick="Onboarding.next()">Continue →</button>
+        <div class="ob-progress">${_dots(1)}</div>
+
+        <div class="ob-panel on" id="ob-panel-1">
+          <div class="ob-hero-icon">₨</div>
+          <h1 class="ob-title">Your wealth command center</h1>
+          <p class="ob-desc">Track PSX stocks, Meezan funds, SIP goals, and how much you've invested over time — all on your phone.</p>
+          <ul class="ob-features">
+            <li><span>📈</span> Live portfolio & P&amp;L</li>
+            <li><span>💰</span> Investment tracker</li>
+            <li><span>🎯</span> SIP &amp; freedom planning</li>
+          </ul>
+          <button class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
+        </div>
+
+        <div class="ob-panel" id="ob-panel-2">
+          <h1 class="ob-title">Income &amp; goals</h1>
+          <p class="ob-desc">Used for SIP progress and financial freedom math. Your ledger data stays untouched.</p>
+          <div class="field">
+            <label class="field-label">Monthly salary</label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">₨</span>
+              <input class="field-input" id="ob-salary" type="number" inputmode="numeric" value="${s.salary || 150000}">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Monthly SIP target</label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">₨</span>
+              <input class="field-input" id="ob-sip" type="number" inputmode="numeric" value="${s.targetSIP || 75000}">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Freedom income goal / month</label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">₨</span>
+              <input class="field-input" id="ob-freedom" type="number" inputmode="numeric" value="${s.freedomTarget || 100000}">
+            </div>
+          </div>
+          <div class="ob-nav">
+            <button class="btn-ghost" onclick="Onboarding.back()">Back</button>
+            <button class="btn-primary" onclick="Onboarding.next()">Continue</button>
           </div>
         </div>
-        <div id="ob-panel-3" class="hidden">
-          <h2>Brokers & refresh</h2>
-          <p>StundsOS tracks Rafi, AKD, and Meezan. Prices try PSX live first, then PSX EOD, then last-known values.</p>
-          <label>Primary broker</label>
-          <select id="ob-broker" class="inp">
-            <option value="Rafi">Rafi</option>
-            <option value="AKD">AKD</option>
-            <option value="Meezan">Meezan</option>
-            <option value="Mixed">Mixed</option>
-          </select>
-          <button class="btn-secondary" onclick="App.refreshPrices()">Try price refresh now</button>
-          <div class="ob-row">
-            <button class="btn-ghost" onclick="Onboarding.back()">← Back</button>
-            <button class="btn-primary" onclick="Onboarding.finish()">Open dashboard ✓</button>
+
+        <div class="ob-panel" id="ob-panel-3">
+          <h1 class="ob-title">Almost done</h1>
+          <p class="ob-desc">Pick your main broker. We'll pull PSX prices through your secure proxy when markets are open.</p>
+          <div class="field">
+            <label class="field-label">Primary broker</label>
+            <select class="field-input" id="ob-broker">
+              <option value="Mixed">Mixed (Rafi + AKD + Meezan)</option>
+              <option value="Rafi">Rafi</option>
+              <option value="AKD">AKD</option>
+              <option value="Meezan">Meezan</option>
+            </select>
+          </div>
+          <div class="ob-proxy-note">
+            <span class="ob-proxy-dot"></span>
+            PSX proxy ready — prices refresh on open
+          </div>
+          <div class="ob-nav">
+            <button class="btn-ghost" onclick="Onboarding.back()">Back</button>
+            <button class="btn-primary" onclick="Onboarding.finish()">Open dashboard</button>
           </div>
         </div>
       </div>`;
     document.body.appendChild(el);
-    const broker = State.get('settings').primaryBroker || 'Mixed';
-    setTimeout(() => {
-      const sel = document.getElementById('ob-broker');
-      if (sel) sel.value = broker;
-    }, 0);
+    const sel = document.getElementById('ob-broker');
+    if (sel) sel.value = s.primaryBroker || 'Mixed';
   }
 
   function _showPanel(n) {
     step = n;
     [1, 2, 3].forEach(i => {
-      const p = document.getElementById('ob-panel-' + i);
-      if (p) p.classList.toggle('hidden', i !== n);
+      document.getElementById('ob-panel-' + i)?.classList.toggle('on', i === n);
     });
-    const steps = document.getElementById('ob-steps');
-    if (steps) steps.textContent = n + ' / 3';
+    const prog = document.querySelector('.ob-progress');
+    if (prog) prog.innerHTML = _dots(n);
   }
 
   function next() {
     if (step === 2) {
-      const salary = parseFloat(document.getElementById('ob-salary')?.value) || 150000;
-      const sip = parseFloat(document.getElementById('ob-sip')?.value) || 75000;
-      const freedom = parseFloat(document.getElementById('ob-freedom')?.value) || 100000;
-      State.update(s => {
-        s.settings.salary = salary;
-        s.settings.targetSIP = sip;
-        s.settings.freedomTarget = freedom;
+      State.update(st => {
+        st.settings.salary = parseFloat(document.getElementById('ob-salary')?.value) || 150000;
+        st.settings.targetSIP = parseFloat(document.getElementById('ob-sip')?.value) || 75000;
+        st.settings.freedomTarget = parseFloat(document.getElementById('ob-freedom')?.value) || 100000;
       });
     }
     if (step < 3) _showPanel(step + 1);
@@ -91,23 +124,26 @@ const Onboarding = (() => {
     if (step > 1) _showPanel(step - 1);
   }
 
+  function _close() {
+    document.getElementById('onboarding')?.remove();
+  }
+
   function skip() {
-    State.update(s => { s.settings.onboardingDone = true; });
-    const el = document.getElementById('onboarding');
-    if (el) el.remove();
-    App.showToast('You can change settings anytime', 'info');
+    State.update(st => { st.settings.onboardingDone = true; });
+    _close();
+    App.showToast('Setup skipped — change anytime in Settings', 'info');
   }
 
   function finish() {
     const broker = document.getElementById('ob-broker')?.value || 'Mixed';
-    State.update(s => {
-      s.settings.primaryBroker = broker;
-      s.settings.onboardingDone = true;
+    State.update(st => {
+      st.settings.primaryBroker = broker;
+      st.settings.onboardingDone = true;
     });
-    const el = document.getElementById('onboarding');
-    if (el) el.remove();
-    App.showToast('Welcome to StundsOS!', 'success');
-    if (typeof Navigation !== 'undefined') Navigation.go('dashboard');
+    _close();
+    App.showToast('Welcome to StundsOS', 'success');
+    Navigation.go('dashboard');
+    setTimeout(() => App.refreshPrices(), 600);
   }
 
   return { mount, next, back, skip, finish, isDone };
