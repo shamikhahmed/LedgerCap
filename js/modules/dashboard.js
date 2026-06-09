@@ -94,6 +94,9 @@ const Dashboard = (() => {
 
     const rafiVal = holdings.filter(h => h.broker === 'Rafi').reduce((a, h) => a + h.shares * (State.getPrice(h.symbol) || h.avgCost), 0);
     const akdVal = holdings.filter(h => h.broker === 'AKD').reduce((a, h) => a + h.shares * (State.getPrice(h.symbol) || h.avgCost), 0);
+    const cdcVal = holdings.filter(h => h.broker === 'CDC').reduce((a, h) => a + h.shares * (State.getPrice(h.symbol) || h.avgCost), 0);
+    const pendingIpos = Ledger.calcIpoPending(transactions);
+    const pendingIpoAmt = pendingIpos.reduce((s, p) => s + (p.amount || 0), 0);
     const meezanVal = funds.reduce((a, f) => {
       const nav = State.getPrice(f.symbol);
       const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
@@ -196,6 +199,15 @@ const Dashboard = (() => {
       </div>
     </div>
 
+    ${pendingIpos.length > 0 ? `
+    <div style="padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;color:var(--purple);">🚀 ${pendingIpos.length} Pending IPO${pendingIpos.length > 1 ? 's' : ''}</div>
+        <div style="font-size:0.68rem;color:var(--text3);margin-top:2px;">${pendingIpos.map(p => p.symbol).join(', ')} · ${fmt(pendingIpoAmt)} subscribed</div>
+      </div>
+      <button class="btn-ghost" style="font-size:0.68rem;white-space:nowrap;" onclick="Navigation.go('transactions')">View →</button>
+    </div>` : ''}
+
     ${typeof Investment !== 'undefined' ? Investment.render(transactions, totalValue) : ''}
 
     <div class="metric-grid">
@@ -281,13 +293,15 @@ const Dashboard = (() => {
     <div class="alloc-wrap">
       <div class="t-label">Portfolio Allocation</div>
       <div class="alloc-bar">
-        <div class="alloc-seg" style="width:${((rafiVal / total4alloc) * 100).toFixed(1)}%;background:#1890FF;border-radius:3px 0 0 3px;"></div>
+        <div class="alloc-seg" style="width:${((rafiVal / total4alloc) * 100).toFixed(1)}%;background:#1890FF;${cdcVal === 0 && akdVal === 0 && meezanVal === 0 ? 'border-radius:3px;' : 'border-radius:3px 0 0 3px;'}"></div>
         <div class="alloc-seg" style="width:${((akdVal / total4alloc) * 100).toFixed(1)}%;background:#FF6B35;"></div>
+        ${cdcVal > 0 ? `<div class="alloc-seg" style="width:${((cdcVal / total4alloc) * 100).toFixed(1)}%;background:#8B5CF6;"></div>` : ''}
         <div class="alloc-seg" style="width:${((meezanVal / total4alloc) * 100).toFixed(1)}%;background:#0ECB81;border-radius:0 3px 3px 0;"></div>
       </div>
       <div class="alloc-labels">
         <div class="alloc-item"><div class="alloc-dot" style="background:#1890FF;"></div><span>Rafi ${((rafiVal / total4alloc) * 100).toFixed(0)}%</span></div>
         <div class="alloc-item"><div class="alloc-dot" style="background:#FF6B35;"></div><span>AKD ${((akdVal / total4alloc) * 100).toFixed(0)}%</span></div>
+        ${cdcVal > 0 ? `<div class="alloc-item"><div class="alloc-dot" style="background:#8B5CF6;"></div><span>CDC ${((cdcVal / total4alloc) * 100).toFixed(0)}%</span></div>` : ''}
         <div class="alloc-item"><div class="alloc-dot" style="background:#0ECB81;"></div><span>Meezan ${((meezanVal / total4alloc) * 100).toFixed(0)}%</span></div>
       </div>
     </div>

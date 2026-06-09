@@ -494,6 +494,7 @@ body {
 .tx-type-dot.dividend { background: rgba(240,185,11,0.12); }
 .tx-type-dot.salary { background: rgba(24,144,255,0.12); }
 .tx-type-dot.contribution { background: rgba(139,92,246,0.12); }
+.tx-type-dot.ipo { background: rgba(139,92,246,0.15); }
 
 .tx-left { flex: 1; min-width: 0; }
 .tx-title { font-size: 0.88rem; font-weight: 600; }
@@ -727,6 +728,7 @@ body {
 .badge-rafi { background: rgba(24,144,255,0.1); color: var(--blue); }
 .badge-akd { background: rgba(255,107,53,0.1); color: var(--orange); }
 .badge-meezan { background: rgba(14,203,129,0.1); color: var(--green); }
+.badge-cdc { background: rgba(139,92,246,0.12); color: var(--purple); }
 .badge-shariah { background: rgba(0,212,170,0.1); color: var(--teal); }
 
 /* ── Wealth Projection ── */
