@@ -44,8 +44,9 @@ const Dashboard = (() => {
   }
 
   function _priceStatusText(allPrices) {
-    const livePrices = allPrices.filter(p => p.source === 'yahoo');
-    if (!livePrices.length) return `<span style="font-size:0.68rem;color:var(--gold);">Using seed prices — tap ⟳ Refresh for live data</span>`;
+    const LIVE = ['yahoo','psx_live','psx_symbol','psx_eod'];
+    const livePrices = allPrices.filter(p => LIVE.includes(p.source));
+    if (!livePrices.length) return `<span style="font-size:0.68rem;color:var(--gold);">Using last-known prices — tap ⟳ Refresh for PSX data</span>`;
     const liveTs = Math.max(...livePrices.map(p => p.ts || 0));
     const diffH = (Date.now() - liveTs) / 3600000;
     const time = new Date(liveTs).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
@@ -293,6 +294,8 @@ const Dashboard = (() => {
         </div>`).join('')}
     </div>` : `
     <div style="padding:12px 16px;font-size:0.75rem;color:var(--text3);">Tap ⟳ Refresh to see today's movers</div>`}
+
+    ${typeof Reports !== 'undefined' ? Reports.monthlySnapshot(state) : ''}
 
     ${insights.length > 0 ? `
     <div class="sec-head"><span class="sec-title">Wealth Insights</span><span class="sec-action">${insights.length} alerts</span></div>

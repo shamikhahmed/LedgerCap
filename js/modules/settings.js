@@ -130,9 +130,31 @@ const Settings = (() => {
         </div>
         <span class="setting-value ${isOnline ? 't-gain' : 't-loss'}">${isOnline ? '● Online' : '● Offline'}</span>
       </div>
-      <div style="padding:12px 16px;">
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+        <div class="field">
+          <label class="field-label">PSX Proxy URL (optional)</label>
+          <input class="field-input" id="s-proxy" type="url" placeholder="https://stunds-psx-proxy.yourname.workers.dev" value="${settings.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl || ''}">
+          <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
+        </div>
+        <button class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
         <button class="btn-secondary" onclick="App.refreshPrices()">⟳ Refresh All Prices</button>
       </div>
+    </div>
+
+    <div class="sec-head"><span class="sec-title">Manual Fund NAV</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;">Meezan funds aren't on PSX — update NAV when AMC publishes new values.</p>
+      ${(window.MEEZAN_FUNDS || []).map(f => {
+        const p = state.prices?.[f.symbol];
+        const nav = p?.price || f.currentNav;
+        return `<div class="field-row" style="margin-bottom:8px;align-items:flex-end;">
+          <div class="field" style="flex:1;">
+            <label class="field-label">${f.symbol}</label>
+            <input class="field-input nav-inp" data-sym="${f.symbol}" type="number" step="0.01" value="${nav}">
+          </div>
+          <button class="btn-ghost" style="padding:10px 14px;" onclick="Settings._saveNav('${f.symbol}')">Save</button>
+        </div>`;
+      }).join('')}
     </div>
 
     <div class="sec-head"><span class="sec-title">Data Management</span></div>
@@ -144,8 +166,8 @@ const Settings = (() => {
         </div>
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
-        <button class="btn-secondary" onclick="Settings._exportData()">↑ Export JSON Backup</button>
-        <button class="btn-secondary" onclick="Settings._importData()">↓ Import JSON Backup</button>
+        <button class="btn-secondary" onclick="Settings._exportData()">↑ Export .stunds Backup</button>
+        <button class="btn-secondary" onclick="Settings._importData()">↓ Import .stunds Backup</button>
         <button class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
       </div>
     </div>
@@ -211,7 +233,7 @@ const Settings = (() => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `stundsOS-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `stundsOS-backup-${new Date().toISOString().slice(0, 10)}.stunds`;
     a.click();
     URL.revokeObjectURL(url);
     App.showToast('Backup exported', 'success');
@@ -220,7 +242,7 @@ const Settings = (() => {
   function _importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.stunds,.json,application/json';
     input.onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -235,6 +257,23 @@ const Settings = (() => {
     input.click();
   }
 
+  function _saveProxy() {
+    const url = document.getElementById('s-proxy')?.value?.trim() || '';
+    State.update(s => { s.settings.psxProxyUrl = url; });
+    if (window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = url;
+    App.showToast(url ? 'Proxy URL saved' : 'Proxy cleared — using public fallbacks', 'success');
+    render();
+  }
+
+  function _saveNav(symbol) {
+    const inp = document.querySelector(`.nav-inp[data-sym="${symbol}"]`);
+    const nav = parseFloat(inp?.value);
+    if (!nav || nav <= 0) { App.showToast('Enter a valid NAV', 'warning'); return; }
+    State.updatePrice(symbol, { price: nav, prevClose: nav * 0.999, source: 'manual', ts: Date.now() });
+    App.showToast(`${symbol} NAV updated to ₨${nav}`, 'success');
+    App.renderCurrent();
+  }
+
   function _resetVault() {
     if (!confirm('Reset all data? This cannot be undone.')) return;
     State.reset();
@@ -242,6 +281,6 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
-  return { render, _saveProfile, _saveAssumptions, _resetAssumptions, _exportData, _importData, _resetVault };
+  return { render, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault };
 })();
 window.Settings = Settings;

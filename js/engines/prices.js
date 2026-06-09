@@ -1,174 +1,256 @@
 'use strict';
 const Prices = (() => {
   const PROXIES = [
-    { url: 'https://corsproxy.io/?url=',              parse: r => r },
-    { url: 'https://api.allorigins.win/get?url=',     parse: r => JSON.parse(r.contents) },
-    { url: 'https://corsproxy.io/?',                  parse: r => r },
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url=',
+    'https://api.allorigins.win/get?url=',
   ];
 
-  // null = skip Yahoo entirely (funds/ETFs not on Yahoo Finance)
   const YAHOO_SYMBOL_MAP = {
-    'ENGROH':      'ENGRO.KA',
-    'MIIETF':      null,
-    'MZNPETF':     null,
-    'MIIF-B':      null,
-    'MIIF-MMKA':   null,
-    'MAAF':        null,
-    'MBF':         null,
-    'MDAAF-MDYP':  null,
-    'KMIF':        null,
-    'MIF':         null,
+    'ENGROH': 'ENGRO.KA',
+    'MIIETF': null,
+    'MZNPETF': null,
+    'MIIF-B': null,
+    'MIIF-MMKA': null,
+    'MAAF': null,
+    'MBF': null,
+    'MDAAF-MDYP': null,
+    'KMIF': null,
+    'MIF': null,
   };
 
-  async function _fetchWithProxy(url) {
-    for (const proxy of PROXIES) {
+  const FUND_SYMBOLS = new Set(['KMIF','MAAF','MBF','MDAAF-MDYP','MIF','MIIF-B','MIIF-MMKA','MIIETF','MZNPETF']);
+
+  async function _fetchAppProxy(url) {
+    const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
+    const base = (fromState || window.STUNDS_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
+    if (!base) return null;
+    try {
+      const res = await fetch(`${base}?url=${encodeURIComponent(url)}`);
+      if (!res.ok) return null;
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return null; }
+    } catch { return null; }
+  }
+
+  async function _fetchRaw(url) {
+    const appProxy = await _fetchAppProxy(url);
+    if (appProxy) return appProxy;
+
+    for (const proxyUrl of PROXIES) {
       try {
-        const res = await fetch(proxy.url + encodeURIComponent(url));
+        const res = await fetch(proxyUrl + encodeURIComponent(url), {
+          headers: { Accept: 'application/json,text/plain,*/*' }
+        });
         if (!res.ok) continue;
-        const raw = await res.json();
-        const data = proxy.parse(raw);
-        if (data) return data;
+        const text = await res.text();
+        let payload = text;
+        try {
+          const j = JSON.parse(text);
+          if (j && j.contents !== undefined) payload = j.contents;
+          else if (j && typeof j === 'object') return j;
+        } catch {}
+        if (typeof payload === 'string') {
+          try { return JSON.parse(payload); } catch { continue; }
+        }
+        return payload;
       } catch {}
     }
     return null;
   }
 
-  async function fetchStock(symbol) {
-    const yahooSym = symbol in YAHOO_SYMBOL_MAP
-      ? YAHOO_SYMBOL_MAP[symbol]
-      : `${symbol}.KA`;
+  function _extractPrice(item) {
+    if (!item) return null;
+    const price = parseFloat(
+      item.current || item.CURRENT || item.close || item.CLOSE ||
+      item.last || item.price || item.ldcp || item.LDCP ||
+      item.regularMarketPrice || item.nav || item.NAV || 0
+    );
+    const prevClose = parseFloat(
+      item.ldcp || item.LDCP || item.prevClose || item.previousClose ||
+      item.chartPreviousClose || item.prev || price
+    );
+    if (!price || price <= 0) return null;
+    return { price, prevClose: prevClose > 0 ? prevClose : price * 0.999 };
+  }
 
-    if (yahooSym === null) {
-      const fp = (window.FALLBACK_PRICES || {})[symbol];
-      return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() } : null;
+  async function fetchPsxSymbol(symbol) {
+    const sym = symbol.toUpperCase();
+    const urls = [
+      `https://dps.psx.com.pk/symbols/${sym}`,
+      `https://dps.psx.com.pk/timeseries/eod/${sym}`,
+      `https://dps.psx.com.pk/timeseries/int/${sym}`,
+    ];
+    for (const url of urls) {
+      const data = await _fetchRaw(url);
+      if (!data) continue;
+      if (Array.isArray(data) && data.length) {
+        const last = data[data.length - 1];
+        const price = parseFloat(last.close || last.Close || last.c || last.price || 0);
+        const prev = parseFloat(last.open || last.ldcp || price);
+        if (price > 0) return { price, prevClose: prev || price * 0.999, source: 'psx_eod', ts: Date.now() };
+      }
+      const direct = _extractPrice(data.data || data.result || data);
+      if (direct) return { ...direct, symbol: sym, source: 'psx_symbol', ts: Date.now() };
+      const direct2 = _extractPrice(data);
+      if (direct2) return { ...direct2, symbol: sym, source: 'psx_symbol', ts: Date.now() };
+    }
+    return null;
+  }
+
+  async function fetchPsxLive(symbols) {
+    const results = {};
+    const psxUrl = 'https://dps.psx.com.pk/live';
+    const data = await _fetchRaw(psxUrl);
+    const items = Array.isArray(data) ? data : (data?.data || data?.result || []);
+    if (!items.length) return results;
+
+    symbols.forEach(sym => {
+      const item = items.find(i =>
+        (i.symbol || i.SYMBOL || i.Symbol || '').toUpperCase() === sym.toUpperCase()
+      );
+      const extracted = _extractPrice(item);
+      if (extracted) {
+        results[sym] = { ...extracted, symbol: sym, source: 'psx_live', ts: Date.now() };
+      }
+    });
+    return results;
+  }
+
+  function fundNavFallback(symbol) {
+    const fund = (window.MEEZAN_FUNDS || []).find(f => f.symbol === symbol);
+    const fp = (window.FALLBACK_PRICES || {})[symbol];
+    const nav = fund?.currentNav || fp;
+    if (!nav) return null;
+    return {
+      symbol,
+      price: nav,
+      prevClose: nav * 0.999,
+      source: fund ? 'meezan_seed' : 'fallback',
+      ts: Date.now() - 3600000
+    };
+  }
+
+  async function fetchStock(symbol) {
+    if (FUND_SYMBOLS.has(symbol)) return fundNavFallback(symbol);
+
+    const psx = await fetchPsxSymbol(symbol);
+    if (psx) {
+      const ok = _sanityCheck(symbol, psx.price);
+      if (ok) return { symbol, ...psx };
     }
 
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=1d&range=1d`;
-    const data = await _fetchWithProxy(url);
-    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    const prevClose = data?.chart?.result?.[0]?.meta?.previousClose
-      || data?.chart?.result?.[0]?.meta?.chartPreviousClose;
+    const yahooSym = symbol in YAHOO_SYMBOL_MAP ? YAHOO_SYMBOL_MAP[symbol] : `${symbol}.KA`;
+    if (yahooSym === null) return fundNavFallback(symbol);
 
-    if (price) {
-      const fallback = (window.FALLBACK_PRICES || {})[symbol] || 0;
-      if (fallback > 0 && (price > fallback * 3 || price < fallback * 0.3)) {
-        console.warn(`${symbol}: Yahoo price ${price} rejected (fallback: ${fallback}) — using fallback`);
-        const fp = (window.FALLBACK_PRICES || {})[symbol];
-        return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() } : null;
-      }
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=1d&range=5d`;
+    const data = await _fetchRaw(url);
+    const meta = data?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice;
+    const prevClose = meta?.previousClose || meta?.chartPreviousClose;
+
+    if (price && _sanityCheck(symbol, price)) {
       return { symbol, price, prevClose, source: 'yahoo', ts: Date.now() };
     }
 
     const fp = (window.FALLBACK_PRICES || {})[symbol];
-    return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() } : null;
+    return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 } : null;
+  }
+
+  function _sanityCheck(symbol, price) {
+    const fallback = (window.FALLBACK_PRICES || {})[symbol] || 0;
+    if (fallback > 0 && (price > fallback * 3 || price < fallback * 0.3)) {
+      console.warn(`${symbol}: price ${price} rejected (fallback ${fallback})`);
+      return false;
+    }
+    return true;
   }
 
   async function fetchKSE100() {
-    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/%5EKMEX?interval=1d&range=1d';
-    const data = await _fetchWithProxy(url);
+    const psxIdx = await _fetchRaw('https://dps.psx.com.pk/indices');
+    if (psxIdx) {
+      const kse = Array.isArray(psxIdx) ? psxIdx.find(i => /kse-100|kse100/i.test(i.name || i.index || '')) : null;
+      if (kse) {
+        const val = parseFloat(kse.value || kse.current || kse.last || 0);
+        if (val > 0) return { value: val, change: parseFloat(kse.change || 0), changeP: parseFloat(kse.changePercent || 0), ts: Date.now() };
+      }
+    }
+    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/%5EKSE100?interval=1d&range=1d';
+    const data = await _fetchRaw(url);
     const meta = data?.chart?.result?.[0]?.meta;
-    return meta?.regularMarketPrice ? {
-      value: meta.regularMarketPrice,
-      change: meta.regularMarketChange || 0,
-      changeP: meta.regularMarketChangePercent || 0,
-      prevClose: meta.previousClose || meta.chartPreviousClose,
-      ts: Date.now()
-    } : null;
+    if (meta?.regularMarketPrice) {
+      return {
+        value: meta.regularMarketPrice,
+        change: meta.regularMarketChange || 0,
+        changeP: meta.regularMarketChangePercent || 0,
+        prevClose: meta.previousClose || meta.chartPreviousClose,
+        ts: Date.now()
+      };
+    }
+    return null;
   }
 
   async function fetchAll(symbols, onProgress) {
     const results = {};
+    const stockSyms = symbols.filter(s => !FUND_SYMBOLS.has(s));
+    const fundSyms = symbols.filter(s => FUND_SYMBOLS.has(s));
 
-    // Try PSX live endpoint — gets ALL stocks in one call
-    try {
-      const psxUrl = 'https://dps.psx.com.pk/live';
-      const psxProxies = [
-        'https://corsproxy.io/?url=',
-        'https://corsproxy.io/?',
-      ];
+    const live = await fetchPsxLive(stockSyms);
+    Object.assign(results, live);
+    if (Object.keys(live).length > 0 && onProgress) {
+      onProgress(Object.keys(live).length, symbols.length, 'batch', true, 'psx_live');
+    }
 
-      for (const proxyUrl of psxProxies) {
-        try {
-          const res = await fetch(proxyUrl + encodeURIComponent(psxUrl), {
-            headers: { 'Accept': 'application/json' }
-          });
-          if (!res.ok) continue;
-          const data = await res.json();
-
-          const items = Array.isArray(data) ? data : (data.data || data.result || []);
-
-          if (items.length > 0) {
-            symbols.forEach(sym => {
-              const item = items.find(i =>
-                (i.symbol || i.SYMBOL || i.Symbol || '').toUpperCase() === sym.toUpperCase()
-              );
-              if (item) {
-                const price = parseFloat(
-                  item.current || item.CURRENT || item.ldcp || item.LDCP ||
-                  item.close || item.CLOSE || item.last || item.price || 0
-                );
-                const prevClose = parseFloat(
-                  item.ldcp || item.LDCP || item.prev || item.prevClose || price
-                );
-                if (price > 0) {
-                  results[sym] = { price, prevClose, source: 'psx_live', ts: Date.now() };
-                }
-              }
-            });
-
-            if (Object.keys(results).length > 0) {
-              if (onProgress) onProgress(Object.keys(results).length, symbols.length, 'PSX Live', true, 'psx_live');
-              return results;
-            }
-          }
-        } catch {}
-      }
-    } catch {}
-
-    // PSX failed — fall back to Yahoo per-symbol with sanity check
-    let done = 0;
-    for (const symbol of symbols) {
-      const yahooSym = YAHOO_SYMBOL_MAP[symbol];
-      if (yahooSym === null) {
-        done++;
-        if (onProgress) onProgress(done, symbols.length, symbol, false, 'skip');
+    let done = Object.keys(results).length;
+    for (const symbol of stockSyms) {
+      if (results[symbol]) {
+        if (onProgress) onProgress(++done, symbols.length, symbol, true, 'psx_live');
         continue;
       }
-      const yahooSymbol = yahooSym || (symbol + '.KA');
+      const psx = await fetchPsxSymbol(symbol);
+      if (psx && _sanityCheck(symbol, psx.price)) {
+        results[symbol] = psx;
+        if (onProgress) onProgress(++done, symbols.length, symbol, true, psx.source);
+        continue;
+      }
 
+      const yahooSym = YAHOO_SYMBOL_MAP[symbol];
+      if (yahooSym === null) {
+        const fb = fundNavFallback(symbol);
+        if (fb) results[symbol] = fb;
+        if (onProgress) onProgress(++done, symbols.length, symbol, !!fb, 'skip');
+        continue;
+      }
+
+      const yahooSymbol = yahooSym || `${symbol}.KA`;
       try {
-        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-        const data = await _fetchWithProxy(url);
+        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=5d`;
+        const data = await _fetchRaw(url);
         const meta = data?.chart?.result?.[0]?.meta;
-
-        if (meta?.regularMarketPrice) {
-          const fallback = (window.FALLBACK_PRICES || {})[symbol] || 0;
-          const yahooPrice = meta.regularMarketPrice;
-
-          if (fallback > 0 && (yahooPrice > fallback * 3 || yahooPrice < fallback * 0.3)) {
-            console.warn(`${symbol}: Yahoo price ${yahooPrice} rejected (fallback: ${fallback})`);
-            done++;
-            if (onProgress) onProgress(done, symbols.length, symbol, false, 'rejected');
-            continue;
-          }
-
+        if (meta?.regularMarketPrice && _sanityCheck(symbol, meta.regularMarketPrice)) {
           results[symbol] = {
-            price: yahooPrice,
-            prevClose: meta.previousClose || meta.chartPreviousClose || yahooPrice,
+            price: meta.regularMarketPrice,
+            prevClose: meta.previousClose || meta.chartPreviousClose || meta.regularMarketPrice,
             source: 'yahoo',
             ts: Date.now()
           };
-          done++;
-          if (onProgress) onProgress(done, symbols.length, symbol, true, 'yahoo');
+          if (onProgress) onProgress(++done, symbols.length, symbol, true, 'yahoo');
         } else {
-          done++;
-          if (onProgress) onProgress(done, symbols.length, symbol, false, 'miss');
+          const fp = (window.FALLBACK_PRICES || {})[symbol];
+          if (fp) results[symbol] = { price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 };
+          if (onProgress) onProgress(++done, symbols.length, symbol, !!fp, 'fallback');
         }
       } catch {
-        done++;
-        if (onProgress) onProgress(done, symbols.length, symbol, false, 'error');
+        if (onProgress) onProgress(++done, symbols.length, symbol, false, 'error');
       }
-      await new Promise(r => setTimeout(r, 80));
+      await new Promise(r => setTimeout(r, 60));
+    }
+
+    for (const symbol of fundSyms) {
+      const nav = fundNavFallback(symbol);
+      if (nav) results[symbol] = nav;
+      done++;
+      if (onProgress) onProgress(done, symbols.length, symbol, true, 'meezan_seed');
     }
 
     return results;
@@ -185,18 +267,31 @@ const Prices = (() => {
     return d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short' });
   }
 
-  return { fetchStock, fetchKSE100, fetchAll, formatTs };
+  function sourceLabel(source) {
+    const map = {
+      psx_live: 'PSX Live',
+      psx_symbol: 'PSX',
+      psx_eod: 'PSX EOD',
+      yahoo: 'Yahoo',
+      meezan_seed: 'Meezan NAV',
+      fallback: 'Last known',
+      manual: 'Manual'
+    };
+    return map[source] || source || '—';
+  }
+
+  return { fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, fetchPsxSymbol };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {
-  'ENGROH':      'ENGRO.KA',
-  'MIIETF':      null,
-  'MZNPETF':     null,
-  'MIIF-B':      null,
-  'MIIF-MMKA':   null,
-  'MAAF':        null,
-  'MBF':         null,
-  'MDAAF-MDYP':  null,
-  'KMIF':        null,
-  'MIF':         null,
+  'ENGROH': 'ENGRO.KA',
+  'MIIETF': null,
+  'MZNPETF': null,
+  'MIIF-B': null,
+  'MIIF-MMKA': null,
+  'MAAF': null,
+  'MBF': null,
+  'MDAAF-MDYP': null,
+  'KMIF': null,
+  'MIF': null,
 };

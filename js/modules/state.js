@@ -17,6 +17,9 @@ const State = (() => {
       usdRate: 280,
       goldPricePerGram: 18000,
       pkrDepreciationRate: 0.15,
+      primaryBroker: 'Mixed',
+      onboardingDone: false,
+      psxProxyUrl: '',
     },
     version: 2,
   };
@@ -63,6 +66,9 @@ const State = (() => {
         const parsed = JSON.parse(r);
         _s = { ...DEFAULT, ...parsed };
         _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
+        if (_s.settings.onboardingDone === false && parsed.transactions?.length > 0 && parsed.settings?.onboardingDone === undefined) {
+          _s.settings.onboardingDone = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }

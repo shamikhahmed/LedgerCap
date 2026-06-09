@@ -72,9 +72,12 @@ const App = (() => {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
     _validateAndCleanPrices();
+    const cfg = State.get('settings')?.psxProxyUrl;
+    if (cfg && window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = cfg;
     _hideSplash();
     Navigation.init();
     Navigation.go('dashboard');
+    if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();
     _maybeInstallHint();
     document.addEventListener('visibilitychange', () => {
@@ -97,7 +100,11 @@ const App = (() => {
     const state = State.get();
     const transactions = state.transactions || [];
     const holdings = Ledger.calcHoldings(transactions);
-    const symbols = [...new Set(holdings.map(h => h.symbol))];
+    const fundHoldings = Ledger.calcFundHoldings(transactions);
+    const symbols = [...new Set([
+      ...holdings.map(h => h.symbol),
+      ...fundHoldings.map(f => f.symbol)
+    ])];
 
     if (symbols.length === 0) {
       showToast('No symbols to refresh', 'warning');
@@ -107,25 +114,28 @@ const App = (() => {
     showToast(`Fetching ${symbols.length} prices…`, 'info');
 
     let liveOk = 0;
-    let liveSource = '';
-    let done = 0;
+    const sources = new Set();
     const results = await Prices.fetchAll(symbols, (d, total, sym, success, source) => {
-      done = d;
-      if (source === 'psx_live' || source === 'yahoo') { liveOk++; liveSource = source; }
+      if (success && source && !['skip','error','rejected','miss','fallback'].includes(source)) {
+        liveOk++;
+        sources.add(source);
+      }
     });
 
+    let updated = 0;
     Object.entries(results).forEach(([sym, data]) => {
       State.updatePrice(sym, data);
+      updated++;
     });
 
     const kse = await Prices.fetchKSE100();
     if (kse) State.set('kseIndex', kse);
 
-    if (liveOk > 0) {
-      const src = liveSource === 'psx_live' ? 'PSX Live' : 'Yahoo';
-      showToast(`Updated ${liveOk} prices via ${src}`, 'success');
+    if (updated > 0) {
+      const srcList = [...sources].map(s => Prices.sourceLabel(s)).join(', ') || 'cached';
+      showToast(`Updated ${updated} prices (${srcList})`, liveOk > 0 ? 'success' : 'info');
     } else {
-      showToast('Auto-update failed — prices unchanged', 'warning');
+      showToast('Could not reach live feeds — using last known prices', 'warning');
     }
 
     renderCurrent();

@@ -61,15 +61,17 @@ const Portfolio = (() => {
   }
 
   function _priceInd(source) {
-    if (source === 'yahoo') return '';
+    if (['yahoo','psx_live','psx_symbol','psx_eod'].includes(source)) return '';
     if (source === 'manual') return '<span class="price-ind" title="Manual price">M</span>';
-    return '<span class="price-ind price-approx" title="Approximate seed price">~</span>';
+    if (source === 'meezan_seed') return '<span class="price-ind" title="Meezan NAV seed">N</span>';
+    return '<span class="price-ind price-approx" title="Last known price">~</span>';
   }
 
   function _priceSourceLabel(source) {
-    if (source === 'yahoo') return 'Live (Yahoo Finance)';
-    if (source === 'manual') return 'Manual (user-entered)';
-    return 'Approximate (seed price)';
+    if (window.Prices?.sourceLabel) return Prices.sourceLabel(source);
+    if (source === 'yahoo') return 'Yahoo Finance';
+    if (source === 'manual') return 'Manual';
+    return 'Last known';
   }
 
   function render() {
