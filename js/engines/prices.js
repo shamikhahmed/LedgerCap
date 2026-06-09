@@ -7,7 +7,7 @@ const Prices = (() => {
   ];
 
   const YAHOO_SYMBOL_MAP = {
-    'ENGROH': 'ENGRO.KA',
+    'ENGROH': 'ENGROH.KA',
     'MIIETF': null,
     'MZNPETF': null,
     'MIIF-B': null,
@@ -311,7 +311,7 @@ const Prices = (() => {
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {
-  'ENGROH': 'ENGRO.KA',
+  'ENGROH': 'ENGROH.KA',
   'MIIETF': null,
   'MZNPETF': null,
   'MIIF-B': null,
