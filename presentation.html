@@ -2,79 +2,378 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StundsOS — Presentation</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#000;--accent:#FF6B35;--accent2:#30D158;--ok:#64D2FF;--text:#fff;--text2:#a0a0a0;--text3:#505050;--border:rgba(255,255,255,.08);--sans:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;user-select:none}
-#progress{position:fixed;top:0;left:0;height:2px;background:var(--accent);z-index:200;transition:width .4s;box-shadow:0 0 8px var(--accent)}
-#counter{position:fixed;bottom:28px;right:28px;font-size:12px;color:var(--text3);z-index:200;font-variant-numeric:tabular-nums}
-#dots{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:200}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);cursor:pointer;transition:all .3s}
-.dot.on{width:18px;border-radius:3px;background:var(--accent)}
-#fsBtn{position:fixed;top:20px;right:20px;z-index:200;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer}
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 48px;text-align:center;opacity:0;pointer-events:none;transform:scale(1.04);transition:opacity .4s,transform .4s}
-.slide.active{opacity:1;pointer-events:auto;transform:scale(1)}
-.anim{opacity:0;transform:translateY(18px);transition:opacity .5s,transform .5s}
-.slide.active .anim{opacity:1;transform:none}
-.slide.active .anim:nth-child(2){transition-delay:.08s}
-.slide.active .anim:nth-child(3){transition-delay:.16s}
-.slide.active .anim:nth-child(4){transition-delay:.24s}
-.slide.active .anim:nth-child(5){transition-delay:.32s}
-.label{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-h2{font-size:clamp(32px,6vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:14px}
-.tagline{font-size:clamp(14px,2vw,18px);color:var(--text2);line-height:1.55;max-width:620px}
-.url-big{font-family:ui-monospace,Menlo,monospace;font-size:clamp(13px,2.2vw,20px);color:var(--accent);text-decoration:none;border-bottom:2px solid var(--accent);padding-bottom:4px;margin-top:20px}
-.stat-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:22px}
-.stat{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:14px 20px;min-width:110px}
-.sv{font-size:22px;font-weight:800;color:var(--accent)}
-.sk{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
-.pain{display:flex;flex-direction:column;gap:10px;max-width:520px;width:100%;margin-top:20px;text-align:left}
-.pain-item{display:flex;gap:10px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;font-size:14px;color:var(--text2)}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:640px;width:100%;margin-top:20px}
-.card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left}
-.card-t{font-weight:700;font-size:14px;margin:8px 0 4px}
-.card-d{font-size:12px;color:var(--text2);line-height:1.45}
-.pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px;max-width:560px}
-.pill{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:99px;padding:8px 14px;font-size:12px;font-weight:600;color:var(--text2)}
-.credit{position:absolute;bottom:36px;right:32px;font-size:11px;color:var(--text3)}
-@media(max-width:600px){.slide{padding:40px 22px}.grid{grid-template-columns:1fr}}
+:root{
+  --bg:#0B0E11;--bg2:#12161C;--bg3:#1E2329;--bg4:#2B3139;
+  --orange:#FF6B35;--green:#0ECB81;--red:#F6465D;--gold:#F0B90B;
+  --text:#EAECEF;--muted:#848E9C;--dim:#5E6673;
+  --border:rgba(255,255,255,0.07);--glass:rgba(255,255,255,0.03);
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
+  overflow:hidden;user-select:none;font-variant-numeric:tabular-nums}
+#deck{position:fixed;inset:0;z-index:10}
+#progress{position:fixed;top:0;left:0;height:2px;z-index:200;width:5%;
+  background:var(--orange);box-shadow:0 0 8px rgba(255,107,53,0.5);transition:width .5s}
+.slide{position:absolute;inset:0;opacity:0;transform:translateX(100%);
+  transition:opacity .5s,transform .5s;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:56px 40px 80px;overflow:hidden;text-align:center}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:auto}
+.slide.active .a1{animation:fadeUp .6s .1s both}
+.slide.active .a2{animation:fadeUp .6s .2s both}
+.slide.active .a3{animation:fadeUp .6s .3s both}
+.slide.active .a4{animation:fadeUp .6s .4s both}
+.slide.active .a5{animation:fadeUp .6s .5s both}
+.slide.active .a6{animation:fadeUp .6s .6s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+#counter{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;
+  font-size:12px;color:var(--dim);background:rgba(11,14,17,0.9);padding:6px 14px;
+  border-radius:20px;border:1px solid var(--border)}
+#arrow-left,#arrow-right{position:fixed;bottom:20px;z-index:200;width:44px;height:44px;
+  border-radius:50%;border:1px solid var(--border);background:rgba(11,14,17,0.9);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+#arrow-left{left:20px}#arrow-right{right:20px}
+#arrow-left:hover,#arrow-right:hover{border-color:var(--orange);color:var(--orange)}
+#fullscreen-btn{position:fixed;top:14px;right:14px;z-index:200;width:36px;height:36px;
+  border-radius:10px;border:1px solid var(--border);background:rgba(11,14,17,0.9);cursor:pointer;color:var(--muted)}
+.overline{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);font-weight:600;margin-bottom:14px}
+.headline{font-size:clamp(1.5rem,3.8vw,2.6rem);font-weight:700;letter-spacing:-.02em;margin-bottom:10px}
+.sub{font-size:clamp(.9rem,1.8vw,1.05rem);color:var(--muted);max-width:560px;line-height:1.55;margin-bottom:14px}
+/* terminal phone mock */
+.terminal{width:min(100%,320px);border-radius:16px;overflow:hidden;
+  border:1px solid var(--bg4);box-shadow:0 20px 50px rgba(0,0,0,0.5);text-align:left;background:var(--bg)}
+.term-header{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bg4);
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.term-body{padding:14px}
+.nw-hero{font-size:2rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.nw-label{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.pnl-row{display:flex;gap:12px;margin:12px 0}
+.pnl-box{flex:1;background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;padding:10px}
+.pnl-val{font-size:14px;font-weight:700}
+.gain{color:var(--green)}.loss{color:var(--red)}
+.holding{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+  border-bottom:1px solid var(--bg4);font-size:11px}
+.holding:last-child{border-bottom:none}
+.broker-tag{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--orange);margin-right:6px}
+.ticker-wrap{overflow:hidden;background:var(--bg2);border-top:1px solid var(--bg4);padding:6px 0;margin-top:10px}
+.ticker{display:flex;gap:20px;white-space:nowrap;font-size:10px;font-weight:600;animation:ticker 20s linear infinite}
+.ticker span.gain{color:var(--green)}.ticker span.loss{color:var(--red)}
+.fab-types{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.fab-type{padding:6px 10px;border-radius:6px;font-size:9px;font-weight:700;
+  background:var(--bg3);border:1px solid var(--bg4)}
+.fab-type.buy{border-color:rgba(14,203,129,0.4);color:var(--green)}
+.fab-type.sell{border-color:rgba(246,70,93,0.4);color:var(--red)}
+.progress-track{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--gold));border-radius:3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:680px;width:100%}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:720px;width:100%}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:left}
+.card h3{font-size:13px;font-weight:700;margin-bottom:6px}
+.card p{font-size:11px;color:var(--muted);line-height:1.45}
+.pain{display:flex;flex-direction:column;gap:8px;max-width:560px;width:100%}
+.pain-item{display:flex;gap:10px;padding:12px;background:var(--glass);
+  border:1px solid var(--border);border-radius:10px;text-align:left;font-size:12px;color:var(--muted)}
+.stat-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.stat{background:var(--bg2);border:1px solid var(--bg4);border-radius:10px;padding:14px 18px;min-width:90px}
+.stat .n{font-size:1.5rem;font-weight:800;color:var(--orange)}
+.stat .l{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.split{display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:900px;width:100%}
+.flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:640px}
+.flow-box{background:var(--bg2);border:1px solid var(--bg4);border-radius:8px;padding:10px 14px;font-size:11px;font-weight:600}
+.flow-arrow{color:var(--orange);opacity:.5;font-size:14px}
+.link-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:10px;
+  font-size:14px;font-weight:700;text-decoration:none}
+.link-orange{background:var(--orange);color:#fff;box-shadow:0 8px 24px rgba(255,107,53,0.3)}
+.t-mono{font-variant-numeric:tabular-nums}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}.split{flex-direction:column}}
 </style>
 </head>
 <body>
 <div id="progress"></div>
-<div id="counter">01 / 07</div>
-<div id="dots"></div>
-<button id="fsBtn" onclick="toggleFS()">⛶ Fullscreen</button>
-<div id="deck"><div class="slide" id="s0"><div class="anim label">2026</div><h2>StundsOS</h2><div class="tagline" style="font-size:1.2rem;color:var(--text);margin-bottom:8px">Personal Wealth Operating System</div><div class="tagline">PSX · Meezan funds · Net worth · Financial freedom</div><a class="url-big" href="https://shamikhahmed.github.io/StundsOS/" target="_blank" rel="noopener">shamikhahmed.github.io/StundsOS/</a>
-      <div style="margin-top:16px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
-        <a href="pitch.html" style="font-size:12px;color:var(--text2)">Pitch deck</a>
-        <a href="landing.html" style="font-size:12px;color:var(--text2)">Landing</a>
-        <a href="docs/GUIDE.md" style="font-size:12px;color:var(--text2)">Guide</a>
-      </div><div class="credit">by Shamikh Ahmed</div></div>
-<div class="slide" id="s1"><div class="anim label">The Problem</div><h2>Scattered.</h2><h2 style="color:var(--accent)">Overwhelming.</h2><div class="tagline">Pakistani wealth is split across PSX, funds, gold, and spreadsheets.</div><div class="pain"><div class="pain-item"><span>•</span>No single PSX + Islamic fund view</div><div class="pain-item"><span>•</span>Transactions scattered in notes</div><div class="pain-item"><span>•</span>Freedom date never calculated</div></div><div class="credit">by Shamikh Ahmed</div></div>
-<div class="slide" id="s2"><div class="anim label">The Solution</div><h2>StundsOS</h2><div class="tagline">Bloomberg-terminal clarity for your personal ledger — offline first.</div><div class="stat-row"><div class="stat"><div class="sv">0</div><div class="sk">Servers</div></div><div class="stat"><div class="sv">100%</div><div class="sk">Offline</div></div><div class="stat"><div class="sv">PWA</div><div class="sk">Install</div></div></div><div class="credit">by Shamikh Ahmed</div></div>
-<div class="slide" id="s3"><div class="anim label">Pillars</div><h2>Four pillars.</h2><div class="grid"><div class="card"><div style="font-size:1.6rem">📒</div><div class="card-t">Ledger</div><div class="card-d">Every buy, sell, dividend logged</div></div><div class="card"><div style="font-size:1.6rem">💼</div><div class="card-t">Portfolio</div><div class="card-d">Holdings, allocation, P&amp;L</div></div><div class="card"><div style="font-size:1.6rem">🇵🇰</div><div class="card-t">PSX</div><div class="card-d">Live prices via proxy worker</div></div><div class="card"><div style="font-size:1.6rem">🎯</div><div class="card-t">Freedom</div><div class="card-d">FI number &amp; runway tracker</div></div></div><div class="credit">by Shamikh Ahmed</div></div>
-<div class="slide" id="s4"><div class="anim label">Features</div><h2>Built for daily use.</h2><div class="pills"><div class="pill">Meezan fund support</div><div class="pill">Multi-currency</div><div class="pill">Export backup</div><div class="pill">Dashboard widgets</div></div><div class="credit">by Shamikh Ahmed</div></div>
-<div class="slide" id="s5"><div class="anim label">Who it's for</div><h2>Investors tracking PSX, funds, and path to financial independence.</h2><div class="tagline">Private. On your device. No account required.</div><div class="credit">by Shamikh Ahmed</div></div>
-<div class="slide" id="s6"><div class="anim label">Live Now</div><h2>Open StundsOS</h2><div class="tagline">Install on iPhone · Add to Home Screen · Works offline</div><a class="url-big" href="https://shamikhahmed.github.io/StundsOS/" target="_blank" rel="noopener">shamikhahmed.github.io/StundsOS/</a>
-      <div style="margin-top:16px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
-        <a href="pitch.html" style="font-size:12px;color:var(--text2)">Pitch deck</a>
-        <a href="landing.html" style="font-size:12px;color:var(--text2)">Landing</a>
-        <a href="docs/GUIDE.md" style="font-size:12px;color:var(--text2)">Guide</a>
-      </div><div class="credit">by Shamikh Ahmed</div></div></div>
+<button id="fullscreen-btn" title="Fullscreen">⛶</button>
+<div id="counter">1 / 20</div>
+<button id="arrow-left" onclick="prev()">←</button>
+<button id="arrow-right" onclick="next()">→</button>
+<div id="deck">
+
+<div class="slide active" id="s1">
+  <div class="overline a1">2026 · Personal Wealth OS</div>
+  <div class="headline a2" style="font-size:clamp(2.4rem,5.5vw,4rem);font-weight:800;color:var(--text)">StundsOS</div>
+  <div class="sub a3">Bloomberg-terminal clarity for your personal ledger</div>
+  <div class="sub a4" style="font-size:12px">PSX · Meezan Funds · Net Worth · Financial Freedom</div>
+  <div class="a5" style="font-size:12px;color:var(--dim);margin-top:16px">Press → to begin</div>
+</div>
+
+<div class="slide" id="s2">
+  <div class="overline a1">The Problem</div>
+  <div class="headline a2">Pakistani wealth is <span style="color:var(--orange)">scattered.</span></div>
+  <div class="pain a3">
+    <div class="pain-item"><span>📊</span><div>Multiple brokers — Rafi, AKD — plus Meezan funds in separate apps</div></div>
+    <div class="pain-item"><span>📝</span><div>Spreadsheets drift from reality — no live P&L</div></div>
+    <div class="pain-item"><span>🎯</span><div>Financial freedom date never calculated</div></div>
+    <div class="pain-item"><span>📡</span><div>No single offline view of true net worth</div></div>
+  </div>
+</div>
+
+<div class="slide" id="s3">
+  <div class="overline a1">The Solution</div>
+  <div class="headline a2">Ledger-first <span style="color:var(--orange)">Wealth OS</span></div>
+  <div class="sub a3">Transactions are truth. Dashboard is a view.</div>
+  <div class="stat-row a4">
+    <div class="stat"><div class="n">0</div><div class="l">Servers</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">Brokers</div></div>
+    <div class="stat"><div class="n">100%</div><div class="l">Offline</div></div>
+    <div class="stat"><div class="n">PWA</div><div class="l">Install</div></div>
+  </div>
+</div>
+
+<div class="slide" id="s4">
+  <div class="overline a1">Dashboard</div>
+  <div class="headline a2">Net Worth <span style="color:var(--orange)">Hero</span></div>
+  <div class="split a3">
+    <div class="terminal">
+      <div class="term-header">Dashboard · Live</div>
+      <div class="term-body">
+        <div class="nw-label">Total Net Worth</div>
+        <div class="nw-hero t-mono">₨ 24,847,320</div>
+        <div class="pnl-row">
+          <div class="pnl-box"><div class="nw-label">Today P&L</div><div class="pnl-val gain t-mono">+₨ 142,800</div></div>
+          <div class="pnl-box"><div class="nw-label">Today %</div><div class="pnl-val gain t-mono">+0.58%</div></div>
+        </div>
+        <div class="ticker-wrap"><div class="ticker">
+          <span>ENGROH <span class="gain">+2.4%</span></span><span>HBL <span class="gain">+1.1%</span></span>
+          <span>OGDC <span class="loss">-0.8%</span></span><span>LUCK <span class="gain">+3.2%</span></span>
+          <span>MIIETF <span class="gain">+0.3%</span></span><span>ENGROH <span class="gain">+2.4%</span></span>
+          <span>HBL <span class="gain">+1.1%</span></span><span>OGDC <span class="loss">-0.8%</span></span>
+        </div></div>
+      </div>
+    </div>
+    <div style="text-align:left;max-width:260px">
+      <div class="card a4" style="margin-bottom:8px"><h3>Hero net worth</h3><p>Tabular nums · Bloomberg density</p></div>
+      <div class="card a5"><h3>PSX ticker row</h3><p>Scrolling live symbols with green/red P&L</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s5">
+  <div class="overline a1">Portfolio</div>
+  <div class="headline a2">Holdings by <span style="color:var(--orange)">Custodian</span></div>
+  <div class="terminal a3" style="max-width:340px">
+    <div class="term-header">Portfolio</div>
+    <div class="term-body">
+      <div style="font-size:9px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:.08em">RAFI · 22 STOCKS</div>
+      <div class="holding"><span><span class="broker-tag">Rafi</span>ENGROH</span><span class="gain t-mono">+12.4%</span></div>
+      <div class="holding"><span><span class="broker-tag">Rafi</span>HBL</span><span class="gain t-mono">+8.1%</span></div>
+      <div style="font-size:9px;font-weight:700;color:var(--orange);margin:10px 0 6px;letter-spacing:.08em">AKD · 8 STOCKS</div>
+      <div class="holding"><span><span class="broker-tag">AKD</span>LUCK</span><span class="gain t-mono">+15.2%</span></div>
+      <div class="holding"><span><span class="broker-tag">AKD</span>OGDC</span><span class="loss t-mono">-2.3%</span></div>
+      <div style="font-size:9px;font-weight:700;color:var(--orange);margin:10px 0 6px;letter-spacing:.08em">MEEZAN · 7 FUNDS</div>
+      <div class="holding"><span><span class="broker-tag">Meezan</span>MIIETF</span><span class="gain t-mono">+6.8%</span></div>
+      <div class="holding"><span><span class="broker-tag">Meezan</span>MIIRF</span><span class="gain t-mono">+4.2%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s6">
+  <div class="overline a1">Transactions</div>
+  <div class="headline a2">FAB <span style="color:var(--orange)">Transaction Types</span></div>
+  <div class="terminal a3" style="max-width:300px">
+    <div class="term-header">+ Add Transaction</div>
+    <div class="term-body">
+      <div class="fab-types">
+        <span class="fab-type buy">Buy</span>
+        <span class="fab-type sell">Sell</span>
+        <span class="fab-type">Contribution</span>
+        <span class="fab-type">Salary</span>
+      </div>
+      <div style="margin-top:14px;font-size:10px;color:var(--muted);line-height:1.5">
+        Ledger engine recalculates cost basis, unrealised P&L, and portfolio weight automatically.
+      </div>
+    </div>
+  </div>
+  <div class="sub a4" style="margin-top:14px">Every buy, sell, contribution, salary → source of truth</div>
+</div>
+
+<div class="slide" id="s7">
+  <div class="overline a1">Financial Freedom</div>
+  <div class="headline a2">Freedom <span style="color:var(--orange)">Progress</span></div>
+  <div class="terminal a3" style="max-width:320px">
+    <div class="term-header">Income · Projection</div>
+    <div class="term-body">
+      <div class="nw-label">Target Annual Passive Income</div>
+      <div style="font-size:1.2rem;font-weight:700;margin-bottom:12px" class="t-mono">₨ 3,600,000</div>
+      <div class="nw-label">Progress to Freedom</div>
+      <div class="progress-track"><div class="progress-fill" style="width:34%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)">
+        <span class="t-mono">34%</span><span>~8.2 years at current rate</span>
+      </div>
+      <div style="margin-top:12px;padding:8px;background:var(--bg3);border-radius:8px;font-size:10px">
+        <span style="color:var(--gold)">🔥</span> Contribution streak: <strong>14 months</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s8">
+  <div class="overline a1">Live Prices</div>
+  <div class="headline a2">Yahoo via <span style="color:var(--orange)">Cloudflare Proxy</span></div>
+  <div class="flow a3" style="margin-top:16px">
+    <div class="flow-box">Deploy Worker</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Paste URL in Settings</div><div class="flow-arrow">→</div>
+    <div class="flow-box">PSX symbols fetch</div><div class="flow-arrow">→</div>
+    <div class="flow-box" style="border-color:rgba(255,107,53,0.4);color:var(--orange)">Live dashboard</div>
+  </div>
+  <div class="sub a4" style="margin-top:16px">Bypasses CORS · fallback prices when proxy unset · 6-hour cache</div>
+</div>
+
+<div class="slide" id="s9">
+  <div class="overline a1">Insights</div>
+  <div class="headline a2">Wealth <span style="color:var(--orange)">Intelligence</span></div>
+  <div class="grid2 a3">
+    <div class="card"><h3>⚠️ Concentration risk</h3><p>Single-stock weight warnings — PK portfolios often overweight 2–3 names</p></div>
+    <div class="card"><h3>🔥 Contribution streak</h3><p>Monthly investment gamification in insights</p></div>
+    <div class="card"><h3>📊 Sector allocation</h3><p>Breakdown by industry and custodian</p></div>
+    <div class="card"><h3>📈 Net worth trend</h3><p>Historical trajectory from ledger truth</p></div>
+  </div>
+</div>
+
+<div class="slide" id="s10">
+  <div class="overline a1">Pre-loaded</div>
+  <div class="headline a2">Real <span style="color:var(--orange)">Scaffold</span></div>
+  <div class="stat-row a3">
+    <div class="stat"><div class="n">22</div><div class="l">Rafi stocks</div></div>
+    <div class="stat"><div class="n">8</div><div class="l">AKD stocks</div></div>
+    <div class="stat"><div class="n">7</div><div class="l">Meezan funds</div></div>
+  </div>
+  <div class="sub a4" style="margin-top:14px">Fork and replace with your portfolio in minutes via Settings or holdings.js</div>
+</div>
+
+<div class="slide" id="s11">
+  <div class="overline a1">Navigation</div>
+  <div class="headline a2">Five <span style="color:var(--orange)">Tabs</span></div>
+  <div class="grid3 a3">
+    <div class="card"><h3>📊 Dashboard</h3><p>Net worth, P&L, insights</p></div>
+    <div class="card"><h3>💼 Portfolio</h3><p>Holdings by broker</p></div>
+    <div class="card"><h3>📒 Transactions</h3><p>Buy, sell, ledger</p></div>
+    <div class="card"><h3>💰 Income</h3><p>Salary, freedom tracker</p></div>
+    <div class="card"><h3>⚙️ Settings</h3><p>Proxy, export, reset</p></div>
+  </div>
+</div>
+
+<div class="slide" id="s12">
+  <div class="overline a1">Design</div>
+  <div class="headline a2">Terminal aesthetics. <span style="color:var(--orange)">Consumer simplicity.</span></div>
+  <div class="stat-row a3">
+    <div class="stat"><div class="n" style="font-size:1rem">#0B0E11</div><div class="l">Background</div></div>
+    <div class="stat"><div class="n" style="font-size:1rem">#FF6B35</div><div class="l">Accent</div></div>
+    <div class="stat"><div class="n" style="font-size:1rem;color:var(--green)">#0ECB81</div><div class="l">Gain</div></div>
+    <div class="stat"><div class="n" style="font-size:1rem;color:var(--red)">#F6465D</div><div class="l">Loss</div></div>
+  </div>
+  <div class="sub a4">430px max width · safe area nav · tabular nums · iPhone-native feel</div>
+</div>
+
+<div class="slide" id="s13">
+  <div class="overline a1">Architecture</div>
+  <div class="headline a2">Vanilla JS <span style="color:var(--orange)">PWA</span></div>
+  <div class="grid2 a3" style="text-align:left;font-family:ui-monospace,Menlo,monospace;font-size:11px">
+    <div class="card"><h3>app.js</h3><p>Router, splash, install hint</p></div>
+    <div class="card"><h3>engines/ledger</h3><p>Cost basis, P&L recalc</p></div>
+    <div class="card"><h3>engines/prices</h3><p>Yahoo + proxy fetch</p></div>
+    <div class="card"><h3>worker/</h3><p>Cloudflare PSX proxy</p></div>
+  </div>
+</div>
+
+<div class="slide" id="s14">
+  <div class="overline a1">Privacy</div>
+  <div class="headline a2">Your ledger. <span style="color:var(--orange)">Your device.</span></div>
+  <div class="pain a3">
+    <div class="pain-item"><span>💾</span><div>localStorage only — no accounts</div></div>
+    <div class="pain-item"><span>🔑</span><div>No brokerage credentials stored</div></div>
+    <div class="pain-item"><span>🌐</span><div>Optional Worker sees only public ticker URLs</div></div>
+    <div class="pain-item"><span>📤</span><div>Export JSON anytime before iOS cleanup</div></div>
+  </div>
+</div>
+
+<div class="slide" id="s15">
+  <div class="overline a1">Onboarding</div>
+  <div class="headline a2">Setup in <span style="color:var(--orange)">Minutes</span></div>
+  <div class="flow a3">
+    <div class="flow-box">Set income</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Freedom target</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Review holdings</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Dashboard</div>
+  </div>
+</div>
+
+<div class="slide" id="s16">
+  <div class="overline a1">Who It's For</div>
+  <div class="headline a2">Pakistani investors tracking <span style="color:var(--orange)">PSX + funds</span></div>
+  <div class="grid2 a3">
+    <div class="card"><h3>📈 PSX equity holders</h3><p>Rafi, AKD multi-broker portfolios</p></div>
+    <div class="card"><h3>🕌 Islamic fund investors</h3><p>Meezan mutual funds with NAV tracking</p></div>
+    <div class="card"><h3>🎯 FI planners</h3><p>Freedom projection at contribution rate</p></div>
+    <div class="card"><h3>🔒 Privacy-first</h3><p>No brokerage login — ledger you control</p></div>
+  </div>
+</div>
+
+<div class="slide" id="s17">
+  <div class="overline a1">iPhone</div>
+  <div class="headline a2">Add to <span style="color:var(--orange)">Home Screen</span></div>
+  <div class="sub a3">Safari → Share → Add to Home Screen · feels like a native finance app · works offline with last-known prices</div>
+</div>
+
+<div class="slide" id="s18">
+  <div class="overline a1">Built By</div>
+  <div class="headline a2">Shamikh <span style="color:var(--orange)">Ahmed</span></div>
+  <div class="sub a3" style="font-style:italic">"Know your net worth. Own your ledger. Reach financial freedom."</div>
+  <div class="sub a4">Karachi · Part of the OS family</div>
+</div>
+
+<div class="slide" id="s19">
+  <div class="overline a1">Quote</div>
+  <div class="headline a2" style="font-size:clamp(1.2rem,3vw,1.8rem);max-width:600px;line-height:1.4">
+    <span style="color:var(--orange)">Transactions are truth.</span> Dashboard is a view.
+  </div>
+  <div class="sub a3">Reconcile via Transactions tab — ledger is always source of truth</div>
+</div>
+
+<div class="slide" id="s20">
+  <div class="overline a1">Live Now</div>
+  <div class="headline a2" style="font-size:clamp(2rem,4.5vw,3.2rem)">Open StundsOS</div>
+  <div class="sub a3">Install on iPhone · Configure PSX proxy · Track your freedom</div>
+  <div class="a4" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:20px 0">
+    <a class="link-btn link-orange" href="https://shamikhahmed.github.io/StundsOS/" target="_blank" rel="noopener">📊 Open StundsOS</a>
+    <a class="link-btn" style="background:var(--bg2);border:1px solid var(--bg4);color:var(--text)" href="pitch.html">Pitch Deck</a>
+    <a class="link-btn" style="background:var(--bg2);border:1px solid var(--bg4);color:var(--text)" href="docs/GUIDE.md">Guide</a>
+  </div>
+  <div class="a5" style="font-size:11px;color:var(--dim)">© 2026 Shamikh Ahmed · shamikhahmed.github.io/StundsOS</div>
+</div>
+
+</div>
 <script>
-const total=7;let cur=0;
-const slides=document.querySelectorAll('.slide'),progress=document.getElementById('progress'),counter=document.getElementById('counter'),dotsEl=document.getElementById('dots');
-for(let i=0;i<total;i++){const d=document.createElement('div');d.className='dot';d.onclick=()=>go(i);dotsEl.appendChild(d);}
-function go(n){if(n===cur)return;slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,n));slides[cur].classList.add('active');progress.style.width=((cur+1)/total*100)+'%';counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(total).padStart(2,'0');document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));}
-document.addEventListener('keydown',e=>{if(['ArrowRight','ArrowDown',' '].includes(e.key)){e.preventDefault();go(cur+1);}if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();go(cur-1);}});
-let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
-document.addEventListener('touchend',e=>{const dx=tx-e.changedTouches[0].clientX;if(Math.abs(dx)>50)go(dx>0?cur+1:cur-1);});
-document.addEventListener('click',e=>{if(['BUTTON','A'].includes(e.target.tagName))return;if(e.clientX>innerWidth/2)go(cur+1);else go(cur-1);});
-function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();}
-go(0);
+(function(){
+var current=0,total=20,slides=Array.from(document.querySelectorAll('.slide')),progressEl=document.getElementById('progress'),counterEl=document.getElementById('counter'),anim=false;
+function goTo(n){if(anim||n<0||n>=total||n===current)return;anim=true;var out=slides[current],inn=slides[n],fwd=n>current;
+inn.style.transition='none';inn.style.transform=fwd?'translateX(100%)':'translateX(-100%)';inn.style.opacity='0';inn.classList.remove('active');inn.getBoundingClientRect();inn.style.transition='';
+out.style.transform=fwd?'translateX(-100%)':'translateX(100%)';out.style.opacity='0';inn.style.transform='translateX(0)';inn.style.opacity='1';inn.classList.add('active');current=n;
+setTimeout(function(){out.classList.remove('active');out.style.transform='';out.style.opacity='';anim=false},520);
+progressEl.style.width=((current+1)/total*100)+'%';counterEl.textContent=(current+1)+' / '+total}
+function next(){goTo(current+1)}function prev(){goTo(current-1)}
+window.next=next;window.prev=prev;
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next()}if(e.key==='ArrowLeft'){e.preventDefault();prev()}if(e.key==='f'||e.key==='F')toggleFS()});
+document.getElementById('deck').addEventListener('click',function(e){if(e.target.closest('a,button'))return;if(e.clientX>innerWidth/2)next();else prev()});
+var tx=0;document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){if(dx<0)next();else prev()}},{passive:true});
+function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.()}
+document.getElementById('fullscreen-btn').addEventListener('click',toggleFS);
+progressEl.style.width=(1/total*100)+'%';
+})();
 </script>
 </body>
 </html>

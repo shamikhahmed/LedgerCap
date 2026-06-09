@@ -2,42 +2,79 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>StundsOS — Pitch Deck</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--accent:#FF6B35;--accent2:#30D158;--muted:rgba(255,255,255,.55);--dim:rgba(255,255,255,.25)}
+:root{--bg:#0B0E11;--bg2:#12161C;--bg3:#1E2329;--bg4:#2B3139;
+  --orange:#FF6B35;--green:#0ECB81;--red:#F6465D;--gold:#F0B90B;
+  --text:#EAECEF;--muted:#848E9C;--dim:#5E6673;font-size:16px}
 html{scroll-behavior:smooth}
-body{font-family:Inter,-apple-system,sans-serif;background:#000;color:#fff;overflow-x:hidden}
-.slide{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:72px 40px;position:relative;text-align:center}
+body{font-family:Inter,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;font-variant-numeric:tabular-nums}
+.slide{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:72px 40px;position:relative;text-align:center;overflow:hidden}
 @media(max-width:600px){.slide{padding:64px 22px}}
-.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s,transform .8s}
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
 .reveal.visible{opacity:1;transform:none}
+.reveal-left{opacity:0;transform:translateX(-50px);transition:opacity .8s,transform .8s}
+.reveal-left.visible{opacity:1;transform:none}
+.reveal-right{opacity:0;transform:translateX(50px);transition:opacity .8s,transform .8s}
+.reveal-right.visible{opacity:1;transform:none}
+.delay-1{transition-delay:.1s}.delay-2{transition-delay:.2s}.delay-3{transition-delay:.35s}.delay-4{transition-delay:.5s}
 #nav-dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:8px}
-.nav-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer}
-.nav-dot.active{background:#fff;transform:scale(1.3)}
-#export-btn{position:fixed;top:16px;right:16px;z-index:100;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:8px 16px;border-radius:99px;font-size:12px;cursor:pointer;font-family:inherit}
+.nav-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.2);cursor:pointer;transition:all .3s}
+.nav-dot.active{background:var(--orange);transform:scale(1.4)}
+#export-btn{position:fixed;top:16px;right:16px;z-index:100;background:rgba(255,255,255,.06);border:1px solid var(--bg4);color:var(--text);padding:8px 16px;border-radius:99px;font-size:12px;cursor:pointer;font-family:inherit}
 h1{font-size:clamp(3rem,12vw,7rem);font-weight:900;letter-spacing:-.05em;line-height:1}
 h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;margin-bottom:1rem}
-.sub{color:var(--muted);font-size:clamp(1rem,2.2vw,1.2rem);max-width:560px;line-height:1.6;margin:0 auto 2rem}
+.sub{color:var(--muted);font-size:clamp(1rem,2.2vw,1.2rem);max-width:580px;line-height:1.7;margin:0 auto 2rem}
 .badges{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.badge{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:99px;padding:10px 18px;font-size:.85rem;font-weight:600}
-.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:720px;width:100%;margin-top:2rem;text-align:left}
+.badge{background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.25);border-radius:99px;padding:10px 18px;font-size:.85rem;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:760px;width:100%;margin-top:2rem;text-align:left}
 @media(max-width:600px){.cards{grid-template-columns:1fr}}
-.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:20px}
+.card{background:var(--bg2);border:1px solid var(--bg4);border-radius:14px;padding:20px;transition:border-color .3s,transform .3s}
+.card:hover{border-color:rgba(255,107,53,.4);transform:translateY(-4px)}
 .card h3{font-size:1rem;margin-bottom:.4rem}
 .card p{font-size:.85rem;color:var(--muted);line-height:1.55}
 .btn-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:2rem}
-.btn{padding:16px 28px;border-radius:99px;font-weight:700;font-size:.95rem;text-decoration:none;border:none;cursor:pointer;font-family:inherit}
-.btn-p{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 28px color-mix(in srgb,var(--accent) 40%,transparent)}
-.btn-s{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff}
-#s1{background:radial-gradient(ellipse 70% 60% at 50% 40%,color-mix(in srgb,var(--accent) 25%,transparent),#000)}
-#s2{background:#0a0a0a}
-#s3{background:radial-gradient(ellipse 80% 60% at 30% 70%,color-mix(in srgb,var(--accent2) 20%,transparent),#050505)}
-#s4{background:#000}
-#s5{background:radial-gradient(ellipse 70% 50% at 50% 50%,color-mix(in srgb,var(--accent) 18%,transparent),#000)}
-@media print{#nav-dots,#export-btn{display:none!important}.slide{page-break-after:always;min-height:100vh}.reveal{opacity:1!important;transform:none!important}}
+.btn{padding:16px 28px;border-radius:10px;font-weight:700;font-size:.95rem;text-decoration:none;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
+.btn-p{background:var(--orange);color:#fff;box-shadow:0 8px 28px rgba(255,107,53,0.3)}
+.btn-s{background:var(--bg2);border:1px solid var(--bg4);color:var(--text)}
+.section-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-bottom:2rem}
+.gain{color:var(--green);font-weight:700}.loss{color:var(--red);font-weight:700}
+/* terminal mock */
+.terminal{width:min(100%,340px);border-radius:14px;overflow:hidden;border:1px solid var(--bg4);
+  box-shadow:0 20px 50px rgba(0,0,0,0.4);text-align:left;margin:0 auto;background:var(--bg)}
+.term-h{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bg4);
+  font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.term-b{padding:14px}
+.nw{font-size:2rem;font-weight:800;letter-spacing:-.03em}
+.pnl{display:flex;gap:10px;margin:10px 0}
+.pnl-b{flex:1;background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;padding:8px}
+.pnl-l{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.hold{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bg4);font-size:11px}
+.hold:last-child{border-bottom:none}
+.btag{font-size:7px;font-weight:700;padding:2px 5px;border-radius:3px;background:var(--bg4);color:var(--orange);margin-right:4px}
+.ticker-o{overflow:hidden;border-top:1px solid var(--bg4);padding:5px 0;margin-top:8px}
+.ticker{display:flex;gap:16px;white-space:nowrap;font-size:9px;font-weight:600;animation:ticker 18s linear infinite}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.fab-t{display:flex;flex-wrap:wrap;gap:5px}
+.fab-t span{padding:5px 8px;border-radius:5px;font-size:8px;font-weight:700;background:var(--bg3);border:1px solid var(--bg4)}
+.fab-t .buy{border-color:rgba(14,203,129,.4);color:var(--green)}
+.fab-t .sell{border-color:rgba(246,70,93,.4);color:var(--red)}
+.prog{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:6px}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--orange),var(--gold));width:34%}
+.steps{display:flex;flex-wrap:wrap;justify-content:center;max-width:800px}
+.step{flex:1;min-width:180px;padding:20px 14px;text-align:center}
+.step-n{font-size:2.5rem;font-weight:900;color:var(--orange);opacity:.25}
+.trust{max-width:560px;margin:2rem auto 0;padding:20px 24px;border-radius:14px;
+  background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2);font-weight:600;line-height:1.6}
+.persona-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:720px;width:100%}
+@media(max-width:600px){.persona-grid{grid-template-columns:1fr}}
+#s1{background:var(--bg)}
+#s1-grad{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(255,107,53,.12) 0%,transparent 70%)}
+.s1-text{font-size:clamp(3.5rem,12vw,8rem);font-weight:900;letter-spacing:-.05em;color:var(--text)}
+@media print{#nav-dots,#export-btn{display:none!important}.slide{page-break-after:always;min-height:100vh}.reveal,.reveal-left,.reveal-right{opacity:1!important;transform:none!important}}
 </style>
 </head>
 <body>
@@ -45,66 +82,221 @@ h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;ma
 <button id="export-btn" onclick="window.print()">⬇ Export PDF</button>
 
 <section class="slide" id="s1">
-  <div>
-    <div style="font-size:4rem;margin-bottom:.5rem" class="reveal">📈</div>
-    <h1 class="reveal delay-1">StundsOS</h1>
+  <div id="s1-grad"></div>
+  <div style="position:relative;z-index:2">
+    <div class="reveal" style="font-size:3.5rem;margin-bottom:.5rem">📊</div>
+    <h1 class="s1-text reveal delay-1">StundsOS</h1>
     <p class="sub reveal delay-2">Personal Wealth Operating System</p>
-    <p class="sub reveal delay-3" style="font-size:.9rem">PSX · Meezan funds · Net worth · Financial freedom</p>
+    <p class="sub reveal delay-3" style="font-size:.9rem">PSX · Meezan Funds · Net Worth · Financial Freedom</p>
     <p class="reveal delay-4" style="color:var(--dim);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase">Scroll to explore ↓</p>
   </div>
 </section>
 
 <section class="slide" id="s2">
   <div style="max-width:800px;width:100%">
-    <h2 class="reveal">The problem</h2>
-    <p class="sub reveal delay-1">Pakistani wealth is split across PSX, funds, gold, and spreadsheets.</p>
+    <h2 class="reveal">Managing Pakistani wealth is <span style="color:var(--orange)">broken.</span></h2>
+    <p class="sub reveal delay-1">PSX equities, Islamic funds, and salary — scattered across brokers and spreadsheets.</p>
     <div class="cards">
-      <div class="card reveal delay-1"><h3>Pain 1</h3><p>No single PSX + Islamic fund view</p></div><div class="card reveal delay-2"><h3>Pain 2</h3><p>Transactions scattered in notes</p></div><div class="card reveal delay-3"><h3>Pain 3</h3><p>Freedom date never calculated</p></div>
+      <div class="card reveal-left delay-1"><h3>🏦 Multi-broker chaos</h3><p>Rafi, AKD, Meezan — no unified view.</p></div>
+      <div class="card reveal-right delay-2"><h3>📁 Spreadsheet drift</h3><p>Manual sheets never match live reality.</p></div>
+      <div class="card reveal-left delay-3"><h3>📡 No live PSX</h3><p>CORS blocks direct price feeds on mobile.</p></div>
+      <div class="card reveal-right delay-4"><h3>🎯 Freedom unknown</h3><p>Months-to-FI never calculated.</p></div>
     </div>
   </div>
 </section>
 
 <section class="slide" id="s3">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal">Introducing StundsOS</h2>
-    <p class="sub reveal delay-1">Bloomberg-terminal clarity for your personal ledger — offline first.</p>
-    <div class="badges reveal delay-2">
-      <span class="badge">📱 PWA</span><span class="badge">🔒 Private</span><span class="badge">✈️ Offline</span>
-    </div>
+  <div style="max-width:700px;width:100%">
+    <h2 class="reveal section-title" id="s3-cycler">Your spreadsheet is lying to you.</h2>
+    <p class="sub reveal delay-2" style="color:var(--orange);font-weight:700">There had to be a better way.</p>
   </div>
 </section>
 
 <section class="slide" id="s4">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Core pillars</h2>
-    <div class="cards">
-      <div class="card reveal delay-1"><div style="font-size:1.8rem;margin-bottom:.5rem">📒</div><h3>Ledger</h3><p>Every buy, sell, dividend logged</p></div><div class="card reveal delay-2"><div style="font-size:1.8rem;margin-bottom:.5rem">💼</div><h3>Portfolio</h3><p>Holdings, allocation, P&amp;L</p></div><div class="card reveal delay-3"><div style="font-size:1.8rem;margin-bottom:.5rem">🇵🇰</div><h3>PSX</h3><p>Live prices via proxy worker</p></div><div class="card reveal delay-4"><div style="font-size:1.8rem;margin-bottom:.5rem">🎯</div><h3>Freedom</h3><p>FI number &amp; runway tracker</p></div>
-    </div>
+  <div style="max-width:720px;width:100%">
+    <div class="reveal" style="font-size:clamp(1.1rem,2.8vw,1.6rem);font-weight:700;line-height:1.5;margin-bottom:.75rem">What if <span style="color:var(--orange)">transactions were truth</span> — and the dashboard just viewed them?</div>
+    <div class="reveal delay-2" style="font-size:clamp(1.1rem,2.8vw,1.6rem);font-weight:700;line-height:1.5;margin-bottom:.75rem">What if PSX prices were <span class="gain">live on your iPhone</span> — via a tiny proxy?</div>
+    <div class="reveal delay-3" style="font-size:clamp(1.1rem,2.8vw,1.6rem);font-weight:700;line-height:1.5">What if financial freedom had a <span style="color:var(--gold)">countdown</span>?</div>
   </div>
 </section>
 
 <section class="slide" id="s5">
+  <div style="max-width:800px;width:100%">
+    <h1 class="reveal" style="font-size:clamp(3rem,10vw,5.5rem)">StundsOS</h1>
+    <p class="sub reveal delay-1">Bloomberg density · iPhone feel · Offline-first</p>
+    <div class="badges reveal delay-2">
+      <span class="badge">📱 PWA</span><span class="badge">🔒 Private</span><span class="badge">📴 Offline</span><span class="badge">🇵🇰 PSX</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s6">
+  <div style="max-width:900px;width:100%">
+    <h2 class="reveal section-title">Ledger-first by design.</h2>
+    <div class="steps">
+      <div class="step reveal-left delay-1"><div class="step-n">01</div><div style="font-size:1.6rem">📒</div><h3>Log</h3><p>Buy · Sell · Contribution · Salary</p></div>
+      <div class="step reveal delay-2"><div class="step-n">02</div><div style="font-size:1.6rem">⚙️</div><h3>Recalculate</h3><p>Cost basis · P&L · weights</p></div>
+      <div class="step reveal-right delay-3"><div class="step-n">03</div><div style="font-size:1.6rem">📊</div><h3>View</h3><p>Dashboard · insights · freedom</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s7">
+  <div style="max-width:900px;width:100%">
+    <h2 class="reveal section-title">Dashboard — net worth hero.</h2>
+    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem">
+      <div class="term-h">Dashboard · Live</div>
+      <div class="term-b">
+        <div class="pnl-l">Total Net Worth</div>
+        <div class="nw">₨ 24,847,320</div>
+        <div class="pnl">
+          <div class="pnl-b"><div class="pnl-l">Today P&L</div><div class="gain">+₨ 142,800</div></div>
+          <div class="pnl-b"><div class="pnl-l">Today %</div><div class="gain">+0.58%</div></div>
+        </div>
+        <div class="ticker-o"><div class="ticker">
+          <span>ENGROH <span class="gain">+2.4%</span></span><span>HBL <span class="gain">+1.1%</span></span>
+          <span>OGDC <span class="loss">-0.8%</span></span><span>LUCK <span class="gain">+3.2%</span></span>
+          <span>ENGROH <span class="gain">+2.4%</span></span><span>HBL <span class="gain">+1.1%</span></span>
+        </div></div>
+      </div>
+    </div>
+    <p class="sub reveal delay-2">Green <span class="gain">#0ECB81</span> · Red <span class="loss">#F6465D</span> · scrolling PSX ticker row</p>
+  </div>
+</section>
+
+<section class="slide" id="s8">
+  <div style="max-width:800px;width:100%">
+    <h2 class="reveal section-title">Portfolio by custodian.</h2>
+    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem">
+      <div class="term-h">Holdings</div>
+      <div class="term-b">
+        <div style="font-size:8px;font-weight:700;color:var(--orange);margin-bottom:4px">RAFI · 22 STOCKS</div>
+        <div class="hold"><span><span class="btag">Rafi</span>ENGROH</span><span class="gain">+12.4%</span></div>
+        <div class="hold"><span><span class="btag">Rafi</span>HBL</span><span class="gain">+8.1%</span></div>
+        <div style="font-size:8px;font-weight:700;color:var(--orange);margin:8px 0 4px">AKD · 8 STOCKS</div>
+        <div class="hold"><span><span class="btag">AKD</span>LUCK</span><span class="gain">+15.2%</span></div>
+        <div style="font-size:8px;font-weight:700;color:var(--orange);margin:8px 0 4px">MEEZAN · 7 FUNDS</div>
+        <div class="hold"><span><span class="btag">Meezan</span>MIIETF</span><span class="gain">+6.8%</span></div>
+      </div>
+    </div>
+    <div class="badges reveal delay-2">
+      <span class="badge">Rafi PSX</span><span class="badge">AKD PSX</span><span class="badge">Meezan Islamic</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s9">
+  <div style="max-width:800px;width:100%">
+    <h2 class="reveal section-title">Transaction FAB types.</h2>
+    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem;max-width:280px">
+      <div class="term-h">+ Add Transaction</div>
+      <div class="term-b">
+        <div class="fab-t">
+          <span class="buy">Buy</span><span class="sell">Sell</span>
+          <span>Contribution</span><span>Salary</span>
+        </div>
+      </div>
+    </div>
+    <div class="cards reveal delay-2">
+      <div class="card"><h3>Buy / Sell</h3><p>Shares and fund units with auto cost basis.</p></div>
+      <div class="card"><h3>Contribution</h3><p>Monthly investment tracking for streaks.</p></div>
+      <div class="card"><h3>Salary</h3><p>Income log feeds freedom projections.</p></div>
+      <div class="card"><h3>Ledger engine</h3><p>Recalculates portfolio totals on every entry.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s10">
+  <div style="max-width:800px;width:100%">
+    <h2 class="reveal section-title">Financial freedom progress.</h2>
+    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem;max-width:300px">
+      <div class="term-h">Freedom Tracker</div>
+      <div class="term-b">
+        <div class="pnl-l">Target Passive Income</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:10px">₨ 3,600,000 / yr</div>
+        <div class="pnl-l">Progress</div>
+        <div class="prog"><div class="prog-f"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--muted)">
+          <span>34%</span><span>~8.2 years</span>
+        </div>
+        <div style="margin-top:10px;font-size:10px"><span style="color:var(--gold)">🔥</span> 14-month contribution streak</div>
+      </div>
+    </div>
+    <p class="sub reveal delay-2">Set target · log salary · watch months-to-freedom shrink</p>
+  </div>
+</section>
+
+<section class="slide" id="s11">
+  <div style="max-width:800px;width:100%">
+    <h2 class="reveal section-title">Live PSX prices.</h2>
+    <div class="cards">
+      <div class="card reveal delay-1"><h3>☁️ Cloudflare Worker</h3><p>Deploy from worker/ — bypasses CORS for Yahoo Finance.</p></div>
+      <div class="card reveal delay-2"><h3>⚙️ Settings URL</h3><p>Paste proxy endpoint once — prices refresh on load.</p></div>
+      <div class="card reveal delay-3"><h3>🗺️ Symbol map</h3><p>ENGROH.KA and PSX tickers mapped in config.js.</p></div>
+      <div class="card reveal delay-4"><h3>📴 Fallback</h3><p>Last-known prices when offline or proxy unset.</p></div>
+    </div>
+    <div class="trust reveal delay-4">Worker sees only public ticker URLs. No brokerage credentials. No accounts.</div>
+  </div>
+</section>
+
+<section class="slide" id="s12">
+  <div style="max-width:800px;width:100%">
+    <h2 class="reveal section-title">Built for Pakistani investors.</h2>
+    <div class="persona-grid">
+      <div class="card reveal-left delay-1"><h3>📈 PSX holders</h3><p>Multi-broker equity portfolios with live P&L.</p></div>
+      <div class="card reveal-right delay-2"><h3>🕌 Fund investors</h3><p>Meezan Islamic mutual funds alongside stocks.</p></div>
+      <div class="card reveal-left delay-3"><h3>🎯 FI planners</h3><p>Freedom projection at your contribution rate.</p></div>
+      <div class="card reveal-right delay-4"><h3>🔒 Privacy-first</h3><p>Ledger on device — export JSON anytime.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s13">
   <div style="max-width:700px;width:100%">
-    <h2 class="reveal">Your StundsOS awaits.</h2>
-    <p class="sub reveal delay-1">Investors tracking PSX, funds, and path to financial independence.</p>
-    <div class="btn-row reveal delay-2">
-      <a class="btn btn-p" href="https://shamikhahmed.github.io/StundsOS/" target="_blank" rel="noopener">Open StundsOS</a>
+    <div style="width:100px;height:100px;border-radius:50%;background:var(--bg3);border:2px solid var(--orange);
+      display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 1.5rem" class="reveal">SA</div>
+    <h2 class="reveal delay-1">Shamikh Ahmed</h2>
+    <p class="sub reveal delay-2" style="font-style:italic;border-left:3px solid var(--orange);padding-left:16px;text-align:left">
+      "I built StundsOS because Pakistani wealth is split across brokers, funds, and spreadsheets — and nothing gave me Bloomberg clarity on my own iPhone."
+    </p>
+    <p class="sub reveal delay-3" style="font-size:.9rem">Karachi · Part of the OS family</p>
+  </div>
+</section>
+
+<section class="slide" id="s14">
+  <div style="max-width:800px;width:100%;position:relative">
+    <div style="position:absolute;inset:-72px -40px;background:radial-gradient(ellipse 80% 80% at 50% 50%,rgba(255,107,53,.1) 0%,transparent 70%);pointer-events:none"></div>
+    <h1 class="reveal" style="font-size:clamp(2.2rem,7vw,4rem);position:relative">Know your net worth.</h1>
+    <p class="sub reveal delay-1" style="position:relative">Own your ledger. Reach financial freedom.</p>
+    <div class="btn-row reveal delay-2" style="position:relative">
+      <a class="btn btn-p" href="https://shamikhahmed.github.io/StundsOS/" target="_blank" rel="noopener">📊 Open StundsOS</a>
       <a class="btn btn-s" href="presentation.html">📊 Presentation</a>
       <a class="btn btn-s" href="landing.html">🌐 Landing</a>
       <a class="btn btn-s" href="docs/GUIDE.md">📖 Guide</a>
-      <a class="btn btn-s" href="https://github.com/shamikhahmed/StundsOS" target="_blank" rel="noopener">GitHub</a>
     </div>
-    <p class="reveal delay-3" style="margin-top:2.5rem;font-size:.75rem;color:var(--dim)">© 2026 Shamikh Ahmed · shamikhahmed.github.io/StundsOS/</p>
+    <p class="reveal delay-3" style="margin-top:2.5rem;font-size:.75rem;color:var(--dim);position:relative">© 2026 Shamikh Ahmed · shamikhahmed.github.io/StundsOS</p>
   </div>
 </section>
 
 <script>
-const slides=document.querySelectorAll('.slide'),nav=document.getElementById('nav-dots');
-slides.forEach((s,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i?'':' active');d.onclick=()=>s.scrollIntoView({behavior:'smooth'});nav.appendChild(d);});
-const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.querySelectorAll('.reveal').forEach(r=>r.classList.add('visible'));}),{threshold:.2});
-slides.forEach(s=>obs.observe(s));
-let cur=0;window.addEventListener('scroll',()=>{slides.forEach((s,i)=>{const r=s.getBoundingClientRect();if(Math.abs(r.top)<innerHeight/2)cur=i;});nav.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===cur));},{passive:true});
-document.querySelectorAll('#s1 .reveal').forEach(el=>setTimeout(()=>el.classList.add('visible'),80));
+const slides=document.querySelectorAll('.slide'),navDots=document.getElementById('nav-dots');
+let currentSlide=0;
+slides.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i===0?' active':'');d.onclick=()=>slides[i].scrollIntoView({behavior:'smooth'});navDots.appendChild(d)});
+function updateDots(){let idx=0;slides.forEach((s,i)=>{if(Math.abs(s.getBoundingClientRect().top)<innerHeight/2)idx=i});currentSlide=idx;navDots.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===idx))}
+addEventListener('scroll',updateDots,{passive:true});
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();if(currentSlide<slides.length-1)slides[currentSlide+1].scrollIntoView({behavior:'smooth'})}
+  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();if(currentSlide>0)slides[currentSlide-1].scrollIntoView({behavior:'smooth'})}
+});
+let ty=0;addEventListener('touchstart',e=>{ty=e.touches[0].clientY},{passive:true});
+addEventListener('touchend',e=>{const dy=ty-e.changedTouches[0].clientY;if(Math.abs(dy)>50){if(dy>0&&currentSlide<slides.length-1)slides[currentSlide+1].scrollIntoView({behavior:'smooth'});else if(dy<0&&currentSlide>0)slides[currentSlide-1].scrollIntoView({behavior:'smooth'})}},{passive:true});
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.15});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>obs.observe(el));
+const cyclerTexts=['Your spreadsheet is lying to you.','Broker apps don\'t show the full picture.','Freedom date? Nobody calculates it.','Your ledger deserves better.'];
+let ci=0,cyclerOn=false;
+const secObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&e.target.id==='s3'&&!cyclerOn){cyclerOn=true;setInterval(()=>{const el=document.getElementById('s3-cycler');if(!el)return;el.style.opacity='0';setTimeout(()=>{ci=(ci+1)%cyclerTexts.length;el.textContent=cyclerTexts[ci];el.style.opacity='1'},400)},2500)}}),{threshold:.3});
+slides.forEach(s=>secObs.observe(s));
+setTimeout(()=>document.querySelectorAll('#s1 .reveal').forEach(el=>el.classList.add('visible')),100);
 </script>
 </body>
 </html>
