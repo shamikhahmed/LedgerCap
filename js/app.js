@@ -41,14 +41,42 @@ const App = (() => {
     if (cleaned > 0) renderCurrent();
   }
 
+  function _hideSplash() {
+    const el = document.getElementById('splash');
+    const fill = document.getElementById('splash-fill');
+    if (fill) fill.style.width = '100%';
+    setTimeout(() => { if (el) el.classList.add('hide'); }, 1400);
+  }
+
+  function dismissInstall() {
+    localStorage.setItem('stundsOS_install_dismiss', '1');
+    const h = document.getElementById('install-hint');
+    if (h) h.classList.add('hidden');
+  }
+
+  function _maybeInstallHint() {
+    if (localStorage.getItem('stundsOS_install_dismiss')) return;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    if (!standalone && ios) {
+      const h = document.getElementById('install-hint');
+      if (h) h.classList.remove('hidden');
+    }
+  }
+
   function launch() {
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      document.documentElement.classList.add('standalone');
+    }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
     _validateAndCleanPrices();
+    _hideSplash();
     Navigation.init();
     Navigation.go('dashboard');
     _scheduleAutoRefresh();
+    _maybeInstallHint();
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) _scheduleAutoRefresh();
     });
@@ -370,7 +398,7 @@ const App = (() => {
 
   return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
-    deleteTransaction, renderCurrent };
+    deleteTransaction, renderCurrent, dismissInstall };
 })();
 window.App = App;
 

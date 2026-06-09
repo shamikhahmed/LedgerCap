@@ -10,10 +10,23 @@
   <meta name="apple-mobile-web-app-title" content="StundsOS">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon-512.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
   <title>StundsOS</title>
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <div id="splash" class="splash">
+    <div class="splash-mark">₨</div>
+    <div class="splash-title">StundsOS</div>
+    <div class="splash-sub">Personal Wealth OS</div>
+    <div class="splash-bar"><div id="splash-fill"></div></div>
+  </div>
+  <div id="install-hint" class="install-hint hidden">
+    <span>📲</span>
+    <p><strong>Install StundsOS</strong> — Safari → Share → <strong>Add to Home Screen</strong></p>
+    <button type="button" class="btn-ghost" onclick="App.dismissInstall()">✕</button>
+  </div>
   <div id="app">
     <div id="screens">
       <div id="screen-dashboard" class="screen active"></div>
