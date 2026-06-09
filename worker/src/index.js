@@ -36,6 +36,9 @@ export default {
         headers: { Accept: 'application/json, text/plain, */*', 'User-Agent': 'StundsOS-Proxy/1.0' },
       });
       const body = await res.text();
+      if (body.trim().startsWith('<!DOCTYPE') || body.trim().startsWith('<html')) {
+        return json({ error: 'PSX returned HTML (endpoint may have moved)', url: fetchUrl }, 404);
+      }
       return new Response(body, {
         status: res.status,
         headers: {

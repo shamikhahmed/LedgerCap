@@ -174,7 +174,7 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">StundsOS</div><span class="setting-value">v2.1</span></div>
+      <div class="setting-row"><div class="setting-label">StundsOS</div><span class="setting-value">v2.3</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
@@ -182,19 +182,18 @@ const Settings = (() => {
   }
 
   function _saveProfile() {
-    const salary = parseInt(document.getElementById('s-salary')?.value) || 150000;
-    const targetSIP = parseInt(document.getElementById('s-sip')?.value) || 75000;
-    const usdRate = parseInt(document.getElementById('s-usdrate')?.value) || 280;
-    const goldPricePerGram = parseInt(document.getElementById('s-goldprice')?.value) || 18000;
-    const currentState = State.get();
-    currentState.settings = { ...currentState.settings, salary, targetSIP, usdRate, goldPricePerGram };
-    try {
-      localStorage.setItem('stundsOS_v2', JSON.stringify(currentState));
-      App.showToast(`Saved: ₨${salary.toLocaleString()}/mo salary`, 'success');
-    } catch(e) {
-      App.showToast('Save failed: ' + e.message, 'error');
-      return;
-    }
+    const salary = parseInt(document.getElementById('s-salary')?.value, 10) || 150000;
+    const targetSIP = parseInt(document.getElementById('s-sip')?.value, 10) || 75000;
+    const usdRate = parseInt(document.getElementById('s-usdrate')?.value, 10) || 280;
+    const goldPricePerGram = parseInt(document.getElementById('s-goldprice')?.value, 10) || 18000;
+    State.update(s => {
+      s.settings.salary = salary;
+      s.settings.targetSIP = targetSIP;
+      s.settings.usdRate = usdRate;
+      s.settings.goldPricePerGram = goldPricePerGram;
+    });
+    App.showToast(`Saved: ₨${salary.toLocaleString()}/mo salary`, 'success');
+    App.renderCurrent();
     render();
   }
 
@@ -202,16 +201,15 @@ const Settings = (() => {
     const ret = parseFloat(document.getElementById('s-return')?.value) / 100 || 0.18;
     const inflation = parseFloat(document.getElementById('s-inflation')?.value) / 100 || 0.20;
     const pkrDep = parseFloat(document.getElementById('s-pkrdep')?.value) / 100 || 0.15;
-    const freedom = parseInt(document.getElementById('s-freedom')?.value) || 100000;
-    const currentState = State.get();
-    currentState.settings = { ...currentState.settings, targetReturn: ret, inflationRate: inflation, pkrDepreciationRate: pkrDep, freedomTarget: freedom };
-    try {
-      localStorage.setItem('stundsOS_v2', JSON.stringify(currentState));
-      App.showToast('Assumptions saved ✓', 'success');
-    } catch(e) {
-      App.showToast('Save failed: ' + e.message, 'error');
-      return;
-    }
+    const freedom = parseInt(document.getElementById('s-freedom')?.value, 10) || 100000;
+    State.update(s => {
+      s.settings.targetReturn = ret;
+      s.settings.inflationRate = inflation;
+      s.settings.pkrDepreciationRate = pkrDep;
+      s.settings.freedomTarget = freedom;
+    });
+    App.showToast('Assumptions saved ✓', 'success');
+    App.renderCurrent();
     render();
   }
 
@@ -262,6 +260,7 @@ const Settings = (() => {
     State.update(s => { s.settings.psxProxyUrl = url; });
     if (window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = url;
     App.showToast(url ? 'Proxy URL saved' : 'Proxy cleared — using public fallbacks', 'success');
+    App.renderCurrent();
     render();
   }
 

@@ -21,6 +21,32 @@ const Prices = (() => {
 
   const FUND_SYMBOLS = new Set(['KMIF','MAAF','MBF','MDAAF-MDYP','MIF','MIIF-B','MIIF-MMKA','MIIETF','MZNPETF']);
 
+  function _isHtml(text) {
+    const t = (text || '').trim();
+    return t.startsWith('<!DOCTYPE') || t.startsWith('<html') || t.startsWith('<HTML');
+  }
+
+  function _parseJson(text) {
+    if (!text || _isHtml(text)) return null;
+    try { return JSON.parse(text); } catch { return null; }
+  }
+
+  function _parseTimeseries(data, source) {
+    const rows = Array.isArray(data) ? data : (data?.data || []);
+    if (!Array.isArray(rows) || !rows.length) return null;
+    const last = rows[rows.length - 1];
+    if (!Array.isArray(last) || last.length < 2) return null;
+    const price = parseFloat(last[1]);
+    const prev = parseFloat(last[3] ?? rows[rows.length - 2]?.[1] ?? last[1]);
+    if (!price || price <= 0) return null;
+    return {
+      price,
+      prevClose: prev > 0 && prev !== price ? prev : price * 0.999,
+      source,
+      ts: Date.now(),
+    };
+  }
+
   async function _fetchAppProxy(url) {
     const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
     const base = (fromState || window.STUNDS_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
@@ -35,8 +61,10 @@ const Prices = (() => {
         const res = await fetch(u, { headers: { Accept: 'application/json' } });
         if (!res.ok) continue;
         const text = await res.text();
+        if (_isHtml(text)) continue;
         if (text.startsWith('{') && text.includes('"error"')) continue;
-        try { return JSON.parse(text); } catch { continue; }
+        const parsed = _parseJson(text);
+        if (parsed) return parsed;
       } catch { continue; }
     }
     return null;
@@ -53,6 +81,7 @@ const Prices = (() => {
         });
         if (!res.ok) continue;
         const text = await res.text();
+        if (_isHtml(text)) continue;
         let payload = text;
         try {
           const j = JSON.parse(text);
@@ -60,7 +89,9 @@ const Prices = (() => {
           else if (j && typeof j === 'object') return j;
         } catch {}
         if (typeof payload === 'string') {
-          try { return JSON.parse(payload); } catch { continue; }
+          const parsed = _parseJson(payload);
+          if (parsed) return parsed;
+          continue;
         }
         return payload;
       } catch {}
@@ -87,43 +118,29 @@ const Prices = (() => {
   async function fetchPsxSymbol(symbol) {
     const sym = symbol.toUpperCase();
     const urls = [
-      `https://dps.psx.com.pk/symbols/${sym}`,
-      `https://dps.psx.com.pk/timeseries/eod/${sym}`,
-      `https://dps.psx.com.pk/timeseries/int/${sym}`,
+      { url: `https://dps.psx.com.pk/timeseries/int/${sym}`, source: 'psx_int' },
+      { url: `https://dps.psx.com.pk/timeseries/eod/${sym}`, source: 'psx_eod' },
     ];
-    for (const url of urls) {
+    for (const { url, source } of urls) {
       const data = await _fetchRaw(url);
       if (!data) continue;
-      if (Array.isArray(data) && data.length) {
-        const last = data[data.length - 1];
-        const price = parseFloat(last.close || last.Close || last.c || last.price || 0);
-        const prev = parseFloat(last.open || last.ldcp || price);
-        if (price > 0) return { price, prevClose: prev || price * 0.999, source: 'psx_eod', ts: Date.now() };
-      }
-      const direct = _extractPrice(data.data || data.result || data);
-      if (direct) return { ...direct, symbol: sym, source: 'psx_symbol', ts: Date.now() };
-      const direct2 = _extractPrice(data);
-      if (direct2) return { ...direct2, symbol: sym, source: 'psx_symbol', ts: Date.now() };
+      const parsed = _parseTimeseries(data, source);
+      if (parsed) return { ...parsed, symbol: sym };
     }
     return null;
   }
 
   async function fetchPsxLive(symbols) {
     const results = {};
-    const psxUrl = 'https://dps.psx.com.pk/live';
-    const data = await _fetchRaw(psxUrl);
-    const items = Array.isArray(data) ? data : (data?.data || data?.result || []);
-    if (!items.length) return results;
-
-    symbols.forEach(sym => {
-      const item = items.find(i =>
-        (i.symbol || i.SYMBOL || i.Symbol || '').toUpperCase() === sym.toUpperCase()
-      );
-      const extracted = _extractPrice(item);
-      if (extracted) {
-        results[sym] = { ...extracted, symbol: sym, source: 'psx_live', ts: Date.now() };
-      }
-    });
+    const chunks = [];
+    for (let i = 0; i < symbols.length; i += 4) chunks.push(symbols.slice(i, i + 4));
+    for (const chunk of chunks) {
+      await Promise.all(chunk.map(async sym => {
+        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+        const parsed = _parseTimeseries(data, 'psx_int');
+        if (parsed) results[sym] = { ...parsed, symbol: sym };
+      }));
+    }
     return results;
   }
 
@@ -177,13 +194,12 @@ const Prices = (() => {
   }
 
   async function fetchKSE100() {
-    const psxIdx = await _fetchRaw('https://dps.psx.com.pk/indices');
-    if (psxIdx) {
-      const kse = Array.isArray(psxIdx) ? psxIdx.find(i => /kse-100|kse100/i.test(i.name || i.index || '')) : null;
-      if (kse) {
-        const val = parseFloat(kse.value || kse.current || kse.last || 0);
-        if (val > 0) return { value: val, change: parseFloat(kse.change || 0), changeP: parseFloat(kse.changePercent || 0), ts: Date.now() };
-      }
+    const psxIdx = await _fetchRaw('https://dps.psx.com.pk/timeseries/eod/KSE100');
+    const parsed = _parseTimeseries(psxIdx, 'psx_eod');
+    if (parsed) {
+      const change = parsed.price - parsed.prevClose;
+      const changeP = parsed.prevClose ? (change / parsed.prevClose) * 100 : 0;
+      return { value: parsed.price, change, changeP, prevClose: parsed.prevClose, ts: Date.now() };
     }
     const url = 'https://query2.finance.yahoo.com/v8/finance/chart/%5EKSE100?interval=1d&range=1d';
     const data = await _fetchRaw(url);
@@ -208,13 +224,13 @@ const Prices = (() => {
     const live = await fetchPsxLive(stockSyms);
     Object.assign(results, live);
     if (Object.keys(live).length > 0 && onProgress) {
-      onProgress(Object.keys(live).length, symbols.length, 'batch', true, 'psx_live');
+      onProgress(Object.keys(live).length, symbols.length, 'batch', true, 'psx_int');
     }
 
     let done = Object.keys(results).length;
     for (const symbol of stockSyms) {
       if (results[symbol]) {
-        if (onProgress) onProgress(++done, symbols.length, symbol, true, 'psx_live');
+        if (onProgress) onProgress(++done, symbols.length, symbol, true, results[symbol].source || 'psx_int');
         continue;
       }
       const psx = await fetchPsxSymbol(symbol);
@@ -280,6 +296,7 @@ const Prices = (() => {
   function sourceLabel(source) {
     const map = {
       psx_live: 'PSX Live',
+      psx_int: 'PSX Intraday',
       psx_symbol: 'PSX',
       psx_eod: 'PSX EOD',
       yahoo: 'Yahoo',

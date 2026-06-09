@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'stundsOS-v6';
+const CACHE = 'stundsOS-v7';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/app.css',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',

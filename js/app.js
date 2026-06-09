@@ -69,7 +69,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=6').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=7').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     const cfg = State.get('settings')?.psxProxyUrl;
@@ -179,14 +179,18 @@ const App = (() => {
       ...(window.MEEZAN_FUNDS || []).map(f => ({ symbol: f.symbol, broker: 'Meezan' })),
     ];
 
-    const typeOpts = ['BUY', 'SELL', 'DIVIDEND', 'SALARY', 'CONTRIBUTION'];
+    const typeOpts = ['BUY', 'SELL', 'DIVIDEND', 'SALARY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'];
     const selType = type || 'BUY';
-    const brokers = ['Rafi', 'AKD', 'Meezan', 'Other'];
+    const brokers = ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
+    const typeLabels = {
+      BUY: '📈 BUY', SELL: '📉 SELL', DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
+      CONTRIBUTION: '🏦 FUND', IPO_SUBSCRIBE: '🚀 IPO',
+    };
 
     const content = `
     <div id="tx-form">
       <div class="type-selector">
-        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${t === 'BUY' ? '📈 BUY' : t === 'SELL' ? '📉 SELL' : t === 'DIVIDEND' ? '💰 DIV' : t === 'SALARY' ? '💼 SALARY' : '🏦 FUND'}</div>`).join('')}
+        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings)}</div>
       <button class="btn-primary" onclick="App._submitTransaction()">Add Transaction</button>
@@ -290,6 +294,20 @@ const App = (() => {
         <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
     }
 
+    if (type === 'IPO_SUBSCRIBE') {
+      return `
+        <div class="field"><label class="field-label">Symbol</label><input class="field-input" id="tx-symbol" type="text" value="${symbol || ''}" placeholder="e.g. SYS" style="text-transform:uppercase;"></div>
+        <div class="field"><label class="field-label">Company Name</label><input class="field-input" id="tx-name" type="text" placeholder="Optional"></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Shares Applied</label><input class="field-input" id="tx-shares" type="number" placeholder="500"></div>
+          <div class="field"><label class="field-label">Amount Paid (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="50000"></div>
+        </div>
+        <div class="field"><label class="field-label">Subscription Broker</label><select class="field-select" id="tx-broker">${brokerOpts}</select></div>
+        <div class="field"><label class="field-label">Subscription Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
+        <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="IPO name, book-building, etc."></div>
+        <div style="padding:8px 12px;background:rgba(139,92,246,0.08);border-radius:var(--r-sm);font-size:0.72rem;color:var(--text2);line-height:1.4;">Shares stay pending until listed. When listed, holdings move to your <strong>CDC</strong> custody account.</div>`;
+    }
+
     if (type === 'CONTRIBUTION') {
       const fundOpts = (window.MEEZAN_FUNDS || []).map(f => `<option value="${f.symbol}"${symbol === f.symbol ? ' selected' : ''}>${f.symbol} — ${f.name}</option>`).join('');
       return `
@@ -354,6 +372,18 @@ const App = (() => {
       if (!sym || !amount) { showToast('Fill in symbol and amount', 'error'); return; }
       tx.symbol = sym;
       tx.amount = amount;
+    } else if (type === 'IPO_SUBSCRIBE') {
+      const sym = g('tx-symbol').toUpperCase();
+      const shares = parseFloat(g('tx-shares'));
+      const amount = parseFloat(g('tx-amount'));
+      const subBroker = g('tx-broker') || 'CDC';
+      if (!sym || !shares || !amount) { showToast('Fill in symbol, shares, and amount', 'error'); return; }
+      tx.symbol = sym;
+      tx.name = g('tx-name') || sym;
+      tx.shares = shares;
+      tx.amount = amount;
+      tx.broker = subBroker;
+      tx.status = 'pending';
     } else if (type === 'CONTRIBUTION') {
       const sym = g('tx-symbol');
       const units = parseFloat(g('tx-units'));
@@ -404,13 +434,59 @@ const App = (() => {
     renderCurrent();
   }
 
+  function openMarkIpoListed(id) {
+    const state = State.get();
+    const tx = (state.transactions || []).find(t => t.id === id);
+    if (!tx || tx.type !== 'IPO_SUBSCRIBE') return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const defaultPrice = tx.listingPrice || (tx.amount && tx.shares ? (tx.amount / tx.shares).toFixed(2) : '');
+
+    const content = `
+    <div style="padding:0 16px 16px;">
+      <div style="padding:10px 12px;background:rgba(139,92,246,0.08);border-radius:var(--r-sm);font-size:0.78rem;color:var(--text2);margin-bottom:14px;line-height:1.4;">
+        <strong>${tx.symbol}</strong> will move to <strong>CDC</strong> custody when listed.
+      </div>
+      <div class="field"><label class="field-label">Listing Date</label><input class="field-input" id="ipo-listed-date" type="date" value="${today}"></div>
+      <div class="field-row">
+        <div class="field"><label class="field-label">Allotted Shares</label><input class="field-input" id="ipo-allotted" type="number" value="${tx.shares || ''}" placeholder="0"></div>
+        <div class="field"><label class="field-label">Listing Price (₨)</label><input class="field-input" id="ipo-list-price" type="number" step="0.01" value="${defaultPrice}" placeholder="0.00"></div>
+      </div>
+      <button class="btn-primary" onclick="App._submitIpoListed('${id}')">Mark as Listed → CDC</button>
+    </div>`;
+
+    openBottomSheet('ipo-list-sheet', `🚀 List ${tx.symbol}`, content);
+  }
+
+  function _submitIpoListed(id) {
+    const listedDate = document.getElementById('ipo-listed-date')?.value;
+    const allottedShares = parseFloat(document.getElementById('ipo-allotted')?.value);
+    const listingPrice = parseFloat(document.getElementById('ipo-list-price')?.value);
+    if (!listedDate || !allottedShares || !listingPrice) {
+      showToast('Fill in listing date, shares, and price', 'error');
+      return;
+    }
+    const ok = State.updateTransaction(id, {
+      status: 'listed',
+      listedDate,
+      allottedShares,
+      listingPrice,
+      broker: Ledger.CDC_BROKER,
+    });
+    if (!ok) { showToast('Could not update IPO', 'error'); return; }
+    const sym = State.get().transactions.find(t => t.id === id)?.symbol || 'IPO';
+    closeBottomSheet();
+    showToast(`${sym} listed — moved to CDC`, 'success');
+    renderCurrent();
+  }
+
   function renderCurrent() {
     Navigation.go(Navigation.current(), true);
   }
 
   return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
-    deleteTransaction, renderCurrent, dismissInstall };
+    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall };
 })();
 window.App = App;
 

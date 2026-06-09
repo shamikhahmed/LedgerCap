@@ -44,7 +44,7 @@ const Dashboard = (() => {
   }
 
   function _priceStatusText(allPrices) {
-    const LIVE = ['yahoo','psx_live','psx_symbol','psx_eod'];
+    const LIVE = ['yahoo','psx_live','psx_int','psx_symbol','psx_eod'];
     const livePrices = allPrices.filter(p => LIVE.includes(p.source));
     if (!livePrices.length) return `<span style="font-size:0.68rem;color:var(--gold);">Using last-known prices — tap ⟳ Refresh for PSX data</span>`;
     const liveTs = Math.max(...livePrices.map(p => p.ts || 0));
@@ -70,7 +70,7 @@ const Dashboard = (() => {
     const dailyPnl = State.calcDailyPnl();
 
     const allPrices = Object.values(state.prices || {});
-    const LIVE_SRC = ['yahoo', 'psx_live', 'psx_symbol', 'psx_eod', 'manual'];
+    const LIVE_SRC = ['yahoo', 'psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'manual'];
     const allFallback = allPrices.length === 0 || !allPrices.some(p => LIVE_SRC.includes(p.source));
     const proxyUrl = settings.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl || '';
 

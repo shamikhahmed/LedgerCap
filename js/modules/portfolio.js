@@ -47,6 +47,7 @@ const Portfolio = (() => {
     if (b === 'rafi') return '<span class="badge badge-rafi">RAFI</span>';
     if (b === 'akd') return '<span class="badge badge-akd">AKD</span>';
     if (b === 'meezan') return '<span class="badge badge-meezan">MEEZAN</span>';
+    if (b === 'cdc') return '<span class="badge badge-cdc">CDC</span>';
     return `<span class="badge">${broker}</span>`;
   }
 
@@ -61,7 +62,7 @@ const Portfolio = (() => {
   }
 
   function _priceInd(source) {
-    if (['yahoo','psx_live','psx_symbol','psx_eod'].includes(source)) return '';
+    if (['yahoo','psx_live','psx_int','psx_symbol','psx_eod'].includes(source)) return '';
     if (source === 'manual') return '<span class="price-ind" title="Manual price">M</span>';
     if (source === 'meezan_seed') return '<span class="price-ind" title="Meezan NAV seed">N</span>';
     return '<span class="price-ind price-approx" title="Last known price">~</span>';
@@ -143,8 +144,8 @@ const Portfolio = (() => {
     </div>
 
     <div class="filter-tabs" id="portfolio-filters">
-      ${['all','rafi','akd','meezan','winners','losers','shariah'].map(f =>
-        `<div class="filter-tab${_filter === f ? ' active' : ''}" data-f="${f}">${f.charAt(0).toUpperCase() + f.slice(1)}</div>`
+      ${['all','rafi','akd','cdc','meezan','winners','losers','shariah'].map(f =>
+        `<div class="filter-tab${_filter === f ? ' active' : ''}" data-f="${f}">${f.toUpperCase() === 'CDC' ? 'CDC' : f.charAt(0).toUpperCase() + f.slice(1)}</div>`
       ).join('')}
     </div>
 
@@ -182,6 +183,7 @@ const Portfolio = (() => {
   function _renderStocksSection(rows) {
     const rafiRows = rows.filter(r => r.broker === 'Rafi');
     const akdRows = rows.filter(r => r.broker === 'AKD');
+    const cdcRows = rows.filter(r => r.broker === 'CDC');
 
     const HEAD = `<div class="pt-head">
       <div class="pt-hc">Symbol</div>
@@ -220,7 +222,20 @@ const Portfolio = (() => {
       html += _brokerTotal(akdRows, 'AKD TOTAL');
     }
 
-    if (rafiRows.length === 0 && akdRows.length === 0 && rows.length > 0) {
+    if (cdcRows.length > 0) {
+      const cv = cdcRows.reduce((s, r) => s + r.value, 0);
+      const cc = cdcRows.reduce((s, r) => s + r.cost, 0);
+      const cp = cv - cc;
+      html += `<div class="pt-sec-head">
+        <span style="color:var(--purple);">&#9679;</span>
+        CDC CUSTODY
+        <span class="pt-sec-meta">${cdcRows.length} stocks &middot; ${fmtC(cv)} &middot; <span style="color:${pnlClr(cp)};">${sgn(cp)}${fmtC(Math.abs(cp))}</span></span>
+      </div>`;
+      html += cdcRows.map((r, i) => _stockRow(r, i)).join('');
+      html += _brokerTotal(cdcRows, 'CDC TOTAL');
+    }
+
+    if (rafiRows.length === 0 && akdRows.length === 0 && cdcRows.length === 0 && rows.length > 0) {
       html += rows.map((r, i) => _stockRow(r, i)).join('');
       html += _brokerTotal(rows, 'TOTAL');
     }
@@ -319,9 +334,12 @@ const Portfolio = (() => {
       const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
       const advisor = (window.ADVISOR_RATINGS || {})[h.symbol];
       const staticData = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
+      const ipoTx = h.broker === 'CDC'
+        ? (State.get().transactions || []).find(t => t.type === 'IPO_SUBSCRIBE' && t.status === 'listed' && t.symbol === h.symbol)
+        : null;
       return {
         key: h.symbol + '_' + h.broker, type: 'stock',
-        symbol: h.symbol, name: staticData?.name || h.symbol,
+        symbol: h.symbol, name: staticData?.name || ipoTx?.name || h.symbol,
         broker: h.broker, shares: h.shares, avgCost: h.avgCost,
         price, priceSource, value, cost, pnl, pnlPct,
         advisor, isShariah: staticData?.isShariah, sector: staticData?.sector,
@@ -354,6 +372,7 @@ const Portfolio = (() => {
     if (f === 'all') return rows;
     if (f === 'rafi') return rows.filter(r => r.broker === 'Rafi');
     if (f === 'akd') return rows.filter(r => r.broker === 'AKD');
+    if (f === 'cdc') return rows.filter(r => r.broker === 'CDC');
     if (f === 'meezan') return rows.filter(r => r.broker === 'Meezan');
     if (f === 'winners') return rows.filter(r => r.pnl > 0);
     if (f === 'losers') return rows.filter(r => r.pnl < 0);

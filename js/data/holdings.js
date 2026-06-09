@@ -71,10 +71,10 @@ const SIP_PLAN = [
 ];
 
 const FALLBACK_PRICES = {
-  // PSX official prices — Jun 5-7 2026 (Rafi Vtrade screenshot + PSX portal)
+  // PSX EOD prices — Jun 10 2026 (dps.psx.com.pk/timeseries/eod)
   'ATRL': 872.46, 'CPHL': 77.75, 'DGKC': 197.20, 'EFERT': 200.40,
   'ENGROH': 262.21, 'FFL': 17.84, 'HUBC': 214.12, 'LUCK': 431.50,
-  'MARI': 649.67, 'MEBL': 489.31, 'MIIETF': 17.02, 'MLCF': 87.40,
+  'MARI': 649.67, 'MEBL': 490.35, 'MIIETF': 17.02, 'MLCF': 87.40,
   'MZNPETF': 20.50, 'NML': 144.23, 'NRL': 364.66, 'OGDC': 320.31,
   'PPL': 228.73, 'PSO': 351.50, 'PTC': 67.54, 'SEARL': 90.93,
   'SSGC': 26.83, 'TRG': 71.61,

@@ -21,7 +21,7 @@ const State = (() => {
       onboardingDone: false,
       psxProxyUrl: '',
     },
-    version: 2,
+    version: 3,
   };
 
   let _s = null;
@@ -72,6 +72,9 @@ const State = (() => {
         if (!_s.settings.psxProxyUrl && window.STUNDS_CONFIG?.psxProxyUrl) {
           _s.settings.psxProxyUrl = window.STUNDS_CONFIG.psxProxyUrl;
         }
+        if (!_s.version || _s.version < 3) {
+          _s.version = 3;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -111,11 +114,21 @@ const State = (() => {
     save();
   }
 
+  function updateTransaction(id, patch) {
+    if (!_s) load();
+    const idx = _s.transactions.findIndex(t => t.id === id);
+    if (idx < 0) return false;
+    _s.transactions[idx] = { ..._s.transactions[idx], ...patch, updatedAt: Date.now() };
+    _logPortfolioValue();
+    save();
+    return true;
+  }
+
   function updatePrice(symbol, priceData) {
     if (!_s) load();
     const price = typeof priceData === 'number' ? priceData : priceData.price;
     const source = typeof priceData === 'object' ? priceData.source : 'manual';
-    const trusted = ['psx_live', 'psx_symbol', 'psx_eod', 'manual', 'meezan_seed'].includes(source);
+    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
     if (!trusted && fallback && price && price > 0) {
       if (price > fallback * 2.5 || price < fallback * 0.4) {
@@ -193,7 +206,7 @@ const State = (() => {
 
   load();
   return { get, set, update, save, reset, exportJSON, importJSON,
-    addTransaction, deleteTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
+    addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
     calcTotalValue, calcTotalCost, calcDailyPnl };
 })();
 window.State = State;
