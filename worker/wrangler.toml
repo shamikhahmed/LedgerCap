@@ -1,6 +1,7 @@
 name = "stunds-psx-proxy"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
+workers_dev = true
 
 [vars]
 # No secrets required — public PSX data only
