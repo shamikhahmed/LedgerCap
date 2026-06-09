@@ -2,7 +2,7 @@
 
 StundsOS is your **Personal Wealth Operating System** — track PSX stocks, Meezan Islamic funds, net worth, and the path to financial freedom.
 
-**Live app:** https://shamikhahmed.github.io/stundsOS/
+**Live app:** https://shamikhahmed.github.io/StundsOS/
 
 ---
 

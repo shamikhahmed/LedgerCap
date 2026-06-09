@@ -2,8 +2,8 @@
 
 **Personal Wealth Operating System** — PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections.
 
-🔗 **Live:** https://shamikhahmed.github.io/stundsOS/  
-📁 **Repo:** https://github.com/shamikhahmed/stundsOS
+🔗 **Live:** https://shamikhahmed.github.io/StundsOS/  
+📁 **Repo:** https://github.com/shamikhahmed/StundsOS
 
 ---
 
