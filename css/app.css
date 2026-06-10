@@ -1306,3 +1306,22 @@ body {
 .install-hint strong { color: var(--orange); }
 
 body { overscroll-behavior: none; }
+
+/* ── Cross-device shell & safe-area ── */
+.screen { overscroll-behavior: contain; }
+.nav-tab { min-height: 44px; min-width: 44px; }
+
+@media (min-width: 768px) and (max-width: 899px) {
+  #app { max-width: min(480px, 100vw); }
+}
+
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+  :root { --nav-h: 56px; }
+  #nav { padding-bottom: 0; }
+  .dash-hero { padding: 12px 16px 16px; }
+  .bs-panel { padding-bottom: 16px; }
+  .toast-wrap { top: 10px; }
+  .portfolio-header { padding: 10px 16px 12px; }
+  .ob-overlay { padding: 0; }
+  .splash { padding-top: 0; }
+}
