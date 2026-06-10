@@ -1,6 +1,6 @@
 {
   "appId": "com.shamikhahmed.stundsos",
-  "appName": "StundsOS",
+  "appName": "LedgerCap",
   "webDir": ".",
   "server": {
     "androidScheme": "https"

@@ -1,7 +1,7 @@
 {
-  "name": "StundsOS",
-  "short_name": "StundsOS",
-  "description": "Personal Wealth Operating System",
+  "name": "LedgerCap",
+  "short_name": "LedgerCap",
+  "description": "LedgerCap by Capricorn Systems — Personal Wealth Operating System",
   "start_url": "./",
   "scope": "./",
   "id": "./",

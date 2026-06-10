@@ -1,5 +1,5 @@
 {
-  "name": "stundsos",
+  "name": "ledgercap",
   "private": true,
   "scripts": {
     "test": "playwright test",
