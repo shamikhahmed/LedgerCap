@@ -96,9 +96,35 @@ Dashboard surfaces:
 ## Settings
 
 - **PSX Proxy URL** — Cloudflare Worker endpoint
-- **Holdings** — edit seed data in `js/data/holdings.js` or via UI
-- **Export** — backup ledger state
+- **Holdings Seed** — **Settings → Load Demo Holdings** loads anonymized PSX + Meezan ledger (`INITIAL_TRANSACTIONS`)
+- **Export** — backup ledger state (`.stunds`)
 - **Reset** — clear all local data
+
+---
+
+## Zakat calculator
+
+In **Settings → Zakat**:
+
+1. Enter **Nisab** threshold (gold/silver equivalent in PKR).
+2. Review **zakatable assets** — cash, gold, funds, stocks (per your methodology).
+3. App computes **2.5% Zakat due** on eligible assets.
+4. Disclaimer shown in-app: **estimates only — consult a qualified scholar** for religious obligations.
+
+Zakat inputs are local-only; no data is sent to any server.
+
+---
+
+## IPO subscribe → list workflow
+
+Track primary-market subscriptions in the ledger:
+
+1. **Subscribe** — log IPO application (symbol, shares, amount blocked).
+2. While pending, position shows as **IPO subscribed** (not yet listed).
+3. **Mark listed** — when shares allot and trade, convert to normal holding with cost basis.
+4. Net worth and insights update from ledger — same source of truth as PSX stocks.
+
+This is record-keeping only — not a securities offering or brokerage service.
 
 ---
 
