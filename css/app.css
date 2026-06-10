@@ -284,6 +284,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
 }
 .hero-pnl {
   display: flex;
@@ -372,6 +373,7 @@ body {
   font-size: 1.3rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
 }
 .metric-sub {
   font-size: 0.68rem;
@@ -501,9 +503,9 @@ body {
   text-overflow: ellipsis;
 }
 .ht-sub { font-size: 0.65rem; color: var(--text3); margin-top: 1px; }
-.ht-price { font-size: 0.82rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.ht-value { font-size: 0.82rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-.ht-pnl { font-size: 0.78rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.ht-price { font-size: 0.82rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.ht-value { font-size: 0.82rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.ht-pnl { font-size: 0.78rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
 
 /* ── Transaction List ── */
 .tx-row {
@@ -542,6 +544,7 @@ body {
   font-size: 0.92rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
   flex-shrink: 0;
 }
 
@@ -808,6 +811,7 @@ body {
   font-weight: 800;
   color: var(--orange);
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
 }
 .proj-sub { font-size: 0.72rem; color: var(--text3); margin-top: 4px; }
 
@@ -1097,6 +1101,7 @@ body {
 .pt-cell {
   font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
   overflow: hidden;
 }
 .pt-r { text-align: right; }
