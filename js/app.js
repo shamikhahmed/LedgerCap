@@ -69,7 +69,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=7').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=8').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     const cfg = State.get('settings')?.psxProxyUrl;

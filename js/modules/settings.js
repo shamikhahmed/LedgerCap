@@ -157,6 +157,16 @@ const Settings = (() => {
       }).join('')}
     </div>
 
+    <div class="sec-head"><span class="sec-title">Holdings Seed</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">Load the demo PSX + Meezan portfolio (${(window.INITIAL_TRANSACTIONS || []).length} ledger entries). Replaces empty vault or merges after confirm.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-secondary" onclick="Settings._loadSeed()">📦 Load Demo Holdings</button>
+        <button class="btn-ghost" onclick="Settings._clearHoldings()">Clear transactions only</button>
+      </div>
+      <div style="font-size:0.65rem;color:var(--text3);margin-top:8px;">${holdings.length} stock positions · ${funds.length} fund positions currently</div>
+    </div>
+
     <div class="sec-head"><span class="sec-title">Data Management</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
       <div class="setting-row">
@@ -280,6 +290,32 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
-  return { render, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault };
+  function _loadSeed() {
+    const seed = window.INITIAL_TRANSACTIONS || [];
+    if (!seed.length) { App.showToast('Seed data unavailable', 'error'); return; }
+    if (!confirm(`Load ${seed.length} demo transactions? Existing ledger will be replaced.`)) return;
+    State.update(s => {
+      s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
+      s.settings.onboardingDone = true;
+      if (window.FALLBACK_PRICES) {
+        Object.entries(window.FALLBACK_PRICES).forEach(([sym, price]) => {
+          s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };
+        });
+      }
+    });
+    App.showToast('Demo holdings loaded ✓', 'success');
+    App.renderCurrent();
+    render();
+  }
+
+  function _clearHoldings() {
+    if (!confirm('Remove all transactions? Settings and prices stay.')) return;
+    State.update(s => { s.transactions = []; });
+    App.showToast('Transactions cleared', 'warning');
+    App.renderCurrent();
+    render();
+  }
+
+  return { render, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings };
 })();
 window.Settings = Settings;
