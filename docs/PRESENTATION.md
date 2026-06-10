@@ -9,7 +9,7 @@
 
 *PSX · Meezan Funds · Net Worth · Financial Freedom*
 
-**Live:** shamikhahmed.github.io/StundsOS
+**Live:** shamikhahmed.github.io/LedgerCap
 
 ---
 
@@ -133,6 +133,6 @@ Feels like a native finance app.
 
 > *Know your net worth. Own your ledger. Reach financial freedom.*
 
-**StundsOS** — github.com/shamikhahmed/StundsOS
+**StundsOS** — github.com/shamikhahmed/LedgerCap
 
 *Shamikh Ahmed · Karachi*

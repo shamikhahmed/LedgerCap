@@ -2,8 +2,8 @@
 
 **Personal Wealth Operating System — by Capricorn Systems.** PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections.
 
-🔗 **Live:** https://shamikhahmed.github.io/StundsOS/  
-📁 **Repo:** https://github.com/shamikhahmed/StundsOS
+🔗 **Live:** https://shamikhahmed.github.io/LedgerCap/  
+📁 **Repo:** https://github.com/shamikhahmed/LedgerCap
 
 ---
 

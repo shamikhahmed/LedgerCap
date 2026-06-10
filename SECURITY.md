@@ -28,4 +28,4 @@
 
 ## Reporting
 
-Open a private security issue on the [StundsOS GitHub repo](https://github.com/shamikhahmed/StundsOS) for vulnerabilities.
+Open a private security issue on the [StundsOS GitHub repo](https://github.com/shamikhahmed/LedgerCap) for vulnerabilities.
