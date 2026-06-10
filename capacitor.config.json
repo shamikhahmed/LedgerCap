@@ -1,0 +1,12 @@
+{
+  "appId": "com.shamikhahmed.stundsos",
+  "appName": "StundsOS",
+  "webDir": ".",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "scrollEnabled": true
+  }
+}
