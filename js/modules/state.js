@@ -92,9 +92,9 @@ const State = (() => {
     try {
       const json = JSON.stringify(_s);
       localStorage.setItem(KEY, json);
-      if (!localStorage.getItem(KEY)) console.error('StundsOS: localStorage write failed silently');
+      if (!localStorage.getItem(KEY)) console.error('LedgerCap: localStorage write failed silently');
     } catch(e) {
-      console.warn('StundsOS save error:', e.message);
+      console.warn('LedgerCap save error:', e.message);
     }
   }
   function reset() { localStorage.removeItem(KEY); _s = null; load(); }

@@ -1,5 +1,5 @@
 /**
- * StundsOS PSX Price Proxy — deploy to Cloudflare Workers
+ * LedgerCap PSX Price Proxy — deploy to Cloudflare Workers
  * wrangler deploy (from worker/ folder)
  * Then set STUNDS_CONFIG.psxProxyUrl in js/data/config.js or Settings
  */
@@ -33,7 +33,7 @@ export default {
 
     try {
       const res = await fetch(fetchUrl, {
-        headers: { Accept: 'application/json, text/plain, */*', 'User-Agent': 'StundsOS-Proxy/1.0' },
+        headers: { Accept: 'application/json, text/plain, */*', 'User-Agent': 'LedgerCap-Proxy/1.0' },
       });
       const body = await res.text();
       if (body.trim().startsWith('<!DOCTYPE') || body.trim().startsWith('<html')) {

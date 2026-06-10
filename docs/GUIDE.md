@@ -1,6 +1,6 @@
-# StundsOS — User Guide
+# LedgerCap — User Guide
 
-StundsOS is your **Personal Wealth Operating System** — track PSX stocks, Meezan Islamic funds, net worth, and the path to financial freedom.
+LedgerCap is your **Personal Wealth Operating System** — track PSX stocks, Meezan Islamic funds, net worth, and the path to financial freedom.
 
 **Live app:** https://shamikhahmed.github.io/LedgerCap/
 
@@ -8,7 +8,7 @@ StundsOS is your **Personal Wealth Operating System** — track PSX stocks, Meez
 
 ## Getting started
 
-1. Open StundsOS in Safari on iPhone.
+1. Open LedgerCap in Safari on iPhone.
 2. Complete onboarding — set income, contribution targets, and financial freedom goal.
 3. Review pre-loaded holdings (customise in Settings).
 4. Land on **Dashboard** — Bloomberg-style net worth and P&L.
@@ -156,4 +156,4 @@ This is record-keeping only — not a securities offering or brokerage service.
 
 ---
 
-*StundsOS © 2026 Shamikh Ahmed*
+*LedgerCap © 2026 Shamikh Ahmed*

@@ -1,16 +1,16 @@
-# StundsOS PSX Price Proxy
+# LedgerCap PSX Price Proxy
 
-Fetches PSX data server-side so the StundsOS PWA avoids CORS blocks.
+Fetches PSX data server-side so the LedgerCap PWA avoids CORS blocks.
 
 ## Deploy (one-time)
 
 ### 1. Go to the worker folder
 
 ```bash
-cd ~/Desktop/Projects/StundsOS/worker
+cd ~/Desktop/Projects/LedgerCap/worker
 ```
 
-**Not** `~/StundsOS/worker` — the repo lives under `Desktop/Projects`.
+**Not** `~/LedgerCap/worker` — the repo lives under `Desktop/Projects`.
 
 ### 2. Log in to Cloudflare
 
@@ -53,7 +53,7 @@ Published stunds-psx-proxy (X.XX sec)
   https://stunds-psx-proxy.<your-subdomain>.workers.dev
 ```
 
-### 5. Paste URL into StundsOS
+### 5. Paste URL into LedgerCap
 
 Open the app → **Settings** → **PSX Proxy URL** → paste the Workers URL → **Save Proxy URL**.
 
@@ -71,8 +71,8 @@ Then commit/push if you want it baked into the deployed site.
 
 | Error | Fix |
 |-------|-----|
-| `cd: no such file or directory: StundsOS/worker` | Use full path: `cd ~/Desktop/Projects/StundsOS/worker` |
-| Permission error on `~/.Trash` | Run deploy **from** the `worker/` folder (not `~`). If it persists: `cd ~/Desktop/Projects/StundsOS/worker` then deploy again. |
+| `cd: no such file or directory: LedgerCap/worker` | Use full path: `cd ~/Desktop/Projects/LedgerCap/worker` |
+| Permission error on `~/.Trash` | Run deploy **from** the `worker/` folder (not `~`). If it persists: `cd ~/Desktop/Projects/LedgerCap/worker` then deploy again. |
 | `register a workers.dev subdomain` | Answer **yes** when prompted, or use the Workers onboarding link above. |
 | `CLOUDFLARE_API_TOKEN` required | Run `npx wrangler login` first |
 

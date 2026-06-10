@@ -88,7 +88,7 @@ const Reports = (() => {
     const contrib = Ledger.monthlyContributions(state.transactions || {})[thisMonth] || 0;
     const target = state.settings?.targetSIP || 75000;
     const text = [
-      `StundsOS Monthly Report — ${now.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}`,
+      `LedgerCap Monthly Report — ${now.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}`,
       `Net Worth: ${fmt(State.calcTotalValue())}`,
       `Invested: ${fmt(State.calcTotalCost())}`,
       `SIP: ${fmt(contrib)} / ${fmt(target)} target`,

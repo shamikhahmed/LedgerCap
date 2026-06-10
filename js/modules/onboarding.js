@@ -141,7 +141,7 @@ const Onboarding = (() => {
       st.settings.onboardingDone = true;
     });
     _close();
-    App.showToast('Welcome to StundsOS', 'success');
+    App.showToast('Welcome to LedgerCap', 'success');
     Navigation.go('dashboard');
     setTimeout(() => App.refreshPrices(), 600);
   }

@@ -1,4 +1,4 @@
-# StundsOS — Security Notes
+# LedgerCap — Security Notes
 
 ## Local-only data
 
@@ -13,7 +13,7 @@
 
 ## Investment disclaimer
 
-- StundsOS is **not investment advice**. Projections, Zakat estimates, and net-worth charts are educational tools.
+- LedgerCap is **not investment advice**. Projections, Zakat estimates, and net-worth charts are educational tools.
 - **Zakat figures are estimates** — consult a qualified Islamic scholar for religious obligations.
 - IPO subscribe/list workflows are record-keeping only — not a securities offering platform.
 
@@ -28,4 +28,4 @@
 
 ## Reporting
 
-Open a private security issue on the [StundsOS GitHub repo](https://github.com/shamikhahmed/LedgerCap) for vulnerabilities.
+Open a private security issue on the [LedgerCap GitHub repo](https://github.com/shamikhahmed/LedgerCap) for vulnerabilities.

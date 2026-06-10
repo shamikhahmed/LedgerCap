@@ -1,10 +1,10 @@
-# StundsOS — Product Presentation
+# LedgerCap — Product Presentation
 
 ---
 
 ## Slide 1 — Title
 
-# StundsOS
+# LedgerCap
 ### Personal Wealth Operating System
 
 *PSX · Meezan Funds · Net Worth · Financial Freedom*
@@ -27,7 +27,7 @@ No single **offline** view of true net worth.
 
 ## Slide 3 — Solution
 
-**StundsOS** — ledger-first wealth OS:
+**LedgerCap** — ledger-first wealth OS:
 
 - Bloomberg-density dashboard on iPhone
 - PSX + fund holdings with live prices
@@ -76,7 +76,7 @@ Deploy once from `worker/` — paste URL in Settings.
 
 Set target annual passive income.
 
-StundsOS projects:
+LedgerCap projects:
 
 - Months to freedom at current contribution rate
 - Salary vs investment ratio
@@ -133,6 +133,6 @@ Feels like a native finance app.
 
 > *Know your net worth. Own your ledger. Reach financial freedom.*
 
-**StundsOS** — github.com/shamikhahmed/LedgerCap
+**LedgerCap** — github.com/shamikhahmed/LedgerCap
 
 *Shamikh Ahmed · Karachi*
