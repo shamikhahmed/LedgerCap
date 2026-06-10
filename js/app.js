@@ -65,6 +65,7 @@ const App = (() => {
   }
 
   function launch() {
+    const demo = new URLSearchParams(location.search).get('demo') === '1';
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
     }
@@ -76,6 +77,9 @@ const App = (() => {
     if (cfg && window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = cfg;
     _hideSplash();
     Navigation.init();
+    if (demo && window.Settings && Settings.loadSeedData) {
+      Settings.loadSeedData({ silent: true });
+    }
     Navigation.go('dashboard');
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();

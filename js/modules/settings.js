@@ -290,10 +290,11 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
-  function _loadSeed() {
+  function loadSeedData(opts) {
+    const silent = opts && opts.silent;
     const seed = window.INITIAL_TRANSACTIONS || [];
-    if (!seed.length) { App.showToast('Seed data unavailable', 'error'); return; }
-    if (!confirm(`Load ${seed.length} demo transactions? Existing ledger will be replaced.`)) return;
+    if (!seed.length) { if (!silent) App.showToast('Seed data unavailable', 'error'); return false; }
+    if (!silent && !confirm(`Load ${seed.length} demo transactions? Existing ledger will be replaced.`)) return false;
     State.update(s => {
       s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
       s.settings.onboardingDone = true;
@@ -303,9 +304,14 @@ const Settings = (() => {
         });
       }
     });
-    App.showToast('Demo holdings loaded ✓', 'success');
+    if (!silent) App.showToast('Demo holdings loaded ✓', 'success');
     App.renderCurrent();
     render();
+    return true;
+  }
+
+  function _loadSeed() {
+    loadSeedData();
   }
 
   function _clearHoldings() {
@@ -316,6 +322,6 @@ const Settings = (() => {
     render();
   }
 
-  return { render, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings };
+  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings };
 })();
 window.Settings = Settings;
