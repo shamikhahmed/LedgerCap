@@ -235,7 +235,7 @@ const Dashboard = (() => {
 
     ${stockRows.length > 0 ? `
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bg4);">
+      <div class="stock-mini-grid">
         <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
           <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">BEST STOCK</div>
           <div style="font-size:0.78rem;font-weight:700;color:var(--green);">${best ? best.symbol : '—'}</div>
@@ -257,7 +257,7 @@ const Dashboard = (() => {
           <div style="font-size:0.62rem;color:var(--text3);">unrealised</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bg4);">
+      <div class="stock-mini-grid">
         <div style="background:var(--bg2);padding:10px 8px;text-align:center;">
           <div style="font-size:0.58rem;color:var(--text3);margin-bottom:3px;">TOTAL STOCKS</div>
           <div style="font-size:0.78rem;font-weight:700;">${holdings.length}</div>
