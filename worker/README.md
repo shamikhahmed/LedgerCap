@@ -7,10 +7,8 @@ Fetches PSX data server-side so the LedgerCap PWA avoids CORS blocks.
 ### 1. Go to the worker folder
 
 ```bash
-cd ~/Desktop/Projects/LedgerCap/worker
+cd LedgerCap/worker   # from your workspace root
 ```
-
-**Not** `~/LedgerCap/worker` — the repo lives under `Desktop/Projects`.
 
 ### 2. Log in to Cloudflare
 
@@ -71,8 +69,8 @@ Then commit/push if you want it baked into the deployed site.
 
 | Error | Fix |
 |-------|-----|
-| `cd: no such file or directory: LedgerCap/worker` | Use full path: `cd ~/Desktop/Projects/LedgerCap/worker` |
-| Permission error on `~/.Trash` | Run deploy **from** the `worker/` folder (not `~`). If it persists: `cd ~/Desktop/Projects/LedgerCap/worker` then deploy again. |
+| `cd: no such file or directory: LedgerCap/worker` | `cd` from workspace root into `LedgerCap/worker` |
+| Permission error on `~/.Trash` | Run deploy **from** the `worker/` folder (not `~`). |
 | `register a workers.dev subdomain` | Answer **yes** when prompted, or use the Workers onboarding link above. |
 | `CLOUDFLARE_API_TOKEN` required | Run `npx wrangler login` first |
 
