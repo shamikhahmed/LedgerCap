@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v25';
+const CACHE = 'ledgercap-v27';
 const ASSETS = [
   './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json', './css/app.css',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',
