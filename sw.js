@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v33';
+const CACHE = 'ledgercap-v34';
 const ASSETS = [
   './css/capricorn-core.css',
   './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json', './css/app.css',

@@ -1,5 +1,8 @@
 # Changelog — LedgerCap
 
+## 2.4.2 (2026-06-12)
+- Phase P4: Playwright tests for Reports tab and CSV export on transactions; service worker cache bump.
+
 ## 2.3.0 (2026-06-10)
 - Portfolio CTO pass: PWA icons (192/512 maskable), service worker cache bump (`stundsOS-v8`)
 - Truth sprint: docs aligned with shipped features
