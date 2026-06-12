@@ -1,5 +1,51 @@
 'use strict';
 const Settings = (() => {
+  let _proxyHealth = { status: 'idle', detail: '' };
+
+  async function _pingProxy(url) {
+    if (!url) {
+      _proxyHealth = { status: 'none', detail: 'No proxy URL configured' };
+      return _proxyHealth;
+    }
+    _proxyHealth = { status: 'checking', detail: 'Pinging worker…' };
+    _updateProxyHealthUI();
+    try {
+      const base = url.replace(/\/$/, '');
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      const res = await fetch(`${base}/health`, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const body = await res.json().catch(() => ({}));
+        _proxyHealth = body.ok
+          ? { status: 'ok', detail: 'Worker reachable' }
+          : { status: 'error', detail: 'Unexpected health response' };
+      } else {
+        _proxyHealth = { status: 'error', detail: `HTTP ${res.status}` };
+      }
+    } catch (e) {
+      _proxyHealth = { status: 'error', detail: e.name === 'AbortError' ? 'Timeout — worker unreachable' : 'Worker unreachable' };
+    }
+    _updateProxyHealthUI();
+    return _proxyHealth;
+  }
+
+  function _proxyHealthLabel() {
+    if (_proxyHealth.status === 'ok') return { cls: 't-gain', text: '● Online' };
+    if (_proxyHealth.status === 'checking') return { cls: '', text: '● Checking…' };
+    if (_proxyHealth.status === 'none') return { cls: '', text: '● Not set' };
+    return { cls: 't-loss', text: '● Offline' };
+  }
+
+  function _updateProxyHealthUI() {
+    const el = document.getElementById('proxy-health-val');
+    const sub = document.getElementById('proxy-health-sub');
+    if (!el) return;
+    const h = _proxyHealthLabel();
+    el.className = `setting-value ${h.cls}`.trim();
+    el.textContent = h.text;
+    if (sub) sub.textContent = _proxyHealth.detail || '';
+  }
 
   function render() {
     const screen = document.getElementById('screen-settings');
@@ -11,7 +57,9 @@ const Settings = (() => {
     const lastUpdate = allPrices.sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
     const lastUpdateStr = lastUpdate ? Prices.formatTs(lastUpdate.ts) : 'Never';
     const txCount = (state.transactions || []).length;
+    const proxyUrl = settings.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl || '';
     const isOnline = navigator.onLine;
+    const proxyHealth = _proxyHealthLabel();
 
     const holdings = Ledger.calcHoldings(state.transactions || []);
     const funds = Ledger.calcFundHoldings(state.transactions || []);
@@ -130,10 +178,17 @@ const Settings = (() => {
         </div>
         <span class="setting-value ${isOnline ? 't-gain' : 't-loss'}">${isOnline ? '● Online' : '● Offline'}</span>
       </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">PSX Proxy</div>
+          <div class="setting-sub" id="proxy-health-sub">${_proxyHealth.detail || (proxyUrl ? 'Worker health check' : 'Set URL below to enable live PSX')}</div>
+        </div>
+        <span class="setting-value ${proxyHealth.cls}" id="proxy-health-val">${proxyHealth.text}</span>
+      </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
         <div class="field">
           <label class="field-label">PSX Proxy URL (optional)</label>
-          <input class="field-input" id="s-proxy" type="url" placeholder="https://stunds-psx-proxy.yourname.workers.dev" value="${settings.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl || ''}">
+          <input class="field-input" id="s-proxy" type="url" placeholder="https://stunds-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
           <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
         </div>
         <button class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
@@ -176,8 +231,8 @@ const Settings = (() => {
         </div>
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
-        <button class="btn-secondary" onclick="Settings._exportData()">↑ Export .stunds Backup</button>
-        <button class="btn-secondary" onclick="Settings._importData()">↓ Import .stunds Backup</button>
+        <button class="btn-secondary" onclick="Settings._exportData()">↑ Export .ledgercap Backup</button>
+        <button class="btn-secondary" onclick="Settings._importData()">↓ Import Backup (.ledgercap / .stunds)</button>
         <button class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
       </div>
     </div>
@@ -189,6 +244,7 @@ const Settings = (() => {
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
     <div style="height:8px;"></div>`;
+    _pingProxy(proxyUrl);
   }
 
   function _saveProfile() {
@@ -241,7 +297,7 @@ const Settings = (() => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `stundsOS-backup-${new Date().toISOString().slice(0, 10)}.stunds`;
+    a.download = `ledgercap-backup-${new Date().toISOString().slice(0, 10)}.ledgercap`;
     a.click();
     URL.revokeObjectURL(url);
     App.showToast('Backup exported', 'success');
@@ -250,7 +306,7 @@ const Settings = (() => {
   function _importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.stunds,.json,application/json';
+    input.accept = '.ledgercap,.stunds,.json,application/json';
     input.onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -269,6 +325,7 @@ const Settings = (() => {
     const url = document.getElementById('s-proxy')?.value?.trim() || '';
     State.update(s => { s.settings.psxProxyUrl = url; });
     if (window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = url;
+    _pingProxy(url);
     App.showToast(url ? 'Proxy URL saved' : 'Proxy cleared — using public fallbacks', 'success');
     App.renderCurrent();
     render();
@@ -298,6 +355,13 @@ const Settings = (() => {
     State.update(s => {
       s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
       s.settings.onboardingDone = true;
+      if (window.MEEZAN_FUNDS) {
+        (window.MEEZAN_FUNDS || []).forEach(f => {
+          if (f.currentNav && !s.prices[f.symbol]) {
+            s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, source: 'meezan_seed', ts: Date.now() };
+          }
+        });
+      }
       if (window.FALLBACK_PRICES) {
         Object.entries(window.FALLBACK_PRICES).forEach(([sym, price]) => {
           s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };

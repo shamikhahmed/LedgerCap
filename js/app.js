@@ -3,15 +3,28 @@ const App = (() => {
   let _refreshTimer = null;
   let _activeSheet = null;
 
-  function _validateAndCleanPrices() {
+  function _priceRef(sym) {
     const fp = window.FALLBACK_PRICES || {};
+    if (fp[sym] > 0) return fp[sym];
+    const mf = (window.MEEZAN_FUNDS || []).find(f => f.symbol === sym);
+    return mf?.currentNav > 0 ? mf.currentNav : 0;
+  }
+
+  function _isBadPrice(sym, stored) {
+    if (!Number.isFinite(stored) || stored <= 0) return true;
+    const ref = _priceRef(sym);
+    if (ref > 0 && (stored > ref * 3 || stored < ref * 0.3)) return true;
+    return false;
+  }
+
+  function _validateAndCleanPrices() {
     const state = State.get();
     let cleaned = 0;
     let changed = false;
     Object.keys(state.prices || {}).forEach(sym => {
-      const fallback = fp[sym];
-      const stored = state.prices[sym]?.price;
-      if (fallback > 0 && stored > 0 && (stored > fallback * 3 || stored < fallback * 0.3)) {
+      const entry = state.prices[sym];
+      const stored = entry?.price;
+      if (!entry || typeof entry !== 'object' || _isBadPrice(sym, stored)) {
         delete state.prices[sym];
         cleaned++;
         changed = true;
@@ -24,14 +37,12 @@ const App = (() => {
   }
 
   function clearWrongPrices() {
-    const fp = window.FALLBACK_PRICES || {};
     let cleaned = 0;
     State.update(s => {
       Object.keys(s.prices || {}).forEach(sym => {
-        const fallback = fp[sym];
         const stored = s.prices[sym]?.price;
-        if (fallback && stored && (stored > fallback * 3 || stored < fallback * 0.3)) {
-          console.log(`Clearing bad price for ${sym}: ${stored} (fallback: ${fallback})`);
+        if (_isBadPrice(sym, stored)) {
+          console.log(`Clearing bad price for ${sym}: ${stored} (ref: ${_priceRef(sym)})`);
           delete s.prices[sym];
           cleaned++;
         }
@@ -49,13 +60,13 @@ const App = (() => {
   }
 
   function dismissInstall() {
-    localStorage.setItem('stundsOS_install_dismiss', '1');
+    localStorage.setItem('ledgercap_install_dismiss', '1');
     const h = document.getElementById('install-hint');
     if (h) h.classList.add('hidden');
   }
 
   function _maybeInstallHint() {
-    if (localStorage.getItem('stundsOS_install_dismiss')) return;
+    if (localStorage.getItem('ledgercap_install_dismiss') || localStorage.getItem('stundsOS_install_dismiss')) return;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
     if (!standalone && ios) {

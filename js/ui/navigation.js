@@ -23,7 +23,7 @@ const Navigation = (() => {
       btn.addEventListener('click', () => go(btn.dataset.tab));
     });
 
-    const saved = sessionStorage.getItem('stundsOS_tab');
+    const saved = sessionStorage.getItem('ledgercap_tab') || sessionStorage.getItem('stundsOS_tab');
     if (saved) go(saved, true);
   }
 
@@ -40,7 +40,7 @@ const Navigation = (() => {
     const fab = document.getElementById('fab');
     if (fab) fab.classList.toggle('hidden', tabId !== 'transactions' && tabId !== 'portfolio');
 
-    if (!silent) sessionStorage.setItem('stundsOS_tab', tabId);
+    if (!silent) sessionStorage.setItem('ledgercap_tab', tabId);
     _renderScreen(tabId);
   }
 

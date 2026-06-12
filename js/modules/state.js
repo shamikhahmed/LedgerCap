@@ -1,6 +1,20 @@
 'use strict';
 const State = (() => {
-  const KEY = 'stundsOS_v2';
+  const KEY = 'ledgercap_v2';
+  const LEGACY_KEYS = ['stundsOS_v2'];
+
+  function _readStorage() {
+    let raw = localStorage.getItem(KEY);
+    if (raw) return raw;
+    for (const lk of LEGACY_KEYS) {
+      raw = localStorage.getItem(lk);
+      if (raw) {
+        localStorage.setItem(KEY, raw);
+        return raw;
+      }
+    }
+    return null;
+  }
 
   const DEFAULT = {
     transactions: [],
@@ -61,7 +75,7 @@ const State = (() => {
 
   function load() {
     try {
-      const r = localStorage.getItem(KEY);
+      const r = _readStorage();
       if (r) {
         const parsed = JSON.parse(r);
         _s = { ...DEFAULT, ...parsed };
@@ -97,7 +111,12 @@ const State = (() => {
       console.warn('LedgerCap save error:', e.message);
     }
   }
-  function reset() { localStorage.removeItem(KEY); _s = null; load(); }
+  function reset() {
+    localStorage.removeItem(KEY);
+    LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
+    _s = null;
+    load();
+  }
   function exportJSON() { if (!_s) load(); return JSON.stringify(_s, null, 2); }
   function importJSON(str) { try { _s = { ...DEFAULT, ...JSON.parse(str) }; _s.settings = { ...DEFAULT.settings, ...(_s.settings || {}) }; save(); return true; } catch { return false; } }
 
