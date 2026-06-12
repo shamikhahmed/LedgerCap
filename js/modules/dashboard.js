@@ -318,8 +318,6 @@ const Dashboard = (() => {
     </div>` : `
     <div style="padding:12px 16px;font-size:0.75rem;color:var(--text3);">Tap ⟳ Refresh to see today's movers</div>`}
 
-    ${typeof Reports !== 'undefined' ? Reports.monthlySnapshot(state) : ''}
-
     ${insights.length > 0 ? `
     <div class="sec-head"><span class="sec-title">Wealth Insights</span><span class="sec-action">${insights.length} alerts</span></div>
     <div class="insights-feed">

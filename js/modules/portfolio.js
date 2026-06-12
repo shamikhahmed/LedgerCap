@@ -102,6 +102,7 @@ const Portfolio = (() => {
     const grandCost = totalStockCost + totalFundCost;
     const grandPnl = grandValue - grandCost;
     const grandPnlPct = grandCost > 0 ? (grandPnl / grandCost) * 100 : 0;
+    const totalDivs = State.getTotalDividends();
 
     const filtered = _applyFilter(allRows, _filter);
     const sorted = _applySort(filtered, _sort);
@@ -118,6 +119,7 @@ const Portfolio = (() => {
         <div style="text-align:right;">
           <div style="font-size:0.92rem;font-weight:700;color:${pnlClr(grandPnl)};">${sgn(grandPnl)}${fmt(Math.abs(grandPnl))}</div>
           <div class="t-dim" style="font-size:0.72rem;">${sgn(grandPnlPct)}${grandPnlPct.toFixed(2)}% all time</div>
+          ${totalDivs > 0 ? `<div style="font-size:0.68rem;color:var(--gold);margin-top:4px;">💰 ${fmt(totalDivs)} dividends</div>` : ''}
         </div>
       </div>
     </div>
@@ -277,7 +279,7 @@ const Portfolio = (() => {
     return `<div class="pt-row" data-key="${row.key}" data-type="${row.type}" style="${bg}">
       <div class="pt-cell">
         <div class="pt-sym">${row.symbol}</div>
-        <div class="pt-sym-sub">${row.name.length > 17 ? row.name.slice(0, 15) + '…' : row.name}</div>
+        <div class="pt-sym-sub">${row.name.length > 17 ? row.name.slice(0, 15) + '…' : row.name}${row.dividends ? ` · 💰${fmtC(row.dividends)}` : ''}</div>
       </div>
       <div class="pt-cell pt-r">${(row.shares || 0).toLocaleString('en-PK')}</div>
       <div class="pt-cell pt-r">${fmtPrice(row.avgCost)}</div>
@@ -342,6 +344,7 @@ const Portfolio = (() => {
         symbol: h.symbol, name: staticData?.name || ipoTx?.name || h.symbol,
         broker: h.broker, shares: h.shares, avgCost: h.avgCost,
         price, priceSource, value, cost, pnl, pnlPct,
+        dividends: State.getHoldingDividends(h.symbol, h.broker),
         advisor, isShariah: staticData?.isShariah, sector: staticData?.sector,
       };
     });
@@ -417,6 +420,7 @@ const Portfolio = (() => {
       [avgLabel, fmtPrice(avgVal)],
       ['Current Price', fmtPrice(row.price) + (row.priceSource !== 'yahoo' ? ` <span style="font-size:0.7rem;color:var(--text3);">(${row.priceSource === 'manual' ? 'manual' : 'approx'})</span>` : '')],
       ['Total Cost', fmt(row.cost)],
+      ...(row.dividends ? [['Dividends Received', `<span class="t-gain">${fmt(row.dividends)}</span>`]] : []),
       ['Price Source', _priceSourceLabel(row.priceSource)],
       ...extraRow,
     ].map(([l, v]) => `<div style="background:var(--bg2);padding:12px 14px;"><div class="metric-label">${l}</div><div style="font-size:0.88rem;font-weight:600;">${v}</div></div>`).join('');

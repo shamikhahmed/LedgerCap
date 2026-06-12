@@ -97,6 +97,37 @@ const Reports = (() => {
     navigator.clipboard.writeText(text).then(() => App.showToast('Report copied', 'success'));
   }
 
-  return { monthlySnapshot, exportText };
+  function render() {
+    const screen = document.getElementById('screen-reports');
+    if (!screen) return;
+    const state = State.get();
+    const transactions = state.transactions || [];
+    const totalDivs = State.getTotalDividends();
+    const divBySym = State.dividendsBySymbol();
+    const divRows = Object.entries(divBySym)
+      .filter(([sym]) => sym !== '_general')
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    screen.innerHTML = `
+    <div style="padding:calc(env(safe-area-inset-top,16px) + 10px) 16px 14px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
+      <div class="hero-label">Reports & Insights</div>
+      <div style="font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;">Monthly snapshot</div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-top:4px;">SIP progress · dividends · movers</div>
+    </div>
+    ${monthlySnapshot(state)}
+    <div class="sec-head"><span class="sec-title">Dividend Income</span><span class="sec-action">${fmt(totalDivs)} total</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:14px 16px;">
+      ${divRows.length ? divRows.map(([sym, amt]) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;font-size:0.82rem;">
+          <span style="font-weight:700;">${sym}</span>
+          <span class="t-gain">${fmt(amt)}</span>
+        </div>`).join('') : '<div style="font-size:0.78rem;color:var(--text3);">No dividends logged yet — use Income tab or + Log Dividend</div>'}
+      <button class="btn-secondary" style="width:100%;margin-top:10px;" onclick="Navigation.go('income')">Open Income & Dividends</button>
+    </div>
+    <div style="height:12px;"></div>`;
+  }
+
+  return { render, monthlySnapshot, exportText };
 })();
 window.Reports = Reports;

@@ -35,7 +35,7 @@ const State = (() => {
       onboardingDone: false,
       psxProxyUrl: '',
     },
-    version: 3,
+    version: 4,
   };
 
   let _s = null;
@@ -86,8 +86,8 @@ const State = (() => {
         if (!_s.settings.psxProxyUrl && window.STUNDS_CONFIG?.psxProxyUrl) {
           _s.settings.psxProxyUrl = window.STUNDS_CONFIG.psxProxyUrl;
         }
-        if (!_s.version || _s.version < 3) {
-          _s.version = 3;
+        if (!_s.version || _s.version < 4) {
+          _s.version = 4;
         }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
@@ -223,9 +223,31 @@ const State = (() => {
     }, 0);
   }
 
+  function dividendsBySymbol() {
+    if (!_s) load();
+    const map = {};
+    (_s.transactions || []).filter(t => t.type === 'DIVIDEND').forEach(t => {
+      const sym = (t.symbol || '').trim() || '_general';
+      map[sym] = (map[sym] || 0) + (t.amount || 0);
+    });
+    return map;
+  }
+
+  function getTotalDividends() {
+    if (!_s) load();
+    return Ledger.totalDividends(_s.transactions);
+  }
+
+  function getHoldingDividends(symbol, broker) {
+    if (!_s) load();
+    return (_s.transactions || [])
+      .filter(t => t.type === 'DIVIDEND' && t.symbol === symbol && (!t.broker || !broker || t.broker === broker))
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+  }
+
   load();
   return { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
-    calcTotalValue, calcTotalCost, calcDailyPnl };
+    calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends };
 })();
 window.State = State;
