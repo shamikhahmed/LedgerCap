@@ -133,7 +133,7 @@ const Settings = (() => {
       </div>
     </div>
 
-    <div class="sec-head"><span class="sec-title">Zakat Calculator</span></div>
+    <div class="sec-head"><span class="sec-title" id="zakat-section">Zakat Calculator</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">

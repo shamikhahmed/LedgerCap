@@ -44,7 +44,10 @@ const Transactions = (() => {
     screen.innerHTML = `
     <div style="padding:calc(env(safe-area-inset-top,16px) + 10px) 16px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:1.1rem;font-weight:700;">Transactions</div>
-      <button class="btn-ghost" onclick="App.openAddTransaction()">+ Add</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="Transactions.exportCsv()" title="Export CSV">⬇ CSV</button>
+        <button class="btn-ghost" onclick="App.openAddTransaction()">+ Add</button>
+      </div>
     </div>
 
     <div class="filter-tabs">
@@ -141,6 +144,26 @@ const Transactions = (() => {
     App.openBottomSheet('tx-detail-sheet', `${meta.icon} ${meta.label}`, content);
   }
 
-  return { render };
+  function exportCsv() {
+    const txs = (State.get().transactions || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!txs.length) { App.showToast('No transactions to export', 'error'); return; }
+    const headers = ['date', 'type', 'symbol', 'broker', 'shares', 'units', 'amount', 'price', 'notes', 'status'];
+    const esc = (v) => {
+      const s = v == null ? '' : String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = txs.map(t => headers.map(h => esc(t[h])).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ledgercap-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    App.showToast(`Exported ${txs.length} transactions`, 'success');
+  }
+
+  return { render, exportCsv };
 })();
 window.Transactions = Transactions;

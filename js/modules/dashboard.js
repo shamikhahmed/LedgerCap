@@ -160,6 +160,19 @@ const Dashboard = (() => {
     const lastUpdate = allPrices.sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
     const lastUpdateStr = lastUpdate ? Prices.formatTs(lastUpdate.ts) : 'Not updated';
 
+    const goldPpg = settings.goldPricePerGram || 18000;
+    const nisabValue = 87.48 * goldPpg;
+    const zakatableStocks = holdings.filter(h => {
+      const sd = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
+      return sd?.isShariah;
+    }).reduce((sum, h) => sum + h.shares * (State.getPrice(h.symbol) || h.avgCost), 0);
+    const zakatableFunds = funds.reduce((sum, f) => {
+      const nav = State.getPrice(f.symbol) || f.avgNav;
+      return sum + f.units * nav;
+    }, 0);
+    const zakatableTotal = zakatableStocks + zakatableFunds;
+    const zakatDue = zakatableTotal >= nisabValue ? zakatableTotal * 0.025 : 0;
+
     const realRet = Projections.realReturn(settings.targetReturn || 0.18, settings.inflationRate || 0.20);
     const ffCorpus = Projections.financialFreedom(settings.freedomTarget || 100000);
     const ffYears = Projections.yearsToFreedom(totalValue, targetSIP, ffCorpus, settings.targetReturn || 0.18);
@@ -209,6 +222,15 @@ const Dashboard = (() => {
     </div>` : ''}
 
     ${typeof Investment !== 'undefined' ? Investment.render(transactions, totalValue) : ''}
+
+    <div style="margin:12px 16px;padding:14px 16px;background:linear-gradient(135deg,rgba(14,203,129,0.08),rgba(14,203,129,0.02));border:1px solid rgba(14,203,129,0.2);border-radius:var(--r);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;color:var(--green);">☪ Zakat Snapshot</div>
+        <div style="font-size:0.95rem;font-weight:800;margin-top:4px;">${zakatableTotal >= nisabValue ? fmt(zakatDue) + ' due' : 'Below nisab'}</div>
+        <div style="font-size:0.65rem;color:var(--text3);margin-top:2px;">Zakatable ${fmt(zakatableTotal)} · Nisab ${fmt(nisabValue)}</div>
+      </div>
+      <button class="btn-ghost" style="font-size:0.68rem;white-space:nowrap;" onclick="Navigation.go('settings');setTimeout(function(){document.getElementById('zakat-section')?.scrollIntoView({behavior:'smooth'})},300)">Calculator →</button>
+    </div>
 
     <div class="metric-grid">
       <div class="metric-tile">
