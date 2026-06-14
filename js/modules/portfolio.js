@@ -103,6 +103,7 @@ const Portfolio = (() => {
     const grandPnl = grandValue - grandCost;
     const grandPnlPct = grandCost > 0 ? (grandPnl / grandCost) * 100 : 0;
     const totalDivs = State.getTotalDividends();
+    const brokerAlloc = Analytics.brokerAllocation(state);
 
     const filtered = _applyFilter(allRows, _filter);
     const sorted = _applySort(filtered, _sort);
@@ -110,10 +111,26 @@ const Portfolio = (() => {
     const filteredFunds = sorted.filter(r => r.type === 'fund');
 
     screen.innerHTML = `
-    <div class="portfolio-header">
+    <div class="os-page-header">
+      <div class="os-page-title">Portfolio</div>
+      <div class="os-page-sub">Unified multi-broker view · ${fmt(grandValue)}</div>
+    </div>
+
+    <div class="os-section">
+      <div class="os-broker-grid">
+        ${brokerAlloc.map(b => `
+          <div class="os-broker-card cap-reveal">
+            <div class="os-broker-name">${b.broker}</div>
+            <div style="font-size:1rem;font-weight:700;">${fmtC(b.value)}</div>
+            <div style="font-size:0.75rem;color:var(--os-text-tertiary);margin-top:4px;">${b.pct.toFixed(1)}% of portfolio</div>
+          </div>`).join('') || '<div class="os-broker-card"><div class="os-broker-name">Empty</div><div>No holdings</div></div>'}
+      </div>
+    </div>
+
+    <div class="portfolio-header" style="padding:0 20px 12px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <div class="hero-label">Portfolio</div>
+          <div class="hero-label">Total Value</div>
           <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;">${fmt(grandValue)}</div>
         </div>
         <div style="text-align:right;">

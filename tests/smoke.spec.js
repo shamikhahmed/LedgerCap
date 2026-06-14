@@ -2,6 +2,8 @@
 const { test, expect } = require('@playwright/test');
 
 test.describe('LedgerCap smoke', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
   test('loads shell without fatal errors', async ({ page }) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -18,19 +20,30 @@ test.describe('LedgerCap smoke', () => {
     await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
   });
 
-  test('reports tab renders and transactions has CSV export', async ({ page }) => {
+  test('intelligence tab renders and holdings opens transaction log', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
     await page.waitForTimeout(800);
 
-    await page.locator('[data-tab="reports"]').click();
-    await expect(page.locator('#screen-reports.active')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Reports & Insights')).toBeVisible();
-    await expect(page.getByText('Monthly snapshot')).toBeVisible();
+    await page.locator('#nav [data-tab="intelligence"]').click();
+    await expect(page.locator('#screen-intelligence.active')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Portfolio Intelligence')).toBeVisible();
 
-    await page.locator('[data-tab="transactions"]').click();
+    await page.locator('#nav [data-tab="holdings"]').click();
+    await expect(page.locator('#screen-holdings.active')).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: /View log/i }).click();
     await expect(page.locator('#screen-transactions.active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('button', { name: /CSV/i })).toBeVisible();
+  });
+
+  test('nine primary nav tabs present on mobile', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
+    const tabs = page.locator('#nav .nav-tab');
+    await expect(tabs).toHaveCount(9);
+    await expect(page.locator('#nav [data-tab="dashboard"]')).toBeVisible();
+    await expect(page.locator('#nav [data-tab="journal"]')).toBeVisible();
   });
 });

@@ -21,6 +21,10 @@ const State = (() => {
     prices: {},
     kseIndex: {},
     priceHistory: [],
+    watchlist: [],
+    journal: [],
+    researchNotes: {},
+    sectorMap: {},
     settings: {
       salary: 150000,
       targetSIP: 75000,
@@ -34,9 +38,31 @@ const State = (() => {
       primaryBroker: 'Mixed',
       onboardingDone: false,
       psxProxyUrl: '',
+      theme: 'dark',
     },
-    version: 4,
+    version: 5,
   };
+
+  function _migrateV5() {
+    if (!_s.watchlist) _s.watchlist = [];
+    if (!_s.journal) _s.journal = [];
+    if (!_s.researchNotes) _s.researchNotes = {};
+    if (!_s.sectorMap) _s.sectorMap = {};
+    if (!_s.settings.theme) _s.settings.theme = 'dark';
+    _seedWatchlist();
+    _s.version = 5;
+  }
+
+  function _seedWatchlist() {
+    if (_s.watchlist.length) return;
+    const staticList = window.WATCHLIST || [];
+    if (!staticList.length) return;
+    _s.watchlist = staticList.map(w => ({
+      ...w,
+      id: typeof Ledger !== 'undefined' && Ledger.newId ? Ledger.newId() : 'wl_' + w.symbol,
+      addedAt: Date.now(),
+    }));
+  }
 
   let _s = null;
 
@@ -86,8 +112,8 @@ const State = (() => {
         if (!_s.settings.psxProxyUrl && window.STUNDS_CONFIG?.psxProxyUrl) {
           _s.settings.psxProxyUrl = window.STUNDS_CONFIG.psxProxyUrl;
         }
-        if (!_s.version || _s.version < 4) {
-          _s.version = 4;
+        if (!_s.version || _s.version < 5) {
+          _migrateV5();
         }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
@@ -118,7 +144,16 @@ const State = (() => {
     load();
   }
   function exportJSON() { if (!_s) load(); return JSON.stringify(_s, null, 2); }
-  function importJSON(str) { try { _s = { ...DEFAULT, ...JSON.parse(str) }; _s.settings = { ...DEFAULT.settings, ...(_s.settings || {}) }; save(); return true; } catch { return false; } }
+  function importJSON(str) {
+    try {
+      const parsed = JSON.parse(str);
+      _s = { ...DEFAULT, ...parsed };
+      _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
+      if (!_s.version || _s.version < 5) _migrateV5();
+      save();
+      return true;
+    } catch { return false; }
+  }
 
   function addTransaction(tx) {
     if (!_s) load();

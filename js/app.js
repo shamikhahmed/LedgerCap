@@ -77,11 +77,12 @@ const App = (() => {
 
   function launch() {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
+    _applyTheme(State.get('settings')?.theme || 'dark');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=8').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=40').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     const cfg = State.get('settings')?.psxProxyUrl;
@@ -495,13 +496,24 @@ const App = (() => {
     renderCurrent();
   }
 
+  function _applyTheme(theme) {
+    document.body.classList.toggle('light', theme === 'light');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = theme === 'light' ? '#f8f9fc' : '#0a0b0d';
+  }
+
+  function applyTheme(theme) {
+    State.update(s => { s.settings.theme = theme; });
+    _applyTheme(theme);
+  }
+
   function renderCurrent() {
     Navigation.go(Navigation.current(), true);
   }
 
   return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
-    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall };
+    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, applyTheme };
 })();
 window.App = App;
 

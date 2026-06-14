@@ -1,5 +1,14 @@
 # Changelog — LedgerCap
 
+## 3.0.0 (2026-06-10) — LedgerCap 2.0
+- Complete product redesign: premium investment OS with 9-section navigation
+- New sections: Holdings, Research, Watchlist, Dividends, Portfolio Intelligence, Investment Journal
+- Dashboard centerpiece: portfolio value, XIRR, risk score, health, allocations, AI summary
+- Analytics engine: XIRR, annual return, sector/broker/asset allocation
+- Design system: `ledger-os.css` with light/dark themes
+- State v5 migration: watchlist, journal, researchNotes preserved alongside existing `ledgercap_v2` data
+- Progressive reveal animations via CapMotion
+
 ## 2.4.2 (2026-06-12)
 - Phase P4: Playwright tests for Reports tab and CSV export on transactions; service worker cache bump.
 

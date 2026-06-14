@@ -1,0 +1,28 @@
+'use strict';
+const CapMotion = (() => {
+  function refresh() {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reveals = document.querySelectorAll('.cap-reveal:not(.is-visible)');
+    if (!reveals.length) return;
+    if (reduced || !('IntersectionObserver' in window)) {
+      reveals.forEach(el => el.classList.add('is-visible'));
+      return;
+    }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('is-visible');
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
+    reveals.forEach((el, i) => {
+      if (!el.style.getPropertyValue('--cap-stagger-i')) {
+        el.style.setProperty('--cap-stagger-i', String(i % 8));
+        el.style.transitionDelay = (i * 0.04) + 's';
+      }
+      io.observe(el);
+    });
+  }
+  return { refresh };
+})();
+window.CapMotion = CapMotion;
