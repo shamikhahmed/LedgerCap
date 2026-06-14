@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#F7B500">
+  <meta name="theme-color" content="#6366f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,33 +13,22 @@
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
   <link rel="apple-touch-icon" href="assets/icons/icon-512.png">
   <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
-  <meta name="description" content="Wealth OS for Pakistan — PSX, Meezan funds, Zakat, and net worth. Offline-first, by Capricorn Systems.">
-<title>LedgerCap</title>
-<link rel="canonical" href="https://shamikhahmed.github.io/LedgerCap/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Capricorn Systems">
-<meta property="og:title" content="LedgerCap — Wealth OS">
-<meta property="og:description" content="Wealth OS for Pakistan — PSX, Meezan funds, Zakat, and net worth. Offline-first, by Capricorn Systems.">
-<meta property="og:url" content="https://shamikhahmed.github.io/LedgerCap/">
-<meta property="og:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="LedgerCap — Wealth OS">
-<meta name="twitter:description" content="Wealth OS for Pakistan — PSX, Meezan funds, Zakat, and net worth. Offline-first, by Capricorn Systems.">
-<meta name="twitter:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
+  <meta name="description" content="Premium investment OS — portfolio intelligence, research, and wealth tracking. Offline-first.">
+  <title>LedgerCap</title>
+  <link rel="canonical" href="https://shamikhahmed.github.io/LedgerCap/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet"></noscript>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="css/capricorn-core.css">
-<style>:root{--cap-accent:#f59e0b}</style>
-<link rel="stylesheet" href="css/app.css?v=10">
+  <link rel="stylesheet" href="css/app.css?v=11">
+  <link rel="stylesheet" href="css/ledger-os.css">
   <link rel="stylesheet" href="css/identity.css">
 </head>
 <body>
   <div id="splash" class="splash">
     <div class="splash-mark">₨</div>
     <div class="splash-title">LedgerCap</div>
-    <div class="splash-sub">Personal Wealth OS</div>
+    <div class="splash-sub">Investment OS</div>
     <div class="splash-bar"><div id="splash-fill"></div></div>
   </div>
   <div id="install-hint" class="install-hint hidden">
@@ -47,22 +36,25 @@
     <p><strong>Install LedgerCap</strong> — Safari → Share → <strong>Add to Home Screen</strong></p>
     <button type="button" class="btn-ghost" onclick="App.dismissInstall()">✕</button>
   </div>
+  <nav id="nav-sidebar"></nav>
   <div id="app">
     <div id="screens">
       <div id="screen-dashboard" class="screen active"></div>
       <div id="screen-portfolio" class="screen"></div>
-      <div id="screen-transactions" class="screen"></div>
-      <div id="screen-income" class="screen"></div>
-      <div id="screen-reports" class="screen"></div>
+      <div id="screen-holdings" class="screen"></div>
+      <div id="screen-research" class="screen"></div>
+      <div id="screen-watchlist" class="screen"></div>
+      <div id="screen-dividends" class="screen"></div>
+      <div id="screen-intelligence" class="screen"></div>
+      <div id="screen-journal" class="screen"></div>
       <div id="screen-settings" class="screen"></div>
+      <div id="screen-transactions" class="screen"></div>
     </div>
     <nav id="nav"></nav>
   </div>
 
-  <!-- FAB -->
   <button class="fab hidden" id="fab" onclick="App.openAddTransaction()" aria-label="Add transaction">+</button>
 
-  <!-- Bottom Sheet -->
   <div class="bottom-sheet" id="bottom-sheet">
     <div class="bs-backdrop"></div>
     <div class="bs-panel">
@@ -75,26 +67,30 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-wrap" id="toast-wrap"></div>
 
-  <!-- Scripts — dependency order -->
   <script src="js/data/holdings.js"></script>
   <script src="js/data/config.js"></script>
   <script src="js/engines/ledger.js"></script>
   <script src="js/engines/prices.js"></script>
   <script src="js/engines/insights.js"></script>
   <script src="js/engines/projections.js"></script>
+  <script src="js/engines/analytics.js"></script>
   <script src="js/modules/state.js"></script>
   <script src="js/modules/onboarding.js"></script>
-  <script src="js/modules/reports.js"></script>
   <script src="js/modules/investment.js"></script>
   <script src="js/modules/dashboard.js"></script>
   <script src="js/modules/portfolio.js"></script>
+  <script src="js/modules/holdings.js"></script>
+  <script src="js/modules/research.js"></script>
+  <script src="js/modules/watchlist.js"></script>
+  <script src="js/modules/dividends.js"></script>
+  <script src="js/modules/intelligence.js"></script>
+  <script src="js/modules/journal.js"></script>
   <script src="js/modules/transactions.js"></script>
-  <script src="js/modules/income.js"></script>
   <script src="js/modules/settings.js"></script>
   <script src="js/ui/charts.js"></script>
+  <script src="js/ui/motion.js"></script>
   <script src="js/ui/navigation.js"></script>
   <script src="js/app.js"></script>
 </body>

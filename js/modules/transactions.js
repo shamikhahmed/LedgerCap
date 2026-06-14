@@ -164,6 +164,10 @@ const Transactions = (() => {
     App.showToast(`Exported ${txs.length} transactions`, 'success');
   }
 
-  return { render, exportCsv };
+  function openLog() {
+    Navigation.go('transactions');
+  }
+
+  return { render, exportCsv, openLog };
 })();
 window.Transactions = Transactions;

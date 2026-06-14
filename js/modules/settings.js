@@ -76,9 +76,21 @@ const Settings = (() => {
     const zakatableTotal = zakatableStocks + zakatableFunds;
     const zakatDue = zakatableTotal >= nisabValue ? zakatableTotal * 0.025 : 0;
 
+    const theme = settings.theme || 'dark';
+
     screen.innerHTML = `
-    <div style="padding:calc(env(safe-area-inset-top,16px) + 10px) 16px 14px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div style="font-size:1.1rem;font-weight:700;">Settings</div>
+    <div class="os-page-header">
+      <div class="os-page-title">Settings</div>
+      <div class="os-page-sub">Preferences & data</div>
+    </div>
+
+    <div class="sec-head"><span class="sec-title">Appearance</span></div>
+    <div style="background:var(--os-bg-card);border-bottom:1px solid var(--os-border);padding:16px 20px;">
+      <div class="field-label" style="margin-bottom:10px;">Theme</div>
+      <div class="os-theme-toggle">
+        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">Dark</button>
+        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">Light</button>
+      </div>
     </div>
 
     <div class="sec-head"><span class="sec-title">Investor Profile</span></div>
@@ -239,7 +251,7 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v2.3.0</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.0.0</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
@@ -386,6 +398,13 @@ const Settings = (() => {
     render();
   }
 
-  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings };
+  function _setTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
+    App.applyTheme(theme);
+    App.showToast(`${theme === 'light' ? 'Light' : 'Dark'} theme applied`, 'success');
+    render();
+  }
+
+  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme };
 })();
 window.Settings = Settings;
