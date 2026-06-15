@@ -7,6 +7,21 @@ const Dashboard = (() => {
     if (!screen) return;
 
     const state = State.get();
+    const hasHoldings = (state.transactions || []).length > 0;
+
+    if (!hasHoldings) {
+      screen.innerHTML = `
+      <div class="os-empty cap-reveal">
+        <div class="os-empty-icon">📊</div>
+        <div class="os-empty-title">Your wealth OS starts here</div>
+        <div class="os-empty-body">Track PSX stocks, Meezan funds, dividends, and net worth — all on your device.</div>
+        <button class="os-btn os-btn-primary" onclick="Navigation.go('holdings')">Add holdings</button>
+        <button class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo portfolio</button>
+      </div>`;
+      CapMotion.refresh();
+      return;
+    }
+
     const summary = PortfolioAnalyticsService.getSummary(state);
     const intel = PortfolioAnalyticsService.getIntelligence(state);
     const dailyPnl = State.calcDailyPnl();
@@ -43,7 +58,7 @@ const Dashboard = (() => {
     <div class="os-section cap-reveal">
       <div class="os-section-title">Requires attention</div>
       ${attention.map(i => `<div class="os-attention-item ${i.severity}">${i.text}</div>`).join('')}
-      <button class="os-btn os-btn-ghost" style="width:100%;margin-top:var(--space-2);" onclick="Navigation.go('intelligence')">View all insights</button>
+      <button class="os-btn os-btn-ghost" style="width:100%;margin-top:var(--space-2);" onclick="Navigation.go('research', false, { portfolioIntel: true })">View all insights</button>
     </div>` : ''}
 
     ${summary.sectorAllocation?.length ? `

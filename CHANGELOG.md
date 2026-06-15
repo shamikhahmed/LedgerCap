@@ -1,5 +1,10 @@
 # Changelog — LedgerCap
 
+## 3.4.0 (2026-06-15)
+- Merge Intel into Research: Stock analysis + Portfolio intel modes; Intel tab removed (8 tabs).
+- Empty dashboard state with Add holdings and demo portfolio CTAs.
+- Legacy `intelligence` / `reports` routes open Portfolio intel inside Research.
+
 ## 3.3.0 (2026-06-15) — Product quality pass
 - Design token system: typography scale, spacing vars, calm light/dark palette, blue interactive accent
 - Dashboard focused on portfolio value, today P&L, passive income, and attention items

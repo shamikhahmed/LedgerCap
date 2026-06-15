@@ -20,14 +20,15 @@ test.describe('LedgerCap smoke', () => {
     await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
   });
 
-  test('intelligence tab renders and holdings opens transaction log', async ({ page }) => {
+  test('portfolio intel in research tab and holdings opens transaction log', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
     await page.waitForTimeout(800);
 
-    await page.locator('#nav [data-tab="intelligence"]').click();
-    await expect(page.locator('#screen-intelligence.active')).toBeVisible({ timeout: 10000 });
+    await page.locator('#nav [data-tab="research"]').click();
+    await page.getByRole('button', { name: 'Portfolio intel' }).click();
+    await expect(page.locator('#screen-research.active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Portfolio Intelligence')).toBeVisible();
 
     await page.locator('#nav [data-tab="holdings"]').click();
@@ -37,14 +38,15 @@ test.describe('LedgerCap smoke', () => {
     await expect(page.getByRole('button', { name: /CSV/i })).toBeVisible();
   });
 
-  test('nine primary nav tabs present on mobile', async ({ page }) => {
+  test('eight primary nav tabs present on mobile', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
     const tabs = page.locator('#nav .nav-tab');
-    await expect(tabs).toHaveCount(9);
+    await expect(tabs).toHaveCount(8);
     await expect(page.locator('#nav [data-tab="dashboard"]')).toBeVisible();
-    await expect(page.locator('#nav [data-tab="journal"]')).toBeVisible();
+    await expect(page.locator('#nav [data-tab="research"]')).toBeVisible();
+    await expect(page.locator('#nav [data-tab="intelligence"]')).toHaveCount(0);
   });
 
   test('research shows fundamentals for demo stock', async ({ page }) => {

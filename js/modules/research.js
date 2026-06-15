@@ -1,19 +1,38 @@
 'use strict';
 const Research = (() => {
   let _symbol = null;
+  let _mode = 'stock';
   const U = PlatformUI;
 
-  function open(symbol) { _symbol = symbol; render(); }
+  function setMode(mode) {
+    _mode = mode === 'portfolio' ? 'portfolio' : 'stock';
+    render();
+  }
+
+  function open(symbol) { _symbol = symbol; _mode = 'stock'; render(); }
+
+  function modeBar() {
+    return `<div class="rt-mode-bar cap-reveal">
+      <button type="button" class="rt-mode-btn${_mode === 'stock' ? ' active' : ''}" onclick="Research.setMode('stock')">Stock analysis</button>
+      <button type="button" class="rt-mode-btn${_mode === 'portfolio' ? ' active' : ''}" onclick="Research.setMode('portfolio')">Portfolio intel</button>
+    </div>`;
+  }
 
   function render() {
     const screen = document.getElementById('screen-research');
     if (!screen) return;
 
+    if (_mode === 'portfolio') {
+      screen.innerHTML = `${modeBar()}<div id="research-portfolio-host"></div>`;
+      if (window.Intelligence) Intelligence.render(document.getElementById('research-portfolio-host'));
+      return;
+    }
+
     const symbols = StockService.listSymbols();
     if (!_symbol && symbols.length) _symbol = symbols[0];
 
     if (!_symbol) {
-      screen.innerHTML = `<div class="rt-terminal"><div class="rt-header"><div class="rt-sym">Research</div><div class="rt-name">Add holdings to begin stock analysis</div></div></div>`;
+      screen.innerHTML = `${modeBar()}<div class="rt-terminal"><div class="rt-header"><div class="rt-sym">Research</div><div class="rt-name">Add holdings to begin stock analysis</div></div></div>`;
       return;
     }
 
@@ -22,6 +41,7 @@ const Research = (() => {
     const isFund = f.type === 'fund';
 
     screen.innerHTML = `
+    ${modeBar()}
     <div class="rt-terminal">
       <div class="rt-header cap-reveal">
         <div class="rt-header-top">
@@ -121,6 +141,6 @@ const Research = (() => {
     App.showToast('Notes saved', 'success');
   }
 
-  return { render, open, saveNotes, _onSearch };
+  return { render, open, setMode, saveNotes, _onSearch };
 })();
 window.Research = Research;

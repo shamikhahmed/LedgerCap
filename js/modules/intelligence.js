@@ -2,8 +2,8 @@
 const Intelligence = (() => {
   const U = PlatformUI;
 
-  function render() {
-    const screen = document.getElementById('screen-intelligence');
+  function render(target) {
+    const screen = target || document.getElementById('screen-intelligence');
     if (!screen) return;
     const intel = PortfolioAnalyticsService.getIntelligence();
     const { summary, insights, ruleInsights, scores } = intel;
