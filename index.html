@@ -38,7 +38,7 @@
     <p><strong>Install LedgerCap</strong> — Safari → Share → <strong>Add to Home Screen</strong></p>
     <button type="button" class="btn-ghost" onclick="App.dismissInstall()">✕</button>
   </div>
-  <nav id="nav-sidebar"></nav>
+  <nav id="nav-sidebar" aria-label="Module navigation"></nav>
   <div id="app">
     <div id="screens">
       <div id="screen-dashboard" class="screen active"></div>
@@ -52,7 +52,7 @@
       <div id="screen-settings" class="screen"></div>
       <div id="screen-transactions" class="screen"></div>
     </div>
-    <nav id="nav"></nav>
+    <nav id="nav" aria-label="Main navigation"></nav>
   </div>
 
   <button class="fab hidden" id="fab" onclick="App.openAddTransaction()" aria-label="Add transaction">+</button>
@@ -69,7 +69,7 @@
     </div>
   </div>
 
-  <div class="toast-wrap" id="toast-wrap"></div>
+  <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="js/data/holdings.js"></script>
   <script src="js/data/fundamentals.js"></script>
