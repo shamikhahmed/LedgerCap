@@ -224,14 +224,9 @@ const Settings = (() => {
       }).join('')}
     </div>
 
-    <div class="sec-head"><span class="sec-title">Holdings Seed</span></div>
+    <div class="sec-head"><span class="sec-title">Try demo</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
-      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">Load the demo PSX + Meezan portfolio (${(window.INITIAL_TRANSACTIONS || []).length} ledger entries). Replaces empty vault or merges after confirm.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn-secondary" onclick="Settings._loadSeed()">📦 Load Demo Holdings</button>
-        <button class="btn-ghost" onclick="Settings._clearHoldings()">Clear transactions only</button>
-      </div>
-      <div style="font-size:0.65rem;color:var(--text3);margin-top:8px;">${holdings.length} stock positions · ${funds.length} fund positions currently</div>
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:0;line-height:1.5;">Open <strong>?demo=1</strong> for a sample PSX + Meezan portfolio without replacing your ledger from Settings.</p>
     </div>
 
     <div class="sec-head"><span class="sec-title">Data Management</span></div>
@@ -352,8 +347,14 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
+  function _snapshotBeforeDestructive() {
+    try { localStorage.setItem('ledgercap_pin_backup', State.exportJSON()); } catch (e) {}
+  }
+
   function _resetVault() {
-    if (!confirm('Reset all data? This cannot be undone.')) return;
+    if (!confirm('Reset all data? Export a .ledgercap backup first if you need to recover.')) return;
+    _snapshotBeforeDestructive();
+    if (!confirm('Final confirmation — delete all ledger data on this device?')) return;
     State.reset();
     App.showToast('Data reset', 'warning');
     App.renderCurrent();
