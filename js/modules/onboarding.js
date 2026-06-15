@@ -26,7 +26,7 @@ const Onboarding = (() => {
     el.innerHTML = `
       <div class="ob-shell">
         <div class="ob-top">
-          <div class="ob-brand">Stunds<span>OS</span></div>
+          <div class="ob-brand">Ledger<em>Cap</em></div>
           <button class="ob-skip-top" onclick="Onboarding.skip()">Skip</button>
         </div>
         <div class="ob-progress">${_dots(1)}</div>
