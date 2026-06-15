@@ -1,0 +1,191 @@
+'use strict';
+const PortfolioAnalyticsService = (() => {
+
+  function _realizedGain(txs) {
+    return (txs || []).filter(t => t.type === 'SELL').reduce((s, t) => {
+      const cost = (t.shares || 0) * (t.avgCostAtSell || t.price || 0);
+      return s + ((t.amount || 0) - cost);
+    }, 0);
+  }
+
+  function _realizedFromLedger(txs) {
+    let realized = 0;
+    const costBasis = {};
+    (txs || []).forEach(t => {
+      if (t.type === 'BUY' && t.symbol) {
+        const k = t.symbol + '_' + (t.broker || '');
+        if (!costBasis[k]) costBasis[k] = { shares: 0, cost: 0 };
+        costBasis[k].shares += t.shares || 0;
+        costBasis[k].cost += (t.shares || 0) * (t.price || 0);
+      } else if (t.type === 'SELL' && t.symbol) {
+        const k = t.symbol + '_' + (t.broker || '');
+        const cb = costBasis[k];
+        if (cb && cb.shares > 0) {
+          const avg = cb.cost / cb.shares;
+          realized += (t.amount || 0) - (t.shares || 0) * avg;
+          cb.shares -= t.shares || 0;
+          cb.cost -= (t.shares || 0) * avg;
+        }
+      }
+    });
+    return realized;
+  }
+
+  function getSummary(state) {
+    state = state || State.get();
+    const txs = state.transactions || [];
+    const m = Analytics.dashboardMetrics(state);
+    const totalValue = m.totalValue;
+    const invested = m.totalCost;
+    const unrealized = m.totalReturn.abs;
+    const realized = _realizedFromLedger(txs);
+    const divs = DividendService.getPortfolioDividends();
+
+    const holdings = Ledger.calcHoldings(txs);
+    const funds = Ledger.calcFundHoldings(txs);
+    let portfolioDivYield = 0;
+    let weightedYield = 0;
+    holdings.forEach(h => {
+      const val = h.shares * (State.getPrice(h.symbol) || h.avgCost);
+      const f = (window.FUNDAMENTALS_DB || {})[h.symbol];
+      if (f?.divYield && totalValue > 0) {
+        weightedYield += (val / totalValue) * f.divYield;
+      }
+    });
+    funds.forEach(f => {
+      const nav = State.getPrice(f.symbol) || f.avgNav;
+      const val = f.units * nav;
+      const fa = (window.FUND_ANALYTICS_DB || {})[f.symbol];
+      if (fa?.divYield && totalValue > 0) weightedYield += (val / totalValue) * fa.divYield;
+    });
+    portfolioDivYield = weightedYield;
+
+    const brokers = {};
+    holdings.forEach(h => {
+      const b = h.broker || 'Other';
+      brokers[b] = (brokers[b] || 0) + h.shares * (State.getPrice(h.symbol) || h.avgCost);
+    });
+    funds.forEach(f => {
+      brokers['Meezan'] = (brokers['Meezan'] || 0) + f.units * (State.getPrice(f.symbol) || f.avgNav);
+    });
+
+    return {
+      totalValue, invested, unrealized, realized,
+      totalReturn: m.totalReturn, xirr: m.xirr,
+      portfolioDivYield, dividendIncome: divs.annual,
+      health: m.portfolioHealth, risk: m.riskScore,
+      assetAllocation: m.assetAllocation,
+      sectorAllocation: m.sectorAllocation,
+      brokerAllocation: m.brokerAllocation,
+      brokers,
+    };
+  }
+
+  function getHoldings(state) {
+    state = state || State.get();
+    const txs = state.transactions || [];
+    const total = State.calcTotalValue() || 1;
+    const stockRows = Ledger.calcHoldings(txs).map(h => {
+      const price = State.getPrice(h.symbol) || h.avgCost;
+      const val = h.shares * price;
+      const cost = h.shares * h.avgCost;
+      const pnl = val - cost;
+      const pnlPct = h.avgCost > 0 ? ((price - h.avgCost) / h.avgCost) * 100 : 0;
+      const alloc = (val / total) * 100;
+      const f = (window.FUNDAMENTALS_DB || {})[h.symbol];
+      const ai = AIAnalysis.analyze(h.symbol);
+      const meta = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
+      return {
+        symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
+        kind: 'stock', quantity: h.shares, price, value: val, costBasis: cost,
+        pnl, pnlPct, allocPct: alloc,
+        divYield: f?.divYield || 0,
+        yieldOnCost: DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares),
+        aiRating: ai.action, aiConfidence: ai.confidence, sector: meta?.sector,
+      };
+    });
+
+    const fundRows = Ledger.calcFundHoldings(txs).map(f => {
+      const nav = State.getPrice(f.symbol) || f.avgNav;
+      const val = f.units * nav;
+      const pnl = val - f.totalInvested;
+      const pnlPct = f.avgNav > 0 ? ((nav - f.avgNav) / f.avgNav) * 100 : 0;
+      const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
+      const fa = (window.FUND_ANALYTICS_DB || {})[f.symbol];
+      const ai = AIAnalysis.analyze(f.symbol);
+      return {
+        symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan',
+        kind: 'fund', quantity: f.units, price: nav, value: val, costBasis: f.totalInvested,
+        pnl, pnlPct, allocPct: (val / total) * 100,
+        divYield: fa?.divYield || 0, yieldOnCost: null,
+        aiRating: ai.action, aiConfidence: ai.confidence, sector: mf?.type,
+      };
+    });
+
+    return [...stockRows, ...fundRows].sort((a, b) => b.value - a.value);
+  }
+
+  function getWinnersLosers(state) {
+    const rows = getHoldings(state);
+    const stocks = rows.filter(r => r.kind === 'stock');
+    const sorted = [...stocks].sort((a, b) => b.pnlPct - a.pnlPct);
+    return {
+      winners: sorted.filter(r => r.pnlPct > 0).slice(0, 3),
+      losers: sorted.filter(r => r.pnlPct < 0).slice(-3).reverse(),
+    };
+  }
+
+  function getIntelligence(state) {
+    state = state || State.get();
+    const summary = getSummary(state);
+    const insights = [];
+    const sectors = summary.sectorAllocation || [];
+    const holdings = getHoldings(state);
+
+    const topSector = sectors[0];
+    if (topSector && topSector.pct > 35) {
+      insights.push({ type: 'risk', severity: 'high', text: `${topSector.sector} allocation at ${topSector.pct.toFixed(0)}% — sector concentration elevated.`, action: 'Rebalance into underweight sectors.' });
+    }
+
+    const banking = sectors.find(s => s.sector === 'Banking');
+    if (banking && banking.pct > 25) {
+      insights.push({ type: 'sector', severity: 'medium', text: `Banking exposure ${banking.pct.toFixed(0)}% — monitor rate cycle and credit risk.`, action: 'Consider diversifying into industrials or tech.' });
+    }
+
+    const tech = sectors.find(s => s.sector === 'Technology');
+    if (!tech || tech.pct < 5) {
+      insights.push({ type: 'opportunity', severity: 'low', text: 'Technology exposure below 5% — growth sleeve underweight.', action: 'Evaluate TRG or KMIF for tech/growth exposure.' });
+    }
+
+    const top = holdings[0];
+    if (top && top.allocPct > 20) {
+      insights.push({ type: 'concentration', severity: 'high', text: `${top.symbol} is ${top.allocPct.toFixed(0)}% of portfolio — single-name concentration risk.`, action: 'Trim or add complementary positions.' });
+    }
+
+    holdings.filter(h => h.divYield > 0).forEach(h => {
+      const growth = DividendService.getDividendGrowth(h.symbol);
+      if (growth != null && growth < 2) {
+        insights.push({ type: 'dividend', severity: 'medium', text: `${h.symbol} dividend growth slowing (${growth.toFixed(1)}% CAGR).`, action: 'Review payout sustainability in Research.' });
+      }
+    });
+
+    if (summary.portfolioDivYield < 4 && summary.invested > 500000) {
+      insights.push({ type: 'income', severity: 'low', text: `Portfolio yield ${summary.portfolioDivYield.toFixed(1)}% — income generation below target.`, action: 'Add high-yield names like MEBL, OGDC, or MIIF.' });
+    }
+
+    const ruleInsights = Insights.generate(state) || [];
+    return {
+      summary, insights, ruleInsights,
+      scores: {
+        health: summary.health,
+        risk: summary.risk,
+        diversification: Math.min(100, sectors.length * 12),
+        dividendQuality: Math.min(100, summary.portfolioDivYield * 8),
+        growthQuality: holdings.filter(h => (window.FUNDAMENTALS_DB || {})[h.symbol]?.profitGrowth > 10).length * 15,
+      },
+    };
+  }
+
+  return { getSummary, getHoldings, getWinnersLosers, getIntelligence };
+})();
+window.PortfolioAnalyticsService = PortfolioAnalyticsService;

@@ -104,6 +104,7 @@ const Portfolio = (() => {
     const grandPnlPct = grandCost > 0 ? (grandPnl / grandCost) * 100 : 0;
     const totalDivs = State.getTotalDividends();
     const brokerAlloc = Analytics.brokerAllocation(state);
+    const pSummary = PortfolioAnalyticsService.getSummary(state);
 
     const filtered = _applyFilter(allRows, _filter);
     const sorted = _applySort(filtered, _sort);
@@ -113,7 +114,18 @@ const Portfolio = (() => {
     screen.innerHTML = `
     <div class="os-page-header">
       <div class="os-page-title">Portfolio</div>
-      <div class="os-page-sub">Unified multi-broker view · ${fmt(grandValue)}</div>
+      <div class="os-page-sub">AKD · Rafi · Meezan · CDC — unified view</div>
+    </div>
+
+    <div style="padding:0 20px 16px;" class="cap-reveal">
+      ${PlatformUI.metricGrid([
+        PlatformUI.metricCell('Total Value', PlatformUI.fmt(pSummary.totalValue)),
+        PlatformUI.metricCell('Invested', PlatformUI.fmt(pSummary.invested)),
+        PlatformUI.metricCell('Unrealized', PlatformUI.fmt(pSummary.unrealized), PlatformUI.fmt(pSummary.totalReturn.pct, { pct: true, signed: true }), PlatformUI.chgCls(pSummary.unrealized)),
+        PlatformUI.metricCell('Realized', PlatformUI.fmt(pSummary.realized)),
+        PlatformUI.metricCell('XIRR', pSummary.xirr != null ? PlatformUI.fmt(pSummary.xirr * 100, { pct: true, signed: true }) : '—'),
+        PlatformUI.metricCell('Div Yield', PlatformUI.fmt(pSummary.portfolioDivYield, { pct: true })),
+      ], 3)}
     </div>
 
     <div class="os-section">

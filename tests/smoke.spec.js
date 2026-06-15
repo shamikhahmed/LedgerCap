@@ -32,7 +32,7 @@ test.describe('LedgerCap smoke', () => {
 
     await page.locator('#nav [data-tab="holdings"]').click();
     await expect(page.locator('#screen-holdings.active')).toBeVisible({ timeout: 10000 });
-    await page.getByRole('button', { name: /View log/i }).click();
+    await page.getByRole('button', { name: /Transaction log/i }).click();
     await expect(page.locator('#screen-transactions.active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('button', { name: /CSV/i })).toBeVisible();
   });
@@ -45,5 +45,14 @@ test.describe('LedgerCap smoke', () => {
     await expect(tabs).toHaveCount(9);
     await expect(page.locator('#nav [data-tab="dashboard"]')).toBeVisible();
     await expect(page.locator('#nav [data-tab="journal"]')).toBeVisible();
+  });
+
+  test('research shows fundamentals for demo stock', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await page.waitForFunction(() => typeof window.ResearchService !== 'undefined');
+    await page.waitForTimeout(800);
+    await page.locator('#nav [data-tab="research"]').click();
+    await expect(page.getByText('Fundamentals')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('AI Rating')).toBeVisible();
   });
 });
