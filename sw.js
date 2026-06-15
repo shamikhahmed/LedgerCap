@@ -1,18 +1,20 @@
 'use strict';
-const CACHE = 'ledgercap-v40';
+const CACHE = 'ledgercap-v41';
 const ASSETS = [
-  './css/capricorn-core.css',
-  './css/ledger-os.css',
-  './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json', './css/app.css',
+  './css/capricorn-core.css', './css/ledger-os.css', './css/platform.css', './css/app.css',
+  './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',
-  './js/data/holdings.js', './js/data/config.js', './js/engines/ledger.js', './js/engines/prices.js',
-  './js/engines/insights.js', './js/engines/projections.js', './js/engines/analytics.js',
+  './js/data/holdings.js', './js/data/fundamentals.js', './js/data/config.js',
+  './js/engines/ledger.js', './js/engines/prices.js', './js/engines/insights.js',
+  './js/engines/projections.js', './js/engines/analytics.js', './js/engines/ai-analysis.js',
+  './js/services/market-data.js', './js/services/stock-service.js', './js/services/dividend-service.js',
+  './js/services/research-service.js', './js/services/portfolio-analytics-service.js',
   './js/modules/state.js', './js/modules/onboarding.js', './js/modules/investment.js',
   './js/modules/dashboard.js', './js/modules/portfolio.js', './js/modules/holdings.js',
   './js/modules/research.js', './js/modules/watchlist.js', './js/modules/dividends.js',
   './js/modules/intelligence.js', './js/modules/journal.js',
   './js/modules/transactions.js', './js/modules/settings.js',
-  './js/ui/charts.js', './js/ui/motion.js', './js/ui/navigation.js', './js/app.js'
+  './js/ui/charts.js', './js/ui/motion.js', './js/ui/platform.js', './js/ui/navigation.js', './js/app.js'
 ];
 
 self.addEventListener('install', e => {
