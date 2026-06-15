@@ -1,5 +1,8 @@
 # Changelog — LedgerCap
 
+## 3.4.1 (2026-06-15)
+- Restore pre–Capricorn identity home-screen icons; service worker cache bump.
+
 ## 3.4.0 (2026-06-15)
 - Merge Intel into Research: Stock analysis + Portfolio intel modes; Intel tab removed (8 tabs).
 - Empty dashboard state with Add holdings and demo portfolio CTAs.
