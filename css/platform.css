@@ -59,7 +59,18 @@
 .rt-insight-action { font-size: 0.78rem; color: var(--os-accent); margin-top: 6px; font-weight: 600; }
 
 .rt-wl-card { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--os-border); cursor: pointer; }
-.os-broker-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; }
+.rt-wl-card:hover { background: var(--os-bg-hover); }
+
+/* Dividend Center */
+.div-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 0 20px 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.div-tabs::-webkit-scrollbar { display: none; }
+.div-tab { flex-shrink: 0; padding: 8px 14px; border-radius: 100px; border: 1px solid var(--os-border); background: var(--os-bg-card); font-size: 0.78rem; font-weight: 600; color: var(--os-text-secondary); cursor: pointer; transition: all 0.2s; }
+.div-tab.active { background: var(--os-accent-soft); border-color: var(--os-accent); color: var(--os-accent); }
+.div-panel { min-height: 200px; }
+.div-cal-month { margin: 0 20px 20px; }
+.div-cal-month-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; }
+.div-cal-section-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--os-text-tertiary); margin: 12px 0 6px; }
+
 @media (min-width: 600px) { .os-broker-grid { grid-template-columns: repeat(4, 1fr); } }
 .os-broker-card { background: var(--os-bg-card); border: 1px solid var(--os-border); border-radius: var(--os-radius-sm); padding: 14px; }
 .os-broker-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--os-text-tertiary); margin-bottom: 6px; }

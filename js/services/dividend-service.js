@@ -1,77 +1,95 @@
 'use strict';
+/**
+ * Dividend data access layer — reads corporate actions dataset + user transactions.
+ * Swap adapter for live PSX dividend API without changing UI.
+ */
 const DividendService = (() => {
+  let _adapter = null;
 
-  function _loggedBySymbol() {
+  function setAdapter(adapter) {
+    _adapter = adapter;
+    if (adapter && CorporateActionsService.setAdapter) {
+      CorporateActionsService.setAdapter(adapter);
+    }
+  }
+
+  function getSymbolData(symbol) {
+    return {
+      profile: CorporateActionsService.getSymbolProfile(symbol),
+      actions: CorporateActionsService.getAllActions(symbol),
+      analysis: DividendAnalyticsService.getHoldingAnalysis(symbol),
+      historical: DividendAnalyticsService.getHistoricalTable(symbol),
+    };
+  }
+
+  function getUpcoming() {
+    return DividendAnalyticsService.getPortfolioDashboard().upcoming;
+  }
+
+  function getCalendar() {
+    return DividendAnalyticsService.getCalendar();
+  }
+
+  function getPortfolioDividends() {
+    const d = DividendAnalyticsService.getPortfolioDashboard();
+    return {
+      total: d.lifetime,
+      annual: d.receivedYtd,
+      monthly: d.receivedMtd,
+      yieldOnPortfolio: d.portfolioYield,
+      expectedThisYear: d.expectedThisYear,
+      expectedNextYear: d.expectedNextYear,
+      count: (State.get('transactions') || []).filter(t => t.type === 'DIVIDEND').length,
+    };
+  }
+
+  function getYieldOnCost(symbol, avgCost, shares) {
+    const a = DividendAnalyticsService.getHoldingAnalysis(symbol);
+    if (avgCost && shares) {
+      const annualDps = a.annualDps || 0;
+      const cost = avgCost * shares;
+      return cost > 0 ? (annualDps * shares / cost) * 100 : null;
+    }
+    return a.yieldOnCost;
+  }
+
+  function getDividendGrowth(symbol) {
+    const a = DividendAnalyticsService.getHoldingAnalysis(symbol);
+    return a.dividendCagr;
+  }
+
+  function loggedBySymbol() {
     return State.dividendsBySymbol();
   }
 
   function getHistory(symbol) {
-    const txs = (State.get('transactions') || [])
-      .filter(t => t.type === 'DIVIDEND' && (!symbol || t.symbol === symbol))
-      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const seed = symbol && (window.FUNDAMENTALS_DB || {})[symbol];
-    const seedHist = (seed?.divHistory || []).map(d => ({ year: d.y, amount: d.a, source: 'seed' }));
-    return { logged: txs, seedAnnual: seedHist };
+    return DividendAnalyticsService.getHistoricalTable(symbol);
   }
 
-  function getUpcoming() {
-    const items = [];
-    Object.entries(window.FUNDAMENTALS_DB || {}).forEach(([sym, f]) => {
-      if (f.upcomingDiv) items.push({ symbol: sym, ...f.upcomingDiv, estAmount: f.upcomingDiv.amount });
-    });
-    const holdings = Ledger.calcHoldings(State.get('transactions') || []);
-    return items.map(u => {
-      const h = holdings.find(x => x.symbol === u.symbol);
-      const estTotal = h ? (u.estAmount || 0) * h.shares : null;
-      return { ...u, shares: h?.shares || 0, estTotal };
-    }).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  function getPortfolioAnalysis() {
+    return DividendAnalyticsService.getPortfolioDashboard();
   }
 
-  function getCalendar() {
-    const upcoming = getUpcoming();
-    const byMonth = {};
-    upcoming.forEach(u => {
-      const m = (u.date || '').slice(0, 7);
-      if (!byMonth[m]) byMonth[m] = [];
-      byMonth[m].push(u);
-    });
-    return byMonth;
+  function getForecast() {
+    return DividendAnalyticsService.getForecast();
   }
 
-  function getPortfolioDividends() {
-    const total = State.getTotalDividends();
-    const txs = (State.get('transactions') || []).filter(t => t.type === 'DIVIDEND');
-    const thisYear = new Date().getFullYear();
-    const annual = txs.filter(t => (t.date || '').startsWith(String(thisYear))).reduce((s, t) => s + (t.amount || 0), 0);
-    const thisMonth = new Date().toISOString().slice(0, 7);
-    const monthly = txs.filter(t => (t.date || '').startsWith(thisMonth)).reduce((s, t) => s + (t.amount || 0), 0);
-    const invested = State.calcTotalCost();
-    const yieldOnPortfolio = invested > 0 ? (annual / invested) * 100 : 0;
-    return { total, annual, monthly, yieldOnPortfolio, count: txs.length };
+  function getTimeline() {
+    return DividendAnalyticsService.getTimeline();
   }
 
-  function getYieldOnCost(symbol, avgCost, shares) {
-    const f = (window.FUNDAMENTALS_DB || {})[symbol];
-    if (!f || !avgCost || !shares) return null;
-    const lastDiv = f.divHistory?.[0]?.a || 0;
-    const annualDiv = lastDiv * shares;
-    const cost = avgCost * shares;
-    return cost > 0 ? (annualDiv / cost) * 100 : null;
+  function getGrowthAnalytics() {
+    return DividendAnalyticsService.getGrowthAnalytics();
   }
 
-  function getDividendGrowth(symbol) {
-    const hist = (window.FUNDAMENTALS_DB || {})[symbol]?.divHistory || [];
-    if (hist.length < 2) return null;
-    const latest = hist[0].a;
-    const prev = hist[hist.length - 1].a;
-    if (!prev) return null;
-    const years = hist.length - 1;
-    return (Math.pow(latest / prev, 1 / years) - 1) * 100;
+  function getHoldingsAnalysis() {
+    return DividendAnalyticsService.getPortfolioHoldingsAnalysis();
   }
 
   return {
-    getHistory, getUpcoming, getCalendar, getPortfolioDividends,
-    getYieldOnCost, getDividendGrowth, loggedBySymbol: _loggedBySymbol,
+    setAdapter, getSymbolData, getUpcoming, getCalendar, getPortfolioDividends,
+    getYieldOnCost, getDividendGrowth, loggedBySymbol, getHistory,
+    getPortfolioAnalysis, getForecast, getTimeline, getGrowthAnalytics, getHoldingsAnalysis,
   };
 })();
 window.DividendService = DividendService;

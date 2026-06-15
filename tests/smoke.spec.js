@@ -55,4 +55,18 @@ test.describe('LedgerCap smoke', () => {
     await expect(page.getByText('Fundamentals')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('AI Rating')).toBeVisible();
   });
+
+  test('dividend center renders with forecast and upcoming tabs', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await page.waitForFunction(() => typeof window.DividendService !== 'undefined');
+    await page.waitForTimeout(800);
+    await page.locator('#nav [data-tab="dividends"]').click();
+    await expect(page.locator('#screen-dividends.active')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Dividend Center')).toBeVisible();
+    await expect(page.getByText('Portfolio Yield')).toBeVisible();
+    await page.getByRole('button', { name: 'Upcoming' }).click();
+    await expect(page.getByText('All Upcoming Dividends')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Forecast' }).click();
+    await expect(page.getByText('Income Forecast')).toBeVisible({ timeout: 5000 });
+  });
 });
