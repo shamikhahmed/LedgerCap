@@ -1,5 +1,11 @@
 # Changelog — LedgerCap
 
+## 3.3.0 (2026-06-15) — Product quality pass
+- Design token system: typography scale, spacing vars, calm light/dark palette, blue interactive accent
+- Dashboard focused on portfolio value, today P&L, passive income, and attention items
+- Portfolio, research, and dividend screens simplified; reduced gradients, shadows, and motion
+- Service worker cache `ledgercap-v43`
+
 ## 3.0.0 (2026-06-10) — LedgerCap 2.0
 - Complete product redesign: premium investment OS with 9-section navigation
 - New sections: Holdings, Research, Watchlist, Dividends, Portfolio Intelligence, Investment Journal

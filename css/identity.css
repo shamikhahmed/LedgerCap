@@ -1,63 +1,47 @@
-/* StundsOS — Bloomberg Terminal PK */
-:root {
-  --bg: #0a0c0f;
-  --bg2: #0f1218;
-  --bg3: #151a22;
-  --gold: #f0b90b;
-  --green: #0ecb81;
-  --red: #f6465d;
-  --orange: #f0b90b;
-  --r: 4px;
-  --r-sm: 3px;
-  --r-lg: 6px;
-  --font: 'Barlow Condensed', system-ui, sans-serif;
-}
+/* LedgerCap identity — calm premium overrides (loads last) */
 
 body {
-  font-family: var(--font);
-  background:
-    linear-gradient(180deg, rgba(240, 185, 11, 0.04) 0%, transparent 120px),
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px),
-    var(--bg) !important;
-  letter-spacing: 0.02em;
+  font-family: var(--os-font, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif) !important;
+  background: var(--os-bg) !important;
+  letter-spacing: -0.01em;
 }
 
-h1, h2, h3, .dash-hero h1, .section-title, .splash-title {
-  font-family: 'Barlow Condensed', sans-serif !important;
-  font-weight: 800 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.06em !important;
-}
-
-.hero-value, .metric-value, .kse-price, [class*="pnl"] {
-  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
-  font-variant-numeric: tabular-nums;
+body.light {
+  background: var(--os-bg) !important;
 }
 
 #nav {
-  border-top: 2px solid var(--gold) !important;
-  background: rgba(10, 12, 15, 0.98) !important;
+  border-top: 1px solid var(--os-border) !important;
+  background: var(--os-bg-elevated) !important;
   border-radius: 0 !important;
 }
 
-.nav-tab.active, .nav-item.active {
-  color: var(--gold) !important;
+.nav-tab.active,
+.nav-side-btn.active {
+  color: var(--os-accent) !important;
 }
 
-.card, .metric-tile, .glass, .btn {
-  border-radius: var(--r) !important;
+.hero-value,
+.metric-value,
+.os-hero-value,
+.os-metric-value {
+  font-variant-numeric: tabular-nums;
 }
 
-.metric-grid, .stock-mini-grid {
-  border-radius: var(--r-lg) !important;
-  border: 1px solid rgba(240, 185, 11, 0.15) !important;
+.btn-primary {
+  background: var(--os-accent) !important;
+  color: #fff !important;
+  border-radius: var(--os-radius-sm, 10px) !important;
+  font-weight: 600 !important;
 }
 
-.btn-primary, .btn-gold {
-  background: var(--gold) !important;
-  color: #000 !important;
-  border-radius: var(--r-sm) !important;
-  font-weight: 800 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.fab {
+  background: var(--os-accent) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.filter-tab.active {
+  background: var(--os-accent-soft) !important;
+  border-color: var(--os-accent) !important;
+  color: var(--os-accent) !important;
 }

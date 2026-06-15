@@ -36,12 +36,12 @@ const Research = (() => {
         </div>
       </div>
 
-      <div class="rt-search cap-reveal"><input type="search" placeholder="Search symbol…" id="rt-search" oninput="Research._onSearch(this.value)"></div>
-      <div class="rt-sym-pills cap-reveal" id="rt-pills">
+      <div class="rt-search"><input type="search" placeholder="Search symbol…" id="rt-search" oninput="Research._onSearch(this.value)"></div>
+      <div class="rt-sym-pills" id="rt-pills">
         ${symbols.slice(0, 20).map(s => `<button class="rt-pill${s === r.symbol ? ' active' : ''}" onclick="Research.open('${s}')">${s}</button>`).join('')}
       </div>
 
-      <div class="rt-ai-bar cap-reveal">
+      <div class="rt-ai-bar">
         <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">AI Rating</div><div class="rt-ai-stat-val">${U.ratingBadge(ai.action)}</div></div>
         <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Confidence</div><div class="rt-ai-stat-val">${ai.confidence}%</div></div>
         <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Fair Value</div><div class="rt-ai-stat-val">${U.fmt(ai.fairValue)}</div></div>
@@ -69,14 +69,10 @@ const Research = (() => {
         U.metricCell('P/E', f.pe ?? '—'),
         U.metricCell('P/B', f.pb ?? '—'),
         U.metricCell('ROE', f.roe ? f.roe + '%' : '—'),
-        U.metricCell('ROA', f.roa ? f.roa + '%' : '—'),
-        U.metricCell('EPS', f.eps ? '₨' + f.eps : '—'),
         U.metricCell('Div Yield', f.divYield ? f.divYield + '%' : '—'),
-        U.metricCell('Payout', f.payout ? f.payout + '%' : '—'),
+        U.metricCell('EPS', f.eps ? '₨' + f.eps : '—'),
         U.metricCell('Rev Growth', f.revGrowth ? f.revGrowth + '%' : '—', null, U.chgCls(f.revGrowth)),
         U.metricCell('Profit Growth', f.profitGrowth ? f.profitGrowth + '%' : '—', null, U.chgCls(f.profitGrowth)),
-        U.metricCell('Debt/Equity', f.debtToEquity ?? '—'),
-        U.metricCell('FCF', f.freeCashFlow ? U.fmt(f.freeCashFlow * 1000, { compact: true }) : '—'),
       ], 4))}
 
       ${!isFund && f.available ? U.section('Valuation Scenarios', `
@@ -104,7 +100,7 @@ const Research = (() => {
         }).join('')}
         </tbody></table></div>`) : ''}
 
-      ${U.section('AI Analysis', `<div class="os-ai-box" style="margin:0;">${ai.summary}</div>`)}
+      ${U.section('Analysis', `<div class="os-ai-box" style="margin:0;">${ai.summary}</div>`)}
 
       ${U.section('Research Notes', `
         <textarea class="field-input" id="rs-notes" rows="4" style="width:100%;">${r.notes}</textarea>

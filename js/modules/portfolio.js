@@ -114,62 +114,48 @@ const Portfolio = (() => {
     screen.innerHTML = `
     <div class="os-page-header">
       <div class="os-page-title">Portfolio</div>
-      <div class="os-page-sub">AKD · Rafi · Meezan · CDC — unified view</div>
+      <div class="os-page-sub">All brokers · allocation · performance</div>
     </div>
 
-    <div style="padding:0 20px 16px;" class="cap-reveal">
-      ${PlatformUI.metricGrid([
-        PlatformUI.metricCell('Total Value', PlatformUI.fmt(pSummary.totalValue)),
-        PlatformUI.metricCell('Invested', PlatformUI.fmt(pSummary.invested)),
-        PlatformUI.metricCell('Unrealized', PlatformUI.fmt(pSummary.unrealized), PlatformUI.fmt(pSummary.totalReturn.pct, { pct: true, signed: true }), PlatformUI.chgCls(pSummary.unrealized)),
-        PlatformUI.metricCell('Realized', PlatformUI.fmt(pSummary.realized)),
-        PlatformUI.metricCell('XIRR', pSummary.xirr != null ? PlatformUI.fmt(pSummary.xirr * 100, { pct: true, signed: true }) : '—'),
-        PlatformUI.metricCell('Div Yield', PlatformUI.fmt(pSummary.portfolioDivYield, { pct: true })),
-      ], 3)}
+    <div class="os-hero cap-reveal">
+      <div class="os-hero-label">Total value</div>
+      <div class="os-hero-value">${fmt(grandValue)}</div>
+      <div class="os-hero-pills">
+        <span class="os-pill ${grandPnl >= 0 ? 'gain' : 'loss'}">${sgn(grandPnl)}${fmt(Math.abs(grandPnl))} (${sgn(grandPnlPct)}${grandPnlPct.toFixed(1)}%)</span>
+        ${totalDivs > 0 ? `<span class="os-pill neutral">Dividends ${fmt(totalDivs)}</span>` : ''}
+        ${pSummary.xirr != null ? `<span class="os-pill neutral">XIRR ${PlatformUI.fmt(pSummary.xirr * 100, { pct: true, signed: true })}</span>` : ''}
+      </div>
     </div>
 
-    <div class="os-section">
-      <div class="os-broker-grid">
+    <div class="os-section cap-reveal" style="padding-top:var(--space-4);padding-bottom:0;">
+      <div class="os-section-title">By broker</div>
+      <div class="os-broker-grid" style="padding:0;">
         ${brokerAlloc.map(b => `
-          <div class="os-broker-card cap-reveal">
+          <div class="os-broker-card">
             <div class="os-broker-name">${b.broker}</div>
-            <div style="font-size:1rem;font-weight:700;">${fmtC(b.value)}</div>
-            <div style="font-size:0.75rem;color:var(--os-text-tertiary);margin-top:4px;">${b.pct.toFixed(1)}% of portfolio</div>
-          </div>`).join('') || '<div class="os-broker-card"><div class="os-broker-name">Empty</div><div>No holdings</div></div>'}
+            <div class="os-metric-value">${fmtC(b.value)}</div>
+            <div class="os-metric-sub">${b.pct.toFixed(1)}% of portfolio</div>
+          </div>`).join('') || '<div class="os-broker-card"><div class="os-broker-name">Empty</div><div class="os-metric-sub">No holdings yet</div></div>'}
       </div>
     </div>
 
-    <div class="portfolio-header" style="padding:0 20px 12px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div class="hero-label">Total Value</div>
-          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;">${fmt(grandValue)}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:0.92rem;font-weight:700;color:${pnlClr(grandPnl)};">${sgn(grandPnl)}${fmt(Math.abs(grandPnl))}</div>
-          <div class="t-dim" style="font-size:0.72rem;">${sgn(grandPnlPct)}${grandPnlPct.toFixed(2)}% all time</div>
-          ${totalDivs > 0 ? `<div style="font-size:0.68rem;color:var(--gold);margin-top:4px;">💰 ${fmt(totalDivs)} dividends</div>` : ''}
+    <div class="port-summary-strip cap-reveal">
+      <div class="port-summary-cell">
+        <div class="port-summary-label">Stocks (${stockRows.length})</div>
+        <div class="port-summary-metrics">
+          <span>Value</span><span>${fmtC(totalStockValue)}</span>
+          <span>Cost</span><span>${fmtC(totalStockCost)}</span>
+          <span>P&amp;L</span><span style="color:${pnlClr(totalStockPnl)}">${sgn(totalStockPnl)}${fmtC(Math.abs(totalStockPnl))}</span>
+          <span>P&amp;L%</span><span style="color:${pnlClr(totalStockPnlPct)}">${sgn(totalStockPnlPct)}${totalStockPnlPct.toFixed(1)}%</span>
         </div>
       </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bg4);">
-      <div style="background:var(--bg2);padding:10px 14px;">
-        <div class="t-label" style="margin-bottom:6px;">STOCKS (${stockRows.length})</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-          <div><div style="font-size:0.58rem;color:var(--text3);">Value</div><div style="font-size:0.78rem;font-weight:700;">${fmtC(totalStockValue)}</div></div>
-          <div><div style="font-size:0.58rem;color:var(--text3);">Cost</div><div style="font-size:0.78rem;">${fmtC(totalStockCost)}</div></div>
-          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalStockPnl)};">${sgn(totalStockPnl)}${fmtC(Math.abs(totalStockPnl))}</div></div>
-          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L%</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalStockPnlPct)};">${sgn(totalStockPnlPct)}${totalStockPnlPct.toFixed(1)}%</div></div>
-        </div>
-      </div>
-      <div style="background:var(--bg2);padding:10px 14px;">
-        <div class="t-label" style="margin-bottom:6px;">FUNDS (${fundRows.length})</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-          <div><div style="font-size:0.58rem;color:var(--text3);">Value</div><div style="font-size:0.78rem;font-weight:700;">${fmtC(totalFundValue)}</div></div>
-          <div><div style="font-size:0.58rem;color:var(--text3);">Invested</div><div style="font-size:0.78rem;">${fmtC(totalFundCost)}</div></div>
-          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalFundPnl)};">${sgn(totalFundPnl)}${fmtC(Math.abs(totalFundPnl))}</div></div>
-          <div><div style="font-size:0.58rem;color:var(--text3);">P&amp;L%</div><div style="font-size:0.78rem;font-weight:700;color:${pnlClr(totalFundPnlPct)};">${sgn(totalFundPnlPct)}${totalFundPnlPct.toFixed(1)}%</div></div>
+      <div class="port-summary-cell">
+        <div class="port-summary-label">Funds (${fundRows.length})</div>
+        <div class="port-summary-metrics">
+          <span>Value</span><span>${fmtC(totalFundValue)}</span>
+          <span>Invested</span><span>${fmtC(totalFundCost)}</span>
+          <span>P&amp;L</span><span style="color:${pnlClr(totalFundPnl)}">${sgn(totalFundPnl)}${fmtC(Math.abs(totalFundPnl))}</span>
+          <span>P&amp;L%</span><span style="color:${pnlClr(totalFundPnlPct)}">${sgn(totalFundPnlPct)}${totalFundPnlPct.toFixed(1)}%</span>
         </div>
       </div>
     </div>
@@ -209,6 +195,7 @@ const Portfolio = (() => {
     document.querySelectorAll('.pt-row[data-key]').forEach(row => {
       row.addEventListener('click', () => _openDetail(row.dataset.key, row.dataset.type));
     });
+    CapMotion.refresh();
   }
 
   function _renderStocksSection(rows) {

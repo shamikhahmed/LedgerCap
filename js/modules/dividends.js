@@ -23,16 +23,37 @@ const Dividends = (() => {
 
   function setTab(id) { _tab = id; render(); }
 
+  function _hero(dash) {
+    const top = dash.byStock[0];
+    return `
+    <div class="div-hero cap-reveal">
+      <div class="div-hero-grid">
+        <div>
+          <div class="div-hero-item-label">Received YTD</div>
+          <div class="div-hero-item-value t-gain">${U.fmt(dash.receivedYtd)}</div>
+        </div>
+        <div>
+          <div class="div-hero-item-label">Expected ${new Date().getFullYear()}</div>
+          <div class="div-hero-item-value">${U.fmt(dash.expectedThisYear)}</div>
+        </div>
+        <div>
+          <div class="div-hero-item-label">Top income holding</div>
+          <div class="div-hero-item-value">${top ? top.symbol : '—'}</div>
+          ${top ? `<div style="font-size:var(--type-caption);color:var(--os-text-secondary);margin-top:var(--space-1);">${U.fmt(top.annualIncome)}/yr · ${top.currentYield != null ? top.currentYield.toFixed(1) + '% yield' : ''}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }
+
   function _overview(dash, forecast) {
     return `
+    ${_hero(dash)}
     ${U.section('', U.metricGrid([
-      U.metricCell('Expected ' + new Date().getFullYear(), U.fmt(dash.expectedThisYear), 'This year forecast'),
-      U.metricCell('Expected ' + (new Date().getFullYear() + 1), U.fmt(dash.expectedNextYear), 'Next year forecast'),
-      U.metricCell('Received YTD', U.fmt(dash.receivedYtd), 'Logged payments'),
       U.metricCell('Portfolio Yield', U.fmt(dash.portfolioYield, { pct: true }), 'On cost basis'),
-      U.metricCell('Monthly Forecast', U.fmt(dash.monthlyForecast), 'Avg this year'),
+      U.metricCell('Monthly forecast', U.fmt(dash.monthlyForecast), 'Avg this year'),
+      U.metricCell('Next year', U.fmt(dash.expectedNextYear), 'Forecast'),
       U.metricCell('Lifetime', U.fmt(dash.lifetime), dash.holdingsCount + ' dividend stocks'),
-    ], 3))}
+    ], 4))}
 
     ${dash.upcoming.filter(u => u.isHeld).length ? U.section('Next Dividend Events', `
       <div class="rt-table-wrap"><table class="rt-table"><thead><tr>
@@ -234,7 +255,7 @@ const Dividends = (() => {
     screen.innerHTML = `
     <div class="os-page-header cap-reveal">
       <div class="os-page-title">Dividend Center</div>
-      <div class="os-page-sub">Professional dividend research & portfolio income</div>
+      <div class="os-page-sub">Earned · forecast · top holdings</div>
     </div>
     ${_tabBar()}
     <div class="div-panel cap-reveal">${panels[_tab] || panels.overview}</div>

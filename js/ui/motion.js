@@ -14,14 +14,8 @@ const CapMotion = (() => {
         e.target.classList.add('is-visible');
         io.unobserve(e.target);
       });
-    }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
-    reveals.forEach((el, i) => {
-      if (!el.style.getPropertyValue('--cap-stagger-i')) {
-        el.style.setProperty('--cap-stagger-i', String(i % 8));
-        el.style.transitionDelay = (i * 0.04) + 's';
-      }
-      io.observe(el);
-    });
+    }, { threshold: 0.05, rootMargin: '0px 0px -2% 0px' });
+    reveals.forEach(el => io.observe(el));
   }
   return { refresh };
 })();
