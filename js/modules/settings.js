@@ -246,7 +246,7 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.4.3</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.4.4</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
@@ -364,13 +364,14 @@ const Settings = (() => {
     const silent = opts && opts.silent;
     const seed = window.INITIAL_TRANSACTIONS || [];
     if (!seed.length) { if (!silent) App.showToast('Seed data unavailable', 'error'); return false; }
-    if (!silent && !confirm(`Load ${seed.length} demo transactions? Existing ledger will be replaced.`)) return false;
+    if (!silent && !confirm(`Load ${seed.length} portfolio transactions? Existing ledger will be replaced.`)) return false;
     State.update(s => {
       s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
       s.settings.onboardingDone = true;
+      s.seedDataVersion = window.SEED_DATA_VERSION || 0;
       if (window.MEEZAN_FUNDS) {
         (window.MEEZAN_FUNDS || []).forEach(f => {
-          if (f.currentNav && !s.prices[f.symbol]) {
+          if (f.currentNav) {
             s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, source: 'meezan_seed', ts: Date.now() };
           }
         });
@@ -380,8 +381,15 @@ const Settings = (() => {
           s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };
         });
       }
+      if (Ledger.portfolioValueTimeline) {
+        const timeline = Ledger.portfolioValueTimeline(s.transactions, (sym, fallback) => {
+          const p = s.prices[sym]?.price;
+          return (p && p > 0) ? p : ((window.FALLBACK_PRICES || {})[sym] || fallback || 0);
+        });
+        s.priceHistory = timeline.map(p => ({ date: p.date, value: p.value }));
+      }
     });
-    if (!silent) App.showToast('Demo holdings loaded ✓', 'success');
+    if (!silent) App.showToast('Portfolio loaded ✓', 'success');
     App.renderCurrent();
     render();
     return true;

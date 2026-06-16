@@ -9,6 +9,8 @@ const Transactions = (() => {
     SALARY:         { icon: '💵', cls: 'salary',       label: 'Salary'         },
     CONTRIBUTION:   { icon: '🏦', cls: 'contribution', label: 'Fund Buy'       },
     IPO_SUBSCRIBE:  { icon: '🚀', cls: 'ipo',          label: 'IPO Subscribe'  },
+    REDEMPTION:     { icon: '↩', cls: 'contribution', label: 'Fund Redemption' },
+    FUND_OUT:       { icon: '↩', cls: 'contribution', label: 'Fund Convert Out' },
   };
 
   function fmt(n) {

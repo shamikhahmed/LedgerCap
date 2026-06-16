@@ -2,6 +2,13 @@
 const Performance = (() => {
   let _tab = 'daily';
 
+  function _priceFn(symbol, fallback) {
+    const live = typeof State !== 'undefined' ? State.getPrice(symbol) : 0;
+    if (live && live > 0) return live;
+    const fp = (window.FALLBACK_PRICES || {})[symbol];
+    return fp && fp > 0 ? fp : (fallback || 0);
+  }
+
   function render() {
     const screen = document.getElementById('screen-performance');
     if (!screen) return;
@@ -16,6 +23,7 @@ const Performance = (() => {
     const dailyData = _calcDailyPnL(state);
     const monthlyData = _calcMonthlyPnL(state);
     const predictiveData = _calcPredictivePnL(state);
+    const totalRealised = Ledger.realisedPnl(state.transactions || []);
 
     screen.innerHTML = `
     <div class="perf-header cap-reveal">
@@ -31,6 +39,10 @@ const Performance = (() => {
       <div class="perf-chart" id="daily-chart"></div>
       <div class="perf-stats">
         <div class="perf-stat">
+          <div class="perf-stat-label">Realised (total)</div>
+          <div class="perf-stat-value ${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</div>
+        </div>
+        <div class="perf-stat">
           <div class="perf-stat-label">Best Day</div>
           <div class="perf-stat-value t-gain">${PlatformUI.fmt(dailyData.best || 0)}</div>
         </div>
@@ -44,9 +56,9 @@ const Performance = (() => {
         </div>
       </div>
       <div class="perf-list">
-        ${(dailyData.days || []).slice(0, 20).map(d => `
+        ${(dailyData.days || []).slice(0, 30).map(d => `
           <div class="perf-item">
-            <div class="perf-item-date">${d.date}</div>
+            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${d.pnl >= 0 ? 't-gain' : 't-loss'}">${d.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(d.pnl)}</div>
           </div>
         `).join('')}
@@ -56,6 +68,10 @@ const Performance = (() => {
     ${_tab === 'monthly' ? `<div class="perf-section cap-reveal">
       <div class="perf-chart" id="monthly-chart"></div>
       <div class="perf-stats">
+        <div class="perf-stat">
+          <div class="perf-stat-label">Realised (total)</div>
+          <div class="perf-stat-value ${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</div>
+        </div>
         <div class="perf-stat">
           <div class="perf-stat-label">Best Month</div>
           <div class="perf-stat-value t-gain">${PlatformUI.fmt(monthlyData.best || 0)}</div>
@@ -72,7 +88,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(monthlyData.months || []).map(m => `
           <div class="perf-item">
-            <div class="perf-item-date">${m.month}</div>
+            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${m.pnl >= 0 ? 't-gain' : 't-loss'}">${m.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(m.pnl)}</div>
           </div>
         `).join('')}
@@ -114,42 +130,36 @@ const Performance = (() => {
   }
 
   function _calcDailyPnL(state) {
-    const days = {};
-    (state.priceHistory || []).forEach((h, i) => {
-      if (i > 0) {
-        const prev = state.priceHistory[i - 1];
-        const pnl = h.value - prev.value;
-        const date = new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        days[date] = pnl;
-      }
-    });
-    const values = Object.values(days);
+    const series = Ledger.dailyPnlSeries(state.transactions, state.priceHistory, _priceFn);
+    const days = series.slice().reverse().map(d => ({
+      date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      pnl: d.pnl,
+      realised: d.realised,
+      markToMarket: d.markToMarket,
+    }));
+    const values = series.map(d => d.pnl);
     return {
-      days: Object.entries(days).reverse().map(([date, pnl]) => ({ date, pnl })),
-      best: Math.max(...values, 0),
-      worst: Math.min(...values, 0),
-      avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0
+      days,
+      best: values.length ? Math.max(...values) : 0,
+      worst: values.length ? Math.min(...values) : 0,
+      avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0,
     };
   }
 
   function _calcMonthlyPnL(state) {
-    const months = {};
-    (state.priceHistory || []).forEach(h => {
-      const date = new Date(h.date);
-      const key = `${date.toLocaleString('en-US', { month: 'short' })} ${date.getFullYear()}`;
-      if (!months[key]) months[key] = [];
-      months[key].push(h.value);
-    });
-    const monthlyPnL = Object.entries(months).map(([month, values]) => ({
-      month,
-      pnl: values[values.length - 1] - (values[0] || 0)
+    const series = Ledger.monthlyPnlSeries(state.transactions, state.priceHistory, _priceFn);
+    const months = series.map(m => ({
+      month: m.month,
+      pnl: m.pnl,
+      realised: m.realised,
+      markToMarket: m.markToMarket,
     }));
-    const values = monthlyPnL.map(m => m.pnl);
+    const values = months.map(m => m.pnl);
     return {
-      months: monthlyPnL,
-      best: Math.max(...values, 0),
-      worst: Math.min(...values, 0),
-      avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0
+      months,
+      best: values.length ? Math.max(...values) : 0,
+      worst: values.length ? Math.min(...values) : 0,
+      avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0,
     };
   }
 
@@ -168,8 +178,8 @@ const Performance = (() => {
 
   function _renderCharts(daily, monthly, predictive) {
     if (_tab === 'daily' && document.getElementById('daily-chart')) {
-      const values = (daily.days || []).map(d => d.pnl);
-      document.getElementById('daily-chart').innerHTML = Charts.barChart ? Charts.barChart(values.slice(0, 30), { height: 160, color: '#2563eb' }) : '';
+      const values = (daily.days || []).slice().reverse().map(d => d.pnl);
+      document.getElementById('daily-chart').innerHTML = Charts.barChart ? Charts.barChart(values.slice(-30), { height: 160, color: '#2563eb' }) : '';
     }
     if (_tab === 'monthly' && document.getElementById('monthly-chart')) {
       const values = (monthly.months || []).map(m => m.pnl);

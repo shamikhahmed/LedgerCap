@@ -41,6 +41,7 @@ const State = (() => {
       theme: 'dark',
     },
     version: 5,
+    seedDataVersion: 0,
   };
 
   function _migrateV5() {
@@ -80,11 +81,46 @@ const State = (() => {
     });
   }
 
+  function _seedPriceHistory() {
+    if (typeof Ledger === 'undefined' || !Ledger.portfolioValueTimeline) return;
+    const fp = window.FALLBACK_PRICES || {};
+    const timeline = Ledger.portfolioValueTimeline(_s.transactions, (sym, fallback) => {
+      const p = _s.prices[sym]?.price;
+      return (p && p > 0) ? p : (fp[sym] || fallback || 0);
+    });
+    if (timeline.length) {
+      _s.priceHistory = timeline.map(p => ({ date: p.date, value: p.value }));
+    }
+  }
+
+  function _applySeedDataMigration() {
+    const target = window.SEED_DATA_VERSION || window.PORTFOLIO_SEED_VERSION || 0;
+    if (!target || !window.INITIAL_TRANSACTIONS?.length) return false;
+    if (_s.seedDataVersion === target) return false;
+    _s.transactions = window.INITIAL_TRANSACTIONS.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
+    _s.seedDataVersion = target;
+    _s.settings.onboardingDone = true;
+    Object.entries(window.FALLBACK_PRICES || {}).forEach(([sym, price]) => {
+      _s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };
+    });
+    (window.MEEZAN_FUNDS || []).forEach(f => {
+      if (f.currentNav) {
+        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, source: 'meezan_seed', ts: Date.now() };
+      }
+    });
+    _seedWatchlist();
+    _seedPriceHistory();
+    return true;
+  }
+
   function _seedTransactions() {
     const init = window.INITIAL_TRANSACTIONS || [];
     if (!init.length) return;
+    if (_applySeedDataMigration()) { save(); return; }
     if (!_s.transactions.length) {
       _s.transactions = [...init];
+      _seedPriceHistory();
+      save();
       return;
     }
     // Patch amounts for initial transactions already stored (corrects historical data errors)

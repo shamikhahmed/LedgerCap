@@ -105,7 +105,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=49').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=50').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
