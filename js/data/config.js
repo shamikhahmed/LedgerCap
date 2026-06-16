@@ -1,17 +1,30 @@
 'use strict';
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
 window.LEDGERCAP_CONFIG = {
+  /** Primary LedgerCap worker (preferred) */
   psxProxyUrl: 'https://ledgercap-psx-proxy.shamikhahmed.workers.dev',
+  /** Legacy worker hostname — kept as silent fallback until all users migrate */
+  legacyPsxProxyUrl: 'https://stunds-psx-proxy.shamikhahmed.workers.dev',
 };
 
-/** Rewrite legacy proxy hostnames saved before the LedgerCap rebrand. */
+/** Normalize saved proxy URLs and prefer the LedgerCap worker hostname. */
 function resolvePsxProxyUrl(url) {
-  const fallback = window.LEDGERCAP_CONFIG?.psxProxyUrl || '';
-  let raw = (url || fallback).trim();
-  if (!raw || /stunds-psx-proxy/i.test(raw)) {
-    raw = raw.replace(/stunds-psx-proxy/gi, 'ledgercap-psx-proxy') || fallback;
+  const primary = window.LEDGERCAP_CONFIG?.psxProxyUrl || '';
+  const legacy = window.LEDGERCAP_CONFIG?.legacyPsxProxyUrl || '';
+  let raw = (url || primary || legacy).trim();
+  if (/stunds-psx-proxy/i.test(raw)) {
+    raw = primary || raw.replace(/stunds-psx-proxy/gi, 'ledgercap-psx-proxy');
   }
-  return raw.replace(/stunds-psx-proxy/gi, 'ledgercap-psx-proxy');
+  return raw.replace(/\/$/, '');
 }
 
-window.LedgerCapConfig = { resolvePsxProxyUrl };
+/** Proxy bases to try in order (primary, then legacy). */
+function psxProxyBases() {
+  const bases = [
+    window.LEDGERCAP_CONFIG?.psxProxyUrl,
+    window.LEDGERCAP_CONFIG?.legacyPsxProxyUrl,
+  ].filter(Boolean).map(u => resolvePsxProxyUrl(u));
+  return [...new Set(bases)];
+}
+
+window.LedgerCapConfig = { resolvePsxProxyUrl, psxProxyBases };

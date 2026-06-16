@@ -48,31 +48,48 @@ const Prices = (() => {
   }
 
   async function _fetchAppProxy(url) {
+    const bases = [...(window.LedgerCapConfig?.psxProxyBases?.() || [])];
     const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
-    const base = (window.LedgerCapConfig?.resolvePsxProxyUrl(fromState) || fromState || window.LEDGERCAP_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
-    if (!base) return null;
+    if (fromState) {
+      const resolved = window.LedgerCapConfig?.resolvePsxProxyUrl(fromState);
+      if (resolved && !bases.includes(resolved)) bases.unshift(resolved);
+    }
+    if (!bases.length) return null;
+
     const path = url.replace('https://dps.psx.com.pk/', '');
-    const tries = [
-      `${base}/${path}`,
-      `${base}?url=${encodeURIComponent(url)}`,
-    ];
-    for (const u of tries) {
-      try {
-        const res = await fetch(u, { headers: { Accept: 'application/json' } });
-        if (!res.ok) continue;
-        const text = await res.text();
-        if (_isHtml(text)) continue;
-        if (text.startsWith('{') && text.includes('"error"')) continue;
-        const parsed = _parseJson(text);
-        if (parsed) return parsed;
-      } catch { continue; }
+    for (const base of bases) {
+      const root = base.replace(/\/$/, '');
+      const tries = [
+        `${root}/${path}`,
+        `${root}?url=${encodeURIComponent(url)}`,
+      ];
+      for (const u of tries) {
+        try {
+          const res = await fetch(u, { headers: { Accept: 'application/json' } });
+          if (!res.ok) continue;
+          const text = await res.text();
+          if (_isHtml(text)) continue;
+          if (text.startsWith('{') && text.includes('"error"')) continue;
+          const parsed = _parseJson(text);
+          if (parsed) return parsed;
+        } catch { continue; }
+      }
     }
     return null;
+  }
+
+  function _hasAppProxy() {
+    const bases = window.LedgerCapConfig?.psxProxyBases?.() || [];
+    const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
+    return bases.length > 0 || !!fromState;
   }
 
   async function _fetchRaw(url) {
     const appProxy = await _fetchAppProxy(url);
     if (appProxy) return appProxy;
+
+    // Public CORS proxies are blocked/rate-limited from GitHub Pages — skip when our worker is configured.
+    if (_hasAppProxy()) return null;
 
     for (const proxyUrl of PROXIES) {
       try {
@@ -132,14 +149,11 @@ const Prices = (() => {
 
   async function fetchPsxLive(symbols) {
     const results = {};
-    const chunks = [];
-    for (let i = 0; i < symbols.length; i += 4) chunks.push(symbols.slice(i, i + 4));
-    for (const chunk of chunks) {
-      await Promise.all(chunk.map(async sym => {
-        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
-        const parsed = _parseTimeseries(data, 'psx_int');
-        if (parsed) results[sym] = { ...parsed, symbol: sym };
-      }));
+    for (const sym of symbols) {
+      const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+      const parsed = _parseTimeseries(data, 'psx_int');
+      if (parsed) results[sym] = { ...parsed, symbol: sym };
+      await new Promise(r => setTimeout(r, 100));
     }
     return results;
   }

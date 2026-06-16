@@ -86,7 +86,11 @@ const App = (() => {
     }
     localStorage.removeItem('stundsOS_install_dismiss');
     const settings = State.get('settings') || {};
-    if (settings.psxProxyUrl && window.LedgerCapConfig?.resolvePsxProxyUrl) {
+    if (/stunds-psx-proxy/i.test(settings.psxProxyUrl || '')) {
+      State.update(s => {
+        s.settings.psxProxyUrl = window.LEDGERCAP_CONFIG?.psxProxyUrl || window.LedgerCapConfig.resolvePsxProxyUrl(s.settings.psxProxyUrl);
+      });
+    } else if (settings.psxProxyUrl && window.LedgerCapConfig?.resolvePsxProxyUrl) {
       const normalized = window.LedgerCapConfig.resolvePsxProxyUrl(settings.psxProxyUrl);
       if (normalized !== settings.psxProxyUrl) {
         State.update(s => { s.settings.psxProxyUrl = normalized; });
@@ -101,7 +105,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=48').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=49').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
