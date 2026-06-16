@@ -12,7 +12,7 @@ const Investment = (() => {
   function render(transactions, totalValue) {
     const timeline = Ledger.investmentTimeline(transactions);
     const bars = Ledger.monthlyInvestmentBars(timeline.byMonth, 12);
-    const totalInvested = Ledger.totalInvested(transactions);
+    const totalInvested = Ledger.currentCostBasis ? Ledger.currentCostBasis(transactions) : Ledger.totalInvested(transactions);
     const gain = totalValue - totalInvested;
     const gainPct = totalInvested > 0 ? (gain / totalInvested) * 100 : 0;
     const maxAdded = Math.max(...bars.map(b => b.added), 1);

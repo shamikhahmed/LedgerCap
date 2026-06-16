@@ -15,20 +15,28 @@ const Ledger = (() => {
     holdings[key].shares += shares;
   }
 
+  function _sortTxs(transactions) {
+    return (transactions || [])
+      .slice()
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '') || String(a.id || '').localeCompare(String(b.id || '')));
+  }
+
   function _removeShares(holdings, symbol, broker, shares) {
-    if (!symbol || !shares) return;
+    if (!symbol || !shares) return 0;
     const key = _holdingKey(symbol, broker);
-    if (!holdings[key]) return;
+    if (!holdings[key] || holdings[key].shares <= 0) return 0;
     const prevShares = holdings[key].shares;
-    holdings[key].shares -= shares;
+    const sold = Math.min(shares, prevShares);
+    holdings[key].shares -= sold;
     holdings[key].totalCost = holdings[key].shares > 0
       ? (holdings[key].totalCost / prevShares) * holdings[key].shares
       : 0;
+    return sold;
   }
 
   function calcHoldings(transactions) {
     const holdings = {};
-    (transactions || []).forEach(t => {
+    _sortTxs(transactions).forEach(t => {
       if (!t.symbol) return;
       if (t.type === 'BUY') {
         _addShares(holdings, t.symbol, t.broker, t.shares || 0, (t.shares || 0) * (t.price || 0));
@@ -101,10 +109,31 @@ const Ledger = (() => {
     return monthly;
   }
 
+  /** Gross cash deployed (includes fund convert-ins). Prefer currentCostBasis for return metrics. */
   function totalInvested(transactions) {
     return (transactions || [])
       .filter(t => ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type))
       .reduce((sum, t) => sum + (t.amount || 0), 0);
+  }
+
+  /** Net cost basis of open stock + fund positions. */
+  function currentCostBasis(transactions) {
+    const stocks = calcHoldings(transactions);
+    const funds = calcFundHoldings(transactions);
+    return stocks.reduce((sum, h) => sum + (h.totalCost || 0), 0)
+      + funds.reduce((sum, f) => sum + (f.totalInvested || 0), 0);
+  }
+
+  function unrealisedPnl(transactions, priceFn) {
+    const px = (sym, fallback) => {
+      const p = priceFn ? priceFn(sym, fallback) : fallback;
+      return (p && p > 0) ? p : fallback;
+    };
+    const stocks = calcHoldings(transactions);
+    const funds = calcFundHoldings(transactions);
+    const stockVal = stocks.reduce((sum, h) => sum + h.shares * px(h.symbol, h.avgCost), 0);
+    const fundVal = funds.reduce((sum, f) => sum + f.units * px(f.symbol, f.avgNav), 0);
+    return (stockVal + fundVal) - currentCostBasis(transactions);
   }
 
   function totalDividends(transactions) {
@@ -130,10 +159,12 @@ const Ledger = (() => {
         holdings[key].shares += shares;
         holdings[key].totalCost += t.amount || shares * (t.listingPrice || 0);
       } else if (t.type === 'SELL') {
+        const requested = t.shares || 0;
+        const sold = holdings[key].shares > 0 ? Math.min(requested, holdings[key].shares) : 0;
         const avgCost = holdings[key].shares > 0 ? holdings[key].totalCost / holdings[key].shares : 0;
-        const sellPnl = ((t.price || 0) - avgCost) * (t.shares || 0);
+        const sellPnl = ((t.price || 0) - avgCost) * sold;
         if (onSell) onSell(t, sellPnl, avgCost);
-        holdings[key].shares -= t.shares || 0;
+        holdings[key].shares -= sold;
         holdings[key].totalCost = holdings[key].shares > 0 ? avgCost * holdings[key].shares : 0;
       }
     });
@@ -245,7 +276,7 @@ const Ledger = (() => {
         .filter(t => t.date === pt.date && ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type))
         .reduce((s, t) => s + (t.amount || 0), 0);
       const sameDayRedeem = (transactions || [])
-        .filter(t => t.date === pt.date && (t.type === 'REDEMPTION' || t.type === 'SELL'))
+        .filter(t => t.date === pt.date && ['REDEMPTION', 'SELL', 'FUND_OUT'].includes(t.type))
         .reduce((s, t) => s + Math.abs(t.amount || 0), 0);
       valueByDate[pt.date] = (pt.value - prev.value) - sameDayInvest + sameDayRedeem;
     });
@@ -328,8 +359,8 @@ const Ledger = (() => {
   function newId() { return 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
 
   return { CDC_BROKER, calcHoldings, calcFundHoldings, calcIpoPending, monthlyContributions, monthlySalary,
-    totalInvested, totalDividends, realisedPnl, realisedPnlByDate, portfolioValueTimeline,
-    dailyPnlSeries, monthlyPnlSeries, currentMonthContribution,
+    totalInvested, currentCostBasis, unrealisedPnl, totalDividends, realisedPnl, realisedPnlByDate,
+    portfolioValueTimeline, dailyPnlSeries, monthlyPnlSeries, currentMonthContribution,
     investmentTimeline, monthlyInvestmentBars, newId };
 })();
 window.Ledger = Ledger;

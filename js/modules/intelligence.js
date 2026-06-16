@@ -20,7 +20,7 @@ const Intelligence = (() => {
       U.metricCell('Diversification', scores.diversification + '/100'),
       U.metricCell('Dividend Quality', scores.dividendQuality + '/100'),
       U.metricCell('Growth Quality', scores.growthQuality + '/100'),
-      U.metricCell('Portfolio Yield', U.fmt(summary.portfolioDivYield, { pct: true })),
+      U.metricCell('Portfolio Yield', summary.portfolioDivYield.toFixed(1) + '%'),
     ], 3))}
 
     ${U.section('Actionable Insights', insights.length ? insights.map(i => `

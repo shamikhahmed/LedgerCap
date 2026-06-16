@@ -1,34 +1,15 @@
 'use strict';
 const PortfolioAnalyticsService = (() => {
 
-  function _realizedGain(txs) {
-    return (txs || []).filter(t => t.type === 'SELL').reduce((s, t) => {
-      const cost = (t.shares || 0) * (t.avgCostAtSell || t.price || 0);
-      return s + ((t.amount || 0) - cost);
-    }, 0);
+  function _clampScore(n) {
+    if (n == null || Number.isNaN(n)) return 0;
+    return Math.max(0, Math.min(100, Math.round(n)));
   }
 
   function _realizedFromLedger(txs) {
-    let realized = 0;
-    const costBasis = {};
-    (txs || []).forEach(t => {
-      if (t.type === 'BUY' && t.symbol) {
-        const k = t.symbol + '_' + (t.broker || '');
-        if (!costBasis[k]) costBasis[k] = { shares: 0, cost: 0 };
-        costBasis[k].shares += t.shares || 0;
-        costBasis[k].cost += (t.shares || 0) * (t.price || 0);
-      } else if (t.type === 'SELL' && t.symbol) {
-        const k = t.symbol + '_' + (t.broker || '');
-        const cb = costBasis[k];
-        if (cb && cb.shares > 0) {
-          const avg = cb.cost / cb.shares;
-          realized += (t.amount || 0) - (t.shares || 0) * avg;
-          cb.shares -= t.shares || 0;
-          cb.cost -= (t.shares || 0) * avg;
-        }
-      }
-    });
-    return realized;
+    return typeof Ledger !== 'undefined' && Ledger.realisedPnl
+      ? Ledger.realisedPnl(txs)
+      : 0;
   }
 
   function getSummary(state) {
@@ -174,14 +155,18 @@ const PortfolioAnalyticsService = (() => {
     }
 
     const ruleInsights = Insights.generate(state) || [];
+    const growthNames = holdings.filter(h => {
+      const g = (window.FUNDAMENTALS_DB || {})[h.symbol]?.profitGrowth;
+      return g != null && g > 10;
+    }).length;
     return {
       summary, insights, ruleInsights,
       scores: {
-        health: summary.health,
-        risk: summary.risk,
-        diversification: Math.min(100, sectors.length * 12),
-        dividendQuality: Math.min(100, summary.portfolioDivYield * 8),
-        growthQuality: holdings.filter(h => (window.FUNDAMENTALS_DB || {})[h.symbol]?.profitGrowth > 10).length * 15,
+        health: _clampScore(summary.health),
+        risk: _clampScore(summary.risk),
+        diversification: _clampScore(sectors.length * 12),
+        dividendQuality: _clampScore(summary.portfolioDivYield * 8),
+        growthQuality: _clampScore(Math.min(8, growthNames) * 12.5),
       },
     };
   }

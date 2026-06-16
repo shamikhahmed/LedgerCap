@@ -162,12 +162,21 @@ const Home = (() => {
     return history.length < 2 ? [total, total] : history;
   }
 
+  function _priceAt(state, symbol, fallback) {
+    const live = state.prices?.[symbol]?.price;
+    if (live && live > 0) return live;
+    const fp = (window.FALLBACK_PRICES || {})[symbol];
+    return fp && fp > 0 ? fp : (fallback || 0);
+  }
+
   function _calcPortfolioValueAtDate(state, date) {
+    const txs = (state.transactions || []).filter(t => t.date <= date);
     let value = 0;
-    const holdings = Ledger.calcHoldings((state.transactions || []).filter(t => t.date <= date));
-    Object.entries(holdings).forEach(([symbol, h]) => {
-      const price = state.prices?.[symbol]?.price || 0;
-      value += (h.units || 0) * price;
+    Ledger.calcHoldings(txs).forEach(h => {
+      value += h.shares * _priceAt(state, h.symbol, h.avgCost);
+    });
+    Ledger.calcFundHoldings(txs).forEach(f => {
+      value += f.units * _priceAt(state, f.symbol, f.avgNav);
     });
     return value;
   }

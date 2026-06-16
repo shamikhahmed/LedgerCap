@@ -52,7 +52,18 @@ export default {
       if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
         return json({ error: 'PSX returned HTML (endpoint may have moved)', url: fetchUrl }, 404);
       }
-      return new Response(body, {
+      let out = trimmed;
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed) || parsed?.data) {
+          const rows = Array.isArray(parsed) ? parsed : parsed.data;
+          if (Array.isArray(rows) && rows.length) {
+            const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+            out = JSON.stringify(Array.isArray(parsed) ? sorted : { ...parsed, data: sorted });
+          }
+        }
+      } catch { /* pass through raw */ }
+      return new Response(out, {
         status: res.ok ? 200 : res.status,
         headers: {
           ...CORS,

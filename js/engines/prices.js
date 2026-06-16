@@ -3,7 +3,6 @@ const Prices = (() => {
   const PROXIES = [
     'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?url=',
-    'https://api.allorigins.win/get?url=',
   ];
 
   const YAHOO_SYMBOL_MAP = {
@@ -21,23 +20,38 @@ const Prices = (() => {
 
   const FUND_SYMBOLS = new Set(['KMIF','MAAF','MBF','MDAAF-MDYP','MIF','MIIF-B','MIIF-MMKA','MIIETF','MZNPETF']);
 
+  let _proxyDownUntil = 0;
+  let _proxyWarned = false;
+  const _yahooSkip = new Set();
+
   function _isHtml(text) {
     const t = (text || '').trim();
     return t.startsWith('<!DOCTYPE') || t.startsWith('<html') || t.startsWith('<HTML');
   }
 
+  function _isBadPayload(text) {
+    const t = (text || '').trim();
+    if (!t) return true;
+    if (_isHtml(t)) return true;
+    if (/^error code:\s*\d+/i.test(t)) return true;
+    if (t.startsWith('{') && t.includes('"error"')) return true;
+    return false;
+  }
+
   function _parseJson(text) {
-    if (!text || _isHtml(text)) return null;
+    if (!text || _isBadPayload(text)) return null;
     try { return JSON.parse(text); } catch { return null; }
   }
 
   function _parseTimeseries(data, source) {
     const rows = Array.isArray(data) ? data : (data?.data || []);
     if (!Array.isArray(rows) || !rows.length) return null;
-    const last = rows[rows.length - 1];
+    const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+    const last = sorted[sorted.length - 1];
     if (!Array.isArray(last) || last.length < 2) return null;
     const price = parseFloat(last[1]);
-    const prev = parseFloat(last[3] ?? rows[rows.length - 2]?.[1] ?? last[1]);
+    const prevRow = sorted.length > 1 ? sorted[sorted.length - 2] : last;
+    const prev = parseFloat(last[3] ?? prevRow[1] ?? last[1]);
     if (!price || price <= 0) return null;
     return {
       price,
@@ -47,7 +61,17 @@ const Prices = (() => {
     };
   }
 
+  function _markProxyDown(status) {
+    if (status >= 400) _proxyDownUntil = Date.now() + 300000;
+    if (!_proxyWarned) {
+      console.warn('LedgerCap: PSX proxy unavailable — using Yahoo/fallback prices.');
+      _proxyWarned = true;
+    }
+  }
+
   async function _fetchAppProxy(url) {
+    if (Date.now() < _proxyDownUntil) return null;
+
     const bases = [...(window.LedgerCapConfig?.psxProxyBases?.() || [])];
     const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
     if (fromState) {
@@ -59,38 +83,23 @@ const Prices = (() => {
     const path = url.replace('https://dps.psx.com.pk/', '');
     for (const base of bases) {
       const root = base.replace(/\/$/, '');
-      const tries = [
-        `${root}/${path}`,
-        `${root}?url=${encodeURIComponent(url)}`,
-      ];
-      for (const u of tries) {
-        try {
-          const res = await fetch(u, { headers: { Accept: 'application/json' } });
-          if (!res.ok) continue;
-          const text = await res.text();
-          if (_isHtml(text)) continue;
-          if (text.startsWith('{') && text.includes('"error"')) continue;
-          const parsed = _parseJson(text);
-          if (parsed) return parsed;
-        } catch { continue; }
-      }
+      const proxyUrl = `${root}/${path}`;
+      try {
+        const res = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
+        if (!res.ok) {
+          _markProxyDown(res.status);
+          continue;
+        }
+        const text = await res.text();
+        if (_isBadPayload(text)) { _markProxyDown(res.ok ? 520 : res.status); continue; }
+        const parsed = _parseJson(text);
+        if (parsed) return parsed;
+      } catch { _markProxyDown(502); }
     }
     return null;
   }
 
-  function _hasAppProxy() {
-    const bases = window.LedgerCapConfig?.psxProxyBases?.() || [];
-    const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
-    return bases.length > 0 || !!fromState;
-  }
-
-  async function _fetchRaw(url) {
-    const appProxy = await _fetchAppProxy(url);
-    if (appProxy) return appProxy;
-
-    // Public CORS proxies are blocked/rate-limited from GitHub Pages — skip when our worker is configured.
-    if (_hasAppProxy()) return null;
-
+  async function _fetchPublicProxy(url) {
     for (const proxyUrl of PROXIES) {
       try {
         const res = await fetch(proxyUrl + encodeURIComponent(url), {
@@ -98,12 +107,12 @@ const Prices = (() => {
         });
         if (!res.ok) continue;
         const text = await res.text();
-        if (_isHtml(text)) continue;
+        if (_isBadPayload(text)) continue;
         let payload = text;
         try {
           const j = JSON.parse(text);
           if (j && j.contents !== undefined) payload = j.contents;
-          else if (j && typeof j === 'object') return j;
+          else if (j && typeof j === 'object' && !Array.isArray(j)) return j;
         } catch {}
         if (typeof payload === 'string') {
           const parsed = _parseJson(payload);
@@ -116,20 +125,10 @@ const Prices = (() => {
     return null;
   }
 
-  function _extractPrice(item) {
-    if (!item) return null;
-    const price = parseFloat(
-      item.current || item.CURRENT || item.close || item.CLOSE ||
-      item.last || item.price || item.Last || item.Price ||
-      item.regularMarketPrice || item.nav || item.NAV ||
-      item['Last Day Close Price'] || item.ldcp || item.LDCP || 0
-    );
-    const prevClose = parseFloat(
-      item.ldcp || item.LDCP || item.prevClose || item.previousClose ||
-      item.chartPreviousClose || item.prev || price
-    );
-    if (!price || price <= 0) return null;
-    return { price, prevClose: prevClose > 0 ? prevClose : price * 0.999 };
+  async function _fetchRaw(url) {
+    const appProxy = await _fetchAppProxy(url);
+    if (appProxy) return appProxy;
+    return _fetchPublicProxy(url);
   }
 
   async function fetchPsxSymbol(symbol) {
@@ -149,11 +148,15 @@ const Prices = (() => {
 
   async function fetchPsxLive(symbols) {
     const results = {};
-    for (const sym of symbols) {
-      const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
-      const parsed = _parseTimeseries(data, 'psx_int');
-      if (parsed) results[sym] = { ...parsed, symbol: sym };
-      await new Promise(r => setTimeout(r, 100));
+    const batchSize = 5;
+    for (let i = 0; i < symbols.length; i += batchSize) {
+      const chunk = symbols.slice(i, i + batchSize);
+      await Promise.all(chunk.map(async sym => {
+        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+        const parsed = _parseTimeseries(data, 'psx_int');
+        if (parsed) results[sym] = { ...parsed, symbol: sym };
+      }));
+      if (i + batchSize < symbols.length) await new Promise(r => setTimeout(r, 80));
     }
     return results;
   }
@@ -172,27 +175,35 @@ const Prices = (() => {
     };
   }
 
+  async function _fetchYahoo(symbol) {
+    if (_yahooSkip.has(symbol)) return null;
+    const yahooSym = symbol in YAHOO_SYMBOL_MAP ? YAHOO_SYMBOL_MAP[symbol] : `${symbol}.KA`;
+    if (yahooSym === null) return null;
+
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=1d&range=5d`;
+    const data = await _fetchPublicProxy(url);
+    const meta = data?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice;
+    const prevClose = meta?.previousClose || meta?.chartPreviousClose;
+    if (!price || price <= 0) {
+      _yahooSkip.add(symbol);
+      return null;
+    }
+    if (!_sanityCheck(symbol, price)) {
+      _yahooSkip.add(symbol);
+      return null;
+    }
+    return { symbol, price, prevClose, source: 'yahoo', ts: Date.now() };
+  }
+
   async function fetchStock(symbol) {
     if (FUND_SYMBOLS.has(symbol)) return fundNavFallback(symbol);
 
     const psx = await fetchPsxSymbol(symbol);
-    if (psx) {
-      const ok = _sanityCheck(symbol, psx.price);
-      if (ok) return { symbol, ...psx };
-    }
+    if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
 
-    const yahooSym = symbol in YAHOO_SYMBOL_MAP ? YAHOO_SYMBOL_MAP[symbol] : `${symbol}.KA`;
-    if (yahooSym === null) return fundNavFallback(symbol);
-
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=1d&range=5d`;
-    const data = await _fetchRaw(url);
-    const meta = data?.chart?.result?.[0]?.meta;
-    const price = meta?.regularMarketPrice;
-    const prevClose = meta?.previousClose || meta?.chartPreviousClose;
-
-    if (price && _sanityCheck(symbol, price)) {
-      return { symbol, price, prevClose, source: 'yahoo', ts: Date.now() };
-    }
+    const yahoo = await _fetchYahoo(symbol);
+    if (yahoo) return yahoo;
 
     const fp = (window.FALLBACK_PRICES || {})[symbol];
     return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 } : null;
@@ -201,7 +212,6 @@ const Prices = (() => {
   function _sanityCheck(symbol, price) {
     const fallback = (window.FALLBACK_PRICES || {})[symbol] || 0;
     if (fallback > 0 && (price > fallback * 3 || price < fallback * 0.3)) {
-      console.warn(`${symbol}: price ${price} rejected (fallback ${fallback})`);
       return false;
     }
     return true;
@@ -215,9 +225,8 @@ const Prices = (() => {
       const changeP = parsed.prevClose ? (change / parsed.prevClose) * 100 : 0;
       return { value: parsed.price, change, changeP, prevClose: parsed.prevClose, ts: Date.now() };
     }
-    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/%5EKSE100?interval=1d&range=1d';
-    const data = await _fetchRaw(url);
-    const meta = data?.chart?.result?.[0]?.meta;
+    const yahoo = await _fetchPublicProxy('https://query2.finance.yahoo.com/v8/finance/chart/%5EKSE100?interval=1d&range=1d');
+    const meta = yahoo?.chart?.result?.[0]?.meta;
     if (meta?.regularMarketPrice) {
       return {
         value: meta.regularMarketPrice,
@@ -247,6 +256,7 @@ const Prices = (() => {
         if (onProgress) onProgress(++done, symbols.length, symbol, true, results[symbol].source || 'psx_int');
         continue;
       }
+
       const psx = await fetchPsxSymbol(symbol);
       if (psx && _sanityCheck(symbol, psx.price)) {
         results[symbol] = psx;
@@ -254,36 +264,23 @@ const Prices = (() => {
         continue;
       }
 
-      const yahooSym = YAHOO_SYMBOL_MAP[symbol];
-      if (yahooSym === null) {
+      if (YAHOO_SYMBOL_MAP[symbol] === null) {
         const fb = fundNavFallback(symbol);
         if (fb) results[symbol] = fb;
         if (onProgress) onProgress(++done, symbols.length, symbol, !!fb, 'skip');
         continue;
       }
 
-      const yahooSymbol = yahooSym || `${symbol}.KA`;
-      try {
-        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=5d`;
-        const data = await _fetchRaw(url);
-        const meta = data?.chart?.result?.[0]?.meta;
-        if (meta?.regularMarketPrice && _sanityCheck(symbol, meta.regularMarketPrice)) {
-          results[symbol] = {
-            price: meta.regularMarketPrice,
-            prevClose: meta.previousClose || meta.chartPreviousClose || meta.regularMarketPrice,
-            source: 'yahoo',
-            ts: Date.now()
-          };
-          if (onProgress) onProgress(++done, symbols.length, symbol, true, 'yahoo');
-        } else {
-          const fp = (window.FALLBACK_PRICES || {})[symbol];
-          if (fp) results[symbol] = { price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 };
-          if (onProgress) onProgress(++done, symbols.length, symbol, !!fp, 'fallback');
-        }
-      } catch {
-        if (onProgress) onProgress(++done, symbols.length, symbol, false, 'error');
+      const yahoo = await _fetchYahoo(symbol);
+      if (yahoo) {
+        results[symbol] = yahoo;
+        if (onProgress) onProgress(++done, symbols.length, symbol, true, 'yahoo');
+      } else {
+        const fp = (window.FALLBACK_PRICES || {})[symbol];
+        if (fp) results[symbol] = { price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 };
+        if (onProgress) onProgress(++done, symbols.length, symbol, !!fp, 'fallback');
       }
-      await new Promise(r => setTimeout(r, 60));
+      await new Promise(r => setTimeout(r, 40));
     }
 
     for (const symbol of fundSyms) {

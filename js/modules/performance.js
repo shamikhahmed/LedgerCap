@@ -24,10 +24,18 @@ const Performance = (() => {
     const monthlyData = _calcMonthlyPnL(state);
     const predictiveData = _calcPredictivePnL(state);
     const totalRealised = Ledger.realisedPnl(state.transactions || []);
+    const costBasis = Ledger.currentCostBasis ? Ledger.currentCostBasis(state.transactions || []) : State.calcTotalCost();
+    const marketValue = State.calcTotalValue();
+    const unrealised = marketValue - costBasis;
 
     screen.innerHTML = `
     <div class="perf-header cap-reveal">
       <div class="perf-title">Portfolio Performance</div>
+      <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-2);font-size:0.75rem;color:var(--text2);">
+        <span>Cost basis <strong>${PlatformUI.fmt(costBasis)}</strong></span>
+        <span>Unrealised <strong class="${unrealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(unrealised)}</strong></span>
+        <span>Realised <strong class="${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</strong></span>
+      </div>
       <div class="perf-tabs">
         <button class="perf-tab${_tab === 'daily' ? ' active' : ''}" onclick="Performance.setTab('daily')">Daily</button>
         <button class="perf-tab${_tab === 'monthly' ? ' active' : ''}" onclick="Performance.setTab('monthly')">Monthly</button>

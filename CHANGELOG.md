@@ -1,5 +1,15 @@
 # Changelog — LedgerCap
 
+## 3.5.1 (2026-06-16)
+- Fix return metrics: dashboard and holdings use ledger cost basis, not gross invested.
+- Portfolio intel scores clamped 0–100; dividend/growth quality display rounded.
+- PSX price chain: when Cloudflare proxy fails (520), fall through to Yahoo and CORS proxies without console spam; skip bad `.KA` symbols after first failure.
+- Desktop layout: full-width sidebar + content shell (VaultCap pattern) on ≥900px; mobile stays 430px column.
+- Service worker cache `ledgercap-v51`; `scripts/verify-ledger.js` for reconciliation.
+
+## 3.5.0 (2026-06-16)
+- Seed v4, `currentCostBasis()`, performance header, home sparkline fix (partial audit — see docs/RECONCILIATION.md).
+
 ## 3.4.3 (2026-06-16)
 - Complete StundsOS → LedgerCap rebrand: config (`LEDGERCAP_CONFIG`), PSX proxy worker name, landing logo, docs, backup format (`.ledgercap`).
 - Legacy localStorage/session keys and proxy URLs migrate automatically on launch.

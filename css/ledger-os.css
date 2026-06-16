@@ -108,9 +108,10 @@ body {
   .lc-shell {
     display: flex;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
     min-height: 100dvh;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.45);
   }
 
   #nav-sidebar {
@@ -121,7 +122,9 @@ body {
     align-self: flex-start;
     min-height: 100dvh;
     height: 100dvh;
-    width: var(--os-sidebar-w);
+    width: 280px;
+    min-width: 272px;
+    max-width: 288px;
     flex-shrink: 0;
     background: var(--os-bg-elevated);
     border-right: 1px solid var(--os-border);
@@ -134,9 +137,35 @@ body {
     flex: 1;
     min-width: 0;
     min-height: 100dvh;
+    max-width: none;
   }
 
   #nav { display: none !important; }
+
+  #screens {
+    padding-bottom: 0;
+  }
+
+  .os-page-header,
+  .os-hero,
+  .os-stat-row,
+  .os-section,
+  .os-card-grid,
+  .os-ai-box {
+    max-width: none;
+  }
+
+  .rt-mode-bar {
+    max-width: none;
+    margin: 0;
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
+  }
+}
+
+@media (min-width: 1400px) {
+  .lc-shell { max-width: 1440px; }
+  #nav-sidebar { width: 288px; }
 }
 
 .os-brand {

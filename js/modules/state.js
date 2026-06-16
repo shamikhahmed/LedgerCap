@@ -292,18 +292,30 @@ const State = (() => {
 
   function calcTotalCost() {
     if (!_s) load();
-    return Ledger.totalInvested(_s.transactions);
+    return Ledger.currentCostBasis
+      ? Ledger.currentCostBasis(_s.transactions)
+      : Ledger.totalInvested(_s.transactions);
   }
 
   function calcDailyPnl() {
     if (!_s) load();
     const holdings = Ledger.calcHoldings(_s.transactions);
-    return holdings.reduce((sum, h) => {
+    const funds = Ledger.calcFundHoldings(_s.transactions);
+    const stockPnl = holdings.reduce((sum, h) => {
       const curr = getPrice(h.symbol);
       const prev = getPrevClose(h.symbol);
       if (!curr || !prev) return sum;
       return sum + h.shares * (curr - prev);
     }, 0);
+    const fundPnl = funds.reduce((sum, f) => {
+      const curr = getPrice(f.symbol);
+      const prev = getPrevClose(f.symbol);
+      const nav = curr || prev || f.avgNav;
+      const prevNav = prev || curr || f.avgNav;
+      if (!nav || !prevNav) return sum;
+      return sum + f.units * (nav - prevNav);
+    }, 0);
+    return stockPnl + fundPnl;
   }
 
   function dividendsBySymbol() {
