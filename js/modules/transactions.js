@@ -42,8 +42,11 @@ const Transactions = (() => {
     const monthKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
     screen.innerHTML = `
-    <div style="padding:calc(env(safe-area-inset-top,16px) + 10px) 16px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:1.1rem;font-weight:700;">Transactions</div>
+    <div style="padding:calc(env(safe-area-inset-top,16px) + 10px) 16px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+        <button class="btn-ghost" style="min-width:44px;min-height:44px;font-size:1.2rem;padding:0" onclick="Navigation.go('holdings')" aria-label="Back to holdings">←</button>
+        <div style="font-size:1.1rem;font-weight:700;">Transactions</div>
+      </div>
       <div style="display:flex;gap:8px;">
         <button class="btn-ghost" onclick="Transactions.exportCsv()" title="Export CSV">⬇ CSV</button>
         <button class="btn-ghost" onclick="App.openAddTransaction()">+ Add</button>
