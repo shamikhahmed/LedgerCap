@@ -49,7 +49,7 @@ const Prices = (() => {
 
   async function _fetchAppProxy(url) {
     const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
-    const base = (fromState || window.STUNDS_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
+    const base = (window.LedgerCapConfig?.resolvePsxProxyUrl(fromState) || fromState || window.LEDGERCAP_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
     if (!base) return null;
     const path = url.replace('https://dps.psx.com.pk/', '');
     const tries = [

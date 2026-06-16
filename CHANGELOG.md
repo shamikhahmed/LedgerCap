@@ -1,5 +1,11 @@
 # Changelog — LedgerCap
 
+## 3.4.3 (2026-06-16)
+- Complete StundsOS → LedgerCap rebrand: config (`LEDGERCAP_CONFIG`), PSX proxy worker name, landing logo, docs, backup format (`.ledgercap`).
+- Legacy localStorage/session keys and proxy URLs migrate automatically on launch.
+- Desktop shell layout fix; Home / Performance / Compare / Transactions navigation wired.
+- Service worker cache `ledgercap-v47`; offline cache includes home, performance, comparison modules.
+
 ## 3.4.1 (2026-06-15)
 - Restore pre–Capricorn identity home-screen icons; service worker cache bump.
 
@@ -27,7 +33,7 @@
 - Phase P4: Playwright tests for Reports tab and CSV export on transactions; service worker cache bump.
 
 ## 2.3.0 (2026-06-10)
-- Portfolio CTO pass: PWA icons (192/512 maskable), service worker cache bump (`stundsOS-v8`)
+- Portfolio CTO pass: PWA icons (192/512 maskable), service worker cache bump (`ledgercap-v8`)
 - Truth sprint: docs aligned with shipped features
 - Holdings seed UI, Zakat docs, pitch expansion
 

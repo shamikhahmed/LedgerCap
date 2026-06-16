@@ -100,6 +100,7 @@ const State = (() => {
   }
 
   function load() {
+    let shouldPersist = false;
     try {
       const r = _readStorage();
       if (r) {
@@ -109,11 +110,21 @@ const State = (() => {
         if (parsed.transactions?.length > 0 && !_s.settings.onboardingDone) {
           _s.settings.onboardingDone = true;
         }
-        if (!_s.settings.psxProxyUrl && window.STUNDS_CONFIG?.psxProxyUrl) {
-          _s.settings.psxProxyUrl = window.STUNDS_CONFIG.psxProxyUrl;
+        const prevProxy = _s.settings.psxProxyUrl || '';
+        if (!_s.settings.psxProxyUrl && window.LEDGERCAP_CONFIG?.psxProxyUrl) {
+          _s.settings.psxProxyUrl = window.LEDGERCAP_CONFIG.psxProxyUrl;
+          shouldPersist = true;
+        }
+        if (window.LedgerCapConfig?.resolvePsxProxyUrl) {
+          const normalized = window.LedgerCapConfig.resolvePsxProxyUrl(_s.settings.psxProxyUrl);
+          if (normalized && normalized !== prevProxy) {
+            _s.settings.psxProxyUrl = normalized;
+            shouldPersist = true;
+          }
         }
         if (!_s.version || _s.version < 5) {
           _migrateV5();
+          shouldPersist = true;
         }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
@@ -123,6 +134,7 @@ const State = (() => {
     }
     _seedTransactions();
     _seedFallbackPrices();
+    if (shouldPersist) save();
   }
 
   function get(k) { if (!_s) load(); return k ? _s[k] : _s; }

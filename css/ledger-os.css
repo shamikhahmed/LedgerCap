@@ -81,7 +81,7 @@ body {
 
 @media (min-width: 900px) {
   #screens {
-    margin-left: var(--os-sidebar-w);
+    margin-left: 0;
     padding-bottom: 0;
   }
 }
@@ -105,19 +105,37 @@ body {
 #nav-sidebar { display: none; }
 
 @media (min-width: 900px) {
+  .lc-shell {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100dvh;
+  }
+
   #nav-sidebar {
     display: flex;
     flex-direction: column;
-    position: fixed;
-    left: 0;
+    position: sticky;
     top: 0;
-    bottom: 0;
+    align-self: flex-start;
+    min-height: 100dvh;
+    height: 100dvh;
     width: var(--os-sidebar-w);
+    flex-shrink: 0;
     background: var(--os-bg-elevated);
     border-right: 1px solid var(--os-border);
     padding: var(--space-5) var(--space-3);
     z-index: 100;
+    overflow-y: auto;
   }
+
+  #app {
+    flex: 1;
+    min-width: 0;
+    min-height: 100dvh;
+  }
+
   #nav { display: none !important; }
 }
 
@@ -152,6 +170,19 @@ body {
   font-weight: 600;
 }
 .nav-side-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.nav-side-divider {
+  height: 1px;
+  background: var(--os-border);
+  margin: var(--space-3) var(--space-2);
+}
+
+.nav-side-footer {
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+.nav-theme-btn .nav-icon { font-size: 1rem; line-height: 1; }
 
 /* Bottom nav (mobile) */
 #nav {

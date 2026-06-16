@@ -97,7 +97,7 @@ Dashboard surfaces:
 
 - **PSX Proxy URL** — Cloudflare Worker endpoint
 - **Holdings Seed** — **Settings → Load Demo Holdings** loads anonymized PSX + Meezan ledger (`INITIAL_TRANSACTIONS`)
-- **Export** — backup ledger state (`.stunds`)
+- **Export** — backup ledger state (`.ledgercap`)
 - **Reset** — clear all local data
 
 ---

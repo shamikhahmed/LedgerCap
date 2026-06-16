@@ -1,7 +1,7 @@
 /**
  * LedgerCap PSX Price Proxy — deploy to Cloudflare Workers
  * wrangler deploy (from worker/ folder)
- * Then set STUNDS_CONFIG.psxProxyUrl in js/data/config.js or Settings
+ * Then set LEDGERCAP_CONFIG.psxProxyUrl in js/data/config.js or Settings
  */
 export default {
   async fetch(request) {
@@ -17,7 +17,7 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'stunds-psx-proxy' });
+      return json({ ok: true, service: 'ledgercap-psx-proxy' });
     }
     const target = url.searchParams.get('url');
     const path = url.pathname.replace(/^\//, '');

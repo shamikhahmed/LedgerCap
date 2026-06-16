@@ -66,12 +66,31 @@ const App = (() => {
   }
 
   function _maybeInstallHint() {
-    if (localStorage.getItem('ledgercap_install_dismiss') || localStorage.getItem('stundsOS_install_dismiss')) return;
+    if (localStorage.getItem('ledgercap_install_dismiss')) return;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
     if (!standalone && ios) {
       const h = document.getElementById('install-hint');
       if (h) h.classList.remove('hidden');
+    }
+  }
+
+  function _migrateLegacyBranding() {
+    const legacyTab = sessionStorage.getItem('stundsOS_tab');
+    if (legacyTab && !sessionStorage.getItem('ledgercap_tab')) {
+      sessionStorage.setItem('ledgercap_tab', legacyTab);
+    }
+    sessionStorage.removeItem('stundsOS_tab');
+    if (localStorage.getItem('stundsOS_install_dismiss') && !localStorage.getItem('ledgercap_install_dismiss')) {
+      localStorage.setItem('ledgercap_install_dismiss', '1');
+    }
+    localStorage.removeItem('stundsOS_install_dismiss');
+    const settings = State.get('settings') || {};
+    if (settings.psxProxyUrl && window.LedgerCapConfig?.resolvePsxProxyUrl) {
+      const normalized = window.LedgerCapConfig.resolvePsxProxyUrl(settings.psxProxyUrl);
+      if (normalized !== settings.psxProxyUrl) {
+        State.update(s => { s.settings.psxProxyUrl = normalized; });
+      }
     }
   }
 
@@ -82,20 +101,23 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=46').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=48').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
+    _migrateLegacyBranding();
     const cfg = State.get('settings')?.psxProxyUrl;
-    if (cfg && window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = cfg;
+    if (cfg && window.LEDGERCAP_CONFIG) {
+      window.LEDGERCAP_CONFIG.psxProxyUrl = window.LedgerCapConfig?.resolvePsxProxyUrl(cfg) || cfg;
+    }
     _hideSplash();
     Navigation.init();
     if (demo && window.Settings && Settings.loadSeedData) {
       Settings.loadSeedData({ silent: true });
     }
-    Navigation.go('dashboard');
+    Navigation.go('home');
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();
-    const hasProxy = State.get('settings')?.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl;
+    const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
     if (hasProxy) setTimeout(() => refreshPrices(), 1200);
     _maybeInstallHint();
     document.addEventListener('visibilitychange', () => {
@@ -497,15 +519,25 @@ const App = (() => {
   }
 
   function _applyTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
     document.body.classList.toggle('light', theme === 'light');
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = theme === 'light' ? '#f8f9fc' : '#0a0b0d';
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
   }
 
   function applyTheme(theme) {
     State.update(s => { s.settings.theme = theme; });
     _applyTheme(theme);
   }
+
+  window.toggleTheme = function() {
+    const current = document.body.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    App.applyTheme(next);
+    localStorage.setItem('theme', next);
+  };
 
   function renderCurrent() {
     Navigation.go(Navigation.current(), true);

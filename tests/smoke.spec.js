@@ -20,7 +20,7 @@ test.describe('LedgerCap smoke', () => {
     await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
   });
 
-  test('portfolio intel in research tab and holdings opens transaction log', async ({ page }) => {
+  test('portfolio intel in research tab is accessible', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
@@ -30,21 +30,15 @@ test.describe('LedgerCap smoke', () => {
     await page.getByRole('button', { name: 'Portfolio intel' }).click();
     await expect(page.locator('#screen-research.active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Portfolio Intelligence')).toBeVisible();
-
-    await page.locator('#nav [data-tab="holdings"]').click();
-    await expect(page.locator('#screen-holdings.active')).toBeVisible({ timeout: 10000 });
-    await page.getByRole('button', { name: /Transaction log/i }).click();
-    await expect(page.locator('#screen-transactions.active')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('button', { name: /CSV/i })).toBeVisible();
   });
 
-  test('eight primary nav tabs present on mobile', async ({ page }) => {
+  test('five primary nav tabs present on mobile', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
     const tabs = page.locator('#nav .nav-tab');
-    await expect(tabs).toHaveCount(8);
-    await expect(page.locator('#nav [data-tab="dashboard"]')).toBeVisible();
+    await expect(tabs).toHaveCount(5);
+    await expect(page.locator('#nav [data-tab="home"]')).toBeVisible();
     await expect(page.locator('#nav [data-tab="research"]')).toBeVisible();
     await expect(page.locator('#nav [data-tab="intelligence"]')).toHaveCount(0);
   });

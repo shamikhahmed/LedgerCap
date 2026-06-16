@@ -34,9 +34,7 @@ Pick something like `shamikhahmed` → your workers live at `*.shamikhahmed.work
 
 **Option B — in browser:**
 
-Open: https://dash.cloudflare.com/42143da6ef4b278b675135010be826e4/workers/onboarding
-
-Then run `npx wrangler deploy` again.
+Open your Cloudflare Workers onboarding page, then run `npx wrangler deploy` again.
 
 ### 4. Deploy
 
@@ -47,8 +45,8 @@ npx wrangler deploy
 On success you'll see something like:
 
 ```
-Published stunds-psx-proxy (X.XX sec)
-  https://stunds-psx-proxy.<your-subdomain>.workers.dev
+Published ledgercap-psx-proxy (X.XX sec)
+  https://ledgercap-psx-proxy.<your-subdomain>.workers.dev
 ```
 
 ### 5. Paste URL into LedgerCap
@@ -58,8 +56,8 @@ Open the app → **Settings** → **PSX Proxy URL** → paste the Workers URL �
 Or edit `js/data/config.js`:
 
 ```js
-window.STUNDS_CONFIG = {
-  psxProxyUrl: 'https://stunds-psx-proxy.<your-subdomain>.workers.dev',
+window.LEDGERCAP_CONFIG = {
+  psxProxyUrl: 'https://ledgercap-psx-proxy.<your-subdomain>.workers.dev',
 };
 ```
 
@@ -77,7 +75,7 @@ Then commit/push if you want it baked into the deployed site.
 ## Test the proxy
 
 ```bash
-curl "https://stunds-psx-proxy.<your-subdomain>.workers.dev?url=https%3A%2F%2Fdps.psx.com.pk%2Flive" | head -c 500
+curl "https://ledgercap-psx-proxy.<your-subdomain>.workers.dev?url=https%3A%2F%2Fdps.psx.com.pk%2Flive" | head -c 500
 ```
 
 You should get JSON (PSX live data), not an HTML error page.

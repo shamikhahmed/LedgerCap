@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v46';
+const CACHE = 'ledgercap-v48';
 const ASSETS = [
   './css/capricorn-core.css', './css/ledger-os.css', './css/platform.css', './css/app.css',
   './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json',
@@ -12,7 +12,11 @@ const ASSETS = [
   './js/services/dividend-service.js',
   './js/services/research-service.js', './js/services/portfolio-analytics-service.js',
   './js/modules/state.js', './js/modules/onboarding.js', './js/modules/investment.js',
-  './js/modules/dashboard.js', './js/modules/portfolio.js', './js/modules/holdings.js',
+  './js/modules/home.js',
+  './js/modules/dashboard.js',
+  './js/modules/performance.js',
+  './js/modules/comparison.js',
+  './js/modules/portfolio.js', './js/modules/holdings.js',
   './js/modules/research.js', './js/modules/watchlist.js', './js/modules/dividends.js',
   './js/modules/intelligence.js', './js/modules/journal.js',
   './js/modules/transactions.js', './js/modules/settings.js',
@@ -34,16 +38,19 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  // Never intercept cross-origin API/proxy requests — avoids null respondWith errors.
+  if (url.origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then(cached => {
-      const fetched = fetch(e.request).then(res => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => cached);
-      return cached || fetched;
+      });
     })
   );
 });

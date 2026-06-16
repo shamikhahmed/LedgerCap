@@ -4,7 +4,7 @@
 
 - Transactions, holdings, net worth, and Zakat inputs are stored in **localStorage** on your device.
 - **No brokerage integration** — you enter trades manually. Ledger is source of truth.
-- Protect device passcode and `.stunds` export files.
+- Protect device passcode and `.ledgercap` export files.
 
 ## Network surface
 
@@ -23,7 +23,7 @@
 
 ## PWA / supply chain
 
-- Static assets served from GitHub Pages; verify `sw.js` cache version (`stundsOS-v8`) when updating.
+- Static assets served from GitHub Pages; verify `sw.js` cache version (`ledgercap-v48`) when updating.
 - Do not commit `.env` or API keys to the repository.
 
 ## Reporting

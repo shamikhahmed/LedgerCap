@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com; frame-src 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev; frame-src 'none'; object-src 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,12 +21,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="css/capricorn-core.css">
-  <link rel="stylesheet" href="css/app.css?v=11">
   <link rel="stylesheet" href="css/ledger-os.css">
   <link rel="stylesheet" href="css/platform.css">
   <link rel="stylesheet" href="css/identity.css">
+  <link rel="stylesheet" href="css/app.css?v=12">
 </head>
-<body>
+<body data-theme="dark">
+  <script>
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', theme);
+    window.toggleTheme = function() {
+      const current = document.body.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      const btn = document.getElementById('theme-toggle');
+      if (btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
+      if (window.Navigation && Navigation.applyTheme) Navigation.applyTheme(next);
+      if (window.App && App.applyTheme) App.applyTheme(next);
+    };
+  </script>
   <div id="splash" class="splash">
     <div class="splash-mark">₨</div>
     <div class="splash-title">LedgerCap</div>
@@ -38,21 +52,31 @@
     <p><strong>Install LedgerCap</strong> — Safari → Share → <strong>Add to Home Screen</strong></p>
     <button type="button" class="btn-ghost" onclick="App.dismissInstall()">✕</button>
   </div>
+  <div class="lc-shell">
+  <header id="app-header" class="app-header">
+    <div style="flex:1;text-align:center;font-size:0.9rem;opacity:0.6">₨</div>
+    <span id="app-title" style="font-weight:700">LedgerCap</span>
+    <button id="theme-toggle" class="theme-toggle" onclick="window.toggleTheme?.()" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+  </header>
   <nav id="nav-sidebar" aria-label="Module navigation"></nav>
   <div id="app">
     <div id="screens">
-      <div id="screen-dashboard" class="screen active"></div>
-      <div id="screen-portfolio" class="screen"></div>
-      <div id="screen-holdings" class="screen"></div>
+      <div id="screen-home" class="screen active"></div>
       <div id="screen-research" class="screen"></div>
       <div id="screen-watchlist" class="screen"></div>
       <div id="screen-dividends" class="screen"></div>
+      <div id="screen-settings" class="screen"></div>
+      <div id="screen-dashboard" class="screen"></div>
+      <div id="screen-performance" class="screen"></div>
+      <div id="screen-portfolio" class="screen"></div>
+      <div id="screen-holdings" class="screen"></div>
+      <div id="screen-comparison" class="screen"></div>
       <div id="screen-intelligence" class="screen"></div>
       <div id="screen-journal" class="screen"></div>
-      <div id="screen-settings" class="screen"></div>
       <div id="screen-transactions" class="screen"></div>
     </div>
     <nav id="nav" aria-label="Main navigation"></nav>
+  </div>
   </div>
 
   <button class="fab hidden" id="fab" onclick="App.openAddTransaction()" aria-label="Add transaction">+</button>
@@ -88,23 +112,26 @@
   <script src="js/services/dividend-service.js"></script>
   <script src="js/services/research-service.js"></script>
   <script src="js/services/portfolio-analytics-service.js"></script>
+  <script src="js/ui/charts.js"></script>
+  <script src="js/ui/motion.js"></script>
+  <script src="js/ui/navigation.js"></script>
   <script src="js/ui/platform.js"></script>
   <script src="js/modules/state.js"></script>
   <script src="js/modules/onboarding.js"></script>
   <script src="js/modules/investment.js"></script>
+  <script src="js/modules/home.js"></script>
   <script src="js/modules/dashboard.js"></script>
+  <script src="js/modules/performance.js"></script>
   <script src="js/modules/portfolio.js"></script>
   <script src="js/modules/holdings.js"></script>
   <script src="js/modules/research.js"></script>
+  <script src="js/modules/comparison.js"></script>
   <script src="js/modules/watchlist.js"></script>
   <script src="js/modules/dividends.js"></script>
   <script src="js/modules/intelligence.js"></script>
   <script src="js/modules/journal.js"></script>
   <script src="js/modules/transactions.js"></script>
   <script src="js/modules/settings.js"></script>
-  <script src="js/ui/charts.js"></script>
-  <script src="js/ui/motion.js"></script>
-  <script src="js/ui/navigation.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

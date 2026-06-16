@@ -57,7 +57,7 @@ const Settings = (() => {
     const lastUpdate = allPrices.sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
     const lastUpdateStr = lastUpdate ? Prices.formatTs(lastUpdate.ts) : 'Never';
     const txCount = (state.transactions || []).length;
-    const proxyUrl = settings.psxProxyUrl || window.STUNDS_CONFIG?.psxProxyUrl || '';
+    const proxyUrl = window.LedgerCapConfig?.resolvePsxProxyUrl(settings.psxProxyUrl) || settings.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl || '';
     const isOnline = navigator.onLine;
     const proxyHealth = _proxyHealthLabel();
 
@@ -200,7 +200,7 @@ const Settings = (() => {
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
         <div class="field">
           <label class="field-label">PSX Proxy URL (optional)</label>
-          <input class="field-input" id="s-proxy" type="url" placeholder="https://stunds-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
+          <input class="field-input" id="s-proxy" type="url" placeholder="https://ledgercap-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
           <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
         </div>
         <button class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
@@ -239,14 +239,14 @@ const Settings = (() => {
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
         <button class="btn-secondary" onclick="Settings._exportData()">↑ Export .ledgercap Backup</button>
-        <button class="btn-secondary" onclick="Settings._importData()">↓ Import Backup (.ledgercap / .stunds)</button>
+        <button class="btn-secondary" onclick="Settings._importData()">↓ Import .ledgercap Backup</button>
         <button class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
       </div>
     </div>
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.4.2</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.4.3</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
@@ -313,7 +313,7 @@ const Settings = (() => {
   function _importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.ledgercap,.stunds,.json,application/json';
+    input.accept = '.ledgercap,.json,.stunds,application/json';
     input.onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -329,9 +329,9 @@ const Settings = (() => {
   }
 
   function _saveProxy() {
-    const url = document.getElementById('s-proxy')?.value?.trim() || '';
+    const url = window.LedgerCapConfig?.resolvePsxProxyUrl(document.getElementById('s-proxy')?.value?.trim() || '') || '';
     State.update(s => { s.settings.psxProxyUrl = url; });
-    if (window.STUNDS_CONFIG) window.STUNDS_CONFIG.psxProxyUrl = url;
+    if (window.LEDGERCAP_CONFIG) window.LEDGERCAP_CONFIG.psxProxyUrl = url;
     _pingProxy(url);
     App.showToast(url ? 'Proxy URL saved' : 'Proxy cleared — using public fallbacks', 'success');
     App.renderCurrent();
