@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="css/app.css?v=13">
 </head>
 <body data-theme="dark">
+  <div class="cap-ambient" aria-hidden="true"></div>
   <script>
     const theme = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', theme);
@@ -133,5 +134,11 @@
   <script src="js/modules/transactions.js"></script>
   <script src="js/modules/settings.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/capricorn-premium-nav.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.CapPremiumNav) CapPremiumNav.init();
+    });
+  </script>
 </body>
 </html>
