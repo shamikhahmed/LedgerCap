@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v51';
+const CACHE = 'ledgercap-v52';
 const ASSETS = [
   './css/capricorn-core.css', './css/ledger-os.css', './css/platform.css', './css/app.css',
   './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json',
@@ -20,7 +20,18 @@ const ASSETS = [
   './js/modules/research.js', './js/modules/watchlist.js', './js/modules/dividends.js',
   './js/modules/intelligence.js', './js/modules/journal.js',
   './js/modules/transactions.js', './js/modules/settings.js',
-  './js/ui/charts.js', './js/ui/motion.js', './js/ui/platform.js', './js/ui/navigation.js', './js/app.js'
+  './js/ui/charts.js', './js/ui/motion.js', './js/ui/platform.js', './js/ui/navigation.js', './js/app.js',
+  './js/capricorn-motion.js',
+  './js/capricorn-scene.js',
+  './js/capricorn-premium-nav.js',
+  './js/capricorn-cinematic.js',
+  './js/capricorn-deck.js',
+  './js/capricorn-deck-pro.js',
+  './js/capricorn-pitch.js',
+  './js/vendor/gsap.min.js',
+  './js/vendor/ScrollTrigger.min.js',
+  './privacy.html',
+  './changelog.html',
 ];
 
 self.addEventListener('install', e => {
