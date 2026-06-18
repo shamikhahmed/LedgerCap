@@ -40,7 +40,7 @@ const Home = (() => {
           <span class="${summary.totalReturn.pct >= 0 ? 't-gain' : 't-loss'}">All time ${summary.totalReturn.pct >= 0 ? '+' : ''}${PlatformUI.fmt(summary.totalReturn.pct, { pct: true })}</span>
         </div>
       </div>
-      ${history.length > 1 ? `<div class="home-chart" id="home-chart"></div>` : ''}
+      ${history.length > 1 ? `<div class="home-chart" id="home-chart" aria-label="Holdings value trend (today's prices)"></div><div class="home-chart-note" style="font-size:0.65rem;color:var(--text3);text-align:center;margin-top:4px;padding:0 12px">Trend uses today's prices on past holding dates — indicative shape only</div>` : ''}
     </div>
 
     <div class="home-stats cap-reveal">

@@ -42,7 +42,7 @@ cd LedgerCap && node scripts/verify-ledger.js
 
 | Issue | Impact |
 |-------|--------|
-| MBF→MIIF Apr-28 convert: ₨35k cost leaves MBF without MIIF-B receipt | Portfolio cost basis ~₨35k low vs AMC books |
+| MBF→MIIF Apr-28 convert: ₨35k cost leaves MBF without MIIF-B receipt | **Closed** — portfolio cost basis matches AMC fund `investedValue` totals (₨634,776); internal convert redistributes cost between MBF/MIIF-B without changing portfolio total |
 | Daily/monthly M2M performance uses today's prices on past dates | Performance tab approximate |
 | PSX worker often returns Cloudflare 520 | App falls back to Yahoo + `FALLBACK_PRICES` |
 | Rafi opening + trade log still noisy in transaction history | Gross `totalInvested()` legacy only |

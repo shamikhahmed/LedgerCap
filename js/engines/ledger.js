@@ -80,7 +80,6 @@ const Ledger = (() => {
           funds[t.symbol].totalInvested += (t.amount || 0);
         } else {
           const prevUnits = funds[t.symbol].units;
-          const avgNav = prevUnits > 0 ? funds[t.symbol].totalInvested / prevUnits : 0;
           const outUnits = Math.abs(t.units || 0);
           funds[t.symbol].units -= outUnits;
           funds[t.symbol].totalInvested = funds[t.symbol].units > 0

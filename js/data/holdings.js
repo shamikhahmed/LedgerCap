@@ -283,7 +283,7 @@ const INITIAL_TRANSACTIONS = [
   { id:'t_sal_4', date:'2026-04-01', type:'SALARY', amount:150000, notes:'Apr salary' },
   { id:'t_sal_5', date:'2026-05-01', type:'SALARY', amount:150000, notes:'May salary' },
   { id:'t_sal_6', date:'2026-06-01', type:'SALARY', amount:150000, notes:'Jun salary' },
-  { id:'t_mbf_out', date:'2026-04-28', type:'FUND_OUT', symbol:'MBF', broker:'Meezan', units:1285.969, nav:27.3708, amount:35000, notes:'CONVERT OUT to MIIF (units leave MBF; verify AMC pairing)', internal:true },
+  { id:'t_mbf_out', date:'2026-04-28', type:'FUND_OUT', symbol:'MBF', broker:'Meezan', units:1285.969, nav:27.3708, amount:35000, notes:'CONVERT OUT to MIIF-B', internal:true },
 ];
 
 window.PORTFOLIO_SEED_VERSION = PORTFOLIO_SEED_VERSION;

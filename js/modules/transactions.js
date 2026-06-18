@@ -21,6 +21,13 @@ const Transactions = (() => {
     return '₨' + Math.round(n).toLocaleString('en-PK');
   }
 
+  function _signedFlow(t) {
+    if (t.internal) return 0;
+    if (t.type === 'SELL' || t.type === 'DIVIDEND' || t.type === 'SALARY' || t.type === 'REDEMPTION') return t.amount || 0;
+    if (t.type === 'BUY' || t.type === 'CONTRIBUTION' || t.type === 'IPO_SUBSCRIBE' || t.type === 'FUND_OUT') return -(t.amount || 0);
+    return 0;
+  }
+
   function render() {
     const screen = document.getElementById('screen-transactions');
     if (!screen) return;
@@ -55,9 +62,9 @@ const Transactions = (() => {
       </div>
     </div>
 
-    <div class="filter-tabs">
+    <div class="filter-tabs cap-tab-bar" role="tablist" aria-label="Transaction filters">
       ${['all','buy','sell','dividend','salary','contribution','ipo'].map(f =>
-        `<div class="filter-tab${_filter === f ? ' active' : ''}" data-f="${f}">${f === 'ipo' ? 'IPO' : f.charAt(0).toUpperCase() + f.slice(1)}</div>`
+        `<button type="button" class="filter-tab cap-tab${_filter === f ? ' active' : ''}" role="tab" aria-selected="${_filter === f}" data-f="${f}">${f === 'ipo' ? 'IPO' : f.charAt(0).toUpperCase() + f.slice(1)}</button>`
       ).join('')}
     </div>
 
@@ -65,10 +72,10 @@ const Transactions = (() => {
 
     ${monthKeys.map(month => {
       const txs = grouped[month];
-      const total = txs.reduce((a, t) => a + (t.amount || 0), 0);
+      const net = txs.reduce((a, t) => a + _signedFlow(t), 0);
       const label = new Date(month + '-01').toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
       return `
-      <div class="month-group"><span>${label}</span><span>${fmt(total)}</span></div>
+      <div class="month-group"><span>${label}</span><span title="Net cash flow (excludes internal fund converts)">${fmt(net)}</span></div>
       ${txs.map(tx => _txRowHTML(tx)).join('')}`;
     }).join('')}
     <div style="height:8px;"></div>`;
