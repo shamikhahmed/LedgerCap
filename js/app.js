@@ -56,7 +56,7 @@ const App = (() => {
     const el = document.getElementById('splash');
     const fill = document.getElementById('splash-fill');
     if (fill) fill.style.width = '100%';
-    setTimeout(() => { if (el) el.classList.add('hide'); }, 1400);
+    setTimeout(() => { if (el) el.classList.add('hide'); }, 480);
   }
 
   function dismissInstall() {

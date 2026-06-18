@@ -8,6 +8,7 @@ const Intelligence = (() => {
     const intel = PortfolioAnalyticsService.getIntelligence();
     const { summary, insights, ruleInsights, scores } = intel;
 
+    const fmtScore = n => Math.round(Number(n) || 0);
     screen.innerHTML = `
     <div class="os-page-header cap-reveal">
       <div class="os-page-title">Portfolio Intelligence</div>
@@ -15,11 +16,11 @@ const Intelligence = (() => {
     </div>
 
     ${U.section('Portfolio Scores', U.metricGrid([
-      U.metricCell('Health', scores.health + '/100', null, scores.health >= 60 ? 't-gain' : 't-loss'),
-      U.metricCell('Risk', scores.risk + '/100', 'Lower is better', scores.risk <= 50 ? 't-gain' : 't-loss'),
-      U.metricCell('Diversification', scores.diversification + '/100'),
-      U.metricCell('Dividend Quality', scores.dividendQuality + '/100'),
-      U.metricCell('Growth Quality', scores.growthQuality + '/100'),
+      U.metricCell('Health', fmtScore(scores.health) + '/100', null, scores.health >= 60 ? 't-gain' : 't-loss'),
+      U.metricCell('Risk', fmtScore(scores.risk) + '/100', 'Lower is better', scores.risk <= 50 ? 't-gain' : 't-loss'),
+      U.metricCell('Diversification', fmtScore(scores.diversification) + '/100'),
+      U.metricCell('Dividend Quality', fmtScore(scores.dividendQuality) + '/100'),
+      U.metricCell('Growth Quality', fmtScore(scores.growthQuality) + '/100'),
       U.metricCell('Portfolio Yield', summary.portfolioDivYield.toFixed(1) + '%'),
     ], 3))}
 

@@ -951,11 +951,15 @@ body > .lc-shell > #app,
   border-radius: 99px;
   font-size: 0.8rem;
   font-weight: 600;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--surface-elevated, rgba(28, 28, 30, 0.94));
   animation: slideDown 0.25s ease;
   white-space: nowrap;
   border: 1px solid transparent;
+}
+body[data-cap-app="1"] .toast,
+body[data-cap-app="1"] .app-header {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .toast.success {
   background: rgba(14,203,129,0.15);
