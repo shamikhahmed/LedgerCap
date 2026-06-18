@@ -36,10 +36,10 @@ const Performance = (() => {
         <span>Unrealised <strong class="${unrealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(unrealised)}</strong></span>
         <span>Realised <strong class="${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</strong></span>
       </div>
-      <div class="perf-tabs">
-        <button class="perf-tab${_tab === 'daily' ? ' active' : ''}" onclick="Performance.setTab('daily')">Daily</button>
-        <button class="perf-tab${_tab === 'monthly' ? ' active' : ''}" onclick="Performance.setTab('monthly')">Monthly</button>
-        <button class="perf-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Forecast</button>
+      <div class="perf-tabs cap-tab-bar">
+        <button type="button" class="perf-tab cap-tab${_tab === 'daily' ? ' active' : ''}" onclick="Performance.setTab('daily')">Daily</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'monthly' ? ' active' : ''}" onclick="Performance.setTab('monthly')">Monthly</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Forecast</button>
       </div>
       <p class="perf-disclaimer" style="margin:var(--space-2) 0 0;font-size:0.7rem;color:var(--text3);line-height:1.4;">Daily/monthly bars use today&apos;s prices on past dates — indicative only. Realised P&amp;L from sells is exact. Forecast uses your return assumptions from Settings.</p>
     </div>

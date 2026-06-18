@@ -18,9 +18,9 @@ const Research = (() => {
   }
 
   function modeBar() {
-    return `<div class="rt-mode-bar cap-reveal">
-      <button type="button" class="rt-mode-btn${_mode === 'stock' ? ' active' : ''}" onclick="Research.setMode('stock')">Stock analysis</button>
-      <button type="button" class="rt-mode-btn${_mode === 'portfolio' ? ' active' : ''}" onclick="Research.setMode('portfolio')">Portfolio intel</button>
+    return `<div class="rt-mode-bar cap-tab-bar--segmented cap-reveal">
+      <button type="button" class="rt-mode-btn cap-tab${_mode === 'stock' ? ' active' : ''}" onclick="Research.setMode('stock')">Stock analysis</button>
+      <button type="button" class="rt-mode-btn cap-tab${_mode === 'portfolio' ? ' active' : ''}" onclick="Research.setMode('portfolio')">Portfolio intel</button>
     </div>`;
   }
 

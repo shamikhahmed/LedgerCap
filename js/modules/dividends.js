@@ -16,8 +16,8 @@ const Dividends = (() => {
   }
 
   function _tabBar() {
-    return `<div class="div-tabs cap-reveal">${_tabs().map(t =>
-      `<button class="div-tab${_tab === t.id ? ' active' : ''}" onclick="Dividends.setTab('${t.id}')">${t.label}</button>`
+    return `<div class="div-tabs cap-tab-bar cap-reveal">${_tabs().map(t =>
+      `<button type="button" class="div-tab cap-tab${_tab === t.id ? ' active' : ''}" onclick="Dividends.setTab('${t.id}')">${t.label}</button>`
     ).join('')}</div>`;
   }
 
