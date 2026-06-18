@@ -1,7 +1,7 @@
 'use strict';
-const CACHE = 'ledgercap-v52';
+const CACHE = 'ledgercap-v53';
 const ASSETS = [
-  './css/capricorn-core.css', './css/ledger-os.css', './css/platform.css', './css/app.css',
+  './css/capricorn-core.css', './css/ledger-os.css', './css/platform.css', './css/identity.css', './css/app.css',
   './', './index.html', './landing.html', './presentation.html', './pitch.html', './manifest.json',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './js/data/holdings.js', './js/data/fundamentals.js', './js/data/dividends.js', './js/data/config.js',

@@ -39,8 +39,9 @@ const Performance = (() => {
       <div class="perf-tabs">
         <button class="perf-tab${_tab === 'daily' ? ' active' : ''}" onclick="Performance.setTab('daily')">Daily</button>
         <button class="perf-tab${_tab === 'monthly' ? ' active' : ''}" onclick="Performance.setTab('monthly')">Monthly</button>
-        <button class="perf-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Predictive</button>
+        <button class="perf-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Forecast</button>
       </div>
+      <p class="perf-disclaimer" style="margin:var(--space-2) 0 0;font-size:0.7rem;color:var(--text3);line-height:1.4;">Daily/monthly bars use today&apos;s prices on past dates — indicative only. Realised P&amp;L from sells is exact. Forecast uses your return assumptions from Settings.</p>
     </div>
 
     ${_tab === 'daily' ? `<div class="perf-section cap-reveal">

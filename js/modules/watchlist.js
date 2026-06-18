@@ -12,8 +12,8 @@ const Watchlist = (() => {
     <button class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
   }
 
-  function openAdd() { App.openBottomSheet('Add to Watchlist', _form()); }
-  function openEdit(id) { const item = (State.get('watchlist') || []).find(w => w.id === id); if (item) App.openBottomSheet('Edit', _form(item)); }
+  function openAdd() { App.openBottomSheet('watchlist-add', 'Add to Watchlist', _form()); }
+  function openEdit(id) { const item = (State.get('watchlist') || []).find(w => w.id === id); if (item) App.openBottomSheet('watchlist-edit', 'Edit', _form(item)); }
 
   function save(id) {
     const symbol = document.getElementById('wl-symbol')?.value?.trim().toUpperCase();

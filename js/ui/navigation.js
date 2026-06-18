@@ -87,7 +87,9 @@ const Navigation = (() => {
   }
 
   function go(tabId, silent, opts) {
-    const portfolioIntel = tabId === 'intelligence' || tabId === 'reports';
+    const portfolioIntel = tabId === 'intelligence' || tabId === 'reports'
+      || (opts && opts.portfolioIntel)
+      || (tabId === 'research' && sessionStorage.getItem('ledgercap_research_mode') === 'portfolio');
     tabId = _resolveTab(tabId);
     if (!VALID_SCREENS.has(tabId)) tabId = 'home';
     _current = tabId;

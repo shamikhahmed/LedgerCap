@@ -71,18 +71,21 @@ const Ledger = (() => {
 
   function calcFundHoldings(transactions) {
     const funds = {};
-    (transactions || [])
+    _sortTxs(transactions)
       .filter(t => ['CONTRIBUTION', 'FUND_OUT', 'REDEMPTION'].includes(t.type) && t.symbol)
-      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
       .forEach(t => {
         if (!funds[t.symbol]) funds[t.symbol] = { symbol: t.symbol, broker: t.broker || 'Meezan', units: 0, totalInvested: 0 };
         if (t.type === 'CONTRIBUTION') {
           funds[t.symbol].units += (t.units || 0);
           funds[t.symbol].totalInvested += (t.amount || 0);
         } else {
-          const avgNav = funds[t.symbol].units > 0 ? funds[t.symbol].totalInvested / funds[t.symbol].units : 0;
-          funds[t.symbol].units -= Math.abs(t.units || 0);
-          funds[t.symbol].totalInvested = funds[t.symbol].units > 0 ? avgNav * funds[t.symbol].units : 0;
+          const prevUnits = funds[t.symbol].units;
+          const avgNav = prevUnits > 0 ? funds[t.symbol].totalInvested / prevUnits : 0;
+          const outUnits = Math.abs(t.units || 0);
+          funds[t.symbol].units -= outUnits;
+          funds[t.symbol].totalInvested = funds[t.symbol].units > 0
+            ? (funds[t.symbol].totalInvested / prevUnits) * funds[t.symbol].units
+            : 0;
         }
       });
     return Object.values(funds).filter(f => f.units > 0.0001).map(f => ({
@@ -93,7 +96,7 @@ const Ledger = (() => {
 
   function monthlyContributions(transactions) {
     const monthly = {};
-    (transactions || []).filter(t => ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type)).forEach(t => {
+    (transactions || []).filter(t => ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type) && !t.internal).forEach(t => {
       const month = (t.date || '').slice(0, 7);
       if (month) monthly[month] = (monthly[month] || 0) + (t.amount || 0);
     });
@@ -112,7 +115,7 @@ const Ledger = (() => {
   /** Gross cash deployed (includes fund convert-ins). Prefer currentCostBasis for return metrics. */
   function totalInvested(transactions) {
     return (transactions || [])
-      .filter(t => ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type))
+      .filter(t => ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type) && !t.internal)
       .reduce((sum, t) => sum + (t.amount || 0), 0);
   }
 
@@ -235,6 +238,10 @@ const Ledger = (() => {
         fundLedger[t.symbol].units -= Math.abs(t.units || 0);
         fundLedger[t.symbol].totalInvested = fundLedger[t.symbol].units > 0 ? avgNav * fundLedger[t.symbol].units : 0;
         fundLedger[t.symbol].avgNav = fundLedger[t.symbol].units > 0 ? avgNav : 0;
+      } else if (t.type === 'IPO_SUBSCRIBE' && t.status === 'listed') {
+        const shares = t.allottedShares || t.shares || 0;
+        const cost = t.amount || shares * (t.listingPrice || 0);
+        _addShares(stockLedger, t.symbol, CDC_BROKER, shares, cost);
       }
 
       const stockHoldings = {};

@@ -49,7 +49,17 @@ test.describe('LedgerCap smoke', () => {
     await page.waitForTimeout(800);
     await page.locator('#nav [data-tab="research"]').click();
     await expect(page.getByText('Fundamentals')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('AI Rating')).toBeVisible();
+    await expect(page.getByText('Smart rating')).toBeVisible();
+  });
+
+  test('comparison tab renders side-by-side holdings', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await page.waitForFunction(() => typeof window.Comparison !== 'undefined');
+    await page.waitForTimeout(800);
+    await page.evaluate(() => Navigation.go('comparison'));
+    await expect(page.locator('#screen-comparison.active')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Stock Comparison')).toBeVisible();
+    await expect(page.locator('.comp-grid')).toBeVisible();
   });
 
   test('dividend center renders with forecast and upcoming tabs', async ({ page }) => {

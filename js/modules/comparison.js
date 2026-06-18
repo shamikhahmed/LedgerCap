@@ -67,10 +67,12 @@ const StockComparison = (() => {
     const change = price - prevClose;
     const changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
     const totalValue = h.value || 0;
-    const totalCost = h.cost || h.invested || 0;
+    const totalCost = h.costBasis || h.cost || h.invested || 0;
     const totalReturn = totalValue - totalCost;
     const returnPct = totalCost > 0 ? (totalReturn / totalCost) * 100 : 0;
-    const divPaid = h.dividend || 0;
+    const divPaid = (typeof State !== 'undefined' && State.dividendsBySymbol)
+      ? (State.dividendsBySymbol()[symbol] || 0)
+      : (h.dividend || 0);
     const yieldPct = h.divYield || 0;
 
     return {
@@ -144,3 +146,4 @@ const StockComparison = (() => {
   return { render, _selectSymbol };
 })();
 window.StockComparison = StockComparison;
+window.Comparison = StockComparison;

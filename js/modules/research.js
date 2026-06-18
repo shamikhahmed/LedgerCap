@@ -6,10 +6,16 @@ const Research = (() => {
 
   function setMode(mode) {
     _mode = mode === 'portfolio' ? 'portfolio' : 'stock';
+    try { sessionStorage.setItem('ledgercap_research_mode', _mode); } catch (_) {}
     render();
   }
 
-  function open(symbol) { _symbol = symbol; _mode = 'stock'; render(); }
+  function open(symbol) {
+    _symbol = symbol;
+    _mode = 'stock';
+    try { sessionStorage.setItem('ledgercap_research_mode', 'stock'); } catch (_) {}
+    render();
+  }
 
   function modeBar() {
     return `<div class="rt-mode-bar cap-reveal">
@@ -21,6 +27,13 @@ const Research = (() => {
   function render() {
     const screen = document.getElementById('screen-research');
     if (!screen) return;
+
+    if (_mode === 'stock') {
+      try {
+        const saved = sessionStorage.getItem('ledgercap_research_mode');
+        if (saved === 'portfolio') _mode = 'portfolio';
+      } catch (_) {}
+    }
 
     if (_mode === 'portfolio') {
       screen.innerHTML = `${modeBar()}<div id="research-portfolio-host"></div>`;
@@ -62,7 +75,7 @@ const Research = (() => {
       </div>
 
       <div class="rt-ai-bar">
-        <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">AI Rating</div><div class="rt-ai-stat-val">${U.ratingBadge(ai.action)}</div></div>
+        <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Smart rating</div><div class="rt-ai-stat-val">${U.ratingBadge(ai.action)}</div></div>
         <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Confidence</div><div class="rt-ai-stat-val">${ai.confidence}%</div></div>
         <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Fair Value</div><div class="rt-ai-stat-val">${U.fmt(ai.fairValue)}</div></div>
         <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Risk</div><div class="rt-ai-stat-val">${ai.riskScore}/100</div></div>

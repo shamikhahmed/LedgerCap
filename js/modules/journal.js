@@ -18,14 +18,14 @@ const Journal = (() => {
 
   function openNew() {
     _editing = null;
-    App.openBottomSheet('New Journal Entry', _form());
+    App.openBottomSheet('journal-new', 'New Journal Entry', _form());
   }
 
   function openEdit(id) {
     const entry = (State.get('journal') || []).find(j => j.id === id);
     if (!entry) return;
     _editing = id;
-    App.openBottomSheet('Edit Entry', _form(entry));
+    App.openBottomSheet('journal-edit', 'Edit Entry', _form(entry));
   }
 
   function save() {
