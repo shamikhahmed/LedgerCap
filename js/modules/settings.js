@@ -77,6 +77,7 @@ const Settings = (() => {
     const zakatDue = zakatableTotal >= nisabValue ? zakatableTotal * 0.025 : 0;
 
     const theme = settings.theme || 'dark';
+    const pilot = state.pilotSettings || {};
 
     screen.innerHTML = `
     <div class="os-page-header">
@@ -244,6 +245,35 @@ const Settings = (() => {
       </div>
     </div>
 
+    <div class="sec-head"><span class="sec-title">Portfolio Pilot</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:12px;color:var(--os-text-secondary);margin-bottom:12px;line-height:1.5">Rule-based signals, CGT estimates, and rebalance tools — ported from Portfolio Pilot. Not AI advice.</p>
+      <div class="field">
+        <label class="field-label">Concentration alert (%)</label>
+        <input class="field-input" id="p-conc" type="number" value="${pilot.concentrationThresholdPct ?? 20}" min="5" max="50">
+      </div>
+      <div class="field">
+        <label class="field-label">Core P/E discount vs sector (%)</label>
+        <input class="field-input" id="p-pe" type="number" value="${pilot.corePeDiscountPct ?? 15}" min="0" max="40">
+      </div>
+      <div class="field">
+        <label class="field-label">Swing RSI oversold / overbought</label>
+        <div style="display:flex;gap:8px">
+          <input class="field-input" id="p-rsi-low" type="number" value="${pilot.swingRsiOversold ?? 35}" min="10" max="45" style="flex:1">
+          <input class="field-input" id="p-rsi-high" type="number" value="${pilot.swingRsiOverbought ?? 65}" min="55" max="90" style="flex:1">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Cash balance (₨) for rebalance</label>
+        <input class="field-input" id="p-cash" type="number" value="${pilot.cashBalancePkr ?? 0}" min="0" step="1000">
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin:12px 0">
+        <input type="checkbox" id="p-filer" ${pilot.isFiler !== false ? 'checked' : ''}>
+        Filer (15% CGT on short-term gains)
+      </label>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="Settings._savePilot()">Save Pilot settings</button>
+    </div>
+
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
       <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.5.5</span></div>
@@ -407,6 +437,28 @@ const Settings = (() => {
     render();
   }
 
+  function _savePilot() {
+    const conc = parseFloat(document.getElementById('p-conc')?.value) || 20;
+    const pe = parseFloat(document.getElementById('p-pe')?.value) || 15;
+    const rsiLow = parseFloat(document.getElementById('p-rsi-low')?.value) || 35;
+    const rsiHigh = parseFloat(document.getElementById('p-rsi-high')?.value) || 65;
+    const cash = parseFloat(document.getElementById('p-cash')?.value) || 0;
+    const isFiler = !!document.getElementById('p-filer')?.checked;
+    State.update(s => {
+      s.pilotSettings = {
+        concentrationThresholdPct: conc,
+        corePeDiscountPct: pe,
+        swingRsiOversold: rsiLow,
+        swingRsiOverbought: rsiHigh,
+        cashBalancePkr: cash,
+        isFiler,
+      };
+    });
+    App.showToast('Pilot settings saved', 'success');
+    App.renderCurrent();
+    render();
+  }
+
   function _setTheme(theme) {
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
@@ -414,6 +466,6 @@ const Settings = (() => {
     render();
   }
 
-  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme };
+  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme };
 })();
 window.Settings = Settings;

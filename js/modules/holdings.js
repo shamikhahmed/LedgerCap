@@ -37,11 +37,11 @@ const Holdings = (() => {
           </tr>`).join('')}
         </tbody>
       </table>
-    </div>` : `<div class="os-empty cap-reveal" style="margin:20px 16px">
-      <div class="os-empty-icon">📋</div>
-      <div class="os-empty-title">No holdings yet</div>
-      <div class="os-empty-body">Log a buy transaction to track your PSX portfolio, dividends, and net worth.</div>
-      <button class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add first transaction</button>
+    </div>` : `<div class="cap-empty cap-reveal" style="margin:20px 16px">
+      <div class="cap-empty__icon">📋</div>
+      <div class="cap-empty__title">No holdings yet</div>
+      <div class="cap-empty__body">Log a buy transaction to track your PSX portfolio, dividends, and net worth.</div>
+      <div class="cap-empty__cta"><button class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add first transaction</button></div>
     </div>`}
     <div style="height:20px;"></div>`;
     CapMotion.refresh();

@@ -186,7 +186,7 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 | `sw.js` | `CACHE = 'ledgercap-vXX'` must match |
 | `js/app.js` | May reference SW cache query param |
 
-**localStorage key:** `ledgercap_v2` (migrates from legacy `stundsOS_v2`).
+**localStorage key:** `ledgercap_v2` (migrates from legacy pre-LedgerCap storage key).
 
 **Demo load:** `?demo=1` or Settings → Load demo holdings.
 
@@ -194,7 +194,7 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 
 ## 9. What Was Attempted (Jun 2026)
 
-1. Full rebrand StundsOS → LedgerCap (done).
+1. Full rebrand to LedgerCap (done).
 2. Replace portfolio from PDFs/screenshots (partial — **data quality issues remain**).
 3. PASM split: friend 9,445 shares excluded; user **1,555** in AKD (done).
 4. Performance daily/monthly P&L (partial — **M2M history still unreliable**).

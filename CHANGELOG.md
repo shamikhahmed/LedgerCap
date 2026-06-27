@@ -11,7 +11,7 @@
 - Seed v4, `currentCostBasis()`, performance header, home sparkline fix (partial audit — see docs/RECONCILIATION.md).
 
 ## 3.4.3 (2026-06-16)
-- Complete StundsOS → LedgerCap rebrand: config (`LEDGERCAP_CONFIG`), PSX proxy worker name, landing logo, docs, backup format (`.ledgercap`).
+- Complete legacy rebrand to LedgerCap: config (`LEDGERCAP_CONFIG`), PSX proxy worker name, landing logo, docs, backup format (`.ledgercap`).
 - Legacy localStorage/session keys and proxy URLs migrate automatically on launch.
 - Desktop shell layout fix; Home / Performance / Compare / Transactions navigation wired.
 - Service worker cache `ledgercap-v47`; offline cache includes home, performance, comparison modules.

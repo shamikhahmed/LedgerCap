@@ -43,6 +43,8 @@ const Home = (() => {
       ${history.length > 1 ? `<div class="home-chart" id="home-chart" aria-label="Holdings value trend (today's prices)"></div><div class="home-chart-note" style="font-size:0.65rem;color:var(--text3);text-align:center;margin-top:4px;padding:0 12px">Trend uses today's prices on past holding dates — indicative shape only</div>` : ''}
     </div>
 
+    ${window.Signals ? Signals.renderBriefCard() : ''}
+
     <div class="home-stats cap-reveal">
       <div class="stat-card">
         <div class="stat-label">Annual Yield</div>
@@ -87,6 +89,8 @@ const Home = (() => {
     </div>
 
     <div class="home-quick-nav cap-reveal">
+      <button type="button" class="home-quick-link" onclick="Navigation.go('signals')">Signals</button>
+      <button type="button" class="home-quick-link" onclick="Navigation.go('pilot-tools')">Pilot Tools</button>
       <button type="button" class="home-quick-link" onclick="Navigation.go('performance')">Performance</button>
       <button type="button" class="home-quick-link" onclick="Navigation.go('comparison')">Compare</button>
       <button type="button" class="home-quick-link" onclick="Navigation.go('transactions')">Transactions</button>

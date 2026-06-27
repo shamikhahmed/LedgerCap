@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="css/app.css?v=13">
 </head>
 <body data-theme="dark" data-cap-app="1">
+  <a href="#app" class="cap-skip-link">Skip to content</a>
   <div class="cap-ambient" aria-hidden="true"></div>
   <canvas id="cap-scene" class="cap-scene-canvas cap-scene-canvas--subtle" aria-hidden="true"></canvas>
   <div class="cap-scroll-progress" aria-hidden="true"></div>
@@ -55,6 +56,11 @@
     <p><strong>Install LedgerCap</strong> — Safari → Share → <strong>Add to Home Screen</strong></p>
     <button type="button" class="btn-ghost" onclick="App.dismissInstall()">✕</button>
   </div>
+  <div id="demo-banner" class="demo-banner hidden" role="status">
+    <span aria-hidden="true">🎯</span>
+    <p><strong>Demo mode</strong> — sample PSX portfolio with seed NAVs. Live price refresh is paused in demo.</p>
+    <button type="button" class="btn-ghost demo-banner__dismiss" onclick="App.dismissDemo()" aria-label="Dismiss demo banner">✕</button>
+  </div>
   <div class="lc-shell">
   <header id="app-header" class="app-header">
     <div style="flex:1;text-align:center;font-size:0.9rem;opacity:0.6">₨</div>
@@ -77,6 +83,8 @@
       <div id="screen-intelligence" class="screen"></div>
       <div id="screen-journal" class="screen"></div>
       <div id="screen-transactions" class="screen"></div>
+      <div id="screen-signals" class="screen"></div>
+      <div id="screen-pilot-tools" class="screen"></div>
     </div>
     <nav id="nav" aria-label="Main navigation"></nav>
   </div>
@@ -115,6 +123,7 @@
   <script src="js/services/dividend-service.js"></script>
   <script src="js/services/research-service.js"></script>
   <script src="js/services/portfolio-analytics-service.js"></script>
+  <script src="js/engines/pilot-engine.js"></script>
   <script src="js/ui/charts.js"></script>
   <script src="js/ui/motion.js"></script>
   <script src="js/ui/navigation.js"></script>
@@ -135,8 +144,11 @@
   <script src="js/modules/journal.js"></script>
   <script src="js/modules/transactions.js"></script>
   <script src="js/modules/settings.js"></script>
+  <script src="js/modules/signals.js"></script>
+  <script src="js/modules/pilot-tools.js"></script>
   <script src="js/app.js"></script>
   <script src="js/capricorn-motion.js"></script>
+  <script src="js/cap-demo-mode.js"></script>
 <script src="js/capricorn-premium-nav.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {

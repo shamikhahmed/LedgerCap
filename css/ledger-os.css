@@ -101,10 +101,15 @@ body {
   .screen.active { animation: none; }
 }
 
-/* Sidebar (desktop) */
+/* Sidebar (desktop) — mutually exclusive with bottom tab bar */
 #nav-sidebar { display: none; }
 
+@media (max-width: 899px) {
+  #nav-sidebar { display: none !important; }
+}
+
 @media (min-width: 900px) {
+  body.lc-desktop-nav #nav { display: none !important; }
   .lc-shell {
     display: flex;
     width: 100%;
@@ -204,6 +209,16 @@ body {
   height: 1px;
   background: var(--os-border);
   margin: var(--space-3) var(--space-2);
+}
+
+.nav-side-section {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--os-text-tertiary, var(--os-text-secondary));
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  opacity: 0.72;
 }
 
 .nav-side-footer {

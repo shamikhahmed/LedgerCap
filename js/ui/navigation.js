@@ -9,6 +9,8 @@ const Navigation = (() => {
   ];
 
   const SIDEBAR_EXTRA = [
+    { id: 'signals', label: 'Signals', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` },
+    { id: 'pilot-tools', label: 'Pilot Tools', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>` },
     { id: 'performance', label: 'Performance', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>` },
     { id: 'comparison',  label: 'Compare',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>` },
     { id: 'transactions', label: 'Transactions', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>` },
@@ -57,8 +59,10 @@ const Navigation = (() => {
       const theme = document.body.getAttribute('data-theme') || 'dark';
       sidebar.innerHTML = `
         <div class="os-brand">LedgerCap</div>
+        <div class="nav-side-section" aria-hidden="true">Main</div>
         ${TABS.map(t => _tabBtn(t, 'nav-side-btn')).join('')}
         <div class="nav-side-divider" aria-hidden="true"></div>
+        <div class="nav-side-section" aria-hidden="true">Tools</div>
         ${SIDEBAR_EXTRA.map(t => _tabBtn(t, 'nav-side-btn')).join('')}
         <div class="nav-side-footer">
           <button type="button" class="nav-side-btn nav-theme-btn" onclick="window.toggleTheme?.()" aria-label="Toggle theme">
@@ -72,6 +76,10 @@ const Navigation = (() => {
     }
 
     document.body.classList.add('os-theme');
+    document.body.classList.toggle('lc-desktop-nav', window.matchMedia('(min-width: 900px)').matches);
+    window.matchMedia('(min-width: 900px)').addEventListener('change', (e) => {
+      document.body.classList.toggle('lc-desktop-nav', e.matches);
+    });
     const saved = sessionStorage.getItem('ledgercap_tab');
     if (saved) go(_resolveTab(saved), true);
   }
@@ -131,6 +139,8 @@ const Navigation = (() => {
       holdings: () => { if (window.Holdings) Holdings.render(); },
       portfolio: () => { if (window.Portfolio) Portfolio.render(); },
       journal: () => { if (window.Journal) Journal.render(); },
+      signals: () => { if (window.Signals) Signals.render(); },
+      'pilot-tools': () => { if (window.PilotTools) PilotTools.render(); },
     };
     if (map[id]) map[id]();
   }

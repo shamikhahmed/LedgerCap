@@ -66,6 +66,9 @@ const Prices = (() => {
     if (!_proxyWarned) {
       console.warn('LedgerCap: PSX proxy unavailable — using Yahoo/fallback prices.');
       _proxyWarned = true;
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast('Live PSX feed unavailable — using seed NAVs and fallbacks', 'warning');
+      }
     }
   }
 

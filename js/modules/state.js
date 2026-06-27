@@ -40,9 +40,34 @@ const State = (() => {
       psxProxyUrl: '',
       theme: 'dark',
     },
-    version: 5,
+    holdingMeta: {},
+    ipoEvents: [],
+    priceAlerts: [],
+    pilotSettings: {
+      concentrationThresholdPct: 20,
+      corePeDiscountPct: 15,
+      swingRsiOversold: 35,
+      swingRsiOverbought: 65,
+      isFiler: true,
+      cashBalancePkr: 0,
+    },
+    cashLedger: [],
+    version: 6,
     seedDataVersion: 0,
   };
+
+  function _migrateV6() {
+    if (!_s.holdingMeta) _s.holdingMeta = {};
+    if (!_s.ipoEvents) _s.ipoEvents = [];
+    if (!_s.priceAlerts) _s.priceAlerts = [];
+    if (!_s.cashLedger) _s.cashLedger = [];
+    if (!_s.pilotSettings) {
+      _s.pilotSettings = { ...DEFAULT.pilotSettings };
+    } else {
+      _s.pilotSettings = { ...DEFAULT.pilotSettings, ..._s.pilotSettings };
+    }
+    _s.version = 6;
+  }
 
   function _migrateV5() {
     if (!_s.watchlist) _s.watchlist = [];
@@ -162,6 +187,10 @@ const State = (() => {
           _migrateV5();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 6) {
+          _migrateV6();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -198,6 +227,7 @@ const State = (() => {
       _s = { ...DEFAULT, ...parsed };
       _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
       if (!_s.version || _s.version < 5) _migrateV5();
+      if (!_s.version || _s.version < 6) _migrateV6();
       save();
       return true;
     } catch { return false; }

@@ -65,6 +65,23 @@ const App = (() => {
     if (h) h.classList.add('hidden');
   }
 
+  function dismissDemo() {
+    sessionStorage.setItem('ledgercap_demo_dismiss', '1');
+    const b = document.getElementById('demo-banner');
+    if (b) b.classList.add('hidden');
+  }
+
+  function _maybeDemoBanner() {
+    const demo = new URLSearchParams(location.search).get('demo') === '1'
+      || sessionStorage.getItem('ledgercap_demo_mode') === '1';
+    if (!demo || sessionStorage.getItem('ledgercap_demo_dismiss')) return;
+    const b = document.getElementById('demo-banner');
+    if (b) {
+      b.classList.remove('hidden');
+      b.classList.add('demo-banner--active');
+    }
+  }
+
   function _maybeInstallHint() {
     if (localStorage.getItem('ledgercap_install_dismiss')) return;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -100,6 +117,9 @@ const App = (() => {
 
   function launch() {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
+    if (demo) {
+      try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
+    }
     _applyTheme(State.get('settings')?.theme || 'dark');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
@@ -118,11 +138,16 @@ const App = (() => {
     if (demo && window.Settings && Settings.loadSeedData) {
       Settings.loadSeedData({ silent: true });
     }
+    if (demo && typeof CapDemo !== 'undefined') {
+      CapDemo.markActive();
+    }
     Navigation.go('home');
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
-    if (hasProxy) setTimeout(() => refreshPrices(), 1200);
+    if (hasProxy && !demo) setTimeout(() => refreshPrices(), 1200);
+    else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
+    _maybeDemoBanner();
     _maybeInstallHint();
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) _scheduleAutoRefresh();
@@ -141,6 +166,13 @@ const App = (() => {
   }
 
   async function refreshPrices() {
+    const isDemo = new URLSearchParams(location.search).get('demo') === '1'
+      || sessionStorage.getItem('ledgercap_demo_mode') === '1';
+    if (isDemo) {
+      showToast('Demo mode — showing seed NAVs. Remove ?demo=1 for live PSX refresh.', 'info');
+      return;
+    }
+
     const state = State.get();
     const transactions = state.transactions || [];
     const holdings = Ledger.calcHoldings(transactions);
@@ -549,7 +581,7 @@ const App = (() => {
 
   return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
-    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, applyTheme };
+    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme };
 })();
 window.App = App;
 
