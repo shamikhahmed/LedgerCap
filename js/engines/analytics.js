@@ -110,11 +110,16 @@ const Analytics = (() => {
       const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
       fundVal += f.units * (nav || mf?.currentNav || f.avgNav);
     });
-    const total = stocks + fundVal || 1;
+    let globalVal = 0;
+    (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).forEach(h => {
+      globalVal += h.qty * (State.getPrice(h.symbol) || FxService.usdToPkr(h.avgCostUsd || 0));
+    });
+    const total = stocks + fundVal + globalVal || 1;
     return {
-      stocks, funds: fundVal, total,
+      stocks, funds: fundVal, global: globalVal, total,
       stocksPct: (stocks / total) * 100,
       fundsPct: (fundVal / total) * 100,
+      globalPct: (globalVal / total) * 100,
     };
   }
 

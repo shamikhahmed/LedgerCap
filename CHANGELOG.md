@@ -1,6 +1,23 @@
 # Changelog — LedgerCap
 
-## 3.10.0 (2026-06-30) — PSX terminal ship, desktop nav contract, proxy /live fix
+## 3.11.0 (2026-06-30) — Global markets, Zakat, CSV import, fullscreen terminal
+
+### Features
+- **Global markets** — US equities + crypto via worker (Yahoo + CoinGecko); `INTL_BUY/SELL`, `CRYPTO_BUY/SELL` transactions; USD/PKR FX
+- **TradingView charts** in Research (widget embed, not scrape)
+- **Zakat calculator** — nisab, debts, manual gold/USD
+- **CSV import** — IBKR/Binance/generic trade logs
+- **Portfolio geography** — PK / US / Crypto / Cash allocation bars
+- **Fullscreen terminal** — desktop full-width shell (`lc-terminal`) + browser fullscreen toggle
+
+### Worker
+- Market proxy routes: `/yahoo/chart/{sym}`, `/crypto/price`, `/fx/usdpkr`
+
+### Version sync
+- App `3.11.0` · SW `ledgercap-v75` · CSS `psx-app.css v18`
+
+## 3.10.1 (2026-06-30) — PSX CORS / proxy hardening
+
 
 ### Features (PSX terminal redesign)
 - Hub, Market (Stock Watch), Funds, Screener, More hub — 5-tab bottom nav + desktop sidebar

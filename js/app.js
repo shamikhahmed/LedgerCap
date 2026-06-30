@@ -131,7 +131,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=74').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=75').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -162,7 +162,10 @@ const App = (() => {
     _scheduleAutoRefresh();
     _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
-    if (hasProxy && !demo) setTimeout(() => refreshPrices(), 1200);
+    if (hasProxy && !demo) {
+      setTimeout(() => refreshPrices(), 1200);
+      if (typeof FxService !== 'undefined') FxService.refreshUsdPkr();
+    }
     else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
     _maybeDemoBanner();
     _maybeInstallHint();
@@ -207,8 +210,11 @@ const App = (() => {
     const fundHoldings = Ledger.calcFundHoldings(transactions);
     const symbols = [...new Set([
       ...holdings.map(h => h.symbol),
-      ...fundHoldings.map(f => f.symbol)
+      ...fundHoldings.map(f => f.symbol),
+      ...(Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(transactions).map(h => h.symbol) : []),
     ])];
+
+    if (typeof FxService !== 'undefined') await FxService.refreshUsdPkr();
 
     if (symbols.length === 0) {
       const kse = await Prices.fetchKSE100();
@@ -234,6 +240,17 @@ const App = (() => {
       State.updatePrice(sym, data);
       updated++;
     });
+
+    const globalHoldings = Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(transactions) : [];
+    if (globalHoldings.length) {
+      const gResults = await Prices.fetchAllGlobal(globalHoldings);
+      Object.entries(gResults).forEach(([sym, data]) => {
+        const pkr = FxService.usdToPkr(data.priceUsd || data.price);
+        State.updatePrice(sym, { ...data, price: pkr, priceUsd: data.priceUsd || data.price });
+        updated++;
+        if (data.source) sources.add(data.source);
+      });
+    }
 
     const kse = await Prices.fetchKSE100();
     if (kse) State.set('kseIndex', kse);
@@ -285,11 +302,14 @@ const App = (() => {
       ...(window.MEEZAN_FUNDS || []).map(f => ({ symbol: f.symbol, broker: 'Meezan' })),
     ];
 
-    const typeOpts = ['BUY', 'SELL', 'DIVIDEND', 'SALARY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'];
+    const typeOpts = ['BUY', 'SELL', 'INTL_BUY', 'INTL_SELL', 'CRYPTO_BUY', 'CRYPTO_SELL', 'DIVIDEND', 'SALARY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'];
     const selType = type || 'BUY';
     const brokers = ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
+    const globalBrokers = window.GLOBAL_BROKERS || ['IBKR', 'Binance', 'Other'];
     const typeLabels = {
-      BUY: '📈 BUY', SELL: '📉 SELL', DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
+      BUY: '📈 BUY', SELL: '📉 SELL', INTL_BUY: '🌎 US BUY', INTL_SELL: '🌎 US SELL',
+      CRYPTO_BUY: '₿ CRYPTO BUY', CRYPTO_SELL: '₿ CRYPTO SELL',
+      DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
       CONTRIBUTION: '🏦 FUND', IPO_SUBSCRIBE: '🚀 IPO',
     };
 
@@ -298,7 +318,7 @@ const App = (() => {
       <div class="type-selector">
         ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
       </div>
-      <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings)}</div>
+      <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
       <button class="btn-primary" onclick="App._submitTransaction()">Add Transaction</button>
     </div>`;
 
@@ -309,7 +329,7 @@ const App = (() => {
         document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const t = btn.dataset.type;
-        document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings);
+        document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);
       });
     });
@@ -376,7 +396,7 @@ const App = (() => {
     }
   }
 
-  function _txFields(type, symbol, broker, allSymbols, allWithFunds, brokers, currentHoldings) {
+  function _txFields(type, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings) {
     const symOpts = allSymbols.map(s => `<option value="${s.symbol}" data-broker="${s.broker}"${symbol === s.symbol ? ' selected' : ''}>${s.symbol} (${s.broker})</option>`).join('');
     const brokerOpts = brokers.map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
     const today = new Date().toISOString().slice(0, 10);
@@ -423,6 +443,23 @@ const App = (() => {
           <div class="field"><label class="field-label">NAV (₨)</label><input class="field-input" id="tx-nav" type="number" step="0.01" placeholder="0.00"></div>
         </div>
         <div class="field"><label class="field-label">Amount Invested (₨)</label><input class="field-input" id="tx-amount" type="number" placeholder="40000"></div>
+        <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
+        <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
+    }
+
+    if (type === 'INTL_BUY' || type === 'INTL_SELL' || type === 'CRYPTO_BUY' || type === 'CRYPTO_SELL') {
+      const isCrypto = type.startsWith('CRYPTO');
+      const catalog = isCrypto ? (window.CRYPTO_ASSETS || []) : (window.INTL_STOCKS || []);
+      const symOpts = catalog.map(s => `<option value="${s.symbol}"${symbol === s.symbol ? ' selected' : ''}>${s.symbol} — ${s.name}</option>`).join('');
+      const gbOpts = (globalBrokers || []).map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
+      const fb = symbol ? (window.GLOBAL_FALLBACK_USD || {})[symbol] : '';
+      return `
+        <div class="field"><label class="field-label">Symbol</label><select class="field-select" id="tx-symbol">${symOpts}</select></div>
+        <div class="field"><label class="field-label">Broker</label><select class="field-select" id="tx-broker">${gbOpts}</select></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Quantity</label><input class="field-input" id="tx-shares" type="number" step="any" placeholder="0"></div>
+          <div class="field"><label class="field-label">Price (USD)</label><input class="field-input" id="tx-price-usd" type="number" step="0.01" value="${fb || ''}" placeholder="0.00"></div>
+        </div>
         <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
         <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
     }
@@ -513,6 +550,20 @@ const App = (() => {
       tx.shares = shares;
       tx.price = price;
       tx.amount = shares * price;
+    } else if (type === 'INTL_BUY' || type === 'INTL_SELL' || type === 'CRYPTO_BUY' || type === 'CRYPTO_SELL') {
+      const sym = g('tx-symbol').toUpperCase();
+      const br = g('tx-broker') || (type.startsWith('CRYPTO') ? 'Binance' : 'IBKR');
+      const qty = parseFloat(g('tx-shares'));
+      const priceUsd = parseFloat(g('tx-price-usd'));
+      if (!sym || !qty || !priceUsd) { showToast('Fill symbol, quantity, and USD price', 'error'); return; }
+      tx.symbol = sym;
+      tx.broker = br;
+      tx.shares = qty;
+      tx.qty = qty;
+      tx.priceUsd = priceUsd;
+      tx.costUsd = qty * priceUsd;
+      tx.currency = 'USD';
+      tx.assetClass = type.startsWith('CRYPTO') ? 'crypto' : 'intl';
     } else {
       const sym = g('tx-symbol');
       const broker = g('tx-broker');

@@ -32,6 +32,10 @@ const PortfolioScreen = (() => {
         <div class="psx-stat"><div class="psx-stat-l">Cash est.</div><div class="psx-stat-v">${PsxUI.fmt(Ledger.cashBalance(state.transactions || []))}</div></div>
       </div>
       <div class="psx-sector"><span>Holdings</span><span>${holdings.length} positions</span></div>
+      ${(s.geoAllocation || []).length ? `<div class="psx-sector"><span>Geography</span><span>PK · US · Crypto</span></div>
+      <div class="psx-alloc-bars" style="padding:0 16px 12px">
+        ${s.geoAllocation.map(g => `<div class="psx-alloc-row"><span>${g.label}</span><div class="psx-alloc-track"><div class="psx-alloc-fill" style="width:${Math.min(100, g.pct).toFixed(1)}%"></div></div><span>${g.pct.toFixed(1)}%</span></div>`).join('')}
+      </div>` : ''}
       <div class="psx-table-wrap"><table class="psx-table"><thead><tr>
         <th>Symbol</th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th>Alloc</th>
       </tr></thead><tbody>

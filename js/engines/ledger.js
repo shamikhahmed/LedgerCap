@@ -7,6 +7,40 @@ const Ledger = (() => {
     return symbol + '_' + (broker || CDC_BROKER);
   }
 
+  function _globalKey(symbol, assetClass, broker) {
+    return `${assetClass || 'intl'}_${symbol}_${broker || 'Global'}`;
+  }
+
+  function calcGlobalHoldings(transactions) {
+    const map = {};
+    _sortTxs(transactions).forEach(t => {
+      if (!t.symbol) return;
+      const ac = t.assetClass || (t.type.startsWith('CRYPTO') ? 'crypto' : 'intl');
+      const key = _globalKey(t.symbol, ac, t.broker);
+      if (!map[key]) {
+        map[key] = {
+          symbol: t.symbol, broker: t.broker || 'IBKR', assetClass: ac,
+          qty: 0, totalCostUsd: 0, currency: t.currency || 'USD',
+        };
+      }
+      const qty = t.shares || t.qty || 0;
+      if (t.type === 'INTL_BUY' || t.type === 'CRYPTO_BUY') {
+        const costUsd = t.costUsd != null ? t.costUsd : (t.priceUsd || t.price || 0) * qty;
+        map[key].qty += qty;
+        map[key].totalCostUsd += costUsd;
+      } else if (t.type === 'INTL_SELL' || t.type === 'CRYPTO_SELL') {
+        const sold = Math.min(qty, map[key].qty);
+        const avg = map[key].qty > 0 ? map[key].totalCostUsd / map[key].qty : 0;
+        map[key].qty -= sold;
+        map[key].totalCostUsd = map[key].qty > 0 ? avg * map[key].qty : 0;
+      }
+    });
+    return Object.values(map).filter(h => h.qty > 0.00000001).map(h => ({
+      ...h,
+      avgCostUsd: h.qty > 0 ? h.totalCostUsd / h.qty : 0,
+    }));
+  }
+
   function _addShares(holdings, symbol, broker, shares, cost) {
     if (!symbol || !shares) return;
     const key = _holdingKey(symbol, broker);
@@ -375,11 +409,19 @@ const Ledger = (() => {
       else if (t.type === 'BUY' && !t.internal)          cash -= t.amount || 0;
       else if (t.type === 'CONTRIBUTION' && !t.internal) cash -= t.amount || 0;
       else if (t.type === 'IPO_SUBSCRIBE' && !t.internal && t.status !== 'refunded') cash -= t.amount || 0;
+      else if (t.type === 'INTL_BUY' || t.type === 'CRYPTO_BUY') {
+        const usd = t.costUsd != null ? t.costUsd : (t.priceUsd || 0) * (t.shares || t.qty || 0);
+        cash -= typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
+      }
+      else if (t.type === 'INTL_SELL' || t.type === 'CRYPTO_SELL') {
+        const usd = (t.priceUsd || 0) * (t.shares || t.qty || 0);
+        cash += typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
+      }
     });
     return Math.max(0, cash);
   }
 
-  return { CDC_BROKER, calcHoldings, calcFundHoldings, calcIpoPending, monthlyContributions, monthlySalary,
+  return { CDC_BROKER, calcHoldings, calcFundHoldings, calcGlobalHoldings, calcIpoPending, monthlyContributions, monthlySalary,
     totalInvested, currentCostBasis, unrealisedPnl, totalDividends, realisedPnl, realisedPnlByDate,
     portfolioValueTimeline, dailyPnlSeries, monthlyPnlSeries, currentMonthContribution,
     investmentTimeline, monthlyInvestmentBars, newId, cashBalance };

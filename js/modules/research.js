@@ -90,7 +90,14 @@ const Research = (() => {
         <div class="psx-metric"><div class="psx-metric-l">Value</div><div class="psx-metric-v">${PsxUI.fmt(position.value)}</div></div>
         <div class="psx-metric"><div class="psx-metric-l">P&L</div><div class="psx-metric-v ${PsxUI.chgCls(position.pnl)}">${PsxUI.fmt(position.pnlPct, { pct: true, signed: true })}</div></div>
       </div>` : ''}
+      <div class="psx-section"><h2>Chart</h2></div>
+      <div id="research-tv-chart" style="min-height:420px;margin:0 16px 24px"></div>
       <div style="height:24px"></div>`;
+    const assetClass = (window.CRYPTO_ASSETS || []).some(c => c.symbol === r.symbol) ? 'crypto'
+      : (window.INTL_STOCKS || []).some(i => i.symbol === r.symbol) ? 'intl' : 'psx';
+    if (typeof TradingViewUI !== 'undefined') {
+      TradingViewUI.mount('research-tv-chart', r.symbol, assetClass);
+    }
   }
 
   function _onSearch(q) {

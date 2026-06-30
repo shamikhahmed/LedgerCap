@@ -30,6 +30,11 @@ window.I18N_LOCALES = {
       signals: { t: 'Market Strategy', d: 'Daily pulse · buy/hold/sell' },
       watchlist: { t: 'Watchlist', d: 'Track before you buy' },
       transactions: { t: 'Transactions', d: 'Buy · sell · dividend log' },
+      global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
+      zakat: { t: 'Zakat', d: 'Nisab · 2.5% estimate' },
+      import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },
+      globalMarkets: { t: 'Global markets', d: 'US equities · crypto · FX' },
+      zakatTool: { t: 'Zakat calculator', d: 'Nisab · debts · gold' },
     },
     market: {
       title: 'Stock Watch',
@@ -147,6 +152,9 @@ window.I18N_LOCALES = {
       signals: { t: 'Market Strategy', d: 'Rozana pulse · buy/hold/sell' },
       watchlist: { t: 'Watchlist', d: 'Kharidne se pehle track karein' },
       transactions: { t: 'Transactions', d: 'Buy · sell · dividend log' },
+      global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
+      zakat: { t: 'Zakat', d: 'Nisab · 2.5% estimate' },
+      import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },
     },
     market: {
       title: 'Stock Watch',

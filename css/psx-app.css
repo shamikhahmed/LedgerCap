@@ -1688,3 +1688,74 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .os-alloc-seg:nth-child(4) { background: #f472b6; }
 .os-alloc-seg:nth-child(5) { background: #60a5fa; }
 .os-alloc-seg:nth-child(6) { background: #fbbf24; }
+
+/* ── Full-width terminal (desktop) ── */
+body.lc-terminal .psx-shell,
+body.lc-terminal-force .psx-shell {
+  max-width: none;
+  width: 100%;
+  border-left: none;
+  border-right: none;
+}
+body.lc-terminal .psx-screens,
+body.lc-terminal-force .psx-screens {
+  max-width: none;
+}
+body.lc-terminal .psx-table-wrap,
+body.lc-terminal-force .psx-table-wrap {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+body.lc-terminal .psx-hero,
+body.lc-terminal-force .psx-hero {
+  border-radius: 0;
+  margin-left: 0;
+  margin-right: 0;
+}
+@media (min-width: 1200px) {
+  body.lc-terminal .psx-sidebar,
+  body.lc-terminal-force .psx-sidebar {
+    width: 260px;
+    min-width: 260px;
+  }
+  body.lc-terminal .psx-screens,
+  body.lc-terminal-force .psx-screens {
+    padding: 0 8px;
+  }
+}
+:root:fullscreen body.psx-app,
+:root:fullscreen .psx-shell {
+  width: 100vw;
+  max-width: none;
+  min-height: 100vh;
+}
+
+.psx-alloc-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 44px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--psx-text-2);
+  margin-bottom: 8px;
+}
+.psx-alloc-track {
+  height: 8px;
+  background: var(--psx-bg-muted);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.psx-alloc-fill {
+  height: 100%;
+  background: var(--psx-accent);
+  border-radius: 999px;
+}
+.psx-tv-wrap {
+  border: 1px solid var(--psx-border);
+  border-radius: var(--psx-radius);
+  overflow: hidden;
+  background: var(--psx-bg-card);
+}
+.psx-tv-chart { height: 420px; min-height: 320px; }

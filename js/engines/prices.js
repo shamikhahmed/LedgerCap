@@ -210,6 +210,69 @@ const Prices = (() => {
     return results;
   }
 
+  async function _fetchWorkerPath(path) {
+    const bases = window.LedgerCapConfig?.psxProxyBases?.() || [];
+    for (const base of bases) {
+      try {
+        const res = await fetch(`${base.replace(/\/$/, '')}/${path}`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) continue;
+        return await res.json();
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function _parseYahooChart(data, symbol, source) {
+    const meta = data?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice;
+    const prevClose = meta?.previousClose || meta?.chartPreviousClose;
+    if (!price || price <= 0) return null;
+    return { symbol, price, priceUsd: price, prevClose, source: source || 'yahoo', currency: 'USD', ts: Date.now() };
+  }
+
+  async function fetchIntlSymbol(symbol) {
+    const meta = (window.INTL_STOCKS || []).find(s => s.symbol === symbol);
+    const yahoo = meta?.yahoo || symbol;
+    const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
+    const parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
+    if (parsed) return parsed;
+    const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
+    return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
+  }
+
+  async function fetchCryptoSymbol(symbol) {
+    const meta = (window.CRYPTO_ASSETS || []).find(c => c.symbol === symbol);
+    const id = meta?.coingecko || symbol.toLowerCase();
+    const data = await _fetchWorkerPath(`crypto/price?ids=${encodeURIComponent(id)}`);
+    const row = data?.[id];
+    const price = row?.usd;
+    if (!price) {
+      const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
+      return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
+    }
+    const chg = row.usd_24h_change || 0;
+    const prev = price / (1 + chg / 100);
+    return { symbol, price, priceUsd: price, prevClose: prev, source: 'coingecko', currency: 'USD', ts: Date.now() };
+  }
+
+  async function fetchGlobalQuote(symbol, assetClass) {
+    if (assetClass === 'crypto') return fetchCryptoSymbol(symbol);
+    if ((window.INTL_STOCKS || []).some(s => s.symbol === symbol)) return fetchIntlSymbol(symbol);
+    return null;
+  }
+
+  async function fetchAllGlobal(holdings, onProgress) {
+    const results = {};
+    let i = 0;
+    for (const h of holdings || []) {
+      const q = await fetchGlobalQuote(h.symbol, h.assetClass);
+      if (q) results[h.symbol] = q;
+      if (onProgress) onProgress(++i, holdings.length, h.symbol, !!q, q?.source);
+      await _sleep(100);
+    }
+    return results;
+  }
+
   function fundNavFallback(symbol) {
     const fund = (window.MEEZAN_FUNDS || []).find(f => f.symbol === symbol);
     const fp = (window.FALLBACK_PRICES || {})[symbol];
@@ -360,6 +423,8 @@ const Prices = (() => {
       psx_symbol: 'PSX',
       psx_eod: 'PSX EOD',
       yahoo: 'Yahoo',
+      yahoo_intl: 'US Market',
+      coingecko: 'Crypto',
       meezan_seed: 'Meezan NAV',
       fallback: 'Last known',
       manual: 'Manual'
@@ -367,7 +432,7 @@ const Prices = (() => {
     return map[source] || source || '—';
   }
 
-  return { fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, fetchPsxSymbol };
+  return { fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {

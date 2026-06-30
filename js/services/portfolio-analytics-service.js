@@ -49,6 +49,35 @@ const PortfolioAnalyticsService = (() => {
     funds.forEach(f => {
       brokers['Meezan'] = (brokers['Meezan'] || 0) + f.units * (State.getPrice(f.symbol) || f.avgNav);
     });
+    (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).forEach(h => {
+      const b = h.broker || 'Global';
+      const val = h.qty * (State.getPrice(h.symbol) || FxService.usdToPkr(h.avgCostUsd || 0));
+      brokers[b] = (brokers[b] || 0) + val;
+    });
+
+    const geo = { pk: 0, us: 0, crypto: 0, cash: 0, other: 0 };
+    holdings.forEach(h => {
+      geo.pk += h.shares * (State.getPrice(h.symbol) || h.avgCost);
+    });
+    funds.forEach(f => {
+      geo.pk += f.units * (State.getPrice(f.symbol) || f.avgNav);
+    });
+    (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).forEach(h => {
+      const val = h.qty * (State.getPrice(h.symbol) || FxService.usdToPkr(h.avgCostUsd || 0));
+      if (h.assetClass === 'crypto') geo.crypto += val;
+      else geo.us += val;
+    });
+    const ma = state.manualAssets || {};
+    geo.cash += Ledger.cashBalance(txs) + (ma.usdCash || 0) * FxService.getUsdRate();
+    geo.other += (ma.goldGrams || 0) * (state.settings?.goldPricePerGram || 18000) + (ma.realEstate || 0);
+    const geoTotal = Object.values(geo).reduce((a, v) => a + v, 0) || 1;
+    const geoAllocation = [
+      { label: 'Pakistan', value: geo.pk, pct: (geo.pk / geoTotal) * 100 },
+      { label: 'US / Intl', value: geo.us, pct: (geo.us / geoTotal) * 100 },
+      { label: 'Crypto', value: geo.crypto, pct: (geo.crypto / geoTotal) * 100 },
+      { label: 'Cash', value: geo.cash, pct: (geo.cash / geoTotal) * 100 },
+      { label: 'Other', value: geo.other, pct: (geo.other / geoTotal) * 100 },
+    ].filter(g => g.value > 0).sort((a, b) => b.value - a.value);
 
     return {
       totalValue, invested, unrealized, realized,
@@ -58,6 +87,7 @@ const PortfolioAnalyticsService = (() => {
       assetAllocation: m.assetAllocation,
       sectorAllocation: m.sectorAllocation,
       brokerAllocation: m.brokerAllocation,
+      geoAllocation,
       brokers,
     };
   }
@@ -103,7 +133,23 @@ const PortfolioAnalyticsService = (() => {
       };
     });
 
-    return [...stockRows, ...fundRows].sort((a, b) => b.value - a.value);
+    const globalRows = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).map(h => {
+      const price = State.getPrice(h.symbol) || FxService.usdToPkr(h.avgCostUsd || 0);
+      const val = h.qty * price;
+      const cost = h.qty * FxService.usdToPkr(h.avgCostUsd || 0);
+      const pnl = val - cost;
+      const pnlPct = h.avgCostUsd > 0 ? ((FxService.pkrToUsd(price) - h.avgCostUsd) / h.avgCostUsd) * 100 : 0;
+      const meta = [...(window.INTL_STOCKS || []), ...(window.CRYPTO_ASSETS || [])].find(x => x.symbol === h.symbol);
+      return {
+        symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
+        kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', quantity: h.qty, price, value: val, costBasis: cost,
+        pnl, pnlPct, allocPct: (val / total) * 100,
+        divYield: 0, yieldOnCost: null,
+        aiRating: '—', aiConfidence: 0, sector: h.assetClass === 'crypto' ? 'Crypto' : 'US',
+      };
+    });
+
+    return [...stockRows, ...fundRows, ...globalRows].sort((a, b) => b.value - a.value);
   }
 
   function getWinnersLosers(state) {

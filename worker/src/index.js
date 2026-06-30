@@ -1,7 +1,6 @@
 /**
- * LedgerCap PSX Price Proxy — deploy to Cloudflare Workers
- * wrangler deploy (from worker/ folder)
- * Then set LEDGERCAP_CONFIG.psxProxyUrl in js/data/config.js or Settings
+ * LedgerCap Market Proxy — PSX, Yahoo, CoinGecko, FX
+ * wrangler deploy (from worker/)
  */
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const CORS = {
@@ -24,79 +23,99 @@ export default {
     }
 
     const url = new URL(request.url);
+    const path = url.pathname.replace(/^\//, '');
+
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ledgercap-psx-proxy' });
+      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx'] });
     }
 
-    const target = url.searchParams.get('url');
-    const path = url.pathname.replace(/^\//, '');
-    let fetchUrl = target;
+    // FX: USD/PKR
+    if (path === 'fx/usdpkr') {
+      return proxyFetch('https://open.er-api.com/v6/latest/USD', {}, async (text) => {
+        const j = JSON.parse(text);
+        const rate = j?.rates?.PKR;
+        if (!rate) throw new Error('PKR rate missing');
+        return json({ rate, source: 'open.er-api.com', ts: Date.now() });
+      });
+    }
 
-    // Legacy /live alias — PSX removed bare /live; map to KSE-100 EOD
+    // Crypto: /crypto/price?ids=bitcoin,ethereum
+    if (path === 'crypto/price') {
+      const ids = url.searchParams.get('ids') || 'bitcoin';
+      const cgUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids)}&vs_currencies=usd&include_24hr_change=true`;
+      return proxyFetch(cgUrl, { headers: { Accept: 'application/json' } }, (text) => okJson(text, 120));
+    }
+
+    // Yahoo: /yahoo/chart/AAPL
+    if (path.startsWith('yahoo/chart/')) {
+      const sym = decodeURIComponent(path.slice('yahoo/chart/'.length));
+      const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=5d`;
+      return proxyFetch(yUrl, { headers: { Accept: 'application/json' } }, (text) => okJson(text, 90));
+    }
+
+    // PSX passthrough
+    const target = url.searchParams.get('url');
+    let fetchUrl = target;
     if (!fetchUrl && (path === 'live' || path === 'kse100' || path === 'index')) {
       fetchUrl = `${PSX_ORIGIN}/timeseries/eod/KSE100`;
     }
     if (!fetchUrl && path) {
       fetchUrl = `${PSX_ORIGIN}/${path}`;
     }
-
     if (!fetchUrl || !fetchUrl.startsWith(`${PSX_ORIGIN}/`)) {
-      return json({ error: 'Invalid url — only dps.psx.com.pk allowed' }, 400);
+      return json({ error: 'Unknown route', path }, 404);
     }
 
-    try {
-      let lastErr = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const res = await fetch(fetchUrl, {
-            headers: PSX_HEADERS,
-            cf: { cacheTtl: 90 },
-          });
-          const body = await res.text();
-          const trimmed = body.trim();
-          if (!trimmed) {
-            lastErr = 'Empty PSX response';
-            if (attempt < 2) { await new Promise(r => setTimeout(r, 200 * (attempt + 1))); continue; }
-            return json({ error: lastErr, url: fetchUrl }, 502);
-          }
-          if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
-            return json({ error: 'PSX returned HTML (endpoint may have moved)', url: fetchUrl }, 404);
-          }
-          if (/^error code:\s*\d+/i.test(trimmed)) {
-            lastErr = trimmed;
-            if (attempt < 2) { await new Promise(r => setTimeout(r, 250 * (attempt + 1))); continue; }
-            return json({ error: 'PSX upstream error', detail: trimmed.slice(0, 80), url: fetchUrl }, 502);
-          }
-          let out = trimmed;
-          try {
-            const parsed = JSON.parse(trimmed);
-            if (Array.isArray(parsed) || parsed?.data) {
-              const rows = Array.isArray(parsed) ? parsed : parsed.data;
-              if (Array.isArray(rows) && rows.length) {
-                const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
-                out = JSON.stringify(Array.isArray(parsed) ? sorted : { ...parsed, data: sorted });
-              }
-            }
-          } catch { /* pass through raw */ }
-          return new Response(out, {
-            status: 200,
-            headers: {
-              ...CORS,
-              'Content-Type': res.headers.get('Content-Type') || 'application/json',
-              'Cache-Control': 'public, max-age=90',
-            },
-          });
-        } catch (e) {
-          lastErr = e.message || 'Proxy fetch failed';
-          if (attempt < 2) { await new Promise(r => setTimeout(r, 200 * (attempt + 1))); continue; }
-        }
+    return proxyFetch(fetchUrl, { headers: PSX_HEADERS, cf: { cacheTtl: 90 } }, (text) => {
+      const trimmed = text.trim();
+      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+        return json({ error: 'PSX returned HTML', url: fetchUrl }, 404);
       }
-      return json({ error: lastErr || 'Proxy fetch failed', url: fetchUrl }, 502);
-    } catch (e) {
-      return json({ error: e.message || 'Proxy fetch failed', url: fetchUrl }, 502);
-    }
+      if (/^error code:\s*\d+/i.test(trimmed)) {
+        throw new Error(trimmed.slice(0, 60));
+      }
+      let out = trimmed;
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed?.data && Array.isArray(parsed.data) && parsed.data.length) {
+          const sorted = [...parsed.data].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+          out = JSON.stringify({ ...parsed, data: sorted });
+        }
+      } catch { /* raw */ }
+      return new Response(out, {
+        status: 200,
+        headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=90' },
+      });
+    });
   },
 };
+
+async function proxyFetch(fetchUrl, opts, handle) {
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(fetchUrl, opts);
+      const text = await res.text();
+      if (!text?.trim()) {
+        lastErr = 'Empty response';
+        if (attempt < 2) { await sleep(200 * (attempt + 1)); continue; }
+        return json({ error: lastErr, url: fetchUrl }, 502);
+      }
+      return await handle(text);
+    } catch (e) {
+      lastErr = e.message || 'fetch failed';
+      if (attempt < 2) { await sleep(250 * (attempt + 1)); continue; }
+    }
+  }
+  return json({ error: lastErr || 'Proxy fetch failed', url: fetchUrl }, 502);
+}
+
+function okJson(text, maxAge) {
+  return new Response(text, {
+    status: 200,
+    headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${maxAge}` },
+  });
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -104,3 +123,5 @@ function json(data, status = 200) {
     headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

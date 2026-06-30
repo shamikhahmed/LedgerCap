@@ -9,6 +9,9 @@ const Navigation = (() => {
   ];
 
   const MORE = [
+    { id: 'global', labelKey: 'tools.global.t' },
+    { id: 'zakat', labelKey: 'tools.zakat.t' },
+    { id: 'import', labelKey: 'tools.import.t' },
     { id: 'screener', labelKey: 'tools.screener.t' },
     { id: 'dividends', labelKey: 'tools.dividends.t' },
     { id: 'watchlist', labelKey: 'tools.watchlist.t' },
@@ -18,7 +21,7 @@ const Navigation = (() => {
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'screener', 'watchlist', 'dividends', 'settings', 'transactions', 'signals', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'settings', 'transactions', 'signals', 'comparison', 'performance', 'journal', 'pilot-tools']);
 
   let _current = 'home';
 
@@ -86,6 +89,9 @@ const Navigation = (() => {
       portfolio: () => PortfolioScreen.render(),
       research: () => { Research.setMode(opts.portfolioIntel ? 'portfolio' : 'stock'); Research.render(); },
       more: () => More.render(),
+      global: () => Global.render(),
+      zakat: () => Zakat.render(),
+      import: () => ImportCsv.render(),
       screener: () => Screener.render(),
       watchlist: () => Watchlist.render(),
       dividends: () => Dividends.render(),

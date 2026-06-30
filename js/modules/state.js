@@ -52,9 +52,16 @@ const State = (() => {
       cashBalancePkr: 0,
     },
     cashLedger: [],
-    version: 6,
+    manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0 },
+    version: 7,
     seedDataVersion: 0,
   };
+
+  function _migrateV7() {
+    if (!_s.manualAssets) _s.manualAssets = { usdCash: 0, goldGrams: 0, realEstate: 0 };
+    if (_s.settings.zakatDebts == null) _s.settings.zakatDebts = 0;
+    _s.version = 7;
+  }
 
   function _migrateV6() {
     if (!_s.holdingMeta) _s.holdingMeta = {};
@@ -191,6 +198,10 @@ const State = (() => {
           _migrateV6();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 7) {
+          _migrateV7();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -228,6 +239,7 @@ const State = (() => {
       _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
       if (!_s.version || _s.version < 5) _migrateV5();
       if (!_s.version || _s.version < 6) _migrateV6();
+      if (!_s.version || _s.version < 7) _migrateV7();
       save();
       return true;
     } catch { return false; }
@@ -260,7 +272,7 @@ const State = (() => {
     if (!_s) load();
     const price = typeof priceData === 'number' ? priceData : priceData.price;
     const source = typeof priceData === 'object' ? priceData.source : 'manual';
-    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'manual', 'meezan_seed'].includes(source);
+    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
     if (!trusted && fallback && price && price > 0) {
       if (price > fallback * 2.5 || price < fallback * 0.4) {
@@ -317,7 +329,21 @@ const State = (() => {
       return sum + f.units * (nav || fallbackNav);
     }, 0);
 
-    return stockVal + fundVal;
+    const globalVal = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(_s.transactions) : []).reduce((sum, h) => {
+      const pkr = getPrice(h.symbol);
+      const usd = pkr ? FxService.pkrToUsd(pkr) : (window.GLOBAL_FALLBACK_USD || {})[h.symbol] || h.avgCostUsd;
+      const px = pkr || FxService.usdToPkr(usd || 0);
+      return sum + h.qty * (px || FxService.usdToPkr(h.avgCostUsd || 0));
+    }, 0);
+
+    const ma = _s.manualAssets || {};
+    const settings = _s.settings || {};
+    const manualVal =
+      (ma.usdCash || 0) * FxService.getUsdRate() +
+      (ma.goldGrams || 0) * (settings.goldPricePerGram || 18000) +
+      (ma.realEstate || 0);
+
+    return stockVal + fundVal + globalVal + manualVal;
   }
 
   function calcTotalCost() {
@@ -345,7 +371,13 @@ const State = (() => {
       if (!nav || !prevNav) return sum;
       return sum + f.units * (nav - prevNav);
     }, 0);
-    return stockPnl + fundPnl;
+    const globalPnl = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(_s.transactions) : []).reduce((sum, h) => {
+      const curr = getPrice(h.symbol);
+      const prev = getPrevClose(h.symbol);
+      if (!curr || !prev) return sum;
+      return sum + h.qty * (curr - prev);
+    }, 0);
+    return stockPnl + fundPnl + globalPnl;
   }
 
   function dividendsBySymbol() {

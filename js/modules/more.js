@@ -1,6 +1,9 @@
 'use strict';
 const More = (() => {
   const ITEMS = () => [
+    { id: 'global', t: I18n.t('tools.global.t'), d: I18n.t('tools.global.d') },
+    { id: 'zakat', t: I18n.t('tools.zakat.t'), d: I18n.t('tools.zakat.d') },
+    { id: 'import', t: I18n.t('tools.import.t'), d: I18n.t('tools.import.d') },
     { id: 'screener', t: I18n.t('tools.screener.t'), d: I18n.t('tools.screener.d') },
     { id: 'dividends', t: I18n.t('tools.dividends.t'), d: I18n.t('tools.dividends.d') },
     { id: 'watchlist', t: I18n.t('tools.watchlist.t'), d: I18n.t('tools.watchlist.d') },
