@@ -185,7 +185,7 @@ const Hub = (() => {
       <div class="lc-dash">
         <div class="lc-dash-greet">
           <h2>${_greeting()}</h2>
-          <p>Your wealth</p>
+          <p>Your wealth · v${window.APP_VERSION || '—'}</p>
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>

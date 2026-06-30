@@ -61,4 +61,17 @@ test.describe('Ledger math (seed)', () => {
     const basis = Ledger.currentCostBasis(txs);
     expect(basis).toBe(2000 * 280);
   });
+
+  test('global sell realised PnL in PKR', () => {
+    const { Ledger } = loadLedger();
+    const txs = [
+      { id: 'b1', type: 'INTL_BUY', date: '2026-01-01', symbol: 'AAPL', broker: 'IBKR', shares: 10, qty: 10, priceUsd: 100, costUsd: 1000, assetClass: 'intl' },
+      { id: 's1', type: 'INTL_SELL', date: '2026-02-01', symbol: 'AAPL', broker: 'IBKR', shares: 5, qty: 5, priceUsd: 120, assetClass: 'intl' },
+    ];
+    const pnl = Ledger.realisedPnl(txs);
+    expect(pnl).toBe((120 - 100) * 5 * 280);
+    const trades = Ledger.realisedTrades(txs);
+    expect(trades.length).toBe(1);
+    expect(trades[0].symbol).toBe('AAPL');
+  });
 });

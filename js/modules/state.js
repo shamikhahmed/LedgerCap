@@ -342,6 +342,12 @@ const State = (() => {
     _s.priceHistory = _s.priceHistory.slice(-90);
   }
 
+  function logPortfolioSnapshot() {
+    if (!_s) load();
+    _logPortfolioValue();
+    save();
+  }
+
   function calcTotalValue() {
     if (!_s) load();
     const stockHoldings = Ledger.calcHoldings(_s.transactions);
@@ -449,7 +455,7 @@ const State = (() => {
   load();
   return { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
-    isPriceStale, priceAgeLabel,
+    isPriceStale, priceAgeLabel, logPortfolioSnapshot,
     calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
 })();
 window.State = State;

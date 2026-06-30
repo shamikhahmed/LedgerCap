@@ -216,15 +216,103 @@ const Ledger = (() => {
   function realisedPnl(transactions) {
     let pnl = 0;
     _walkStockLedger(transactions, (_t, sellPnl) => { pnl += sellPnl; });
+    _walkGlobalLedger(transactions, (_t, sellPnl) => { pnl += sellPnl; });
     return pnl;
   }
 
   function realisedPnlByDate(transactions) {
     const byDate = {};
-    _walkStockLedger(transactions, (t, sellPnl) => {
-      const d = t.date || '';
-      if (!d) return;
-      byDate[d] = (byDate[d] || 0) + sellPnl;
+    const add = (d, amt) => { if (d) byDate[d] = (byDate[d] || 0) + amt; };
+    _walkStockLedger(transactions, (t, sellPnl) => add(t.date, sellPnl));
+    _walkGlobalLedger(transactions, (t, sellPnl) => add(t.date, sellPnl));
+    return byDate;
+  }
+
+  /** Per-trade realised rows for Performance tab (PSX + INTL + crypto). */
+  function realisedTrades(transactions) {
+    const rows = [];
+    _walkStockLedger(transactions, (t, sellPnl, avgCost) => {
+      rows.push({
+        date: t.date,
+        symbol: t.symbol,
+        kind: 'psx',
+        qty: t.shares || 0,
+        unit: 'sh',
+        pnl: sellPnl,
+        avgCost,
+        exitPrice: t.price || 0,
+        currency: 'PKR',
+      });
+    });
+    _walkGlobalLedger(transactions, (t, sellPnl, avgCostUsd) => {
+      rows.push({
+        date: t.date,
+        symbol: t.symbol,
+        kind: t.assetClass || 'intl',
+        qty: t.shares || t.qty || 0,
+        unit: t.assetClass === 'crypto' ? 'units' : 'sh',
+        pnl: sellPnl,
+        avgCost: avgCostUsd,
+        exitPrice: t.priceUsd || 0,
+        currency: 'USD',
+      });
+    });
+    return rows.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.symbol || '').localeCompare(b.symbol || ''));
+  }
+
+  function _walkGlobalLedger(transactions, onSell) {
+    const ledger = {};
+    (transactions || [])
+      .slice()
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '') || String(a.id || '').localeCompare(String(b.id || '')))
+      .forEach(t => {
+        if (!t.symbol || !['INTL_BUY', 'INTL_SELL', 'CRYPTO_BUY', 'CRYPTO_SELL'].includes(t.type)) return;
+        const ac = t.assetClass || (String(t.type).startsWith('CRYPTO') ? 'crypto' : 'intl');
+        const key = _globalKey(t.symbol, ac, t.broker);
+        if (!ledger[key]) {
+          ledger[key] = { symbol: t.symbol, assetClass: ac, broker: t.broker, qty: 0, totalCostUsd: 0 };
+        }
+        const qty = t.shares || t.qty || 0;
+        if (t.type === 'INTL_BUY' || t.type === 'CRYPTO_BUY') {
+          const costUsd = t.costUsd != null ? t.costUsd : (t.priceUsd || 0) * qty;
+          ledger[key].qty += qty;
+          ledger[key].totalCostUsd += costUsd;
+        } else {
+          const sold = ledger[key].qty > 0 ? Math.min(qty, ledger[key].qty) : 0;
+          const avgUsd = ledger[key].qty > 0 ? ledger[key].totalCostUsd / ledger[key].qty : 0;
+          const proceedsUsd = (t.priceUsd || 0) * sold;
+          const costUsd = avgUsd * sold;
+          const pnlUsd = proceedsUsd - costUsd;
+          const pnlPkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(pnlUsd) : pnlUsd * 280;
+          if (onSell && sold > 0) onSell(t, pnlPkr, avgUsd);
+          ledger[key].qty -= sold;
+          ledger[key].totalCostUsd = ledger[key].qty > 0 ? avgUsd * ledger[key].qty : 0;
+        }
+      });
+    return ledger;
+  }
+
+  /** Net external cash flow on date (+sell proceeds, −buys) for M2M adjustment. */
+  function _cashFlowsByDate(transactions) {
+    const byDate = {};
+    const flow = (date, amt) => { if (date && amt) byDate[date] = (byDate[date] || 0) + amt; };
+    (transactions || []).forEach(t => {
+      if (!t.date) return;
+      if (['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type) && !t.internal) {
+        flow(t.date, -(t.amount || 0));
+      } else if (['INTL_BUY', 'CRYPTO_BUY'].includes(t.type)) {
+        const usd = t.costUsd != null ? t.costUsd : (t.priceUsd || 0) * (t.shares || t.qty || 0);
+        const pkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
+        flow(t.date, -pkr);
+      } else if (t.type === 'SELL') {
+        flow(t.date, (t.shares || 0) * (t.price || 0));
+      } else if (['REDEMPTION', 'FUND_OUT'].includes(t.type)) {
+        flow(t.date, Math.abs(t.amount || 0));
+      } else if (['INTL_SELL', 'CRYPTO_SELL'].includes(t.type)) {
+        const usd = (t.priceUsd || 0) * (t.shares || t.qty || 0);
+        const pkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
+        flow(t.date, pkr);
+      }
     });
     return byDate;
   }
@@ -322,8 +410,8 @@ const Ledger = (() => {
           stockHoldings[key] = { ...h, avgCost: h.shares > 0 ? h.totalCost / h.shares : 0 };
         }
       });
-      const snap = _portfolioSnapshot(stockHoldings, fundLedger, px, globalLedger);
-      byDate[t.date] = { date: t.date, value: snap.value, cost: snap.cost, unrealised: snap.unrealised };
+      const snap = _portfolioSnapshot(stockHoldings, fundLedger, (sym, fb) => fb || 0, globalLedger);
+      byDate[t.date] = { date: t.date, value: snap.cost, cost: snap.cost, unrealised: 0 };
     });
 
     const points = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
@@ -353,23 +441,25 @@ const Ledger = (() => {
 
   function dailyPnlSeries(transactions, priceHistory, priceFn) {
     const realised = realisedPnlByDate(transactions);
-    const timeline = portfolioValueTimeline(transactions, priceFn);
+    const cashFlow = _cashFlowsByDate(transactions);
     const valueByDate = {};
-    timeline.forEach((pt, i) => {
-      if (i === 0) return;
-      const prev = timeline[i - 1];
-      const sameDayInvest = (transactions || [])
-        .filter(t => t.date === pt.date && ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type))
-        .reduce((s, t) => s + (t.amount || 0), 0);
-      const sameDayRedeem = (transactions || [])
-        .filter(t => t.date === pt.date && ['REDEMPTION', 'SELL', 'FUND_OUT'].includes(t.type))
-        .reduce((s, t) => s + Math.abs(t.amount || 0), 0);
-      valueByDate[pt.date] = (pt.value - prev.value) - sameDayInvest + sameDayRedeem;
-    });
 
-    (priceHistory || []).forEach((h, i) => {
-      if (i > 0) valueByDate[h.date] = h.value - priceHistory[i - 1].value;
-    });
+    const hist = (priceHistory || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    for (let i = 1; i < hist.length; i++) {
+      const prev = hist[i - 1];
+      const cur = hist[i];
+      if (!cur.date || cur.value == null || prev.value == null) continue;
+      valueByDate[cur.date] = (cur.value - prev.value) - (cashFlow[cur.date] || 0);
+    }
+
+    if (hist.length < 2 && typeof priceFn === 'function') {
+      const timeline = portfolioValueTimeline(transactions, (sym, fb) => fb || 0);
+      timeline.forEach((pt, i) => {
+        if (i === 0) return;
+        const prev = timeline[i - 1];
+        valueByDate[pt.date] = (pt.cost - prev.cost) - (cashFlow[pt.date] || 0);
+      });
+    }
 
     const dates = [...new Set([...Object.keys(realised), ...Object.keys(valueByDate)])].sort();
     return dates.map(date => ({
@@ -377,6 +467,7 @@ const Ledger = (() => {
       pnl: (realised[date] || 0) + (valueByDate[date] || 0),
       realised: realised[date] || 0,
       markToMarket: valueByDate[date] || 0,
+      fromSnapshots: hist.length >= 2,
     }));
   }
 
@@ -468,7 +559,7 @@ const Ledger = (() => {
   }
 
   return { CDC_BROKER, calcHoldings, calcFundHoldings, calcGlobalHoldings, calcIpoPending, monthlyContributions, monthlySalary,
-    totalInvested, currentCostBasis, unrealisedPnl, totalDividends, realisedPnl, realisedPnlByDate,
+    totalInvested, currentCostBasis, unrealisedPnl, totalDividends, realisedPnl, realisedPnlByDate, realisedTrades,
     portfolioValueTimeline, dailyPnlSeries, monthlyPnlSeries, currentMonthContribution,
     investmentTimeline, monthlyInvestmentBars, newId, cashBalance };
 })();

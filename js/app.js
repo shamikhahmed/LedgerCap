@@ -274,7 +274,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=82').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=83').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -302,6 +302,8 @@ const App = (() => {
       CapDemo.markActive();
     }
     Navigation.go('home');
+    if ((State.get().transactions || []).length) State.logPortfolioSnapshot?.();
+    _checkDeployVersion();
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();
@@ -319,15 +321,29 @@ const App = (() => {
     });
   }
 
-  function showToast(msg, type) {
+  function _checkDeployVersion() {
+    const local = window.APP_VERSION || '';
+    fetch('./VERSION.json?_=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(v => {
+        const remote = v.version || v.appVersion || '';
+        if (remote && local && remote !== local) {
+          showToast(`Update available (${remote}). Hard refresh or clear site data.`, 'info', 6000);
+        }
+      })
+      .catch(() => {});
+  }
+
+  function showToast(msg, type, ms) {
     type = type || 'info';
+    ms = ms || 3000;
     const wrap = document.getElementById('toast-wrap');
     if (!wrap) return;
     const el = document.createElement('div');
     el.className = `toast ${type}`;
     el.textContent = msg;
     wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, ms);
   }
 
   async function _fetchMarketIndex() {

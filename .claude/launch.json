@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "LedgerCap",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "8769", "."],
+      "port": 8769
+    }
+  ]
+}

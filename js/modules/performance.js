@@ -24,7 +24,9 @@ const Performance = (() => {
     const monthlyData = _calcMonthlyPnL(state);
     const predictiveData = _calcPredictivePnL(state);
     const totalRealised = Ledger.realisedPnl(state.transactions || []);
-    const realisedRows = _calcRealisedRows(state);
+    const realisedRows = Ledger.realisedTrades ? Ledger.realisedTrades(state.transactions || []) : [];
+    const histDays = (state.priceHistory || []).length;
+    const m2mSource = histDays >= 2 ? 'logged snapshots' : 'cost-basis until more daily snapshots';
     const costBasis = Ledger.currentCostBasis ? Ledger.currentCostBasis(state.transactions || []) : State.calcTotalCost();
     const marketValue = State.calcTotalValue();
     const unrealised = marketValue - costBasis;
@@ -44,7 +46,7 @@ const Performance = (() => {
         <button type="button" class="perf-tab cap-tab${_tab === 'realised' ? ' active' : ''}" onclick="Performance.setTab('realised')">Realised</button>
         <button type="button" class="perf-tab cap-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Forecast</button>
       </div>
-      <p class="perf-disclaimer" style="margin:var(--space-2) 0 0;font-size:0.7rem;color:var(--text3);line-height:1.4;">Daily/monthly bars use mark-to-market on past dates — indicative only. Realised tab shows closed trades (PSX sells). Forecast uses return assumptions from Settings.</p>
+      <p class="perf-disclaimer" style="margin:var(--space-2) 0 0;font-size:0.7rem;color:var(--text3);line-height:1.4;">Daily/monthly M2M uses ${m2mSource} (${histDays} day${histDays === 1 ? '' : 's'} logged). Open app after refresh to build history. Realised = closed PSX + US/crypto sells. Forecast uses Settings assumptions.</p>
     </div>
 
     ${_tab === 'daily' ? `<div class="perf-section cap-reveal">
@@ -110,7 +112,7 @@ const Performance = (() => {
     ${_tab === 'realised' ? `<div class="perf-section cap-reveal">
       <div class="perf-stats">
         <div class="perf-stat">
-          <div class="perf-stat-label">Total realised (PSX)</div>
+          <div class="perf-stat-label">Total realised</div>
           <div class="perf-stat-value ${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</div>
         </div>
         <div class="perf-stat">
@@ -121,11 +123,10 @@ const Performance = (() => {
       <div class="perf-list">
         ${realisedRows.length ? realisedRows.map(r => `
           <div class="perf-item">
-            <div class="perf-item-date">${r.date} · ${r.symbol} · ${r.shares} sh</div>
+            <div class="perf-item-date">${new Date((r.date || '') + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · ${r.symbol} · ${r.qty} ${r.unit}${r.currency === 'USD' ? ` @ $${Number(r.exitPrice || 0).toFixed(2)}` : ''}</div>
             <div class="perf-item-value ${r.pnl >= 0 ? 't-gain' : 't-loss'}">${r.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(r.pnl)}</div>
-          </div>`).join('') : '<p class="lc-empty-note">No PSX sells logged yet.</p>'}
+          </div>`).join('') : '<p class="lc-empty-note">No closed sells logged yet.</p>'}
       </div>
-      <p class="perf-disclaimer" style="margin-top:12px;font-size:0.7rem;color:var(--text3);">INTL/CRYPTO realised P&amp;L coming in a future release.</p>
     </div>` : ''}
 
     ${_tab === 'predictive' ? `<div class="perf-section cap-reveal">
@@ -160,18 +161,6 @@ const Performance = (() => {
 
     _renderCharts(dailyData, monthlyData, predictiveData);
     CapMotion.refresh();
-  }
-
-  function _calcRealisedRows(state) {
-    const byDate = Ledger.realisedPnlByDate(state.transactions || []);
-    return Object.entries(byDate)
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([date, pnl]) => ({
-        date: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        symbol: 'PSX sells',
-        shares: '—',
-        pnl,
-      }));
   }
 
   function _calcDailyPnL(state) {

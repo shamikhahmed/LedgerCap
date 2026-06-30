@@ -1,5 +1,16 @@
 # Changelog — LedgerCap
 
+## 3.18.0 (2026-06-30) — Performance M2M + global realised
+
+### Fixes
+- **Daily/monthly M2M** — uses logged `priceHistory` snapshots (real net-worth deltas), not today's prices on past dates
+- **INTL/CRYPTO realised** — `realisedTrades()`, Performance Realised tab lists US/crypto sells in PKR
+- **Deploy visibility** — hub shows `v3.18.0`, toast if `VERSION.json` newer than cached app
+- **Snapshot on launch** — logs today's portfolio value for M2M history
+
+### Service worker
+- `ledgercap-v83` — hard refresh after deploy
+
 ## 3.17.0 (2026-06-30) — Audit completion (C/H/M/L)
 
 ### Critical

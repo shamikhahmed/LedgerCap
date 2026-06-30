@@ -1,5 +1,7 @@
 {
-  "version": "3.17.0",
-  "swCache": "ledgercap-v82",
-  "released": "2026-06-30"
+  "app": "LedgerCap",
+  "version": "3.18.0",
+  "swCache": "ledgercap-v83",
+  "released": "2026-06-30",
+  "updated": "2026-06-30"
 }
