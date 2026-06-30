@@ -93,6 +93,63 @@ const App = (() => {
   }
 
   let _intlCatalog = [];
+  let _pendingPortfolioId = null;
+
+  function openAddPortfolio() {
+    openBottomSheet('add-portfolio', 'Add portfolio', `
+      <div class="field"><label class="field-label">Portfolio name</label>
+        <input class="field-input" id="pf-name" type="text" placeholder="e.g. USA Growth · IBKR" autocomplete="off"></div>
+      <div class="field"><label class="field-label">Type</label>
+        <select class="field-select" id="pf-kind">
+          <option value="intl">US / International stocks</option>
+          <option value="crypto">Cryptocurrency</option>
+          <option value="psx">Pakistan PSX stocks</option>
+          <option value="funds">Islamic / mutual funds</option>
+        </select></div>
+      <button type="button" class="btn-primary" onclick="App._submitPortfolio()">Create portfolio</button>`);
+  }
+
+  function _submitPortfolio() {
+    const name = document.getElementById('pf-name')?.value?.trim();
+    const kind = document.getElementById('pf-kind')?.value || 'intl';
+    if (!name) { showToast('Enter a portfolio name', 'error'); return; }
+    State.update(s => {
+      if (!s.portfolios) s.portfolios = [];
+      s.portfolios.push({ id: Ledger.newId(), name, kind, createdAt: Date.now() });
+    });
+    closeBottomSheet();
+    showToast(`Portfolio “${name}” created`, 'success');
+    if (typeof Hub !== 'undefined') Hub.render();
+    if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
+  }
+
+  function openAddForPortfolio(bucketId) {
+    const buckets = typeof PortfolioBuckets !== 'undefined' ? PortfolioBuckets.list() : [];
+    const b = (bucketId && buckets.find(x => x.id === bucketId)) || buckets.find(x => x.id === 'psx');
+    _pendingPortfolioId = b && !b.builtin ? b.id : null;
+    const txType = b ? PortfolioBuckets.defaultTxType(b.kind) : 'BUY';
+    openAddTransaction(txType);
+  }
+
+  function _portfolioFieldForType(type) {
+    if (typeof PortfolioBuckets === 'undefined') return '';
+    const kindMap = {
+      BUY: 'psx', SELL: 'psx', DIVIDEND: 'psx', IPO_SUBSCRIBE: 'psx',
+      CONTRIBUTION: 'funds', INTL_BUY: 'intl', INTL_SELL: 'intl',
+      CRYPTO_BUY: 'crypto', CRYPTO_SELL: 'crypto',
+    };
+    const kind = kindMap[type];
+    if (!kind) return '';
+    const custom = PortfolioBuckets.list().filter(p => !p.builtin && p.kind === kind);
+    if (!custom.length) return '';
+    const opts = custom.map(p =>
+      `<option value="${p.id}"${(_pendingPortfolioId === p.id) ? ' selected' : ''}>${p.name}</option>`
+    ).join('');
+    return `<div class="field"><label class="field-label">Portfolio</label>
+      <select class="field-select" id="tx-portfolio-id">
+        <option value="">Default ledger</option>${opts}
+      </select></div>`;
+  }
 
   function _filterIntlSymbols(q) {
     const pick = document.getElementById('tx-symbol-pick');
@@ -189,7 +246,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=80').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=81').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -502,6 +559,7 @@ const App = (() => {
     if (type === 'CONTRIBUTION') {
       const fundOpts = (window.MEEZAN_FUNDS || []).map(f => `<option value="${f.symbol}"${symbol === f.symbol ? ' selected' : ''}>${f.symbol} — ${f.name}</option>`).join('');
       return `
+        ${_portfolioFieldForType(type)}
         <div class="field"><label class="field-label">Fund</label><select class="field-select" id="tx-symbol">${fundOpts}</select></div>
         <div class="field-row">
           <div class="field"><label class="field-label">Units</label><input class="field-input" id="tx-units" type="number" step="0.0001" placeholder="0.0000"></div>
@@ -520,6 +578,7 @@ const App = (() => {
       const gbOpts = (globalBrokers || []).map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
       const fb = sel ? (window.GLOBAL_FALLBACK_USD || {})[sel] : '';
       return `
+        ${_portfolioFieldForType(type)}
         <div class="field"><label class="field-label">Search ${isCrypto ? 'crypto' : 'US'} symbol</label>
           <input class="field-input" id="tx-symbol-search" type="search" placeholder="Type symbol or name…" value="${sel}" autocomplete="off" oninput="App._filterIntlSymbols(this.value)">
           <input type="hidden" id="tx-symbol" value="${sel}">
@@ -554,6 +613,7 @@ const App = (() => {
     // BUY (default)
     const initialPrice = symbol ? (State.getPrice(symbol) || '') : '';
     return `
+      ${_portfolioFieldForType(type)}
       <div class="field"><label class="field-label">Symbol</label><select class="field-select" id="tx-symbol">${symOpts}</select></div>
       <div class="field"><label class="field-label">Broker</label><select class="field-select" id="tx-broker">${brokerOpts}</select></div>
       <div class="field-row">
@@ -574,6 +634,9 @@ const App = (() => {
 
     const tx = { type, date: g('tx-date') || new Date().toISOString().slice(0, 10) };
     if (g('tx-notes')) tx.notes = g('tx-notes');
+    const pf = g('tx-portfolio-id') || _pendingPortfolioId || '';
+    if (pf) tx.portfolioId = pf;
+    _pendingPortfolioId = null;
 
     if (type === 'SALARY') {
       const amount = parseFloat(g('tx-amount'));
@@ -736,7 +799,8 @@ const App = (() => {
   return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
-    checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol };
+    checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
+    openAddPortfolio, _submitPortfolio, openAddForPortfolio };
 })();
 window.App = App;
 

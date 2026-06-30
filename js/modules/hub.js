@@ -62,6 +62,19 @@ const Hub = (() => {
     Navigation.go('market');
   }
 
+  function openPortfolio(id) {
+    if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.setFilter(id, { replace: true });
+    Navigation.go('portfolio', false, { portfolioId: id });
+  }
+
+  function _portfolioSection(state) {
+    if (typeof PortfolioBuckets === 'undefined') return '';
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>${I18n.t('portfolio.bucketsTitle')}</h3><span>${I18n.t('portfolio.bucketsSub')}</span></div>
+      <div class="lc-portfolio-grid">${PortfolioBuckets.cardsHtml(state)}</div>
+    </div>`;
+  }
+
   function _portfolioMovers() {
     const holdings = PortfolioAnalyticsService.getHoldings();
     if (!holdings.length) return '';
@@ -131,6 +144,7 @@ const Hub = (() => {
             </button>
           </div>
           ${_marketPulse(stats)}
+          ${_portfolioSection(state)}
           <div class="lc-empty-state">
             <h2>${I18n.t('hub.hero')}</h2>
             <p>${I18n.t('hub.sub')}</p>
@@ -179,6 +193,7 @@ const Hub = (() => {
           </button>
         </div>
         ${_marketPulse(stats)}
+        ${_portfolioSection(state)}
         ${_portfolioChart(state)}
         ${_portfolioMovers()}
         <div class="lc-dash-section">
@@ -188,7 +203,7 @@ const Hub = (() => {
       </div>`;
   }
 
-  return { render, openMarketFilter };
+  return { render, openMarketFilter, openPortfolio };
 })();
 window.Hub = Hub;
 window.Home = Hub;

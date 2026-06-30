@@ -55,9 +55,15 @@ const State = (() => {
     },
     cashLedger: [],
     manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0 },
-    version: 7,
+    portfolios: [],
+    version: 8,
     seedDataVersion: 0,
   };
+
+  function _migrateV8() {
+    if (!_s.portfolios) _s.portfolios = [];
+    _s.version = 8;
+  }
 
   function _migrateV7() {
     if (!_s.manualAssets) _s.manualAssets = { usdCash: 0, goldGrams: 0, realEstate: 0 };
@@ -206,6 +212,10 @@ const State = (() => {
           _migrateV7();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 8) {
+          _migrateV8();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -244,6 +254,7 @@ const State = (() => {
       if (!_s.version || _s.version < 5) _migrateV5();
       if (!_s.version || _s.version < 6) _migrateV6();
       if (!_s.version || _s.version < 7) _migrateV7();
+      if (!_s.version || _s.version < 8) _migrateV8();
       save();
       return true;
     } catch { return false; }

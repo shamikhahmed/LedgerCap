@@ -88,7 +88,7 @@ const Navigation = (() => {
       home: () => Hub.render(),
       market: () => Market.render(),
       funds: () => Funds.render(),
-      portfolio: () => PortfolioScreen.render(),
+      portfolio: () => PortfolioScreen.render(opts),
       research: () => { Research.setMode(opts.portfolioIntel ? 'portfolio' : 'stock'); Research.render(); },
       more: () => More.render(),
       global: () => Global.render(),

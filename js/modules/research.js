@@ -140,6 +140,13 @@ const Research = (() => {
     if (!screen) return;
 
     if (_mode === 'portfolio') {
+      const state = State.get();
+      const bucketsHtml = typeof PortfolioBuckets !== 'undefined'
+        ? `<div class="lc-dash-section" style="padding:0 var(--lc-space-4)">
+            <div class="lc-dash-section-head"><h3>${I18n.t('portfolio.bucketsTitle')}</h3><span>${I18n.t('portfolio.bucketsSub')}</span></div>
+            <div class="lc-portfolio-grid">${PortfolioBuckets.cardsHtml(state)}</div>
+          </div>`
+        : '';
       screen.innerHTML = `
         <div class="lc-dash">
           <div class="lc-screen-head">
@@ -147,6 +154,7 @@ const Research = (() => {
             <p>Portfolio intelligence &amp; risk signals</p>
           </div>
           ${_modeSegment()}
+          ${bucketsHtml}
           <div id="research-portfolio-host" style="padding:0 var(--lc-space-4)"></div>
         </div>`;
       if (window.Intelligence) Intelligence.render(document.getElementById('research-portfolio-host'));

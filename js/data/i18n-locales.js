@@ -48,6 +48,8 @@ window.I18N_LOCALES = {
       sub: 'Your P&L · holdings · allocation',
       value: 'Portfolio value', today: 'Today', allTime: 'All time',
       invested: 'Invested', gainLoss: 'Gain / loss', yield: 'Annual yield',
+      bucketsTitle: 'Portfolios', bucketsSub: 'PSX · Funds · US · custom',
+      addBucket: 'Add portfolio',
     },
     analyze: {
       title: 'Analyze',
@@ -108,6 +110,8 @@ window.I18N_LOCALES = {
       sub: 'آप کا P&L · holdings',
       value: ' پورٹ فولiyo value', today: 'آج', allTime: 'کل',
       invested: 'invested', gainLoss: 'منافع / نقصان', yield: 'سالانہ yield',
+      bucketsTitle: 'پورٹ فولiyo', bucketsSub: 'PSX · Funds · US',
+      addBucket: 'پورٹ فولiyo شامل',
     },
     analyze: {
       title: 'تجزیہ',
@@ -168,6 +172,8 @@ window.I18N_LOCALES = {
       sub: 'Aap ka P&L · holdings',
       value: 'Portfolio value', today: 'Aaj', allTime: 'Kul',
       invested: 'Invested', gainLoss: 'Faida / nuqsan', yield: 'Salana yield',
+      bucketsTitle: 'Portfolios', bucketsSub: 'PSX · Funds · US · custom',
+      addBucket: 'Portfolio jodein',
     },
     analyze: {
       title: 'Tajzia',

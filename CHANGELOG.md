@@ -1,5 +1,12 @@
 # Changelog — LedgerCap
 
+## 3.16.0 (2026-06-30) — Multi-portfolio hub
+
+### Features
+- **Three portfolio ledgers** — Pakistan PSX, Islamic Funds, and US Equities shown as cards on Hub, P&L, and Analyze → Portfolio
+- **Add portfolio** — create custom ledgers (e.g. USA IBKR account) and assign transactions to them
+- Tap a portfolio card to filter holdings and add holdings to that ledger
+
 ## 3.15.1 (2026-06-30) — Search focus + chart reliability
 
 ### Bug fixes

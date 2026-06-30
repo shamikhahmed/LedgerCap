@@ -565,3 +565,107 @@ body.lc-rtl .psx-sidebar {
   color: var(--psx-text-2);
   margin: 0;
 }
+
+.lc-portfolio-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 0 var(--lc-space-4) var(--lc-space-4);
+}
+
+@media (min-width: 600px) {
+  .lc-portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 960px) {
+  .lc-portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.lc-portfolio-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--lc-radius-md, 14px);
+  border: 1px solid var(--psx-border, rgba(255,255,255,.1));
+  background: var(--psx-surface, #141414);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: var(--lc-shadow, 0 1px 3px rgba(0,0,0,.2));
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.lc-portfolio-card:hover,
+.lc-portfolio-card:focus-visible {
+  border-color: var(--psx-accent, #3b82f6);
+  outline: none;
+}
+
+.lc-portfolio-card.on {
+  border-color: var(--psx-accent, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+}
+
+.lc-portfolio-card--empty .lc-portfolio-card-meta em { color: var(--psx-text-2); }
+
+.lc-portfolio-card--add {
+  border-style: dashed;
+  background: transparent;
+}
+
+.lc-portfolio-card-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+}
+
+.lc-portfolio-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lc-portfolio-card-body strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lc-portfolio-card-desc {
+  font-size: 12px;
+  color: var(--psx-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lc-portfolio-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.lc-portfolio-card-meta em {
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lc-portfolio-card-meta span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lc-portfolio-card-meta label {
+  font-size: 10px;
+  color: var(--psx-text-2);
+  font-weight: 500;
+}
