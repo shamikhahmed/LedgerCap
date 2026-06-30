@@ -1,5 +1,10 @@
 # Changelog — LedgerCap
 
+## 3.11.1 (2026-06-30) — Scroll fix on desktop / fullscreen
+
+### Bug fix
+- Restore bounded `overflow-y: auto` on active screen at ≥900px (relative positioning clipped content inside `overflow: hidden` shell)
+
 ## 3.11.0 (2026-06-30) — Global markets, Zakat, CSV import, fullscreen terminal
 
 ### Features

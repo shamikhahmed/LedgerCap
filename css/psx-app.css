@@ -133,7 +133,16 @@ body.psx-app {
 }
 .psx-screen.active { display: block; z-index: 1; }
 @media (min-width: 900px) {
-  .psx-screen { padding-bottom: 24px; position: relative; inset: auto; display: none; min-height: calc(100dvh - var(--psx-top)); }
+  .psx-screens { flex: 1; min-height: 0; }
+  .psx-screen {
+    padding-bottom: 24px;
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    display: none;
+  }
   .psx-screen.active { display: block; }
 }
 
@@ -1725,11 +1734,15 @@ body.lc-terminal-force .psx-hero {
     padding: 0 8px;
   }
 }
-:root:fullscreen body.psx-app,
-:root:fullscreen .psx-shell {
-  width: 100vw;
-  max-width: none;
-  min-height: 100vh;
+:root:fullscreen .psx-main {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+:root:fullscreen .psx-screens {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .psx-alloc-row {
