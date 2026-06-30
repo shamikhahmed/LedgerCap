@@ -113,6 +113,7 @@ const Research = (() => {
           </div>
           <div class="lc-research-price">${PsxUI.fmt(quote.price)}</div>
           <span class="lc-research-chg ${chgCls}">${PsxUI.fmt(quote.changePct, { pct: true, signed: true })} today</span>
+          <p class="lc-card-sub">Source: ${Prices.sourceLabel(quote.source || 'seed')}</p>
         </div>
         <div class="lc-verdict">
           <h3>${I18n.t('analyze.plainEnglish')}</h3>

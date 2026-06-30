@@ -1,5 +1,11 @@
 'use strict';
 const PlatformUI = (() => {
+  function _numberFormat() {
+    try {
+      return (typeof State !== 'undefined' && State.get('settings')?.numberFormat) || 'full';
+    } catch (_) { return 'full'; }
+  }
+
   function fmt(n, opts) {
     if (n == null || Number.isNaN(n)) return '—';
     opts = opts || {};
@@ -8,8 +14,14 @@ const PlatformUI = (() => {
       const sign = opts.signed && n > 0 ? '+' : '';
       return sign + Number(n).toFixed(d) + '%';
     }
-    const d = opts.decimals ?? 2;
+    const compact = opts.compact ?? (_numberFormat() === 'compact');
     const abs = Math.abs(n);
+    if (compact) {
+      if (abs >= 1e7) return '₨' + (n / 1e7).toFixed(2) + 'cr';
+      if (abs >= 1e5) return '₨' + (n / 1e5).toFixed(2) + 'L';
+      if (abs >= 1e3) return '₨' + (n / 1e3).toFixed(2) + 'k';
+    }
+    const d = opts.decimals ?? 2;
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
     const prefix = opts.noCurrency ? '' : '₨';
     if (opts.signed && n > 0) return '+' + prefix + formatted;

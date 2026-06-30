@@ -20,6 +20,7 @@ const State = (() => {
     transactions: [],
     prices: {},
     kseIndex: {},
+    kseHistory: [],
     priceHistory: [],
     watchlist: [],
     journal: [],
@@ -39,6 +40,7 @@ const State = (() => {
       onboardingDone: false,
       psxProxyUrl: '',
       theme: 'dark',
+      numberFormat: 'full',
     },
     holdingMeta: {},
     ipoEvents: [],
@@ -60,6 +62,8 @@ const State = (() => {
   function _migrateV7() {
     if (!_s.manualAssets) _s.manualAssets = { usdCash: 0, goldGrams: 0, realEstate: 0 };
     if (_s.settings.zakatDebts == null) _s.settings.zakatDebts = 0;
+    if (!_s.kseHistory) _s.kseHistory = [];
+    if (!_s.settings.numberFormat) _s.settings.numberFormat = 'full';
     _s.version = 7;
   }
 
@@ -402,9 +406,22 @@ const State = (() => {
       .reduce((sum, t) => sum + (t.amount || 0), 0);
   }
 
+  function recordKseSnapshot(kse) {
+    if (!_s) load();
+    if (!kse?.value) return;
+    if (!_s.kseHistory) _s.kseHistory = [];
+    const today = new Date().toISOString().slice(0, 10);
+    const idx = _s.kseHistory.findIndex(p => p.date === today);
+    const row = { date: today, value: kse.value };
+    if (idx >= 0) _s.kseHistory[idx] = row;
+    else _s.kseHistory.push(row);
+    _s.kseHistory = _s.kseHistory.slice(-30);
+    save();
+  }
+
   load();
   return { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
-    calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends };
+    calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
 })();
 window.State = State;

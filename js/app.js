@@ -57,7 +57,67 @@ const App = (() => {
     if (!el || typeof PsxUI === 'undefined') return;
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
-    el.innerHTML = `KSE-100 <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>`;
+    const hist = (State.get('kseHistory') || []).map(h => h.value);
+    const spark = hist.length >= 2 && typeof Charts !== 'undefined'
+      ? `<span class="lc-ticker-spark">${Charts.lineChart(hist, { height: 28, width: 80, fill: false, color: k.cls === 'psx-up' ? '#22c55e' : '#ef4444' })}</span>`
+      : '';
+    el.innerHTML = `${spark}KSE-100 <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>`;
+  }
+
+  function checkPriceAlerts() {
+    const list = State.get('watchlist') || [];
+    const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
+    const now = Date.now();
+    list.forEach(w => {
+      if (!w.targetPrice || w.targetPrice <= 0) return;
+      const q = MarketDataService.getQuote(w.symbol);
+      if (!q.price) return;
+      const hit = q.price <= w.targetPrice;
+      if (!hit) return;
+      const key = `${w.id}:${w.targetPrice}`;
+      if (fired[key] && now - fired[key] < 86400000) return;
+      fired[key] = now;
+      const msg = `${w.symbol} at ${PlatformUI.fmt(q.price)} — target ${PlatformUI.fmt(w.targetPrice)}`;
+      showToast(msg, 'success');
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try { new Notification('LedgerCap price alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
+      }
+    });
+    localStorage.setItem('ledgercap_alerts_fired', JSON.stringify(fired));
+  }
+
+  function requestAlertPermission() {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }
+
+  let _intlCatalog = [];
+
+  function _filterIntlSymbols(q) {
+    const pick = document.getElementById('tx-symbol-pick');
+    const hidden = document.getElementById('tx-symbol');
+    if (!pick) return;
+    const needle = (q || '').trim().toUpperCase();
+    const rows = _intlCatalog.filter(s =>
+      !needle || s.symbol.includes(needle) || (s.name || '').toUpperCase().includes(needle)
+    ).slice(0, 12);
+    pick.innerHTML = rows.map(s =>
+      `<button type="button" class="lc-intl-pick" onclick="App._pickIntlSymbol('${s.symbol}')"><strong>${s.symbol}</strong><span>${s.name || ''}</span></button>`
+    ).join('') || '<p class="psx-muted">No matches</p>';
+    if (!needle && hidden?.value) return;
+    if (rows.length && hidden && !hidden.value) _pickIntlSymbol(rows[0].symbol);
+  }
+
+  function _pickIntlSymbol(sym) {
+    const hidden = document.getElementById('tx-symbol');
+    const search = document.getElementById('tx-symbol-search');
+    const price = document.getElementById('tx-price-usd');
+    if (hidden) hidden.value = sym;
+    if (search) search.value = sym;
+    const fb = (window.GLOBAL_FALLBACK_USD || {})[sym];
+    if (price && fb) price.value = Number(fb).toFixed(2);
+    document.querySelectorAll('.lc-intl-pick').forEach(b => b.classList.toggle('on', b.querySelector('strong')?.textContent === sym));
   }
 
   function _hideSplash() {
@@ -131,7 +191,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=78').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=79').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -190,6 +250,7 @@ const App = (() => {
       const kse = await Prices.fetchKSE100();
       if (kse) {
         State.set('kseIndex', kse);
+        State.recordKseSnapshot?.(kse);
         _renderTicker();
         if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
       }
@@ -253,8 +314,12 @@ const App = (() => {
     }
 
     const kse = await Prices.fetchKSE100();
-    if (kse) State.set('kseIndex', kse);
+    if (kse) {
+      State.set('kseIndex', kse);
+      State.recordKseSnapshot?.(kse);
+    }
     _renderTicker();
+    checkPriceAlerts();
 
     if (updated > 0) {
       const srcList = [...sources].map(s => Prices.sourceLabel(s)).join(', ') || 'cached';
@@ -331,10 +396,12 @@ const App = (() => {
         const t = btn.dataset.type;
         document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);
+        if (t.startsWith('INTL') || t.startsWith('CRYPTO')) _filterIntlSymbols(document.getElementById('tx-symbol-search')?.value || '');
       });
     });
 
     _bindFieldListeners(selType);
+    if (selType.startsWith('INTL') || selType.startsWith('CRYPTO')) _filterIntlSymbols(symbol || '');
   }
 
   function _bindFieldListeners(type) {
@@ -450,15 +517,20 @@ const App = (() => {
     if (type === 'INTL_BUY' || type === 'INTL_SELL' || type === 'CRYPTO_BUY' || type === 'CRYPTO_SELL') {
       const isCrypto = type.startsWith('CRYPTO');
       const catalog = isCrypto ? (window.CRYPTO_ASSETS || []) : (window.INTL_STOCKS || []);
-      const symOpts = catalog.map(s => `<option value="${s.symbol}"${symbol === s.symbol ? ' selected' : ''}>${s.symbol} — ${s.name}</option>`).join('');
+      _intlCatalog = catalog;
+      const sel = symbol || catalog[0]?.symbol || '';
       const gbOpts = (globalBrokers || []).map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
-      const fb = symbol ? (window.GLOBAL_FALLBACK_USD || {})[symbol] : '';
+      const fb = sel ? (window.GLOBAL_FALLBACK_USD || {})[sel] : '';
       return `
-        <div class="field"><label class="field-label">Symbol</label><select class="field-select" id="tx-symbol">${symOpts}</select></div>
+        <div class="field"><label class="field-label">Search ${isCrypto ? 'crypto' : 'US'} symbol</label>
+          <input class="field-input" id="tx-symbol-search" type="search" placeholder="Type symbol or name…" value="${sel}" autocomplete="off" oninput="App._filterIntlSymbols(this.value)">
+          <input type="hidden" id="tx-symbol" value="${sel}">
+          <div id="tx-symbol-pick" class="lc-intl-pick-list"></div>
+        </div>
         <div class="field"><label class="field-label">Broker</label><select class="field-select" id="tx-broker">${gbOpts}</select></div>
         <div class="field-row">
           <div class="field"><label class="field-label">Quantity</label><input class="field-input" id="tx-shares" type="number" step="any" placeholder="0"></div>
-          <div class="field"><label class="field-label">Price (USD)</label><input class="field-input" id="tx-price-usd" type="number" step="0.01" value="${fb || ''}" placeholder="0.00"></div>
+          <div class="field"><label class="field-label">Price (USD)</label><input class="field-input" id="tx-price-usd" type="number" step="0.01" value="${fb ? Number(fb).toFixed(2) : ''}" placeholder="0.00"></div>
         </div>
         <div class="field"><label class="field-label">Date</label><input class="field-input" id="tx-date" type="date" value="${today}"></div>
         <div class="field"><label class="field-label">Notes</label><input class="field-input" id="tx-notes" type="text" placeholder="Optional"></div>`;
@@ -665,7 +737,8 @@ const App = (() => {
 
   return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
-    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme };
+    deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
+    checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol };
 })();
 window.App = App;
 

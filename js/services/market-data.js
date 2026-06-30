@@ -40,9 +40,9 @@ const MarketDataService = (() => {
   }
 
   async function fetchLiveQuote(symbol) {
-    if (typeof Prices !== 'undefined' && Prices.fetchSymbol) {
+    if (typeof Prices !== 'undefined' && Prices.fetchStock) {
       try {
-        const r = await Prices.fetchSymbol(symbol);
+        const r = await Prices.fetchStock(symbol);
         if (r?.price) {
           State.updatePrice(symbol, r);
           _cache[symbol] = { ...r, ts: Date.now() };

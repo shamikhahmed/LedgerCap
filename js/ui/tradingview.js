@@ -27,22 +27,57 @@ const TradingViewUI = (() => {
     if (intl?.tv) return intl.tv;
     const cry = (window.CRYPTO_ASSETS || []).find(x => x.symbol === symbol);
     if (cry?.tv) return cry.tv;
-    const psx = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === symbol);
-    if (psx) return `PSX:${symbol}`;
     if (assetClass === 'crypto') return `BINANCE:${symbol}USDT`;
     if (assetClass === 'intl') return `NASDAQ:${symbol}`;
-    return `PSX:${symbol}`;
+    const psx = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === symbol);
+    if (psx) return `PSX:${symbol}`;
+    return null;
   }
 
-  async function mount(containerId, symbol, assetClass) {
+  function _isTvLikely(symbol, assetClass) {
+    if (assetClass === 'intl' || assetClass === 'crypto') return true;
+    if ((window.YAHOO_SYMBOL_MAP || {})[symbol] === null) return false;
+    if ((window.MEEZAN_FUNDS || []).some(f => f.symbol === symbol)) return false;
+    return !!resolveTvSymbol(symbol, assetClass);
+  }
+
+  async function _svgFallback(el, symbol, height) {
+    height = height || 360;
+    el.innerHTML = `<div class="lc-chart-loading">Loading chart…</div>`;
+    let series = [];
+    if (typeof Prices !== 'undefined' && Prices.fetchPriceSeries) {
+      try { series = await Prices.fetchPriceSeries(symbol, 40); } catch (_) {}
+    }
+    if (series.length < 2) {
+      const hist = (typeof State !== 'undefined' ? State.get('priceHistory') : []) || [];
+      if (hist.length >= 2) series = hist.map(h => h.value);
+    }
+    if (series.length < 2) {
+      el.innerHTML = `<p class="psx-muted">Price history chart unavailable for ${symbol}. Refresh live prices or check proxy in Settings.</p>`;
+      return;
+    }
+    const up = series[series.length - 1] >= series[0];
+    el.innerHTML = `<div class="lc-chart-fallback">${Charts.lineChart(series, { height, color: up ? '#22c55e' : '#ef4444', fill: true })}<p class="psx-muted lc-chart-caption">Local price series · ${series.length} points</p></div>`;
+  }
+
+  async function mount(containerId, symbol, assetClass, opts) {
+    opts = opts || {};
     const el = document.getElementById(containerId);
-    if (!el) return;
+    if (!el || !symbol) return;
+
     const tvSym = resolveTvSymbol(symbol, assetClass);
+    const useTv = opts.forceTv !== false && _isTvLikely(symbol, assetClass) && tvSym;
+
+    if (!useTv) {
+      await _svgFallback(el, symbol, opts.height || 360);
+      return;
+    }
+
     el.innerHTML = `<div class="psx-tv-wrap"><div id="tv-chart-${containerId}" class="psx-tv-chart"></div></div>`;
     try {
       await loadScript();
       if (typeof TradingView === 'undefined') {
-        el.innerHTML = `<p class="psx-muted">Chart unavailable offline. Symbol: ${tvSym}</p>`;
+        await _svgFallback(el, symbol, opts.height || 360);
         return;
       }
       new TradingView.widget({
@@ -59,8 +94,12 @@ const TradingViewUI = (() => {
         hide_legend: false,
         container_id: `tv-chart-${containerId}`,
       });
+      setTimeout(() => {
+        const inner = document.getElementById(`tv-chart-${containerId}`);
+        if (inner && !inner.children.length) _svgFallback(el, symbol, opts.height || 360);
+      }, 4500);
     } catch (_) {
-      el.innerHTML = `<p class="psx-muted">TradingView chart failed to load.</p>`;
+      await _svgFallback(el, symbol, opts.height || 360);
     }
   }
 

@@ -84,15 +84,20 @@ const Prices = (() => {
     };
   }
 
-  function _markProxyDown(status) {
-    if (status >= 400) _proxyDownUntil = Date.now() + 300000;
-    if (!_proxyWarned) {
-      console.warn('LedgerCap: PSX proxy unavailable — using Yahoo/fallback prices.');
-      _proxyWarned = true;
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Live PSX feed unavailable — using seed NAVs and fallbacks', 'warning');
-      }
+  async function fetchPriceSeries(symbol, points) {
+    points = points || 30;
+    const sym = (symbol || '').toUpperCase();
+    const intl = (window.INTL_STOCKS || []).find(s => s.symbol === sym);
+    if (intl) {
+      const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(intl.yahoo || sym)}`);
+      const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v => v != null) || [];
+      if (closes.length >= 2) return closes.slice(-points);
     }
+    const raw = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+    const rows = Array.isArray(raw) ? raw : (raw?.data || []);
+    if (!Array.isArray(rows) || rows.length < 2) return [];
+    const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+    return sorted.slice(-points).map(r => parseFloat(r[1])).filter(n => n > 0);
   }
 
   async function _fetchAppProxy(url, attempt = 0) {
@@ -432,7 +437,7 @@ const Prices = (() => {
     return map[source] || source || '—';
   }
 
-  return { fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal };
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {

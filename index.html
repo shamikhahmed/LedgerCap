@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://s3.tradingview.com; connect-src 'self' https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev https://s3.tradingview.com; frame-src https://s3.tradingview.com https://www.tradingview.com; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://s.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://s3.tradingview.com https://s.tradingview.com; connect-src 'self' https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://query1.finance.yahoo.com https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev https://s3.tradingview.com https://s.tradingview.com https://symbol-search.tradingview.com https://prodata.tradingview.com https://notifications.tradingview.com; frame-src https://s3.tradingview.com https://www.tradingview.com https://s.tradingview.com; object-src 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,7 +31,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/psx-app.css?v=19">
   <link rel="stylesheet" href="css/lc-pro.css?v=3">
-  <link rel="stylesheet" href="css/lc-pro-phase.css?v=1">
+  <link rel="stylesheet" href="css/lc-pro-phase.css?v=2">
   <script>
     const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', theme);
@@ -204,7 +204,7 @@
   </div>
 </div>
 <script>
-window.APP_VERSION = '3.14.1';
+window.APP_VERSION = '3.15.0';
 (function () {
   window.openProUpgrade = function () {
     var m = document.getElementById('proUpgradeModal');

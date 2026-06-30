@@ -95,6 +95,15 @@ const Settings = (() => {
       </div>
     </div>
 
+    <div class="sec-head"><span class="sec-title">Number format</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Full shows every digit with 2 decimals. Compact uses L/cr for big PKR amounts.</p>
+      <div class="os-theme-toggle">
+        <button type="button" class="os-theme-btn${(settings.numberFormat || 'full') === 'full' ? ' active' : ''}" onclick="Settings._setNumberFormat('full')">Full</button>
+        <button type="button" class="os-theme-btn${settings.numberFormat === 'compact' ? ' active' : ''}" onclick="Settings._setNumberFormat('compact')">Compact</button>
+      </div>
+    </div>
+
     <div class="sec-head"><span class="sec-title">Investor Profile</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <div class="field">
@@ -462,6 +471,14 @@ const Settings = (() => {
     render();
   }
 
+  function _setNumberFormat(mode) {
+    if (mode !== 'full' && mode !== 'compact') return;
+    State.update(s => { s.settings.numberFormat = mode; });
+    App.showToast(mode === 'compact' ? 'Compact numbers on' : 'Full numbers on', 'success');
+    render();
+    App.renderCurrent();
+  }
+
   function _setTheme(theme) {
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
@@ -469,6 +486,6 @@ const Settings = (() => {
     render();
   }
 
-  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme };
+  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat };
 })();
 window.Settings = Settings;

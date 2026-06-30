@@ -62,6 +62,33 @@ const Hub = (() => {
     Navigation.go('market');
   }
 
+  function _portfolioMovers() {
+    const holdings = PortfolioAnalyticsService.getHoldings();
+    if (!holdings.length) return '';
+    const movers = holdings.map(h => {
+      const prev = State.getPrevClose(h.symbol) || h.price;
+      const chg = prev && h.price ? ((h.price - prev) / prev) * 100 : 0;
+      return { symbol: h.symbol, chg };
+    }).sort((a, b) => Math.abs(b.chg) - Math.abs(a.chg)).slice(0, 5);
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Your movers</h3><span>Today</span></div>
+      <div class="lc-movers-row">${movers.map(m => `
+        <button type="button" class="lc-mover-chip" onclick="Research.open('${m.symbol}')">
+          <strong>${m.symbol}</strong>
+          <em class="${PsxUI.chgCls(m.chg)}">${PsxUI.fmt(m.chg, { pct: true, signed: true })}</em>
+        </button>`).join('')}</div>
+    </div>`;
+  }
+
+  function _portfolioChart(state) {
+    const hist = (state.priceHistory || []).map(h => h.value).filter(v => v > 0);
+    if (hist.length < 2 || typeof Charts === 'undefined') return '';
+    return `<div class="lc-chart-block hub-chart">
+      <div class="lc-dash-section-head"><h3>Net worth</h3><span>${hist.length} days</span></div>
+      ${Charts.lineChart(hist, { height: 110, color: '#2563eb' })}
+    </div>`;
+  }
+
   function _kseCard(k, sign) {
     return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('market')" aria-label="Open stock watch">
       <span>KSE-100</span>
@@ -152,6 +179,8 @@ const Hub = (() => {
           </button>
         </div>
         ${_marketPulse(stats)}
+        ${_portfolioChart(state)}
+        ${_portfolioMovers()}
         <div class="lc-dash-section">
           <div class="lc-dash-section-head"><h3>${I18n.t('hub.toolsTitle')}</h3><span>${I18n.t('hub.toolsSub')}</span></div>
           ${_toolGrid()}

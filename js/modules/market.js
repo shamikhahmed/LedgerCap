@@ -2,6 +2,7 @@
 const Market = (() => {
   let _filter = 'all';
   let _moveFilter = 'all';
+  let _sectorFilter = '';
   let _query = '';
 
   function _rows() {
@@ -52,7 +53,9 @@ const Market = (() => {
   function _sectorBlocks(bySector, onRow) {
     return Object.keys(bySector).sort().map(sec => `
       <div class="lc-sector-card">
-        <div class="lc-sector-head"><h4>${sec}</h4><span>${bySector[sec].length} stocks</span></div>
+        <button type="button" class="lc-sector-head lc-sector-head--btn${_sectorFilter === sec ? ' on' : ''}" onclick="Market.setSectorFilter('${sec.replace(/'/g, "\\'")}')">
+          <h4>${sec}</h4><span>${bySector[sec].length} stocks</span>
+        </button>
         ${bySector[sec].map(r => `
           <button type="button" class="lc-market-row" onclick="${onRow(r.symbol)}">
             <div>
@@ -83,13 +86,18 @@ const Market = (() => {
     if (_moveFilter === 'advancing') rows = baseRows.filter(r => r.chg > 0.05);
     else if (_moveFilter === 'declining') rows = baseRows.filter(r => r.chg < -0.05);
     else if (_moveFilter === 'unchanged') rows = baseRows.filter(r => r.chg >= -0.05 && r.chg <= 0.05);
+    if (_sectorFilter) rows = rows.filter(r => (r.sector || 'Other') === _sectorFilter);
+
+    if (_moveFilter === 'advancing') rows.sort((a, b) => b.chg - a.chg);
+    else if (_moveFilter === 'declining') rows.sort((a, b) => a.chg - b.chg);
+    else rows.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
     const bySector = {};
     rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
-    const filterHint = _moveFilter !== 'all'
-      ? `<p class="lc-filter-hint">Showing ${_moveFilter} · <button type="button" class="lc-link-btn" onclick="Market.setMoveFilter('all')">Clear filter</button></p>`
+    const filterHint = (_moveFilter !== 'all' || _sectorFilter)
+      ? `<p class="lc-filter-hint">${_sectorFilter ? `Sector: ${_sectorFilter} · ` : ''}${_moveFilter !== 'all' ? _moveFilter + ' · ' : ''}<button type="button" class="lc-link-btn" onclick="Market.clearFilters()">Clear filters</button></p>`
       : '';
 
     screen.innerHTML = `
@@ -126,9 +134,11 @@ const Market = (() => {
 
   function setFilter(f) { _filter = f; render(); }
   function setMoveFilter(f) { _moveFilter = _moveFilter === f ? 'all' : f; render(); }
+  function setSectorFilter(sec) { _sectorFilter = _sectorFilter === sec ? '' : sec; render(); }
+  function clearFilters() { _moveFilter = 'all'; _sectorFilter = ''; render(); }
   function moveFilter() { return _moveFilter; }
   function _onSearch(q) { _query = q; render(); }
 
-  return { render, setFilter, setMoveFilter, moveFilter, _onSearch };
+  return { render, setFilter, setMoveFilter, setSectorFilter, clearFilters, moveFilter, _onSearch };
 })();
 window.Market = Market;
