@@ -50,8 +50,8 @@ test.describe('LedgerCap smoke', () => {
     await page.waitForFunction(() => typeof window.ResearchService !== 'undefined');
     await page.waitForTimeout(800);
     await page.locator('#nav [data-tab="research"]').click();
-    await expect(page.getByText('Plain-English verdict')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.psx-metric-l').filter({ hasText: 'Smart rating' })).toBeVisible();
+    await expect(page.locator('.lc-verdict h3')).toHaveText('Plain-English verdict');
+    await expect(page.locator('.lc-metric-cell label').filter({ hasText: 'Rating' })).toBeVisible();
   });
 
   test('comparison tab renders side-by-side holdings', async ({ page }) => {
@@ -82,6 +82,6 @@ test.describe('LedgerCap smoke', () => {
     await page.locator('#nav [data-tab="market"]').click();
     await expect(page.locator('#screen-market.active')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#screen-market.active h1')).toHaveText('Stock Watch');
-    await expect(page.locator('.psx-table tbody tr').first()).toBeVisible();
+    await expect(page.locator('.lc-market-row').first()).toBeVisible();
   });
 });

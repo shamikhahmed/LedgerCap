@@ -1,5 +1,11 @@
 # Changelog — LedgerCap
 
+## 3.13.0 (2026-06-30) — Pro UI phase 2: Market + Research
+
+### Design
+- Market: KSE header cards, iOS segment filter, search, sector grouped rows
+- Research: hero price block, verdict card, metric grid, TradingView in card chrome
+
 ## 3.12.0 (2026-06-30) — Pro UI redesign (Apple HIG)
 
 ### Design

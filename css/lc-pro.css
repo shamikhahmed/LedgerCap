@@ -574,3 +574,306 @@ body.lc-pro .toast {
   line-height: 1.5;
   margin-bottom: var(--lc-space-5);
 }
+
+/* ── Segment control (iOS) ── */
+.lc-segment {
+  display: flex;
+  padding: 3px;
+  margin: 0 var(--lc-space-4) var(--lc-space-4);
+  border-radius: 10px;
+  background: var(--psx-bg-muted);
+  gap: 2px;
+}
+
+.lc-segment-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--psx-text-2);
+  cursor: pointer;
+  transition: background 0.2s var(--lc-ease), color 0.2s var(--lc-ease), box-shadow 0.2s var(--lc-ease);
+}
+
+.lc-segment-btn.on {
+  background: var(--psx-bg-card);
+  color: var(--psx-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Search ── */
+.lc-search {
+  margin: 0 var(--lc-space-4) var(--lc-space-4);
+}
+
+.lc-search input {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--lc-radius);
+  background: var(--psx-bg-card);
+  box-shadow: var(--lc-shadow);
+  color: var(--psx-text);
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.lc-search input::placeholder { color: var(--psx-text-3); }
+
+.lc-search input:focus {
+  outline: 2px solid color-mix(in srgb, var(--psx-accent) 50%, transparent);
+  outline-offset: 0;
+}
+
+/* ── Market list ── */
+.lc-sector-card {
+  margin: 0 var(--lc-space-4) var(--lc-space-4);
+  border-radius: var(--lc-radius);
+  background: var(--psx-bg-card);
+  box-shadow: var(--lc-shadow);
+  overflow: hidden;
+}
+
+.lc-sector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px var(--lc-space-4);
+  background: var(--psx-bg-muted);
+  border-bottom: 1px solid var(--psx-border);
+}
+
+.lc-sector-head h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--psx-text-2);
+  letter-spacing: -0.01em;
+}
+
+.lc-sector-head span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--psx-text-3);
+}
+
+.lc-market-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--lc-space-3);
+  align-items: center;
+  width: 100%;
+  padding: 14px var(--lc-space-4);
+  border: none;
+  border-bottom: 1px solid var(--psx-border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: start;
+  color: var(--psx-text);
+  transition: background 0.15s var(--lc-ease);
+}
+
+.lc-market-row:last-child { border-bottom: none; }
+
+.lc-market-row:active,
+.lc-market-row:hover { background: var(--psx-bg-muted); }
+
+.lc-market-sym {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.lc-market-name {
+  font-size: 12px;
+  color: var(--psx-text-3);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.lc-market-price {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.lc-market-chg {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  min-width: 56px;
+}
+
+.lc-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  background: var(--psx-up-bg);
+  color: var(--psx-up);
+}
+
+/* ── Research ── */
+.lc-verdict {
+  margin: 0 var(--lc-space-4) var(--lc-space-5);
+  padding: var(--lc-space-5);
+  border-radius: var(--lc-radius-lg);
+  background: var(--psx-bg-card);
+  box-shadow: var(--lc-shadow);
+  border-left: 3px solid var(--psx-accent);
+}
+
+.lc-verdict h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--psx-accent);
+  margin-bottom: var(--lc-space-2);
+}
+
+.lc-verdict p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--psx-text);
+  font-weight: 400;
+}
+
+.lc-verdict .lc-verdict-meta {
+  margin-top: var(--lc-space-3);
+  font-size: 12px;
+  color: var(--psx-text-3);
+  font-weight: 500;
+}
+
+.lc-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--lc-space-3);
+  padding: 0 var(--lc-space-4) var(--lc-space-5);
+}
+
+.lc-metric-cell {
+  padding: var(--lc-space-4);
+  border-radius: var(--lc-radius);
+  background: var(--psx-bg-card);
+  box-shadow: var(--lc-shadow);
+}
+
+.lc-metric-cell label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--psx-text-3);
+  margin-bottom: 6px;
+}
+
+.lc-metric-cell strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-sym-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 var(--lc-space-4) var(--lc-space-4);
+  scrollbar-width: none;
+}
+
+.lc-sym-scroll::-webkit-scrollbar { display: none; }
+
+.lc-sym-chip {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: var(--psx-bg-card);
+  box-shadow: var(--lc-shadow);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--psx-text-2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s var(--lc-ease), color 0.15s var(--lc-ease);
+}
+
+.lc-sym-chip.on {
+  background: var(--psx-accent);
+  color: #fff;
+}
+
+.lc-chart-block {
+  margin: 0 var(--lc-space-4) var(--lc-space-8);
+  border-radius: var(--lc-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--lc-shadow);
+  background: var(--psx-bg-card);
+}
+
+.lc-chart-block .lc-dash-section-head {
+  padding: var(--lc-space-4) var(--lc-space-4) var(--lc-space-2);
+  margin: 0;
+}
+
+.lc-research-hero {
+  margin: 0 var(--lc-space-4) var(--lc-space-4);
+  padding: var(--lc-space-5);
+  border-radius: var(--lc-radius-lg);
+  background: var(--psx-bg-card);
+  box-shadow: var(--lc-shadow);
+}
+
+.lc-research-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lc-space-3);
+  margin-bottom: var(--lc-space-3);
+}
+
+.lc-research-hero-top h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.lc-research-hero-top p {
+  font-size: 14px;
+  color: var(--psx-text-2);
+  margin-top: 4px;
+}
+
+.lc-research-price {
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-research-chg {
+  display: inline-block;
+  margin-top: var(--lc-space-2);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.lc-research-chg.up { background: var(--psx-up-bg); color: var(--psx-up); }
+.lc-research-chg.down { background: var(--psx-down-bg); color: var(--psx-down); }
