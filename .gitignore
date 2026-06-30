@@ -4,3 +4,6 @@ worker/.wrangler/
 .env.*
 node_modules/
 test-results/
+.agents/
+.claude/
+skills-lock.json
