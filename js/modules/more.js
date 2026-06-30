@@ -17,12 +17,20 @@ const More = (() => {
     const screen = document.getElementById('screen-more');
     if (!screen) return;
     screen.innerHTML = `
-      ${PsxUI.strip()}
-      ${PsxUI.pageTitle(I18n.t('more.title'), I18n.t('more.sub'))}
-      ${ITEMS().map(it => `<button type="button" class="psx-list-btn" onclick="Navigation.go('${it.id}')">
-        <div><strong>${it.t}</strong><span>${it.d}</span></div><span>→</span>
-      </button>`).join('')}
-      <div style="padding:16px">${I18n.langSwitcher('lc-more-lang')}</div>`;
+      <div class="lc-dash">
+        <div class="lc-screen-head">
+          <h1>${I18n.t('more.title')}</h1>
+          <p>${I18n.t('more.sub')}</p>
+        </div>
+        <div class="lc-tool-grid" style="margin-top:8px">
+          ${ITEMS().map(it => `
+            <button type="button" class="lc-tool-card" onclick="Navigation.go('${it.id}')">
+              <strong>${it.t}</strong>
+              <span>${it.d}</span>
+            </button>`).join('')}
+        </div>
+        <div style="padding:24px 4px">${I18n.langSwitcher('lc-more-lang')}</div>
+      </div>`;
     I18n.bindLangSwitch(screen);
   }
   return { render };

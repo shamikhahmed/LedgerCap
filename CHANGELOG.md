@@ -1,5 +1,13 @@
 # Changelog — LedgerCap
 
+## 3.12.0 (2026-06-30) — Pro UI redesign (Apple HIG)
+
+### Design
+- New `lc-pro.css` design system — SF-style typography, iOS colors, blur chrome, card shadows
+- Dashboard rebuilt — hero net worth, market cards, tool grid, pulse pills
+- Portfolio + More screens restyled to match
+- Default dark theme; system font stack
+
 ## 3.11.1 (2026-06-30) — Scroll fix on desktop / fullscreen
 
 ### Bug fix

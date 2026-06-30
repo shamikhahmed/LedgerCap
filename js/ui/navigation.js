@@ -44,10 +44,10 @@ const Navigation = (() => {
     const sidebar = document.getElementById('nav-sidebar');
     if (sidebar) {
       sidebar.innerHTML = `
-        <div class="psx-brand" style="padding:8px 12px 20px">Ledger<span>Cap</span></div>
-        ${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}
-        <div style="height:1px;background:var(--psx-border);margin:12px 0"></div>
-        ${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}"><span>${_t(t.labelKey)}</span></button>`).join('')}
+        <div class="psx-brand" style="padding:4px 12px 24px;font-size:18px">Ledger<span>Cap</span></div>
+        <nav aria-label="Primary">${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
+        <div style="height:1px;background:var(--psx-border);margin:16px 8px"></div>
+        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}"><span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }

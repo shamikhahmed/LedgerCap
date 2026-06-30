@@ -1,7 +1,8 @@
 'use strict';
-const CACHE = 'ledgercap-v75';
+const CACHE = 'ledgercap-v76';
 const ASSETS = [
   './css/psx-app.css',
+  './css/lc-pro.css',
   './', './index.html', './landing.html', './manifest.json', './VERSION.json',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './js/data/holdings.js', './js/data/global-assets.js', './js/data/fundamentals.js', './js/data/dividends.js', './js/data/config.js',

@@ -87,7 +87,7 @@ const PsxUI = (() => {
   }
 
   function pageTitle(title, sub) {
-    return `<div class="psx-page-title"><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>`;
+    return `<div class="lc-screen-head"><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>`;
   }
 
   function refreshPortfolioMini() {
