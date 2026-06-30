@@ -70,8 +70,9 @@ const Navigation = (() => {
     document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => b.classList.remove('active'));
     const el = document.getElementById('screen-' + tabId);
     if (el) {
-      el.classList.add('active');
+      el.classList.add('active', 'lc-screen-enter');
       el.scrollTop = 0;
+      requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
     }
     document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
     if (!silent) sessionStorage.setItem('ledgercap_tab', tabId);
@@ -79,6 +80,7 @@ const Navigation = (() => {
     document.title = tabLabel + ' — LedgerCap';
     _render(tabId, opts || {});
     if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
+    if (typeof CapMotion !== 'undefined') CapMotion.refresh();
   }
 
   function _render(id, opts) {

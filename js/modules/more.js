@@ -9,6 +9,8 @@ const More = (() => {
     { id: 'watchlist', t: I18n.t('tools.watchlist.t'), d: I18n.t('tools.watchlist.d') },
     { id: 'signals', t: I18n.t('tools.signals.t'), d: I18n.t('tools.signals.d') },
     { id: 'comparison', t: 'Compare', d: 'Side by side' },
+    { id: 'performance', t: 'Performance', d: 'P&L · daily · forecast' },
+    { id: 'journal', t: 'Journal', d: 'Investment thesis' },
     { id: 'transactions', t: I18n.t('tools.transactions.t'), d: I18n.t('tools.transactions.d') },
     { id: 'settings', t: 'Settings', d: I18n.t('more.sub') },
   ];

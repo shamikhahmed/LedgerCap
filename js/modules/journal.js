@@ -59,9 +59,10 @@ const Journal = (() => {
     const entries = [...(State.get('journal') || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Journal', 'Investment thesis', 'Record decisions · review outcomes')}
-    <div style="padding:0 20px 12px;" class="cap-reveal">
-      <button type="button" class="os-btn os-btn-primary" onclick="Journal.openNew()">+ New entry</button>
+    <div class="lc-dash">
+    <div class="lc-screen-head"><h1>Journal</h1><p>Investment thesis · record decisions</p></div>
+    <div class="lc-dash-actions cap-reveal">
+      <button type="button" class="lc-btn-primary" onclick="Journal.openNew()">+ New entry</button>
     </div>
     ${entries.length ? entries.map(e => `
       <div class="os-card cap-reveal" role="button" tabindex="0" aria-label="Edit journal entry" style="margin:0 20px 12px;cursor:pointer;" onclick="Journal.openEdit('${e.id}')">
@@ -74,8 +75,8 @@ const Journal = (() => {
         </div>
         ${e.body ? `<p style="font-size:0.85rem;color:var(--os-text-secondary);margin:10px 0 0;line-height:1.5;">${e.body.slice(0, 160)}${e.body.length > 160 ? '…' : ''}</p>` : ''}
         ${e.review ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--os-border);font-size:0.8rem;color:var(--os-gain);">Review: ${e.review.slice(0, 100)}${e.review.length > 100 ? '…' : ''}</div>` : ''}
-      </div>`).join('') : `<div class="os-section" style="color:var(--os-text-secondary);">No journal entries yet. Document your investment thesis before you buy.</div>`}
-    <div style="height:16px;"></div>`;
+      </div>`).join('') : `<div class="lc-empty-note">No journal entries yet. Document your investment thesis before you buy.</div>`}
+    </div>`;
     CapMotion.refresh();
   }
 

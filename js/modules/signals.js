@@ -40,8 +40,8 @@ const Signals = (() => {
     const summary = PilotEngine.portfolioSummary();
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Signals', 'Morning brief', 'Core & Swing books · transparent rules')}
-
+    <div class="lc-dash">
+    <div class="lc-screen-head"><h1>Signals</h1><p>Morning brief · Core &amp; Swing books</p></div>
     ${U.metricGrid([
       U.metricCell('Pilot Score', score.grade + ' · ' + score.score, null, score.score >= 70 ? 't-gain' : 't-warn'),
       U.metricCell('Core book', summary.core_pct.toFixed(0) + '%', 'Long-term positions'),
@@ -61,8 +61,8 @@ const Signals = (() => {
 
     ${U.section('Book tags', _bookTagEditor())}
 
-    <div style="font-size:11px;color:var(--os-text-tertiary);padding:16px;line-height:1.5">${brief.disclaimer}</div>
-    <div style="height:20px"></div>`;
+    <div class="lc-disclaimer">${brief.disclaimer}</div>
+    </div>`;
     CapMotion.refresh();
   }
 

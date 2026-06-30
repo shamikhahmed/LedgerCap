@@ -3,17 +3,14 @@ const ImportCsv = (() => {
   function render() {
     const screen = document.getElementById('screen-import');
     if (!screen) return;
-    screen.innerHTML = `
-      ${PsxUI.strip()}
-      ${PsxUI.pageTitle('Import CSV', 'IBKR · Binance · generic trade log')}
-      <div class="psx-analyze" style="margin:16px">
-        <p>Paste CSV with columns: <code>date,symbol,type,quantity,price,broker</code> or IBKR/Binance export. Types: BUY, SELL, INTL_BUY, CRYPTO_BUY.</p>
-      </div>
-      <div style="padding:0 16px">
-        <textarea id="csv-input" class="field-input" rows="8" placeholder="date,symbol,type,quantity,price,broker&#10;2026-01-15,AAPL,INTL_BUY,10,195,IBKR"></textarea>
+    screen.innerHTML = PsxUI.lcDash('Import CSV', 'IBKR · Binance · generic trade log', `
+      <div class="lc-verdict"><h3>Format</h3><p>Columns: <code>date,symbol,type,quantity,price,broker</code>. Types: BUY, SELL, INTL_BUY, CRYPTO_BUY.</p></div>
+      <div class="lc-form-block">
+        <textarea id="csv-input" class="lc-field-input lc-field-textarea" rows="10" placeholder="date,symbol,type,quantity,price,broker&#10;2026-01-15,AAPL,INTL_BUY,10,195,IBKR"></textarea>
         <button type="button" class="psx-btn psx-btn-primary" style="width:100%;margin-top:12px" onclick="ImportCsv._run()">Import rows</button>
-        <p id="csv-result" class="psx-muted" style="margin-top:12px;font-size:13px"></p>
-      </div>`;
+        <p id="csv-result" style="margin-top:12px;font-size:13px;color:var(--psx-text-3)"></p>
+      </div>
+    `);
   }
 
   function _parseLine(line) {
@@ -25,7 +22,6 @@ const ImportCsv = (() => {
     const quantity = parseFloat(qty) || 0;
     const px = parseFloat(price) || 0;
     if (!quantity) return null;
-
     if (t === 'INTL_BUY' || t === 'INTL_SELL') {
       return { type: t, date, symbol: symbol.toUpperCase(), assetClass: 'intl', shares: quantity, qty: quantity, priceUsd: px, costUsd: quantity * px, broker: broker || 'IBKR', currency: 'USD' };
     }
@@ -40,9 +36,8 @@ const ImportCsv = (() => {
 
   function _run() {
     const raw = document.getElementById('csv-input')?.value || '';
-    const lines = raw.split(/\r?\n/).filter(Boolean);
     let n = 0;
-    lines.forEach(line => {
+    raw.split(/\r?\n/).filter(Boolean).forEach(line => {
       const tx = _parseLine(line);
       if (tx) { State.addTransaction(tx); n++; }
     });

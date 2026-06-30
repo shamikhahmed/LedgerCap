@@ -51,7 +51,11 @@ const Transactions = (() => {
     const monthKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Transactions', 'Ledger log', `${filtered.length} entries · filter by type`, { action: '<button type="button" class="lc-section-action" onclick="App.openAddTransaction()">+ Add</button>' })}
+    <div class="lc-dash">
+    <div class="lc-screen-head lc-screen-head--row">
+      <div><h1>Transactions</h1><p>${filtered.length} entries · filter by type</p></div>
+      <button type="button" class="lc-section-action" onclick="App.openAddTransaction()">+ Add</button>
+    </div>
     <div class="lc-filter-bar cap-reveal" style="border-top:none;padding-top:0">
       <div class="lc-pill-group" style="margin-left:0;width:100%;flex-wrap:wrap">
       ${['all','buy','sell','dividend','salary','contribution','ipo'].map(f =>
@@ -71,7 +75,7 @@ const Transactions = (() => {
       <div class="month-group"><span>${label}</span><span title="Net cash flow (excludes internal fund converts)">${fmt(net)}</span></div>
       ${txs.map(tx => _txRowHTML(tx)).join('')}`;
     }).join('')}
-    <div style="height:8px;"></div>`;
+    </div>`;
 
     document.querySelectorAll('[data-f]').forEach(tab => {
       tab.addEventListener('click', () => { _filter = tab.dataset.f; render(); });

@@ -15,7 +15,7 @@ const Performance = (() => {
 
     const state = State.get();
     if (!state.transactions?.length) {
-      screen.innerHTML = `${MarketUI.compactStrip()}${MarketUI.emptyState('📈', 'No performance data', 'Add holdings to track daily, monthly, and predictive profit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Performance</h1><p>P&amp;L tracking</p></div>${MarketUI.emptyState('📈', 'No performance data', 'Add holdings to track daily, monthly, and predictive profit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }
@@ -29,7 +29,8 @@ const Performance = (() => {
     const unrealised = marketValue - costBasis;
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Performance', 'P&L tracking', 'Daily · monthly · forecast')}
+    <div class="lc-dash">
+    <div class="lc-screen-head"><h1>Performance</h1><p>P&amp;L tracking · daily · monthly · forecast</p></div>
     <div class="perf-header cap-reveal" style="padding-top:0">
       <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-2);font-size:0.85rem;color:var(--os-text-secondary);">
         <span>Cost basis <strong>${PlatformUI.fmt(costBasis)}</strong></span>
@@ -132,7 +133,7 @@ const Performance = (() => {
       </div>
     </div>` : ''}
 
-    <div style="height:var(--space-4);"></div>`;
+    </div>`;
 
     _renderCharts(dailyData, monthlyData, predictiveData);
     CapMotion.refresh();

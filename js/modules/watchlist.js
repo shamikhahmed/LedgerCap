@@ -39,8 +39,9 @@ const Watchlist = (() => {
     const list = State.get('watchlist') || [];
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Watchlist', 'Track before you buy', `${list.length} symbols · fair value & upside`)}
-    <div style="padding:0 20px 12px;" class="cap-reveal"><button type="button" class="os-btn os-btn-primary" onclick="Watchlist.openAdd()">+ Add symbol</button></div>
+    <div class="lc-dash">
+    <div class="lc-screen-head"><h1>Watchlist</h1><p>${list.length} symbols · fair value &amp; upside</p></div>
+    <div class="lc-dash-actions cap-reveal"><button type="button" class="lc-btn-primary" onclick="Watchlist.openAdd()">+ Add symbol</button></div>
     ${list.length ? list.map(w => {
       const quote = MarketDataService.getQuote(w.symbol);
       const ai = AIAnalysis.analyze(w.symbol);
@@ -65,8 +66,8 @@ const Watchlist = (() => {
         <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.openEdit('${w.id}')">Edit</button>
         <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.remove('${w.id}')">Remove</button>
       </div>`;
-    }).join('') : `<div class="os-section" style="color:var(--os-text-secondary);">Empty watchlist. Track symbols before you buy.</div>`}
-    <div style="height:20px;"></div>`;
+    }).join('') : `<div class="lc-empty-note">Empty watchlist. Track symbols before you buy.</div>`}
+    </div>`;
     CapMotion.refresh();
   }
 

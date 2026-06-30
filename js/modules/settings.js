@@ -80,8 +80,8 @@ const Settings = (() => {
     const pilot = state.pilotSettings || {};
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Settings', I18n.t('more.title'), I18n.t('more.sub'))}
-
+    <div class="lc-dash">
+    <div class="lc-screen-head"><h1>Settings</h1><p>${I18n.t('more.sub')}</p></div>
     <div class="sec-head"><span class="sec-title">${I18n.t('lang.label')}</span></div>
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       ${I18n.langSwitcher('lc-settings-lang')}
@@ -277,11 +277,11 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v3.5.5</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || '3.14.0'}</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
-    <div style="height:8px;"></div>`;
+    </div>`;
     if (typeof I18n !== 'undefined') I18n.bindLangSwitch(screen);
     _pingProxy(proxyUrl);
     if (typeof CapMotion !== 'undefined') CapMotion.refresh();

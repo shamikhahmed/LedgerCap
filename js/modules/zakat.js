@@ -6,10 +6,7 @@ const Zakat = (() => {
     const s = PortfolioAnalyticsService.getSummary(state);
     const settings = state.settings || {};
     const ma = state.manualAssets || {};
-    let total = s.totalValue + (ma.usdCash || 0) * FxService.getUsdRate() + (ma.goldGrams || 0) * (settings.goldPricePerGram || 18000) + (ma.realEstate || 0);
-    if (!(settings.zakatIncludeCrypto !== false)) {
-      /* crypto included in portfolio via global holdings */
-    }
+    const total = s.totalValue + (ma.usdCash || 0) * FxService.getUsdRate() + (ma.goldGrams || 0) * (settings.goldPricePerGram || 18000) + (ma.realEstate || 0);
     return Math.max(0, total - (settings.zakatDebts || 0));
   }
 
@@ -24,49 +21,36 @@ const Zakat = (() => {
     const due = zakatable >= nisab ? zakatable * 0.025 : 0;
     const haul = settings.zakatHaulDate || new Date().toISOString().slice(0, 10);
 
-    screen.innerHTML = `
-      ${PsxUI.strip()}
-      ${PsxUI.pageTitle('Zakat calculator', 'Hanafi nisab · 2.5% on zakatable wealth')}
-      <div class="psx-hero">
-        <div class="psx-hero-label">Estimated Zakat due</div>
-        <div class="psx-hero-val">${PsxUI.fmt(due)}</div>
-        <div class="psx-hero-pills">
-          <span class="psx-pill">Nisab ${PsxUI.fmt(nisab)}</span>
-          <span class="psx-pill">Zakatable ${PsxUI.fmt(zakatable)}</span>
+    screen.innerHTML = PsxUI.lcDash('Zakat calculator', 'Hanafi nisab · 2.5% on zakatable wealth', `
+      <div class="lc-dash-hero">
+        <div class="lc-dash-hero-label">Estimated Zakat due</div>
+        <div class="lc-dash-hero-val">${PsxUI.fmt(due)}</div>
+        <div class="lc-dash-hero-row">
+          <span class="lc-dash-chip">Nisab ${PsxUI.fmt(nisab)}</span>
+          <span class="lc-dash-chip">Zakatable ${PsxUI.fmt(zakatable)}</span>
         </div>
       </div>
-      <div class="psx-metrics">
-        <div class="psx-metric"><div class="psx-metric-l">Gold nisab</div><div class="psx-metric-v">${NISAB_GOLD_G}g</div></div>
-        <div class="psx-metric"><div class="psx-metric-l">Gold / g</div><div class="psx-metric-v">₨${goldG}</div></div>
-        <div class="psx-metric"><div class="psx-metric-l">Haul date</div><div class="psx-metric-v">${haul}</div></div>
-        <div class="psx-metric"><div class="psx-metric-l">Debts offset</div><div class="psx-metric-v">${PsxUI.fmt(settings.zakatDebts || 0)}</div></div>
+      <div class="lc-metric-grid">
+        <div class="lc-metric-cell"><label>Gold nisab</label><strong>${NISAB_GOLD_G}g</strong></div>
+        <div class="lc-metric-cell"><label>Gold / g</label><strong>₨${goldG}</strong></div>
+        <div class="lc-metric-cell"><label>Haul date</label><strong>${haul}</strong></div>
+        <div class="lc-metric-cell"><label>Debts offset</label><strong>${PsxUI.fmt(settings.zakatDebts || 0)}</strong></div>
       </div>
-      <div class="psx-analyze" style="margin:16px">
-        <p>Rules-based estimate only — not a fatwa. Consult a scholar for crypto, business inventory, and mixed portfolios. Ledger stays on device.</p>
+      <div class="lc-verdict"><h3>Disclaimer</h3><p>Rules-based estimate only — not a fatwa. Consult a scholar for crypto, inventory, and mixed portfolios. Data stays on device.</p></div>
+      <div class="lc-form-block">
+        <label class="lc-field-label">Debts to subtract (₨)</label>
+        <input class="lc-field-input" id="zk-debts" type="number" value="${settings.zakatDebts || 0}" onchange="Zakat._saveDebts(this.value)">
+        <label class="lc-field-label">Gold grams (manual)</label>
+        <input class="lc-field-input" id="zk-gold" type="number" step="0.01" value="${(state.manualAssets || {}).goldGrams || 0}" onchange="Zakat._saveGold(this.value)">
+        <label class="lc-field-label">USD cash (manual)</label>
+        <input class="lc-field-input" id="zk-usd" type="number" step="0.01" value="${(state.manualAssets || {}).usdCash || 0}" onchange="Zakat._saveUsd(this.value)">
       </div>
-      <div style="padding:0 16px 24px">
-        <label class="field-label">Debts to subtract (₨)</label>
-        <input class="field-input" id="zk-debts" type="number" value="${settings.zakatDebts || 0}" onchange="Zakat._saveDebts(this.value)">
-        <label class="field-label" style="margin-top:12px">Gold grams (manual)</label>
-        <input class="field-input" id="zk-gold" type="number" step="0.01" value="${(state.manualAssets || {}).goldGrams || 0}" onchange="Zakat._saveGold(this.value)">
-        <label class="field-label" style="margin-top:12px">USD cash (manual)</label>
-        <input class="field-input" id="zk-usd" type="number" step="0.01" value="${(state.manualAssets || {}).usdCash || 0}" onchange="Zakat._saveUsd(this.value)">
-      </div>`;
+    `);
   }
 
-  function _saveDebts(v) {
-    State.update(s => { s.settings.zakatDebts = parseFloat(v) || 0; });
-    render();
-  }
-  function _saveGold(v) {
-    State.update(s => { s.manualAssets = { ...(s.manualAssets || {}), goldGrams: parseFloat(v) || 0 }; });
-    render();
-  }
-  function _saveUsd(v) {
-    State.update(s => { s.manualAssets = { ...(s.manualAssets || {}), usdCash: parseFloat(v) || 0 }; });
-    render();
-  }
-
+  function _saveDebts(v) { State.update(s => { s.settings.zakatDebts = parseFloat(v) || 0; }); render(); }
+  function _saveGold(v) { State.update(s => { s.manualAssets = { ...(s.manualAssets || {}), goldGrams: parseFloat(v) || 0 }; }); render(); }
+  function _saveUsd(v) { State.update(s => { s.manualAssets = { ...(s.manualAssets || {}), usdCash: parseFloat(v) || 0 }; }); render(); }
   return { render, _saveDebts, _saveGold, _saveUsd };
 })();
 window.Zakat = Zakat;

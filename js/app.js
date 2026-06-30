@@ -126,12 +126,12 @@ const App = (() => {
     if (demo) {
       try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
     }
-    _applyTheme(localStorage.getItem('theme') || State.get('settings')?.theme || 'light');
+    _applyTheme(localStorage.getItem('theme') || State.get('settings')?.theme || 'dark');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=76').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=77').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();

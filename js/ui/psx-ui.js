@@ -90,6 +90,22 @@ const PsxUI = (() => {
     return `<div class="lc-screen-head"><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>`;
   }
 
+  function lcDash(title, sub, inner) {
+    return `<div class="lc-dash"><div class="lc-screen-head"><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${inner || ''}</div>`;
+  }
+
+  function segment(items, active, ns, method) {
+    method = method || 'setFilter';
+    return `<div class="lc-segment" role="tablist">${items.map(it =>
+      `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" onclick="${ns}.${method}('${it.id}')">${it.label}</button>`
+    ).join('')}</div>`;
+  }
+
+  function skeleton(lines) {
+    lines = lines || 4;
+    return `<div class="lc-skeleton-wrap" aria-hidden="true">${Array.from({ length: lines }, () => '<div class="lc-skeleton-line"></div>').join('')}</div>`;
+  }
+
   function refreshPortfolioMini() {
     const el = document.getElementById('psx-portfolio-mini');
     const sub = document.getElementById('psx-portfolio-mini-sub');
@@ -101,6 +117,6 @@ const PsxUI = (() => {
     if (sub) sub.textContent = `${I18n.t('portfolio.allTime')} ${fmt(s.totalReturn.pct, { pct: true, signed: true })}`;
   }
 
-  return { fmt, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, refreshPortfolioMini };
+  return { fmt, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, refreshPortfolioMini };
 })();
 window.PsxUI = PsxUI;

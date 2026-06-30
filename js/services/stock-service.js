@@ -16,6 +16,8 @@ const StockService = (() => {
   function getProfile(symbol) {
     const stock = _meta(symbol);
     const fund = _fundMeta(symbol);
+    const intl = (window.INTL_STOCKS || []).find(s => s.symbol === symbol);
+    const crypto = (window.CRYPTO_ASSETS || []).find(c => c.symbol === symbol);
     const quote = MarketDataService.getQuote(symbol);
     if (fund) {
       const analytics = (window.FUND_ANALYTICS_DB || {})[symbol] || {};
@@ -25,6 +27,17 @@ const StockService = (() => {
       };
     }
     const f = (window.FUNDAMENTALS_DB || {})[symbol] || {};
+    if (intl || crypto) {
+      return {
+        symbol,
+        name: intl?.name || crypto?.name || symbol,
+        type: crypto ? 'crypto' : 'intl',
+        sector: intl?.sector || 'Global',
+        currency: intl?.currency || crypto?.currency || 'USD',
+        price: quote.price,
+        marketCap: intl?.marketCap,
+      };
+    }
     return {
       symbol,
       name: stock?.name || symbol,
@@ -84,9 +97,11 @@ const StockService = (() => {
   function listSymbols() {
     const fromHoldings = Ledger.calcHoldings(State.get('transactions') || []).map(h => h.symbol);
     const fromFunds = Ledger.calcFundHoldings(State.get('transactions') || []).map(f => f.symbol);
+    const fromGlobal = Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(State.get('transactions') || []).map(h => h.symbol) : [];
     const fromWatch = (State.get('watchlist') || []).map(w => w.symbol);
     const fromDb = Object.keys(window.FUNDAMENTALS_DB || {});
-    return [...new Set([...fromHoldings, ...fromFunds, ...fromWatch, ...fromDb])].sort();
+    const fromIntl = (window.INTL_STOCKS || []).slice(0, 120).map(s => s.symbol);
+    return [...new Set([...fromHoldings, ...fromFunds, ...fromGlobal, ...fromWatch, ...fromDb, ...fromIntl])].sort();
   }
 
   return { getProfile, getFundamentals, isFund, listSymbols };
