@@ -1,5 +1,15 @@
 # Changelog — LedgerCap
 
+## 3.19.0 (2026-06-30) — Rafi / AKD / CDC split + US picker fix
+
+### Portfolios
+- **Rafi Securities**, **AKD Securities**, **CDC Custody** — separate hub cards (was one “Pakistan PSX” bucket)
+- Holdings filtered by `broker` on each transaction
+- Add-holding pre-selects broker when opened from a bucket
+
+### Bug fix
+- **US stock picker** — type ticker OR tap row; search syncs hidden symbol; mobile tap targets 44px; fallback catalog if `INTL_STOCKS` empty
+
 ## 3.18.0 (2026-06-30) — Performance M2M + global realised
 
 ### Fixes

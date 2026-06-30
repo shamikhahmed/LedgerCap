@@ -94,6 +94,7 @@ const App = (() => {
 
   let _intlCatalog = [];
   let _pendingPortfolioId = null;
+  let _pendingBroker = null;
 
   function openAddPortfolio() {
     openBottomSheet('add-portfolio', 'Add portfolio', `
@@ -153,10 +154,11 @@ const App = (() => {
 
   function openAddForPortfolio(bucketId) {
     const buckets = typeof PortfolioBuckets !== 'undefined' ? PortfolioBuckets.list() : [];
-    const b = (bucketId && buckets.find(x => x.id === bucketId)) || buckets.find(x => x.id === 'psx');
+    const b = (bucketId && buckets.find(x => x.id === bucketId)) || buckets.find(x => x.id === 'rafi');
     _pendingPortfolioId = b && !b.builtin ? b.id : null;
+    _pendingBroker = b?.brokerFilter || PortfolioBuckets.defaultBroker?.(bucketId) || null;
     const txType = b ? PortfolioBuckets.defaultTxType(b.kind) : 'BUY';
-    openAddTransaction(txType);
+    openAddTransaction(txType, null, _pendingBroker);
   }
 
   function _portfolioFieldForType(type) {
@@ -179,6 +181,18 @@ const App = (() => {
       </select></div>`;
   }
 
+  function _ensureIntlCatalog(isCrypto) {
+    if (isCrypto) return window.CRYPTO_ASSETS || [];
+    const catalog = window.INTL_STOCKS || window.US_STOCKS_CATALOG || [];
+    if (catalog.length) return catalog;
+    return [
+      { symbol: 'AAPL', name: 'Apple' }, { symbol: 'MSFT', name: 'Microsoft' }, { symbol: 'NVDA', name: 'NVIDIA' },
+      { symbol: 'GOOGL', name: 'Alphabet' }, { symbol: 'AMZN', name: 'Amazon' }, { symbol: 'META', name: 'Meta' },
+      { symbol: 'TSLA', name: 'Tesla' }, { symbol: 'TTWO', name: 'Take-Two' }, { symbol: 'VOO', name: 'Vanguard S&P 500' },
+      { symbol: 'QQQ', name: 'Invesco QQQ' }, { symbol: 'SPY', name: 'SPDR S&P 500' },
+    ];
+  }
+
   function _filterIntlSymbols(q) {
     const pick = document.getElementById('tx-symbol-pick');
     const hidden = document.getElementById('tx-symbol');
@@ -188,8 +202,35 @@ const App = (() => {
       !needle || s.symbol.includes(needle) || (s.name || '').toUpperCase().includes(needle)
     ).slice(0, 12);
     pick.innerHTML = rows.map(s =>
-      `<button type="button" class="lc-intl-pick" onmousedown="event.preventDefault();App._pickIntlSymbol('${s.symbol}')"><strong>${s.symbol}</strong><span>${s.name || ''}</span></button>`
-    ).join('') || '<p class="psx-muted">No matches</p>';
+      `<button type="button" class="lc-intl-pick" data-sym="${s.symbol}"><strong>${s.symbol}</strong><span>${s.name || ''}</span></button>`
+    ).join('') || '<p class="psx-muted">No matches — type a valid ticker (e.g. AAPL, TTWO)</p>';
+    if (needle && /^[A-Z.^-]{1,10}$/.test(needle)) {
+      const exact = _intlCatalog.find(s => s.symbol === needle);
+      if (exact) _pickIntlSymbol(exact.symbol);
+      else if (hidden) hidden.value = needle;
+    }
+  }
+
+  function _bindIntlSearch() {
+    const search = document.getElementById('tx-symbol-search');
+    const pick = document.getElementById('tx-symbol-pick');
+    if (!search || search.dataset.bound) return;
+    search.dataset.bound = '1';
+    search.addEventListener('input', () => _filterIntlSymbols(search.value));
+    if (pick) {
+      pick.addEventListener('click', (e) => {
+        const btn = e.target.closest('.lc-intl-pick');
+        if (!btn?.dataset?.sym) return;
+        e.preventDefault();
+        _pickIntlSymbol(btn.dataset.sym);
+      });
+    }
+  }
+
+  function _resolveIntlSymbol() {
+    const search = document.getElementById('tx-symbol-search')?.value?.trim().toUpperCase() || '';
+    const hidden = document.getElementById('tx-symbol')?.value?.trim().toUpperCase() || '';
+    return search || hidden;
   }
 
   function _pickIntlSymbol(sym) {
@@ -274,7 +315,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=83').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=85').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -499,12 +540,18 @@ const App = (() => {
         const t = btn.dataset.type;
         document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);
-        if (t.startsWith('INTL') || t.startsWith('CRYPTO')) _filterIntlSymbols(document.getElementById('tx-symbol-search')?.value || '');
+        if (t.startsWith('INTL') || t.startsWith('CRYPTO')) {
+          _filterIntlSymbols(document.getElementById('tx-symbol-search')?.value || '');
+          _bindIntlSearch();
+        }
       });
     });
 
     _bindFieldListeners(selType);
-    if (selType.startsWith('INTL') || selType.startsWith('CRYPTO')) _filterIntlSymbols(symbol || '');
+    if (selType.startsWith('INTL') || selType.startsWith('CRYPTO')) {
+      _filterIntlSymbols(symbol || '');
+      _bindIntlSearch();
+    }
   }
 
   function _bindFieldListeners(type) {
@@ -568,7 +615,7 @@ const App = (() => {
 
   function _txFields(type, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings) {
     const symOpts = allSymbols.map(s => `<option value="${s.symbol}" data-broker="${s.broker}"${symbol === s.symbol ? ' selected' : ''}>${s.symbol} (${s.broker})</option>`).join('');
-    const brokerOpts = brokers.map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
+    const brokerOpts = brokers.map(b => `<option value="${b}"${(broker === b || _pendingBroker === b) ? ' selected' : ''}>${b}</option>`).join('');
     const today = new Date().toISOString().slice(0, 10);
     const settings = State.get().settings || {};
 
@@ -620,17 +667,18 @@ const App = (() => {
 
     if (type === 'INTL_BUY' || type === 'INTL_SELL' || type === 'CRYPTO_BUY' || type === 'CRYPTO_SELL') {
       const isCrypto = type.startsWith('CRYPTO');
-      const catalog = isCrypto ? (window.CRYPTO_ASSETS || []) : (window.INTL_STOCKS || []);
+      const catalog = _ensureIntlCatalog(isCrypto);
       _intlCatalog = catalog;
-      const sel = symbol || catalog[0]?.symbol || '';
+      const sel = symbol || '';
       const gbOpts = (globalBrokers || []).map(b => `<option value="${b}"${broker === b ? ' selected' : ''}>${b}</option>`).join('');
       const fb = sel ? (window.GLOBAL_FALLBACK_USD || {})[sel] : '';
       return `
         ${_portfolioFieldForType(type)}
         <div class="field"><label class="field-label">Search ${isCrypto ? 'crypto' : 'US'} symbol</label>
-          <input class="field-input" id="tx-symbol-search" type="search" placeholder="Type symbol or name…" value="${sel}" autocomplete="off" oninput="App._filterIntlSymbols(this.value)">
+          <input class="field-input" id="tx-symbol-search" type="search" placeholder="Type ticker e.g. AAPL, TTWO…" value="${sel}" autocomplete="off" autocapitalize="characters">
           <input type="hidden" id="tx-symbol" value="${sel}">
-          <div id="tx-symbol-pick" class="lc-intl-pick-list"></div>
+          <div id="tx-symbol-pick" class="lc-intl-pick-list" role="listbox" aria-label="Symbol matches"></div>
+          <p class="lc-search-hint">Tap a row or type exact ticker — both work</p>
         </div>
         <div class="field"><label class="field-label">Broker</label><select class="field-select" id="tx-broker">${gbOpts}</select></div>
         <div class="field-row">
@@ -685,6 +733,7 @@ const App = (() => {
     const pf = g('tx-portfolio-id') || _pendingPortfolioId || '';
     if (pf) tx.portfolioId = pf;
     _pendingPortfolioId = null;
+    _pendingBroker = null;
 
     if (type === 'SALARY') {
       const amount = parseFloat(g('tx-amount'));
@@ -732,11 +781,14 @@ const App = (() => {
       tx.price = price;
       tx.amount = shares * price;
     } else if (type === 'INTL_BUY' || type === 'INTL_SELL' || type === 'CRYPTO_BUY' || type === 'CRYPTO_SELL') {
-      const sym = g('tx-symbol').toUpperCase();
+      const sym = _resolveIntlSymbol();
       const br = g('tx-broker') || (type.startsWith('CRYPTO') ? 'Binance' : 'IBKR');
       const qty = parseFloat(g('tx-shares'));
       const priceUsd = parseFloat(g('tx-price-usd'));
       if (!sym || !qty || !priceUsd) { showToast('Fill symbol, quantity, and USD price', 'error'); return; }
+      if (!_intlCatalog.some(s => s.symbol === sym) && sym.length > 5) {
+        showToast('Check ticker spelling', 'warning');
+      }
       tx.symbol = sym;
       tx.broker = br;
       tx.shares = qty;

@@ -398,9 +398,12 @@ body.lc-rtl .psx-sidebar {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 180px;
+  max-height: 200px;
   overflow-y: auto;
   margin-top: 8px;
+  position: relative;
+  z-index: 2;
+  -webkit-overflow-scrolling: touch;
 }
 
 .lc-intl-pick {
@@ -408,7 +411,8 @@ body.lc-rtl .psx-sidebar {
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  min-height: 44px;
   border: 1px solid var(--psx-border);
   border-radius: 10px;
   background: var(--psx-bg-card);
@@ -416,6 +420,7 @@ body.lc-rtl .psx-sidebar {
   font-family: inherit;
   text-align: left;
   color: var(--psx-text);
+  touch-action: manipulation;
 }
 
 .lc-intl-pick.on { border-color: var(--psx-accent); background: color-mix(in srgb, var(--psx-accent) 10%, var(--psx-bg-card)); }
@@ -577,8 +582,8 @@ body.lc-rtl .psx-sidebar {
   .lc-portfolio-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (min-width: 960px) {
-  .lc-portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 900px) {
+  .lc-portfolio-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .lc-portfolio-card {

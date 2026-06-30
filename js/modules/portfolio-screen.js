@@ -101,7 +101,7 @@ const PortfolioScreen = (() => {
         </div>` : `<div class="lc-empty-state" style="margin-top:0">
           <h2>No holdings in this portfolio</h2>
           <p>Add ${active ? active.name.toLowerCase() : 'positions'} to start tracking.</p>
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || 'psx'}')">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || 'rafi'}')">${I18n.t('addHoldings')}</button>
         </div>`}
         <div class="lc-dash-actions" style="margin-top:var(--lc-space-6)">
           <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || ''}')">${I18n.t('addHoldings')}</button>

@@ -74,4 +74,22 @@ test.describe('Ledger math (seed)', () => {
     expect(trades.length).toBe(1);
     expect(trades[0].symbol).toBe('AAPL');
   });
+
+  test('PSX txs split by broker bucket', () => {
+    const root = path.join(__dirname, '..');
+    const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280, getUsdRate: () => 280 } } };
+    vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/data/holdings.js'), 'utf8'), ctx);
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/engines/ledger.js'), 'utf8'), ctx);
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/services/portfolio-buckets-service.js'), 'utf8'), ctx);
+    const PB = ctx.window.PortfolioBuckets;
+    const state = { transactions: [
+      { id: '1', type: 'BUY', date: '2026-01-01', symbol: 'LUCK', broker: 'Rafi', shares: 10, price: 100, amount: 1000 },
+      { id: '2', type: 'BUY', date: '2026-01-02', symbol: 'PASM', broker: 'AKD', shares: 5, price: 8, amount: 40 },
+    ]};
+    expect(PB.inferBuiltinId(state.transactions[0])).toBe('rafi');
+    expect(PB.inferBuiltinId(state.transactions[1])).toBe('akd');
+    expect(PB.txsForBucket(state, 'rafi').length).toBe(1);
+    expect(PB.txsForBucket(state, 'akd').length).toBe(1);
+  });
 });

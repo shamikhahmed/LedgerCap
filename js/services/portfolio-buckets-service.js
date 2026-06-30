@@ -1,17 +1,37 @@
 'use strict';
 const PortfolioBuckets = (() => {
   const BUILTIN = [
-    { id: 'psx', name: 'Pakistan PSX', kind: 'psx', icon: '🇵🇰', builtin: true, desc: 'Stocks · Rafi · AKD · CDC' },
+    { id: 'rafi', name: 'Rafi Securities', kind: 'psx', brokerFilter: 'Rafi', icon: 'R', builtin: true, desc: 'CDC broker account 6773' },
+    { id: 'akd', name: 'AKD Securities', kind: 'psx', brokerFilter: 'AKD', icon: 'A', builtin: true, desc: 'Account COAF55870' },
+    { id: 'cdc', name: 'CDC Custody', kind: 'psx', brokerFilter: 'CDC', icon: 'C', builtin: true, desc: 'Central depository · IPO allotments' },
     { id: 'funds', name: 'Islamic Funds', kind: 'funds', icon: '☪', builtin: true, desc: 'Meezan · AMC units' },
     { id: 'usa', name: 'US Equities', kind: 'intl', icon: '🇺🇸', builtin: true, desc: 'IBKR · US stocks & crypto' },
   ];
+
+  function _brokerMatch(txBroker, filter) {
+    if (!filter) return true;
+    const b = String(txBroker || '').toLowerCase();
+    const f = String(filter).toLowerCase();
+    if (f === 'rafi') return b === 'rafi' || b.includes('6773');
+    if (f === 'akd') return b === 'akd' || b.includes('coaf');
+    if (f === 'cdc') return b === 'cdc';
+    return b === f;
+  }
+
+  function inferPsxBucketId(tx) {
+    const b = String(tx?.broker || '').toLowerCase();
+    if (tx?.type === 'IPO_SUBSCRIBE') return 'cdc';
+    if (b === 'akd' || b.includes('coaf')) return 'akd';
+    if (b === 'cdc') return 'cdc';
+    return 'rafi';
+  }
 
   function inferBuiltinId(tx) {
     const t = tx?.type || '';
     if (['CONTRIBUTION', 'FUND_OUT', 'REDEMPTION'].includes(t)) return 'funds';
     if (['INTL_BUY', 'INTL_SELL'].includes(t) || tx.assetClass === 'intl') return 'usa';
     if (['CRYPTO_BUY', 'CRYPTO_SELL'].includes(t) || tx.assetClass === 'crypto') return 'usa';
-    if (['BUY', 'SELL', 'DIVIDEND', 'IPO_SUBSCRIBE'].includes(t) && tx.symbol) return 'psx';
+    if (['BUY', 'SELL', 'DIVIDEND', 'IPO_SUBSCRIBE'].includes(t) && tx.symbol) return inferPsxBucketId(tx);
     return null;
   }
 
@@ -43,10 +63,12 @@ const PortfolioBuckets = (() => {
 
     let rows = [];
     if (bucket.kind === 'psx') {
-      rows = Ledger.calcHoldings(txs).map(h => {
-        const price = State.getPrice(h.symbol) || h.avgCost;
-        return { value: h.shares * price, cost: h.shares * h.avgCost };
-      });
+      rows = Ledger.calcHoldings(txs)
+        .filter(h => !bucket.brokerFilter || _brokerMatch(h.broker, bucket.brokerFilter))
+        .map(h => {
+          const price = State.getPrice(h.symbol) || h.avgCost;
+          return { value: h.shares * price, cost: h.shares * h.avgCost };
+        });
     } else if (bucket.kind === 'funds') {
       rows = Ledger.calcFundHoldings(txs).map(f => {
         const nav = State.getPrice(f.symbol) || f.avgNav;
@@ -88,7 +110,9 @@ const PortfolioBuckets = (() => {
     const slice = { ...state, transactions: txs };
     const all = PortfolioAnalyticsService.getHoldings(slice);
     if (bucket.builtin) {
-      if (bucket.id === 'psx') return all.filter(h => h.kind === 'stock');
+      if (bucket.kind === 'psx') {
+        return all.filter(h => h.kind === 'stock' && (!bucket.brokerFilter || _brokerMatch(h.broker, bucket.brokerFilter)));
+      }
       if (bucket.id === 'funds') return all.filter(h => h.kind === 'fund');
       if (bucket.id === 'usa') return all.filter(h => h.kind === 'intl' || h.kind === 'crypto');
     }
@@ -100,6 +124,11 @@ const PortfolioBuckets = (() => {
     if (kind === 'intl') return 'INTL_BUY';
     if (kind === 'crypto') return 'CRYPTO_BUY';
     return 'BUY';
+  }
+
+  function defaultBroker(bucketId) {
+    const b = BUILTIN.find(x => x.id === bucketId);
+    return b?.brokerFilter || null;
   }
 
   function cardsHtml(state, opts) {
@@ -135,14 +164,14 @@ const PortfolioBuckets = (() => {
     }).join('');
     const add = `<button type="button" class="lc-portfolio-card lc-portfolio-card--add" onclick="App.openAddPortfolio()" aria-label="Add portfolio">
       <span class="lc-portfolio-card-icon" aria-hidden="true">+</span>
-      <div class="lc-portfolio-card-body"><strong>Add portfolio</strong><span class="lc-portfolio-card-desc">USA · crypto · PSX · funds</span></div>
+      <div class="lc-portfolio-card-body"><strong>Add portfolio</strong><span class="lc-portfolio-card-desc">Custom USA · crypto · PSX ledger</span></div>
     </button>`;
     return cards + add;
   }
 
   return {
-    BUILTIN, list, inferBuiltinId, txsForBucket, statsForBucket, bucketSparkline,
-    getHoldingsForBucket, defaultTxType, cardsHtml,
+    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, bucketSparkline,
+    getHoldingsForBucket, defaultTxType, defaultBroker, cardsHtml, _brokerMatch,
   };
 })();
 window.PortfolioBuckets = PortfolioBuckets;
