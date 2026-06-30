@@ -103,10 +103,8 @@ const App = (() => {
       !needle || s.symbol.includes(needle) || (s.name || '').toUpperCase().includes(needle)
     ).slice(0, 12);
     pick.innerHTML = rows.map(s =>
-      `<button type="button" class="lc-intl-pick" onclick="App._pickIntlSymbol('${s.symbol}')"><strong>${s.symbol}</strong><span>${s.name || ''}</span></button>`
+      `<button type="button" class="lc-intl-pick" onmousedown="event.preventDefault();App._pickIntlSymbol('${s.symbol}')"><strong>${s.symbol}</strong><span>${s.name || ''}</span></button>`
     ).join('') || '<p class="psx-muted">No matches</p>';
-    if (!needle && hidden?.value) return;
-    if (rows.length && hidden && !hidden.value) _pickIntlSymbol(rows[0].symbol);
   }
 
   function _pickIntlSymbol(sym) {
@@ -191,7 +189,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=79').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=80').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();

@@ -88,9 +88,15 @@ const Prices = (() => {
     points = points || 30;
     const sym = (symbol || '').toUpperCase();
     const intl = (window.INTL_STOCKS || []).find(s => s.symbol === sym);
-    if (intl) {
-      const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(intl.yahoo || sym)}`);
-      const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v => v != null) || [];
+    const crypto = (window.CRYPTO_ASSETS || []).find(c => c.symbol === sym);
+    if (intl || crypto) {
+      const yahoo = intl?.yahoo || sym;
+      let data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
+      let closes = _yahooCloses(data);
+      if (closes.length < 2) {
+        data = await _fetchPublicProxy(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=3mo`);
+        closes = _yahooCloses(data);
+      }
       if (closes.length >= 2) return closes.slice(-points);
     }
     const raw = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
@@ -98,6 +104,20 @@ const Prices = (() => {
     if (!Array.isArray(rows) || rows.length < 2) return [];
     const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
     return sorted.slice(-points).map(r => parseFloat(r[1])).filter(n => n > 0);
+  }
+
+  function _yahooCloses(data) {
+    const result = data?.chart?.result?.[0];
+    if (!result) return [];
+    const q = result.indicators?.quote?.[0];
+    if (result.timestamp && q?.close) {
+      return result.timestamp
+        .map((_, i) => q.close[i])
+        .filter(v => v != null && Number.isFinite(v) && v > 0);
+    }
+    const adj = result.indicators?.adjclose?.[0]?.adjclose;
+    if (Array.isArray(adj)) return adj.filter(v => v != null && v > 0);
+    return [];
   }
 
   async function _fetchAppProxy(url, attempt = 0) {
@@ -238,8 +258,12 @@ const Prices = (() => {
   async function fetchIntlSymbol(symbol) {
     const meta = (window.INTL_STOCKS || []).find(s => s.symbol === symbol);
     const yahoo = meta?.yahoo || symbol;
-    const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
-    const parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
+    let data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
+    let parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
+    if (!parsed) {
+      data = await _fetchPublicProxy(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=5d`);
+      parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
+    }
     if (parsed) return parsed;
     const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
     return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
@@ -315,6 +339,22 @@ const Prices = (() => {
 
   async function fetchStock(symbol) {
     if (FUND_SYMBOLS.has(symbol)) return fundNavFallback(symbol);
+
+    if ((window.CRYPTO_ASSETS || []).some(c => c.symbol === symbol)) {
+      const r = await fetchCryptoSymbol(symbol);
+      if (r && typeof FxService !== 'undefined') {
+        return { ...r, price: FxService.usdToPkr(r.priceUsd || r.price) };
+      }
+      return r;
+    }
+
+    if ((window.INTL_STOCKS || []).some(s => s.symbol === symbol)) {
+      const r = await fetchIntlSymbol(symbol);
+      if (r && typeof FxService !== 'undefined') {
+        return { ...r, price: FxService.usdToPkr(r.priceUsd || r.price) };
+      }
+      return r;
+    }
 
     const psx = await fetchPsxSymbol(symbol);
     if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };

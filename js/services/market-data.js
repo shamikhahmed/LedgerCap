@@ -2,9 +2,18 @@
 const MarketDataService = (() => {
   const _cache = {};
 
+  function _isGlobal(symbol) {
+    return (window.INTL_STOCKS || []).some(s => s.symbol === symbol)
+      || (window.CRYPTO_ASSETS || []).some(c => c.symbol === symbol);
+  }
+
   function _price(symbol) {
     const p = State.getPrice(symbol);
     if (p > 0) return p;
+    if (_isGlobal(symbol)) {
+      const usd = State.get()?.prices?.[symbol]?.priceUsd || (window.GLOBAL_FALLBACK_USD || {})[symbol];
+      if (usd > 0 && typeof FxService !== 'undefined') return FxService.usdToPkr(usd);
+    }
     const fp = (window.FALLBACK_PRICES || {})[symbol];
     if (fp > 0) return fp;
     const mf = (window.MEEZAN_FUNDS || []).find(f => f.symbol === symbol);
@@ -14,6 +23,11 @@ const MarketDataService = (() => {
   function _prevClose(symbol) {
     const prev = State.getPrevClose(symbol);
     if (prev > 0) return prev;
+    if (_isGlobal(symbol)) {
+      const st = State.get()?.prices?.[symbol];
+      const usd = st?.prevClose || st?.priceUsd || (window.GLOBAL_FALLBACK_USD || {})[symbol];
+      if (usd > 0 && typeof FxService !== 'undefined') return FxService.usdToPkr(usd * 0.999);
+    }
     const p = _price(symbol);
     return p * 0.998;
   }

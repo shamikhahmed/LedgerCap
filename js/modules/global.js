@@ -28,42 +28,65 @@ const Global = (() => {
     return { list, holdings, count: catalog.length };
   }
 
+  function _listHtml(list) {
+    const shown = list.slice(0, 80);
+    return `
+      ${shown.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
+        <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
+        <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="lc-market-chg">${r.held ? r.qty + ' held' : PsxUI.fmt(r.pkr)}</div>
+      </button>`).join('')}
+      ${list.length > 80 ? `<p class="lc-search-empty">Showing 80 of ${list.length} — keep typing to narrow</p>` : ''}
+      ${!list.length ? `<p class="lc-search-empty">No matches for “${_query.replace(/"/g, '&quot;')}”</p>` : ''}`;
+  }
+
+  function _paintList() {
+    const listEl = document.getElementById('global-list');
+    const showingEl = document.getElementById('global-showing');
+    if (!listEl) { render(); return; }
+    const { list } = _rows();
+    listEl.innerHTML = _listHtml(list);
+    if (showingEl) showingEl.textContent = String(Math.min(80, list.length)) + (list.length > 80 ? '+' : '');
+  }
+
   function render() {
     const screen = document.getElementById('screen-global');
     if (!screen) return;
     const usdRate = FxService.getUsdRate();
     const { list, holdings, count } = _rows();
-    const shown = list.slice(0, 80);
+    const heldCount = holdings.filter(h => _tab === 'crypto' ? h.assetClass === 'crypto' : h.assetClass !== 'crypto').length;
 
-    screen.innerHTML = PsxUI.lcDash('Global markets', `USD/PKR ₨${usdRate.toLocaleString('en-PK')} · ${count} US symbols + crypto`, `
+    screen.innerHTML = PsxUI.lcDash('Global markets', `USD/PKR ₨${usdRate.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${count} US symbols + crypto`, `
       ${PsxUI.segment([
         { id: 'intl', label: 'US equities' },
         { id: 'crypto', label: 'Crypto' },
       ], _tab, 'Global', 'setTab')}
-      <div class="lc-search"><input type="search" placeholder="Search ${_tab === 'crypto' ? 'crypto' : 'US ticker'}…" value="${_query.replace(/"/g, '&quot;')}" oninput="Global._onSearch(this.value)"></div>
+      <div class="lc-search-wrap">
+        <input type="search" id="global-search" placeholder="Search ${_tab === 'crypto' ? 'crypto' : 'US ticker'}…" value="${_query.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Search global symbols">
+        <p class="lc-search-hint">Type to shortlist — list updates without leaving the field</p>
+      </div>
       <div class="lc-pulse-row">
-        <div class="lc-pulse-pill"><label>Your positions</label><b>${holdings.filter(h => _tab === 'crypto' ? h.assetClass === 'crypto' : h.assetClass !== 'crypto').length}</b></div>
+        <div class="lc-pulse-pill"><label>Your positions</label><b>${heldCount}</b></div>
         <div class="lc-pulse-pill"><label>Catalog</label><b>${count}</b></div>
-        <div class="lc-pulse-pill"><label>Showing</label><b>${shown.length}${list.length > 80 ? '+' : ''}</b></div>
+        <div class="lc-pulse-pill"><label>Showing</label><b id="global-showing">${Math.min(80, list.length)}${list.length > 80 ? '+' : ''}</b></div>
       </div>
-      <div class="lc-sector-card">
-        ${shown.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}');Navigation.go('research')">
-          <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
-          <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
-          <div class="lc-market-chg">${r.held ? r.qty + ' held' : PsxUI.fmt(r.pkr)}</div>
-        </button>`).join('')}
-      </div>
-      ${list.length > 80 ? `<p style="padding:0 16px 8px;font-size:13px;color:var(--psx-text-3)">Refine search to see more than 80 rows.</p>` : ''}
+      <div class="lc-sector-card" id="global-list">${_listHtml(list)}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-primary" onclick="Global._refreshQuotes()">Refresh FX &amp; quotes</button>
         <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction('INTL_BUY')">Add US stock</button>
         <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction('CRYPTO_BUY')">Add crypto</button>
       </div>
     `);
+
+    const inp = document.getElementById('global-search');
+    if (inp && !inp.dataset.bound) {
+      inp.dataset.bound = '1';
+      inp.addEventListener('input', e => { _query = e.target.value; _paintList(); });
+    }
   }
 
-  function setTab(t) { _tab = t; render(); }
-  function _onSearch(q) { _query = q; render(); }
+  function setTab(t) { _tab = t; _query = ''; render(); }
+  function _onSearch(q) { _query = q; _paintList(); }
   return { render, setTab, _onSearch, _refreshQuotes };
 })();
 window.Global = Global;

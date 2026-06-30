@@ -2,6 +2,7 @@
 const Research = (() => {
   let _symbol = null;
   let _mode = 'stock';
+  let _searchQ = '';
 
   function setMode(mode) {
     _mode = mode === 'portfolio' ? 'portfolio' : 'stock';
@@ -11,10 +12,39 @@ const Research = (() => {
 
   function open(symbol) {
     _symbol = symbol;
+    _searchQ = '';
     _mode = 'stock';
     try { sessionStorage.setItem('ledgercap_research_mode', 'stock'); } catch (_) {}
     if (typeof Navigation !== 'undefined') Navigation.go('research', true);
     render();
+  }
+
+  function pickSymbol(sym) {
+    if (!sym) return;
+    _symbol = sym;
+    _searchQ = '';
+    render();
+  }
+
+  function _catalogSearch(q) {
+    const needle = (q || '').trim().toUpperCase();
+    if (!needle) return StockService.listSymbols().slice(0, 24);
+    const out = [];
+    const seen = new Set();
+    const push = sym => { if (sym && !seen.has(sym)) { seen.add(sym); out.push(sym); } };
+    [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].forEach(s => {
+      if (s.symbol.includes(needle) || (s.name || '').toUpperCase().includes(needle)) push(s.symbol);
+    });
+    (window.INTL_STOCKS || []).forEach(s => {
+      if (s.symbol.includes(needle) || (s.name || '').toUpperCase().includes(needle)) push(s.symbol);
+    });
+    (window.CRYPTO_ASSETS || []).forEach(s => {
+      if (s.symbol.includes(needle) || (s.name || '').toUpperCase().includes(needle)) push(s.symbol);
+    });
+    Object.keys(window.FUNDAMENTALS_DB || {}).forEach(sym => {
+      if (sym.includes(needle)) push(sym);
+    });
+    return out.slice(0, 24);
   }
 
   function _modeSegment() {
@@ -28,6 +58,81 @@ const Research = (() => {
     return `<div class="lc-metric-grid">${cells.map(c => `
       <div class="lc-metric-cell"><label>${c.l}</label><strong class="${c.cls || ''}">${c.v}</strong></div>
     `).join('')}</div>`;
+  }
+
+  function _searchHitsHtml(matches) {
+    if (!matches.length) return `<p class="psx-muted lc-search-empty">No symbols match</p>`;
+    return matches.map(s => {
+      const meta = (window.INTL_STOCKS || []).find(x => x.symbol === s)
+        || (window.CRYPTO_ASSETS || []).find(x => x.symbol === s)
+        || [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === s);
+      const name = meta?.name || '';
+      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${s}')">
+        <strong>${s}</strong><span>${name}</span>
+      </button>`;
+    }).join('');
+  }
+
+  function _usdDisplay(sym, quote) {
+    const st = State.get()?.prices?.[sym];
+    if (st?.priceUsd > 0) return st.priceUsd;
+    if (quote?.price > 0 && typeof FxService !== 'undefined') return FxService.pkrToUsd(quote.price);
+    return (window.GLOBAL_FALLBACK_USD || {})[sym] || 0;
+  }
+
+  function _paintQuote(sym) {
+    const q = MarketDataService.getQuote(sym);
+    const isIntl = (window.INTL_STOCKS || []).some(i => i.symbol === sym);
+    const isCrypto = (window.CRYPTO_ASSETS || []).some(c => c.symbol === sym);
+    const priceEl = document.querySelector('.lc-research-price');
+    const chgEl = document.querySelector('.lc-research-chg');
+    const srcEl = document.querySelector('.lc-research-source');
+    if (priceEl) {
+      priceEl.textContent = (isIntl || isCrypto)
+        ? `$${Number(_usdDisplay(sym, q)).toFixed(2)}`
+        : PsxUI.fmt(q.price);
+    }
+    if (chgEl) {
+      chgEl.textContent = `${PsxUI.fmt(q.changePct, { pct: true, signed: true })} today`;
+      chgEl.className = `lc-research-chg ${q.changePct >= 0 ? 'up' : 'down'}`;
+    }
+    if (srcEl) srcEl.textContent = `Source: ${Prices.sourceLabel(q.source || 'seed')}`;
+  }
+
+  async function _refreshQuote(sym) {
+    if (!sym) return;
+    const isIntl = (window.INTL_STOCKS || []).some(i => i.symbol === sym);
+    const isCrypto = (window.CRYPTO_ASSETS || []).some(c => c.symbol === sym);
+    let raw = null;
+    if (isIntl && typeof Prices !== 'undefined' && Prices.fetchIntlSymbol) {
+      raw = await Prices.fetchIntlSymbol(sym);
+    } else if (isCrypto && typeof Prices !== 'undefined' && Prices.fetchCryptoSymbol) {
+      raw = await Prices.fetchCryptoSymbol(sym);
+    } else if (typeof MarketDataService !== 'undefined' && MarketDataService.fetchLiveQuote) {
+      await MarketDataService.fetchLiveQuote(sym);
+      if (sym === _symbol) _paintQuote(sym);
+      return;
+    }
+    if (raw && (raw.priceUsd > 0 || raw.price > 0) && typeof FxService !== 'undefined') {
+      State.updatePrice(sym, {
+        ...raw,
+        price: FxService.usdToPkr(raw.priceUsd || raw.price),
+        priceUsd: raw.priceUsd || raw.price,
+      });
+    }
+    if (sym !== _symbol) return;
+    _paintQuote(sym);
+    const assetClass = isCrypto ? 'crypto' : isIntl ? 'intl' : 'psx';
+    if (typeof TradingViewUI !== 'undefined') {
+      TradingViewUI.mount('research-tv-chart', sym, assetClass);
+    }
+  }
+
+  function _onSearch(q) {
+    _searchQ = q;
+    const el = document.getElementById('rt-search-results');
+    if (!el) return;
+    el.innerHTML = _searchHitsHtml(_catalogSearch(q));
   }
 
   function render() {
@@ -58,12 +163,17 @@ const Research = (() => {
             <p>Add holdings to analyze</p>
           </div>
           ${_modeSegment()}
+          <div class="lc-search-wrap">
+            <input type="search" placeholder="Search US, PSX, crypto…" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" oninput="Research._onSearch(this.value)" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
+            <div id="rt-search-results" class="lc-search-results" role="listbox"></div>
+          </div>
           <div class="lc-empty-state">
             <h2>No symbols</h2>
-            <p>Import transactions or load demo portfolio first.</p>
+            <p>Search above or add holdings / load demo.</p>
             <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
+      _onSearch(_searchQ);
       return;
     }
 
@@ -73,12 +183,17 @@ const Research = (() => {
     const sd = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === r.symbol);
     const shLabel = sd?.isShariah ? I18n.t('analyze.shariahCompliant') : I18n.t('analyze.notShariah');
     const chgCls = quote.changePct >= 0 ? 'up' : 'down';
+    const isIntl = (window.INTL_STOCKS || []).some(i => i.symbol === r.symbol);
+    const isCrypto = (window.CRYPTO_ASSETS || []).some(c => c.symbol === r.symbol);
+    const priceLabel = (isIntl || isCrypto)
+      ? `$${Number(_usdDisplay(r.symbol, quote)).toFixed(2)}`
+      : PsxUI.fmt(quote.price);
 
     const fundMetrics = !isFund ? _metricGrid([
       { l: 'P/E', v: f.pe ?? '—' },
-      { l: 'Div yield', v: f.divYield ? f.divYield + '%' : '—' },
-      { l: 'ROE', v: f.roe ? f.roe + '%' : '—' },
-      { l: 'EPS', v: f.eps ? '₨' + f.eps : '—' },
+      { l: 'Div yield', v: f.divYield ? Number(f.divYield).toFixed(2) + '%' : '—' },
+      { l: 'ROE', v: f.roe ? Number(f.roe).toFixed(2) + '%' : '—' },
+      { l: 'EPS', v: f.eps ? '₨' + Number(f.eps).toFixed(2) : '—' },
     ]) : '';
 
     const perfMetrics = _metricGrid([
@@ -97,6 +212,8 @@ const Research = (() => {
         { l: 'P&amp;L', v: PsxUI.fmt(position.pnlPct, { pct: true, signed: true }), cls: PsxUI.chgCls(position.pnl) },
       ])}` : '';
 
+    const quickPicks = symbols.slice(0, 16);
+
     screen.innerHTML = `
       <div class="lc-dash">
         <div class="lc-screen-head">
@@ -104,6 +221,10 @@ const Research = (() => {
           <p>${I18n.t('analyze.sub')}</p>
         </div>
         ${_modeSegment()}
+        <div class="lc-search-wrap">
+          <input type="search" placeholder="Search symbol — type to shortlist" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" oninput="Research._onSearch(this.value)" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
+          <div id="rt-search-results" class="lc-search-results" role="listbox">${_searchHitsHtml(_searchQ ? _catalogSearch(_searchQ) : [])}</div>
+        </div>
         <div class="lc-research-hero">
           <div class="lc-research-hero-top">
             <div>
@@ -111,20 +232,17 @@ const Research = (() => {
               <p>${profile.name}${profile.sector ? ' · ' + profile.sector : ''}</p>
             </div>
           </div>
-          <div class="lc-research-price">${PsxUI.fmt(quote.price)}</div>
+          <div class="lc-research-price">${priceLabel}</div>
           <span class="lc-research-chg ${chgCls}">${PsxUI.fmt(quote.changePct, { pct: true, signed: true })} today</span>
-          <p class="lc-card-sub">Source: ${Prices.sourceLabel(quote.source || 'seed')}</p>
+          <p class="lc-card-sub lc-research-source">Source: ${Prices.sourceLabel(quote.source || 'seed')}</p>
         </div>
         <div class="lc-verdict">
           <h3>${I18n.t('analyze.plainEnglish')}</h3>
           <p>${ai.summary}</p>
           <div class="lc-verdict-meta">${shLabel}</div>
         </div>
-        <div class="lc-search">
-          <input type="search" placeholder="Search symbol…" id="rt-search" oninput="Research._onSearch(this.value)" aria-label="Search symbols">
-        </div>
-        <div class="lc-sym-scroll" id="rt-pills">${symbols.slice(0, 28).map(s =>
-          `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" onclick="Research.open('${s}')">${s}</button>`
+        <div class="lc-sym-scroll" id="rt-pills">${quickPicks.map(s =>
+          `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" onclick="Research.pickSymbol('${s}')">${s}</button>`
         ).join('')}</div>
         ${_metricGrid([
           { l: 'Rating', v: ai.action },
@@ -137,26 +255,18 @@ const Research = (() => {
         ${perfMetrics}
         ${positionBlock}
         <div class="lc-chart-block">
-          <div class="lc-dash-section-head"><h3>Chart</h3><span>TradingView</span></div>
-          <div id="research-tv-chart" style="min-height:400px"></div>
+          <div class="lc-dash-section-head"><h3>Price history</h3><span>Last ~30 sessions</span></div>
+          <div id="research-tv-chart" style="min-height:320px"></div>
         </div>
       </div>`;
 
-    const assetClass = (window.CRYPTO_ASSETS || []).some(c => c.symbol === r.symbol) ? 'crypto'
-      : (window.INTL_STOCKS || []).some(i => i.symbol === r.symbol) ? 'intl' : 'psx';
+    const assetClass = isCrypto ? 'crypto' : isIntl ? 'intl' : 'psx';
     if (typeof TradingViewUI !== 'undefined') {
       TradingViewUI.mount('research-tv-chart', r.symbol, assetClass);
     }
+    _refreshQuote(r.symbol);
   }
 
-  function _onSearch(q) {
-    const el = document.getElementById('rt-pills');
-    if (!el) return;
-    el.innerHTML = ResearchService.search(q).slice(0, 28).map(s =>
-      `<button type="button" class="lc-sym-chip${s === _symbol ? ' on' : ''}" onclick="Research.open('${s}')">${s}</button>`
-    ).join('');
-  }
-
-  return { render, open, setMode, _onSearch };
+  return { render, open, pickSymbol, setMode, _onSearch };
 })();
 window.Research = Research;

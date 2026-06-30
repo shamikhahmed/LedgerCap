@@ -1,5 +1,16 @@
 # Changelog — LedgerCap
 
+## 3.15.1 (2026-06-30) — Search focus + chart reliability
+
+### Bug fixes
+- **Stock search** — typing now shortlists in place on Global, Market, Screener, Funds, and Research (no full-screen re-render / lost focus)
+- **US transaction search** — picker no longer hijacks the input on first keystroke
+- **Charts** — TTWO and other US symbols use Yahoo price history SVG instead of offline TradingView embed
+- **US quote price** — intl symbols (e.g. TTWO) show USD live/fallback price instead of ₨0.00
+
+### UX
+- Search dropdown styles (`.lc-search-wrap`, hit list, hints)
+
 ## 3.13.0 (2026-06-30) — Pro UI phase 2: Market + Research
 
 ### Design

@@ -68,9 +68,7 @@ const Market = (() => {
       </div>`).join('');
   }
 
-  function render() {
-    const screen = document.getElementById('screen-market');
-    if (!screen) return;
+  function _filteredRows() {
     let baseRows = _rows();
     if (_filter === 'islamic') baseRows = baseRows.filter(r => r.isShariah);
     const q = _query.trim().toLowerCase();
@@ -81,17 +79,32 @@ const Market = (() => {
         (r.sector || '').toLowerCase().includes(q)
       );
     }
-
     let rows = baseRows;
     if (_moveFilter === 'advancing') rows = baseRows.filter(r => r.chg > 0.05);
     else if (_moveFilter === 'declining') rows = baseRows.filter(r => r.chg < -0.05);
     else if (_moveFilter === 'unchanged') rows = baseRows.filter(r => r.chg >= -0.05 && r.chg <= 0.05);
     if (_sectorFilter) rows = rows.filter(r => (r.sector || 'Other') === _sectorFilter);
-
     if (_moveFilter === 'advancing') rows.sort((a, b) => b.chg - a.chg);
     else if (_moveFilter === 'declining') rows.sort((a, b) => a.chg - b.chg);
     else rows.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    return { baseRows, rows };
+  }
 
+  function _paintList() {
+    const host = document.getElementById('market-list');
+    if (!host) { render(); return; }
+    const { rows } = _filteredRows();
+    const bySector = {};
+    rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
+    host.innerHTML = rows.length
+      ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`)
+      : `<div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol or clear filters.</p></div>`;
+  }
+
+  function render() {
+    const screen = document.getElementById('screen-market');
+    if (!screen) return;
+    const { baseRows, rows } = _filteredRows();
     const bySector = {};
     rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
     const k = PsxUI.kse();
@@ -119,17 +132,24 @@ const Market = (() => {
           </button>
         </div>
         ${_segment()}
-        <div class="lc-search">
-          <input type="search" placeholder="Search symbol, sector…" value="${_query.replace(/"/g, '&quot;')}" oninput="Market._onSearch(this.value)" aria-label="Search stocks">
+        <div class="lc-search-wrap">
+          <input type="search" id="market-search" placeholder="Search symbol, sector…" value="${_query.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Search stocks">
+          <p class="lc-search-hint">Type to shortlist — stays focused while you type</p>
         </div>
         ${_pulseRow(baseRows)}
         ${filterHint}
-        ${rows.length ? _sectorBlocks(bySector, sym => `Navigation.go('research');Research.open('${sym}')`) : `
-          <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}
+        <div id="market-list">${rows.length ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`) : `
+          <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
         <div class="lc-dash-actions">
           <button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button>
         </div>
       </div>`;
+
+    const inp = document.getElementById('market-search');
+    if (inp && !inp.dataset.bound) {
+      inp.dataset.bound = '1';
+      inp.addEventListener('input', e => { _query = e.target.value; _paintList(); });
+    }
   }
 
   function setFilter(f) { _filter = f; render(); }
@@ -137,7 +157,7 @@ const Market = (() => {
   function setSectorFilter(sec) { _sectorFilter = _sectorFilter === sec ? '' : sec; render(); }
   function clearFilters() { _moveFilter = 'all'; _sectorFilter = ''; render(); }
   function moveFilter() { return _moveFilter; }
-  function _onSearch(q) { _query = q; render(); }
+  function _onSearch(q) { _query = q; _paintList(); }
 
   return { render, setFilter, setMoveFilter, setSectorFilter, clearFilters, moveFilter, _onSearch };
 })();
