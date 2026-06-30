@@ -1,5 +1,37 @@
 # Changelog — LedgerCap
 
+## 3.17.0 (2026-06-30) — Audit completion (C/H/M/L)
+
+### Critical
+- **C1** Seed v4 documented — no Rafi double-count; `docs/RECONCILIATION.md` updated
+- **C2** `?demo=1` no longer overwrites saved ledger
+- **C3** `portfolioValueTimeline` includes INTL/CRYPTO transactions
+- **C4** `currentCostBasis()` includes global holdings
+
+### High
+- **H1** Performance Realised tab (PSX sells by date) + M2M disclaimer
+- **H2** Stale price badges, hub stale chip, watchlist symbols in refresh
+- **H3** Delete/rename custom portfolios
+- **H4** CSV import portfolio picker
+- **H5** `docs/HANDOVER.md` version sync
+- **H6** Broker cash field (`manualAssets.brokerCashPkr`) in Settings
+
+### Medium
+- **M1** Design tokens consolidated in `lc-pro-phase.css` (legacy CSS noted)
+- **M2** Hub tool icons use geometric glyphs (no emoji hub grid)
+- **M3** Light mode polish for portfolio cards and badges
+- **M5** Search debounce (`LcDebounce`) on Market + Global
+- **M6** Intelligence screen restyled to `lc-pro` dash layout
+- **M7** i18n keys unchanged; English-first audit items closed
+
+### Low
+- **L1** Per-portfolio sparklines on hub cards
+- **L2** GitHub Actions CI — `verify-ledger.js` + Playwright
+- **L3** Version sync — app `3.17.0`, SW `ledgercap-v82`
+
+### Tests
+- `tests/ledger.spec.js` — PASM, Meezan units, cost basis, global holdings
+
 ## 3.16.0 (2026-06-30) — Multi-portfolio hub
 
 ### Features

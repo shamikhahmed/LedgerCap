@@ -1,13 +1,14 @@
 # App Store Wrapper Audit — LedgerCap
 
-**Date:** 2026-06-30 · **App version:** 3.14.0
+**Date:** 2026-06-30 · **App version:** 3.17.0
 
 ## PWA (GitHub Pages)
 
 | Check | Status | Notes |
 |-------|--------|-------|
 | `manifest.json` | OK | `theme_color` `#000000`, maskable icons |
-| Service worker | OK | `ledgercap-v77`, precaches `us-stocks.js` |
+| Service worker | OK | `ledgercap-v82`, precaches `debounce.js` + `us-stocks.js` |
+| CI | OK | `.github/workflows/ci.yml` — verify-ledger + Playwright |
 | CSP | OK | TradingView + worker origins allowlisted |
 | Offline | OK | Network-first for HTML/JS/CSS |
 | Privacy policy link | OK | `privacy.html` linked from landing |

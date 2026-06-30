@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v81';
+const CACHE = 'ledgercap-v82';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',
@@ -15,7 +15,7 @@ const ASSETS = [
   './js/services/dividend-service.js', './js/services/research-service.js',
   './js/services/portfolio-analytics-service.js', './js/services/portfolio-buckets-service.js', './js/services/fx-service.js',
   './js/engines/pilot-engine.js',
-  './js/ui/charts.js', './js/ui/platform.js', './js/ui/psx-ui.js', './js/ui/tradingview.js', './js/ui/market-ui.js',
+  './js/ui/charts.js', './js/ui/debounce.js', './js/ui/platform.js', './js/ui/psx-ui.js', './js/ui/tradingview.js', './js/ui/market-ui.js',
   './js/lc-desktop-nav.js', './js/lc-terminal.js', './js/ui/navigation.js',
   './js/modules/state.js', './js/modules/investment.js',
   './js/modules/hub.js', './js/modules/market.js', './js/modules/portfolio-screen.js',

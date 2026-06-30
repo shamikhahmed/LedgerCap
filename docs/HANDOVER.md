@@ -1,6 +1,6 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.10.0  
+**Version:** 3.17.0  
 **Last updated:** 30 Jun 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
@@ -46,7 +46,7 @@ index.html
   └── js/modules/more.js            # Secondary tools menu
   └── js/modules/*.js               # Research, dividends, settings, etc.
   └── js/lc-desktop-nav.js          # Desktop sidebar contract (≥900px)
-  └── sw.js                         # Service worker (ledgercap-v73)
+  └── sw.js                         # Service worker (ledgercap-v82)
   └── worker/                    # Cloudflare PSX proxy (optional deploy)
 ```
 

@@ -62,7 +62,7 @@ const Market = (() => {
               <div class="lc-market-sym">${r.symbol}${r.isShariah ? '<span class="lc-badge">S</span>' : ''}</div>
               <div class="lc-market-name">${r.name}</div>
             </div>
-            <div class="lc-market-price">${PsxUI.fmt(r.price)}</div>
+            <div class="lc-market-price">${PsxUI.fmt(r.price)} ${typeof Prices !== 'undefined' && Prices.priceBadge ? Prices.priceBadge(r.symbol) : ''}</div>
             <div class="lc-market-chg ${PsxUI.chgCls(r.chg)}">${PsxUI.fmt(r.chg, { pct: true, signed: true })}</div>
           </button>`).join('')}
       </div>`).join('');
@@ -148,7 +148,10 @@ const Market = (() => {
     const inp = document.getElementById('market-search');
     if (inp && !inp.dataset.bound) {
       inp.dataset.bound = '1';
-      inp.addEventListener('input', e => { _query = e.target.value; _paintList(); });
+      const onInput = typeof LcDebounce !== 'undefined'
+        ? LcDebounce.debounce(e => { _query = e.target.value; _paintList(); }, 120)
+        : e => { _query = e.target.value; _paintList(); };
+      inp.addEventListener('input', onInput);
     }
   }
 

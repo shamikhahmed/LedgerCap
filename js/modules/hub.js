@@ -67,6 +67,22 @@ const Hub = (() => {
     Navigation.go('portfolio', false, { portfolioId: id });
   }
 
+  function _stalePriceChip(state) {
+    const txs = state.transactions || [];
+    const holdings = Ledger.calcHoldings(txs);
+    const funds = Ledger.calcFundHoldings(txs);
+    const global = Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : [];
+    const syms = new Set([
+      ...holdings.map(h => h.symbol),
+      ...funds.map(f => f.symbol),
+      ...global.map(h => h.symbol),
+    ]);
+    let stale = 0;
+    syms.forEach(s => { if (State.isPriceStale(s, 24)) stale++; });
+    if (!stale) return '';
+    return `<button type="button" class="lc-stale-chip" onclick="App.refreshPrices()">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
+  }
+
   function _portfolioSection(state) {
     if (typeof PortfolioBuckets === 'undefined') return '';
     return `<div class="lc-dash-section">
@@ -183,6 +199,7 @@ const Hub = (() => {
         <div class="lc-dash-actions">
           <button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button>
           <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+          ${_stalePriceChip(state)}
         </div>
         <div class="lc-dash-market">
           ${_kseCard(k, sign)}

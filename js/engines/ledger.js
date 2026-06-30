@@ -152,12 +152,18 @@ const Ledger = (() => {
       .reduce((sum, t) => sum + (t.amount || 0), 0);
   }
 
-  /** Net cost basis of open stock + fund positions. */
+  /** Net cost basis of open stock + fund + global positions. */
   function currentCostBasis(transactions) {
     const stocks = calcHoldings(transactions);
     const funds = calcFundHoldings(transactions);
-    return stocks.reduce((sum, h) => sum + (h.totalCost || 0), 0)
+    const local = stocks.reduce((sum, h) => sum + (h.totalCost || 0), 0)
       + funds.reduce((sum, f) => sum + (f.totalInvested || 0), 0);
+    const global = calcGlobalHoldings(transactions).reduce((sum, h) => {
+      const usd = h.totalCostUsd != null ? h.totalCostUsd : h.qty * (h.avgCostUsd || 0);
+      if (typeof FxService !== 'undefined') return sum + FxService.usdToPkr(usd);
+      return sum + usd * 280;
+    }, 0);
+    return local + global;
   }
 
   function unrealisedPnl(transactions, priceFn) {
@@ -223,31 +229,62 @@ const Ledger = (() => {
     return byDate;
   }
 
-  function _portfolioSnapshot(stockHoldings, fundHoldings, priceFn) {
+  function _portfolioSnapshot(stockHoldings, fundHoldings, priceFn, globalHoldings) {
     let value = 0;
     let cost = 0;
-    Object.values(stockHoldings).forEach(h => {
+    Object.values(stockHoldings || {}).forEach(h => {
       if (h.shares <= 0) return;
       const px = priceFn(h.symbol, h.avgCost, 'stock');
       value += h.shares * px;
       cost += h.totalCost;
     });
-    Object.values(fundHoldings).forEach(f => {
+    Object.values(fundHoldings || {}).forEach(f => {
       if (f.units <= 0) return;
       const px = priceFn(f.symbol, f.avgNav, 'fund');
       value += f.units * px;
       cost += f.totalInvested;
     });
+    Object.values(globalHoldings || {}).forEach(h => {
+      if (h.qty <= 0) return;
+      const costPkr = typeof FxService !== 'undefined'
+        ? FxService.usdToPkr(h.totalCostUsd != null ? h.totalCostUsd : h.qty * (h.avgCostUsd || 0))
+        : (h.totalCostUsd || h.qty * (h.avgCostUsd || 0)) * 280;
+      const px = priceFn(h.symbol, costPkr / (h.qty || 1), 'global');
+      value += h.qty * px;
+      cost += costPkr;
+    });
     return { value, cost, unrealised: value - cost };
+  }
+
+  function _applyGlobalTx(globalLedger, t) {
+    if (!t.symbol) return;
+    const ac = t.assetClass || (String(t.type).startsWith('CRYPTO') ? 'crypto' : 'intl');
+    const key = _globalKey(t.symbol, ac, t.broker);
+    if (!globalLedger[key]) {
+      globalLedger[key] = { symbol: t.symbol, broker: t.broker || 'IBKR', assetClass: ac, qty: 0, totalCostUsd: 0, avgCostUsd: 0 };
+    }
+    const qty = t.shares || t.qty || 0;
+    if (t.type === 'INTL_BUY' || t.type === 'CRYPTO_BUY') {
+      const costUsd = t.costUsd != null ? t.costUsd : (t.priceUsd || 0) * qty;
+      globalLedger[key].qty += qty;
+      globalLedger[key].totalCostUsd += costUsd;
+    } else if (t.type === 'INTL_SELL' || t.type === 'CRYPTO_SELL') {
+      const sold = Math.min(qty, globalLedger[key].qty);
+      const avg = globalLedger[key].qty > 0 ? globalLedger[key].totalCostUsd / globalLedger[key].qty : 0;
+      globalLedger[key].qty -= sold;
+      globalLedger[key].totalCostUsd = globalLedger[key].qty > 0 ? avg * globalLedger[key].qty : 0;
+    }
+    globalLedger[key].avgCostUsd = globalLedger[key].qty > 0 ? globalLedger[key].totalCostUsd / globalLedger[key].qty : 0;
   }
 
   function portfolioValueTimeline(transactions, priceFn) {
     const sorted = (transactions || [])
-      .filter(t => t.date && ['BUY', 'SELL', 'CONTRIBUTION', 'FUND_OUT', 'REDEMPTION', 'IPO_SUBSCRIBE'].includes(t.type))
+      .filter(t => t.date && ['BUY', 'SELL', 'CONTRIBUTION', 'FUND_OUT', 'REDEMPTION', 'IPO_SUBSCRIBE', 'INTL_BUY', 'INTL_SELL', 'CRYPTO_BUY', 'CRYPTO_SELL'].includes(t.type))
       .sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || '')));
 
     const stockLedger = {};
     const fundLedger = {};
+    const globalLedger = {};
     const byDate = {};
     const px = (sym, fallback, _kind) => {
       const p = priceFn ? priceFn(sym, fallback) : fallback;
@@ -275,6 +312,8 @@ const Ledger = (() => {
         const shares = t.allottedShares || t.shares || 0;
         const cost = t.amount || shares * (t.listingPrice || 0);
         _addShares(stockLedger, t.symbol, CDC_BROKER, shares, cost);
+      } else if (['INTL_BUY', 'INTL_SELL', 'CRYPTO_BUY', 'CRYPTO_SELL'].includes(t.type)) {
+        _applyGlobalTx(globalLedger, t);
       }
 
       const stockHoldings = {};
@@ -283,7 +322,7 @@ const Ledger = (() => {
           stockHoldings[key] = { ...h, avgCost: h.shares > 0 ? h.totalCost / h.shares : 0 };
         }
       });
-      const snap = _portfolioSnapshot(stockHoldings, fundLedger, px);
+      const snap = _portfolioSnapshot(stockHoldings, fundLedger, px, globalLedger);
       byDate[t.date] = { date: t.date, value: snap.value, cost: snap.cost, unrealised: snap.unrealised };
     });
 
@@ -292,11 +331,18 @@ const Ledger = (() => {
     if (points.length) {
       const holdings = calcHoldings(transactions);
       const funds = calcFundHoldings(transactions);
+      const globals = calcGlobalHoldings(transactions);
       const stockMap = {};
       holdings.forEach(h => { stockMap[_holdingKey(h.symbol, h.broker)] = h; });
       const fundMap = {};
       funds.forEach(f => { fundMap[f.symbol] = { ...f, avgNav: f.avgNav }; });
-      const live = _portfolioSnapshot(stockMap, fundMap, px);
+      const globalMap = {};
+      globals.forEach(h => {
+        globalMap[_globalKey(h.symbol, h.assetClass, h.broker)] = {
+          ...h, totalCostUsd: h.totalCostUsd, avgCostUsd: h.avgCostUsd,
+        };
+      });
+      const live = _portfolioSnapshot(stockMap, fundMap, px, globalMap);
       const last = points[points.length - 1];
       if (last.date !== today || Math.abs(last.value - live.value) > 1) {
         points.push({ date: today, value: live.value, cost: live.cost, unrealised: live.unrealised });

@@ -123,6 +123,34 @@ const App = (() => {
     if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
   }
 
+  function deletePortfolio(id) {
+    if (typeof PortfolioBuckets === 'undefined') return;
+    const b = PortfolioBuckets.list().find(x => x.id === id);
+    if (!b || b.builtin) { showToast('Built-in portfolios cannot be deleted', 'warning'); return; }
+    const txs = PortfolioBuckets.txsForBucket(State.get(), id);
+    if (txs.length && !confirm(`Delete “${b.name}” and ${txs.length} transaction(s)? Cannot undo.`)) return;
+    State.update(s => {
+      s.portfolios = (s.portfolios || []).filter(p => p.id !== id);
+      if (txs.length) s.transactions = (s.transactions || []).filter(t => t.portfolioId !== id);
+    });
+    showToast(`Deleted ${b.name}`, 'success');
+    if (typeof Hub !== 'undefined') Hub.render();
+    if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
+  }
+
+  function renamePortfolio(id) {
+    const b = PortfolioBuckets.list().find(x => x.id === id);
+    if (!b || b.builtin) return;
+    const name = prompt('Portfolio name', b.name);
+    if (!name || !name.trim()) return;
+    State.update(s => {
+      const p = (s.portfolios || []).find(x => x.id === id);
+      if (p) p.name = name.trim();
+    });
+    showToast('Portfolio renamed', 'success');
+    renderCurrent();
+  }
+
   function openAddForPortfolio(bucketId) {
     const buckets = typeof PortfolioBuckets !== 'undefined' ? PortfolioBuckets.list() : [];
     const b = (bucketId && buckets.find(x => x.id === bucketId)) || buckets.find(x => x.id === 'psx');
@@ -246,7 +274,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=81').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=82').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -266,7 +294,9 @@ const App = (() => {
     Navigation.init();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
-      Settings.loadSeedData({ silent: true });
+      const hasLedger = (State.get().transactions || []).length > 0;
+      if (!hasLedger) Settings.loadSeedData({ silent: true });
+      else showToast('Demo mode — your saved ledger was kept. Clear data in Settings to load sample portfolio.', 'info');
     }
     if (demo && typeof CapDemo !== 'undefined') {
       CapDemo.markActive();
@@ -324,10 +354,12 @@ const App = (() => {
     const transactions = state.transactions || [];
     const holdings = Ledger.calcHoldings(transactions);
     const fundHoldings = Ledger.calcFundHoldings(transactions);
+    const watchlist = (state.watchlist || []).map(w => w.symbol).filter(Boolean);
     const symbols = [...new Set([
       ...holdings.map(h => h.symbol),
       ...fundHoldings.map(f => f.symbol),
       ...(Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(transactions).map(h => h.symbol) : []),
+      ...watchlist,
     ])];
 
     if (typeof FxService !== 'undefined') await FxService.refreshUsdPkr();
@@ -800,7 +832,7 @@ const App = (() => {
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
-    openAddPortfolio, _submitPortfolio, openAddForPortfolio };
+    openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio };
 })();
 window.App = App;
 

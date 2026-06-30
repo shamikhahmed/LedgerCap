@@ -1,55 +1,50 @@
-# LedgerCap Reconciliation — 16 Jun 2026
+# LedgerCap Reconciliation — 30 Jun 2026
 
-v3.5.1 / seed v4 — calculation + UI fixes (local; push to deploy on GitHub Pages).
+**App 3.17.0** · **Seed v4** · commit after audit pass.
 
-## Live vs local (commit `884bdf7` vs disk)
+## C1 — Rafi seed double-count (closed)
 
-| Metric | Live (884bdf7) | Local (v3.5.1) | Notes |
-|--------|----------------|----------------|-------|
-| Dashboard “Invested” | Gross ₨2,375,415 | **Cost basis ₨1,697,568** | `State.calcTotalCost()` → `currentCostBasis()` |
-| All-time return % | ~−24% (inflated denominator) | **+5.73%** (fallback NAVs) | `(value − cost) / cost` |
-| MIIF-B gain % | ~−88% (wrong basis / stale) | **+1.64%** | Ledger `avgNav` 55.31 vs NAV 56.22 |
-| Growth Quality score | 120/100 | **100/100** (clamped) | Intel scores capped 0–100 |
-| Dividend Quality | Long decimals | **Integer /100** | Rounded display |
-| PASM AKD | 1,555 @ 8.41 | **1,555 @ 8.41** | OK both |
-| Meezan fund units | Match PDF | **All 7 OK** | See verify script |
+Seed v4 uses **2026-04-02** opening balances only. No duplicate Rafi CDC layer on top of trade log. Fund converts tagged `internal: true` so `totalInvested()` gross stays legacy-only; UI metrics use `currentCostBasis()`.
 
-Run verification:
+Verify:
 
 ```bash
 cd LedgerCap && node scripts/verify-ledger.js
 ```
 
-## Engine changes (v3.5.0 → v3.5.1)
+Expected: cost basis ≈ **₨1,697,568**, PASM **1,555 @ 8.41**, all 7 Meezan units OK.
+
+## Live vs local (historical)
+
+| Metric | Live (884bdf7) | Local (v3.17.0) | Notes |
+|--------|----------------|-----------------|-------|
+| Dashboard “Invested” | Gross ₨2,375,415 | **Cost basis ₨1,697,568** | `State.calcTotalCost()` → `currentCostBasis()` |
+| All-time return % | ~−24% (inflated denominator) | **+5.73%** (fallback NAVs) | `(value − cost) / cost` |
+| PASM AKD | 1,555 @ 8.41 | **1,555 @ 8.41** | OK |
+| Meezan fund units | Match PDF | **All 7 OK** | See verify script |
+
+## Engine changes (v3.5 → v3.17)
 
 | Change | File |
 |--------|------|
-| `currentCostBasis()` for return metrics | `ledger.js`, `state.js`, `investment.js` |
+| `currentCostBasis()` incl. global | `ledger.js`, `state.js` |
+| Global txs in portfolio timeline | `ledger.js` |
+| Demo mode preserves user ledger | `app.js` |
+| Broker cash in net worth | `state.js`, `settings.js` |
 | Sell clamping, sorted holdings | `ledger.js` |
-| Home sparkline stocks + funds | `home.js` |
-| Performance cost basis header | `performance.js` |
-| Intel scores clamped 0–100 | `portfolio-analytics-service.js`, `intelligence.js` |
-| PSX proxy fail → Yahoo/CORS/fallback, no CORS block | `prices.js` |
-| Desktop full-width shell (VaultCap pattern) | `app.css`, `ledger-os.css` |
-| Proxy timeseries sort-by-timestamp | `prices.js`, `worker/src/index.js` |
 
-## Seed v4 (unchanged version bump)
-
-- Opening date 2026-04-02; EFERT/PPL oversell fixes
-- Fund converts tagged `internal: true`
-
-## Still open
+## Still approximate (documented)
 
 | Issue | Impact |
 |-------|--------|
-| MBF→MIIF Apr-28 convert: ₨35k cost leaves MBF without MIIF-B receipt | **Closed** — portfolio cost basis matches AMC fund `investedValue` totals (₨634,776); internal convert redistributes cost between MBF/MIIF-B without changing portfolio total |
-| Daily/monthly M2M performance uses today's prices on past dates | Performance tab approximate |
-| PSX worker often returns Cloudflare 520 | App falls back to Yahoo + `FALLBACK_PRICES` |
-| Rafi opening + trade log still noisy in transaction history | Gross `totalInvested()` legacy only |
+| Daily/monthly M2M performance | Uses today's prices on past dates — see Performance disclaimer |
+| PSX worker 520 | Falls back to Yahoo + `FALLBACK_PRICES` |
+| AKD uninvested cash | Manual field in Settings (~₨9k typical) |
+| INTL realised P&L tab | PSX only in v3.17; global sells next release |
 
 ## Deploy checklist
 
-1. Push all modified files to `main`
-2. Hard refresh or clear site data (seed v4 migrates on load)
-3. Optional: `cd worker && npx wrangler deploy` for sorted proxy response
-4. Confirm Settings → seed version 4, dashboard invested ≈ ₨1.70M
+1. Push to `main` → GitHub Pages
+2. Hard refresh (`sw.js` **ledgercap-v82**)
+3. `node scripts/verify-ledger.js` && `npm test`
+4. Settings → confirm seed version 4, invested ≈ ₨1.70M

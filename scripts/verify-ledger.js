@@ -8,9 +8,10 @@ const fs = require('fs');
 const vm = require('vm');
 
 const root = __dirname.replace(/\/scripts$/, '');
-const ctx = { window: {} };
+const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280 } } };
 vm.createContext(ctx);
 
+vm.runInContext(fs.readFileSync(`${root}/js/services/fx-service.js`, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(`${root}/js/data/holdings.js`, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(`${root}/js/engines/ledger.js`, 'utf8'), ctx);
 
@@ -22,6 +23,7 @@ const costBasis = Math.round(L.currentCostBasis(txs));
 const gross = Math.round(L.totalInvested(txs));
 const holdings = L.calcHoldings(txs);
 const funds = L.calcFundHoldings(txs);
+const global = L.calcGlobalHoldings ? L.calcGlobalHoldings(txs) : [];
 
 let marketValue = 0;
 holdings.forEach(h => {
@@ -31,6 +33,10 @@ holdings.forEach(h => {
 funds.forEach(f => {
   const nav = FALLBACK_PRICES[f.symbol] || f.avgNav;
   marketValue += f.units * nav;
+});
+global.forEach(h => {
+  const usd = (FALLBACK_PRICES[h.symbol] ? FALLBACK_PRICES[h.symbol] / 280 : null) || h.avgCostUsd || 0;
+  marketValue += h.qty * ctx.window.FxService.usdToPkr(usd);
 });
 
 const gain = marketValue - costBasis;
@@ -42,6 +48,7 @@ console.log('Cost basis:   ₨' + costBasis.toLocaleString('en-PK'));
 console.log('Gross invested: ₨' + gross.toLocaleString('en-PK'), '(legacy metric — do not use for return %)');
 console.log('Market value: ₨' + Math.round(marketValue).toLocaleString('en-PK'), '(fallback prices)');
 console.log('Gain:         ₨' + Math.round(gain).toLocaleString('en-PK'), `(${gainPct.toFixed(2)}%)`);
+console.log('Global positions:', global.length);
 
 const pasm = holdings.find(h => h.symbol === 'PASM');
 console.log('\nPASM:', pasm ? `${pasm.shares} @ ${pasm.avgCost.toFixed(2)}` : 'MISSING');

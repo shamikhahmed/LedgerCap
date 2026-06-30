@@ -33,7 +33,7 @@ const Global = (() => {
     return `
       ${shown.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
         <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
-        <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${typeof Prices !== 'undefined' && Prices.priceBadge ? Prices.priceBadge(r.symbol) : ''}</div>
         <div class="lc-market-chg">${r.held ? r.qty + ' held' : PsxUI.fmt(r.pkr)}</div>
       </button>`).join('')}
       ${list.length > 80 ? `<p class="lc-search-empty">Showing 80 of ${list.length} — keep typing to narrow</p>` : ''}
@@ -81,7 +81,10 @@ const Global = (() => {
     const inp = document.getElementById('global-search');
     if (inp && !inp.dataset.bound) {
       inp.dataset.bound = '1';
-      inp.addEventListener('input', e => { _query = e.target.value; _paintList(); });
+      const onInput = typeof LcDebounce !== 'undefined'
+        ? LcDebounce.debounce(e => { _query = e.target.value; _paintList(); }, 120)
+        : e => { _query = e.target.value; _paintList(); };
+      inp.addEventListener('input', onInput);
     }
   }
 

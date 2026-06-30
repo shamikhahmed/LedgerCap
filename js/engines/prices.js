@@ -472,12 +472,23 @@ const Prices = (() => {
       coingecko: 'Crypto',
       meezan_seed: 'Meezan NAV',
       fallback: 'Last known',
-      manual: 'Manual'
+      manual: 'Manual',
+      stale: 'Stale'
     };
     return map[source] || source || '—';
   }
 
-  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries };
+  function priceBadge(symbol) {
+    if (typeof State === 'undefined') return '';
+    const src = State.getPriceSource(symbol);
+    const stale = State.isPriceStale(symbol, 24);
+    const age = State.priceAgeLabel(symbol);
+    const label = stale ? 'Stale' : sourceLabel(src);
+    const cls = stale ? 'lc-price-badge lc-price-badge--stale' : 'lc-price-badge';
+    return `<span class="${cls}" title="${age || ''}">${label}${age && !stale ? ' · ' + age : ''}</span>`;
+  }
+
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {

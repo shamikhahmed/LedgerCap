@@ -669,3 +669,50 @@ body.lc-rtl .psx-sidebar {
   color: var(--psx-text-2);
   font-weight: 500;
 }
+
+.lc-portfolio-card { position: relative; }
+.lc-portfolio-spark { margin-top: 6px; opacity: 0.9; }
+.lc-portfolio-spark .lc-chart-svg { max-height: 28px; }
+.lc-portfolio-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.lc-price-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  color: var(--psx-text-2);
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.lc-price-badge--stale { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.lc-stale-chip {
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+}
+[data-theme="light"] .lc-portfolio-card { background: #fff; border-color: rgba(0,0,0,.08); }
+[data-theme="light"] .lc-price-badge { background: rgba(0,0,0,.06); }
+[data-theme="light"] .lc-stale-chip { background: rgba(245, 158, 11, 0.15); }
+.lc-sector-head { position: sticky; top: 0; z-index: 2; background: var(--psx-surface, #141414); }
+[data-theme="light"] .lc-sector-head { background: #fff; }

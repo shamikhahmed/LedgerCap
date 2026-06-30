@@ -54,7 +54,7 @@ const State = (() => {
       cashBalancePkr: 0,
     },
     cashLedger: [],
-    manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0 },
+    manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 },
     portfolios: [],
     version: 8,
     seedDataVersion: 0,
@@ -66,7 +66,8 @@ const State = (() => {
   }
 
   function _migrateV7() {
-    if (!_s.manualAssets) _s.manualAssets = { usdCash: 0, goldGrams: 0, realEstate: 0 };
+    if (!_s.manualAssets) _s.manualAssets = { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 };
+    if (_s.manualAssets.brokerCashPkr == null) _s.manualAssets.brokerCashPkr = 0;
     if (_s.settings.zakatDebts == null) _s.settings.zakatDebts = 0;
     if (!_s.kseHistory) _s.kseHistory = [];
     if (!_s.settings.numberFormat) _s.settings.numberFormat = 'full';
@@ -302,6 +303,20 @@ const State = (() => {
     save();
   }
 
+  function isPriceStale(symbol, maxHours) {
+    if (!_s) load();
+    maxHours = maxHours == null ? 24 : maxHours;
+    const ts = _s.prices[symbol]?.ts;
+    if (!ts) return true;
+    return (Date.now() - ts) > maxHours * 3600000;
+  }
+
+  function priceAgeLabel(symbol) {
+    const ts = _s?.prices?.[symbol]?.ts;
+    if (!ts || typeof Prices === 'undefined') return '';
+    return Prices.formatTs(ts);
+  }
+
   function getPrice(symbol) {
     if (!_s) load();
     return _s.prices[symbol]?.price || 0;
@@ -356,7 +371,8 @@ const State = (() => {
     const manualVal =
       (ma.usdCash || 0) * FxService.getUsdRate() +
       (ma.goldGrams || 0) * (settings.goldPricePerGram || 18000) +
-      (ma.realEstate || 0);
+      (ma.realEstate || 0) +
+      (ma.brokerCashPkr || 0);
 
     return stockVal + fundVal + globalVal + manualVal;
   }
@@ -433,6 +449,7 @@ const State = (() => {
   load();
   return { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
+    isPriceStale, priceAgeLabel,
     calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
 })();
 window.State = State;

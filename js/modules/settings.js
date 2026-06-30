@@ -78,6 +78,7 @@ const Settings = (() => {
 
     const theme = settings.theme || 'dark';
     const pilot = state.pilotSettings || {};
+    const ma = state.manualAssets || {};
 
     screen.innerHTML = `
     <div class="lc-dash">
@@ -125,6 +126,26 @@ const Settings = (() => {
         </div>
       </div>
       <button type="button" class="btn-primary" onclick="Settings._saveProfile()">Save Profile</button>
+    </div>
+
+    <div class="sec-head"><span class="sec-title">Cash &amp; manual assets</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">Uninvested broker cash (e.g. AKD ~₨9k) counts toward net worth. Not auto-synced from broker.</p>
+      <div class="field">
+        <label class="field-label">Broker cash (₨)</label>
+        <input class="field-input" id="s-broker-cash" type="number" min="0" step="1" value="${ma.brokerCashPkr || 0}" placeholder="9412">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">USD cash</label>
+          <input class="field-input" id="s-usd-cash" type="number" min="0" step="0.01" value="${ma.usdCash || 0}">
+        </div>
+        <div class="field">
+          <label class="field-label">Gold (grams)</label>
+          <input class="field-input" id="s-gold-grams" type="number" min="0" step="0.01" value="${ma.goldGrams || 0}">
+        </div>
+      </div>
+      <button type="button" class="btn-primary" onclick="Settings._saveManualAssets()">Save manual assets</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Return Assumptions</span></div>
@@ -294,6 +315,21 @@ const Settings = (() => {
     if (typeof I18n !== 'undefined') I18n.bindLangSwitch(screen);
     _pingProxy(proxyUrl);
     if (typeof CapMotion !== 'undefined') CapMotion.refresh();
+  }
+
+  function _saveManualAssets() {
+    const brokerCashPkr = parseFloat(document.getElementById('s-broker-cash')?.value) || 0;
+    const usdCash = parseFloat(document.getElementById('s-usd-cash')?.value) || 0;
+    const goldGrams = parseFloat(document.getElementById('s-gold-grams')?.value) || 0;
+    State.update(s => {
+      if (!s.manualAssets) s.manualAssets = {};
+      s.manualAssets.brokerCashPkr = brokerCashPkr;
+      s.manualAssets.usdCash = usdCash;
+      s.manualAssets.goldGrams = goldGrams;
+    });
+    App.showToast('Manual assets saved', 'success');
+    App.renderCurrent();
+    render();
   }
 
   function _saveProfile() {
@@ -486,6 +522,6 @@ const Settings = (() => {
     render();
   }
 
-  return { render, loadSeedData, _saveProfile, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat };
 })();
 window.Settings = Settings;
