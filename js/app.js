@@ -57,7 +57,7 @@ const App = (() => {
     if (!el || typeof PsxUI === 'undefined') return;
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
-    el.innerHTML = `KSE-100 <strong>${k.value ? PsxUI.fmt(k.value) : '—'}</strong> <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>`;
+    el.innerHTML = `KSE-100 <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>`;
   }
 
   function _hideSplash() {
@@ -131,7 +131,7 @@ const App = (() => {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=77').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=78').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -364,7 +364,7 @@ const App = (() => {
     const shares = parseFloat(document.getElementById('tx-shares')?.value) || 0;
     const price = parseFloat(document.getElementById('tx-price')?.value) || 0;
     const el = document.getElementById('tx-total-display');
-    if (el) el.textContent = shares > 0 && price > 0 ? `Total: ₨${Math.round(shares * price).toLocaleString('en-PK')}` : '';
+    if (el) el.textContent = shares > 0 && price > 0 ? `Total: ${PlatformUI.fmt(shares * price)}` : '';
   }
 
   function _onSellSymbolChange() {
@@ -389,7 +389,7 @@ const App = (() => {
     if (el && shares > 0 && sellPrice > 0 && avgCost > 0) {
       const pnl = (sellPrice - avgCost) * shares;
       const pct = (sellPrice - avgCost) / avgCost * 100;
-      el.textContent = `P&L: ${pnl >= 0 ? '+' : ''}₨${Math.round(pnl).toLocaleString('en-PK')} (${pnl >= 0 ? '+' : ''}${pct.toFixed(1)}%)`;
+      el.textContent = `P&L: ${PlatformUI.fmt(pnl, { signed: true })} (${pnl >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
       el.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
     } else if (el) {
       el.textContent = '';

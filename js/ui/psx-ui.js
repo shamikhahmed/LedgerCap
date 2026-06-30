@@ -4,7 +4,17 @@ const PsxUI = (() => {
   function fmt(n, opts) {
     if (typeof PlatformUI !== 'undefined') return PlatformUI.fmt(n, opts);
     if (n == null || Number.isNaN(n)) return '—';
-    return Number(n).toLocaleString('en-PK');
+    return Number(n).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtIndex(n) {
+    if (typeof PlatformUI !== 'undefined') return PlatformUI.fmtIndex(n);
+    return fmt(n, { noCurrency: true });
+  }
+
+  function fmtNum(n, d) {
+    if (typeof PlatformUI !== 'undefined') return PlatformUI.fmtNum(n, d);
+    return fmt(n, { noCurrency: true, decimals: d });
   }
 
   function chgCls(v) {
@@ -24,7 +34,7 @@ const PsxUI = (() => {
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     return `<div class="psx-strip">
       <div><span class="psx-live"><span class="psx-live-dot"></span>${I18n.t('liveMarket')}</span></div>
-      <div><strong>KSE-100</strong> ${k.value ? fmt(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
+      <div><strong>KSE-100</strong> ${k.value ? fmtIndex(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
       <button type="button" class="psx-strip-refresh" onclick="${onRefresh || 'App.refreshPrices()'}">${I18n.t('refresh')}</button>
     </div>`;
   }
@@ -35,7 +45,7 @@ const PsxUI = (() => {
     return `<div class="psx-index-row">
       <div class="psx-index-card">
         <div class="psx-index-label">KSE-100 · Index · live</div>
-        <div class="psx-index-val">${k.value ? fmt(k.value) : '—'}</div>
+        <div class="psx-index-val">${k.value ? fmtIndex(k.value) : '—'}</div>
         <div class="psx-index-meta"><span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</span></div>
       </div>
       <div class="psx-index-card">
@@ -117,6 +127,6 @@ const PsxUI = (() => {
     if (sub) sub.textContent = `${I18n.t('portfolio.allTime')} ${fmt(s.totalReturn.pct, { pct: true, signed: true })}`;
   }
 
-  return { fmt, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, refreshPortfolioMini };
+  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, refreshPortfolioMini };
 })();
 window.PsxUI = PsxUI;

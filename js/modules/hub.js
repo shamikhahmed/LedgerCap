@@ -22,13 +22,52 @@ const Hub = (() => {
     return 'Good evening';
   }
 
+  function _marketStats() {
+    const seen = new Set();
+    let adv = 0, dec = 0, unch = 0, listed = 0;
+    [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].forEach(s => {
+      if (seen.has(s.symbol)) return;
+      seen.add(s.symbol);
+      listed++;
+      const price = State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0;
+      const prev = State.getPrevClose(s.symbol) || price;
+      const chg = prev ? ((price - prev) / prev) * 100 : 0;
+      if (chg > 0.05) adv++;
+      else if (chg < -0.05) dec++;
+      else unch++;
+    });
+    return { adv, dec, unch, listed };
+  }
+
   function _marketPulse(stats) {
-    return `<div class="lc-pulse-row" aria-label="Market pulse">
-      <div class="lc-pulse-pill"><label>Advancing</label><b class="psx-up">${stats.adv}</b></div>
-      <div class="lc-pulse-pill"><label>Declining</label><b class="psx-down">${stats.dec}</b></div>
-      <div class="lc-pulse-pill"><label>Flat</label><b>${stats.unch}</b></div>
-      <div class="lc-pulse-pill"><label>Listed</label><b>${stats.listed}</b></div>
+    const active = typeof Market !== 'undefined' ? Market.moveFilter() : 'all';
+    return `<div class="lc-pulse-row" role="group" aria-label="Market pulse">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'advancing' ? ' on' : ''}" onclick="Hub.openMarketFilter('advancing')" aria-pressed="${active === 'advancing'}">
+        <label>Advancing</label><b class="psx-up">${stats.adv}</b>
+      </button>
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'declining' ? ' on' : ''}" onclick="Hub.openMarketFilter('declining')" aria-pressed="${active === 'declining'}">
+        <label>Declining</label><b class="psx-down">${stats.dec}</b>
+      </button>
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'unchanged' ? ' on' : ''}" onclick="Hub.openMarketFilter('unchanged')" aria-pressed="${active === 'unchanged'}">
+        <label>Flat</label><b>${stats.unch}</b>
+      </button>
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'all' ? ' on' : ''}" onclick="Hub.openMarketFilter('all')" aria-pressed="${active === 'all'}">
+        <label>Listed</label><b>${stats.listed}</b>
+      </button>
     </div>`;
+  }
+
+  function openMarketFilter(f) {
+    if (typeof Market !== 'undefined') Market.setMoveFilter(f);
+    Navigation.go('market');
+  }
+
+  function _kseCard(k, sign) {
+    return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('market')" aria-label="Open stock watch">
+      <span>KSE-100</span>
+      <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
+      <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</em>
+    </button>`;
   }
 
   function _toolGrid() {
@@ -47,19 +86,7 @@ const Hub = (() => {
     const hasHoldings = (state.transactions || []).length > 0;
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
-
-    let stats = { adv: 0, dec: 0, unch: 0, listed: 0 };
-    if (hasHoldings) {
-      PortfolioAnalyticsService.getHoldings().forEach(h => {
-        const prev = State.getPrevClose(h.symbol) || h.price;
-        const chg = prev && h.price ? ((h.price - prev) / prev) * 100 : null;
-        if (chg == null) return;
-        if (chg > 0.05) stats.adv++;
-        else if (chg < -0.05) stats.dec++;
-        else stats.unch++;
-      });
-    }
-    stats.listed = [...new Set([...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].map(s => s.symbol))].length;
+    const stats = _marketStats();
 
     if (!hasHoldings) {
       screen.innerHTML = `
@@ -69,17 +96,14 @@ const Hub = (() => {
             <p>LedgerCap</p>
           </div>
           <div class="lc-dash-market">
-            <div class="lc-dash-market-card">
-              <span>KSE-100</span>
-              <strong>${k.value ? PsxUI.fmt(k.value) : '—'}</strong>
-              <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</em>
-            </div>
-            <div class="lc-dash-market-card">
+            ${_kseCard(k, sign)}
+            <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="App.openAddTransaction()" aria-label="Add holdings">
               <span>${I18n.t('portfolio.value')}</span>
               <strong>—</strong>
               <em>${I18n.t('addHoldings')}</em>
-            </div>
+            </button>
           </div>
+          ${_marketPulse(stats)}
           <div class="lc-empty-state">
             <h2>${I18n.t('hub.hero')}</h2>
             <p>${I18n.t('hub.sub')}</p>
@@ -120,16 +144,12 @@ const Hub = (() => {
           <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
         </div>
         <div class="lc-dash-market">
-          <div class="lc-dash-market-card">
-            <span>KSE-100</span>
-            <strong>${k.value ? PsxUI.fmt(k.value) : '—'}</strong>
-            <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : '—'}</em>
-          </div>
-          <div class="lc-dash-market-card">
+          ${_kseCard(k, sign)}
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('portfolio')" aria-label="Open portfolio">
             <span>${I18n.t('portfolio.yield')}</span>
-            <strong>${s.portfolioDivYield.toFixed(1)}%</strong>
+            <strong>${s.portfolioDivYield.toFixed(2)}%</strong>
             <em>${I18n.t('portfolio.invested')} ${PsxUI.fmt(s.invested)}</em>
-          </div>
+          </button>
         </div>
         ${_marketPulse(stats)}
         <div class="lc-dash-section">
@@ -139,7 +159,7 @@ const Hub = (() => {
       </div>`;
   }
 
-  return { render };
+  return { render, openMarketFilter };
 })();
 window.Hub = Hub;
 window.Home = Hub;

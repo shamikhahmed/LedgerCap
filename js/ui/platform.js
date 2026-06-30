@@ -1,19 +1,31 @@
 'use strict';
 const PlatformUI = (() => {
   function fmt(n, opts) {
-    if (n == null || isNaN(n)) return '—';
+    if (n == null || Number.isNaN(n)) return '—';
     opts = opts || {};
+    if (opts.pct) {
+      const d = opts.decimals ?? 2;
+      const sign = opts.signed && n > 0 ? '+' : '';
+      return sign + Number(n).toFixed(d) + '%';
+    }
+    const d = opts.decimals ?? 2;
     const abs = Math.abs(n);
-    if (opts.pct) return (n >= 0 && opts.signed ? '+' : '') + n.toFixed(opts.decimals ?? 1) + '%';
-    if (abs >= 1e7) return '₨' + (n / 1e7).toFixed(2) + 'cr';
-    if (abs >= 1e5) return '₨' + (n / 1e5).toFixed(2) + 'L';
-    if (abs >= 1e3 && opts.compact) return '₨' + (n / 1e3).toFixed(1) + 'k';
-    return '₨' + Math.round(n).toLocaleString('en-PK');
+    const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const prefix = opts.noCurrency ? '' : '₨';
+    if (opts.signed && n > 0) return '+' + prefix + formatted;
+    if (n < 0) return '-' + prefix + formatted;
+    return prefix + formatted;
+  }
+
+  /** Index / points — no currency prefix, 2 decimals */
+  function fmtIndex(n, d) {
+    return fmtNum(n, d ?? 2);
   }
 
   function fmtNum(n, d) {
-    if (n == null || isNaN(n)) return '—';
-    return Number(n).toLocaleString('en-PK', { maximumFractionDigits: d ?? 2 });
+    if (n == null || Number.isNaN(n)) return '—';
+    const dec = d ?? 2;
+    return Number(n).toLocaleString('en-PK', { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
 
   function chgCls(v) { return v >= 0 ? 't-gain' : 't-loss'; }
@@ -40,6 +52,6 @@ const PlatformUI = (() => {
     return `<div class="rt-section cap-reveal">${head}<div class="lc-section-body">${body}</div></div>`;
   }
 
-  return { fmt, fmtNum, chgCls, ratingBadge, metricCell, metricGrid, section };
+  return { fmt, fmtNum, fmtIndex, chgCls, ratingBadge, metricCell, metricGrid, section };
 })();
 window.PlatformUI = PlatformUI;

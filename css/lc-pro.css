@@ -534,6 +534,64 @@ body.lc-pro .toast {
   font-variant-numeric: tabular-nums;
 }
 
+.lc-pulse-pill--btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: start;
+  color: inherit;
+  transition: transform 0.15s var(--lc-ease), box-shadow 0.15s var(--lc-ease), background 0.15s var(--lc-ease);
+}
+
+.lc-pulse-pill--btn:active { transform: scale(0.97); }
+
+.lc-pulse-pill--btn.on {
+  box-shadow: 0 0 0 2px var(--psx-accent);
+  background: color-mix(in srgb, var(--psx-accent) 10%, var(--psx-bg-card));
+}
+
+@media (hover: hover) {
+  .lc-pulse-pill--btn:hover {
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--psx-accent) 14%, transparent);
+  }
+}
+
+.lc-dash-market-card--btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: start;
+  color: inherit;
+  width: 100%;
+  transition: transform 0.15s var(--lc-ease), box-shadow 0.15s var(--lc-ease);
+}
+
+.lc-dash-market-card--btn:active { transform: scale(0.98); }
+
+@media (hover: hover) {
+  .lc-dash-market-card--btn:hover {
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--psx-accent) 12%, transparent);
+  }
+}
+
+.lc-filter-hint {
+  font-size: 13px;
+  color: var(--psx-text-2);
+  padding: 0 var(--lc-space-4) var(--lc-space-3);
+  margin: 0;
+}
+
+.lc-link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--psx-accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .lc-screen-head {
   padding: var(--lc-space-4) var(--lc-space-4) var(--lc-space-3);
 }

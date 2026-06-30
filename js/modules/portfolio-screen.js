@@ -36,7 +36,7 @@ const PortfolioScreen = (() => {
           </div>
         </div>
         <div class="lc-pulse-row">
-          <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(1)}%</b></div>
+          <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(2)}%</b></div>
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(s.invested)}</b></div>
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.gainLoss')}</label><b class="${s.totalReturn.abs >= 0 ? 'psx-up' : 'psx-down'}">${PsxUI.fmt(s.totalReturn.abs, { signed: s.totalReturn.abs >= 0 })}</b></div>
           <div class="lc-pulse-pill"><label>Cash</label><b>${PsxUI.fmt(Ledger.cashBalance(state.transactions || []))}</b></div>
@@ -56,7 +56,7 @@ const PortfolioScreen = (() => {
           </tr></thead><tbody>
           ${holdings.map(h => `<tr onclick="Navigation.go('research');Research.open('${h.symbol}')">
             <td><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
-            <td>${h.kind === 'fund' ? h.quantity.toFixed(2) : h.quantity}</td>
+            <td>${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
             <td>${PsxUI.fmt(h.price)}</td>
             <td>${PsxUI.fmt(h.value)}</td>
             <td class="${PsxUI.chgCls(h.pnlPct)}">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
