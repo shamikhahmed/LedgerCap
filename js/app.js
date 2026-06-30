@@ -52,10 +52,16 @@ const App = (() => {
     if (cleaned > 0) renderCurrent();
   }
 
+  function _renderTicker() {
+    const el = document.getElementById('lc-app-ticker');
+    if (!el || typeof PsxUI === 'undefined') return;
+    const k = PsxUI.kse();
+    const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
+    el.innerHTML = `KSE-100 <strong>${k.value ? PsxUI.fmt(k.value) : '—'}</strong> <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>`;
+  }
+
   function _hideSplash() {
     const el = document.getElementById('splash');
-    const fill = document.getElementById('splash-fill');
-    if (fill) fill.style.width = '100%';
     setTimeout(() => { if (el) el.classList.add('hide'); }, 480);
   }
 
@@ -120,12 +126,12 @@ const App = (() => {
     if (demo) {
       try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
     }
-    _applyTheme(State.get('settings')?.theme || 'dark');
+    _applyTheme(localStorage.getItem('theme') || State.get('settings')?.theme || 'light');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=55').then(reg => reg.update()).catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=73').then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -134,7 +140,16 @@ const App = (() => {
       window.LEDGERCAP_CONFIG.psxProxyUrl = window.LedgerCapConfig?.resolvePsxProxyUrl(cfg) || cfg;
     }
     _hideSplash();
+    if (typeof I18n !== 'undefined') {
+      I18n.init();
+      const langHost = document.getElementById('lc-header-lang');
+      if (langHost) {
+        langHost.innerHTML = I18n.langSwitcher('lc-header-lang-inner');
+        I18n.bindLangSwitch(langHost);
+      }
+    }
     Navigation.init();
+    window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
       Settings.loadSeedData({ silent: true });
     }
@@ -142,8 +157,10 @@ const App = (() => {
       CapDemo.markActive();
     }
     Navigation.go('home');
+    _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     _scheduleAutoRefresh();
+    _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
     if (hasProxy && !demo) setTimeout(() => refreshPrices(), 1200);
     else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
@@ -165,6 +182,17 @@ const App = (() => {
     setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
   }
 
+  async function _fetchMarketIndex() {
+    try {
+      const kse = await Prices.fetchKSE100();
+      if (kse) {
+        State.set('kseIndex', kse);
+        _renderTicker();
+        if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
+      }
+    } catch (_) { /* offline / blocked */ }
+  }
+
   async function refreshPrices() {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
@@ -183,7 +211,10 @@ const App = (() => {
     ])];
 
     if (symbols.length === 0) {
-      showToast('No symbols to refresh', 'warning');
+      const kse = await Prices.fetchKSE100();
+      if (kse) State.set('kseIndex', kse);
+      showToast(kse ? 'Market index updated' : 'No holdings — add transactions to refresh prices', kse ? 'success' : 'warning');
+      renderCurrent();
       return;
     }
 
@@ -206,6 +237,7 @@ const App = (() => {
 
     const kse = await Prices.fetchKSE100();
     if (kse) State.set('kseIndex', kse);
+    _renderTicker();
 
     if (updated > 0) {
       const srcList = [...sources].map(s => Prices.sourceLabel(s)).join(', ') || 'cached';
@@ -556,9 +588,10 @@ const App = (() => {
 
   function _applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
-    document.body.classList.toggle('light', theme === 'light');
+    if (window.Navigation?.applyTheme) Navigation.applyTheme(theme);
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = theme === 'light' ? '#f8f9fc' : '#0a0b0d';
+    if (meta) meta.content = theme === 'light' ? '#fafafa' : '#09090b';
+    document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
     if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
   }

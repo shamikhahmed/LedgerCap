@@ -1,7 +1,7 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.4.5 (seed v3)  
-**Last updated:** 16 Jun 2026  
+**Version:** 3.10.0  
+**Last updated:** 30 Jun 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
@@ -18,7 +18,9 @@ LedgerCap is a **vanilla JS PWA** (no build step for the web app) for tracking a
 | **AKD** | AKD account **COAF55870** | PSX equities |
 | **Meezan** | Al Meezan portfolio **733102-1** | Islamic mutual funds |
 
-Features: dashboard, portfolio, transactions, performance P&L, dividends, research, settings. Data persists in **localStorage** (`ledgercap_v2`).
+Features: hub dashboard, stock watch (market), Meezan funds, portfolio P&L, research analyzer, screener, dividends, transactions, settings. Data persists in **localStorage** (`ledgercap_v2`).
+
+**UI:** PSX Tactics design (`psx-app.css`) — 5-tab mobile nav + desktop sidebar at ≥900px (`lc-desktop-nav.js`).
 
 **Important:** This is a **rules-based** wealth tracker. There is no LLM in production paths. Do not market it as “AI-powered portfolio management.”
 
@@ -36,8 +38,15 @@ index.html
   └── js/engines/prices.js       # Live PSX fetch + fallbacks
   └── js/engines/analytics.js    # XIRR, allocation, totalReturn
   └── js/modules/state.js        # localStorage, calcTotalValue, seed migration
-  └── js/modules/*.js            # UI screens
-  └── sw.js                      # Service worker (same-origin cache only)
+  └── js/modules/hub.js             # Home hub (net worth, tools grid)
+  └── js/modules/market.js          # Stock watch by sector
+  └── js/modules/funds.js           # Meezan fund NAV table
+  └── js/modules/portfolio-screen.js # Holdings + cash est.
+  └── js/modules/screener.js        # Fundamental screener
+  └── js/modules/more.js            # Secondary tools menu
+  └── js/modules/*.js               # Research, dividends, settings, etc.
+  └── js/lc-desktop-nav.js          # Desktop sidebar contract (≥900px)
+  └── sw.js                         # Service worker (ledgercap-v73)
   └── worker/                    # Cloudflare PSX proxy (optional deploy)
 ```
 
@@ -247,4 +256,30 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 
 ---
 
-*This handover reflects code and seed state as of commit `884bdf7`. Calculations are known to be wrong in multiple places — treat UI numbers as untrusted until engine + seed are fixed.*
+---
+
+## 13. UI Polish Pass — 2026-06-29 (v3.6.0)
+
+**Status:** All 16 screens now styled and functional in both light and dark mode.
+
+### What was fixed
+
+| Issue | Fix |
+|-------|-----|
+| `CapMotion is not defined` crash on 7+ screens | Added `capricorn-motion.js` to `index.html`; `window.CapMotion = window.CapricornMotion` alias added inline |
+| Comparison, Performance, Journal, Pilot-tools, Watchlist, Market Strategy unreachable (crash on nav) | Above fix |
+| ~20 CSS component classes missing (comp-*, perf-*, rt-*, os-btn, badge, cap-tab-bar, etc.) | All added to `psx-app.css v4` |
+| Watchlist cards, BUY/SELL badges unstyled | `rt-wl-card`, `rt-badge`, `rt-buy/sell` added |
+| Comparison screen metrics wall-of-text | `comp-grid`, `comp-card`, `comp-metric`, `comp-verdict` layout added |
+| Performance stats unstructured | `perf-stat`, `perf-stat-label`, `perf-stat-value`, `perf-list` added |
+| Market Strategy action badges (REDUCE/TRIM/HOLD) unstyled | `badge` with colour variants added |
+
+### Screens verified (light + dark mode)
+Hub · Watch · Funds · P&L · Analyze · Stock Screener · Dividends · Watchlist · Market Strategy · Transactions · Comparison · Performance · Journal · Pilot-tools · Settings · More
+
+### What is NOT fixed (engine bugs remain)
+UI is polished but **calculation bugs C1–C4 and H1–H6 documented above are still present**. Numbers displayed are unreliable until engine + seed are repaired (see section 10 for fix order).
+
+---
+
+*Updated 2026-06-29. UI: production-ready. Data engine: known bugs remain — see section 5.*

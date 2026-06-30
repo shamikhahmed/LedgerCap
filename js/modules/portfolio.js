@@ -112,10 +112,7 @@ const Portfolio = (() => {
     const filteredFunds = sorted.filter(r => r.type === 'fund');
 
     screen.innerHTML = `
-    <div class="os-page-header">
-      <div class="os-page-title">Portfolio</div>
-      <div class="os-page-sub">All brokers · allocation · performance</div>
-    </div>
+    ${MarketUI.pageHeader('Portfolio', 'All brokers', 'Allocation · performance · dense rows')}
 
     <div class="os-hero cap-reveal">
       <div class="os-hero-label">Total value</div>
@@ -169,7 +166,7 @@ const Portfolio = (() => {
     <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);">
       <span class="t-dim" style="font-size:0.68rem;">Sort:</span>
       ${['value','pnl%','name','shares'].map(s =>
-        `<button class="btn-ghost" style="padding:3px 9px;font-size:0.68rem;${_sort === s ? 'border-color:var(--orange);color:var(--orange);' : ''}" data-s="${s}">${s === 'pnl%' ? 'P&L%' : s.charAt(0).toUpperCase() + s.slice(1)}</button>`
+        `<button type="button" class="btn-ghost" style="padding:3px 9px;font-size:0.68rem;${_sort === s ? 'border-color:var(--orange);color:var(--orange);' : ''}" data-s="${s}">${s === 'pnl%' ? 'P&L%' : s.charAt(0).toUpperCase() + s.slice(1)}</button>`
       ).join('')}
       <span class="t-dim" style="font-size:0.6rem;margin-left:auto;">~ approx · M manual</span>
     </div>
@@ -472,8 +469,8 @@ const Portfolio = (() => {
         </div>` : ''}
 
         <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn-primary" style="background:rgba(14,203,129,0.15);color:var(--green);border:1px solid rgba(14,203,129,0.3);" onclick="App.openAddTransaction('BUY','${row.symbol}','${row.broker}')">Log Buy</button>
-          <button class="btn-primary" style="background:rgba(246,70,93,0.1);color:var(--red);border:1px solid rgba(246,70,93,0.2);" onclick="App.openAddTransaction('SELL','${row.symbol}','${row.broker}')">Log Sell</button>
+          <button type="button" class="btn-primary" style="background:rgba(14,203,129,0.15);color:var(--green);border:1px solid rgba(14,203,129,0.3);" onclick="App.openAddTransaction('BUY','${row.symbol}','${row.broker}')">Log Buy</button>
+          <button type="button" class="btn-primary" style="background:rgba(246,70,93,0.1);color:var(--red);border:1px solid rgba(246,70,93,0.2);" onclick="App.openAddTransaction('SELL','${row.symbol}','${row.broker}')">Log Sell</button>
         </div>
       </div>`;
 

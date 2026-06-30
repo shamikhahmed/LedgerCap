@@ -4,112 +4,114 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev; frame-src 'none'; object-src 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#fafafa">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="LedgerCap">
-  <meta name="author" content="Capricorn Systems">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
   <link rel="apple-touch-icon" href="assets/icons/icon-512.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
-  <meta name="description" content="Premium investment OS — portfolio intelligence, research, and wealth tracking. Offline-first.">
-  <title>LedgerCap</title>
+  <meta name="description" content="LedgerCap is a private wealth OS for Pakistani investors — PSX stocks, Meezan funds, Zakat, net worth in PKR. Offline-first, by Capricorn Systems.">
+  <title>LedgerCap — Pakistani wealth. One ledger. · Capricorn Systems</title>
   <link rel="canonical" href="https://shamikhahmed.github.io/LedgerCap/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Capricorn Systems">
+  <meta property="og:title" content="LedgerCap — Pakistani wealth. One ledger.">
+  <meta property="og:description" content="PSX stocks, Meezan funds, Zakat, net worth in PKR — terminal-grade, phone-native, private. Offline-first by Capricorn Systems.">
+  <meta property="og:url" content="https://shamikhahmed.github.io/LedgerCap/">
+  <meta property="og:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LedgerCap — Pakistani wealth. One ledger.">
+  <meta name="twitter:description" content="PSX stocks, Meezan funds, Zakat, net worth in PKR — offline-first by Capricorn Systems.">
+  <meta name="twitter:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="css/capricorn-core.css">
-  <link rel="stylesheet" href="css/ledger-os.css">
-  <link rel="stylesheet" href="css/platform.css">
-  <link rel="stylesheet" href="css/identity.css">
-  <link rel="stylesheet" href="css/app.css?v=13">
-</head>
-<body data-theme="dark" data-cap-app="1">
-  <a href="#app" class="cap-skip-link">Skip to content</a>
-  <div class="cap-ambient" aria-hidden="true"></div>
-  <canvas id="cap-scene" class="cap-scene-canvas cap-scene-canvas--subtle" aria-hidden="true"></canvas>
-  <div class="cap-scroll-progress" aria-hidden="true"></div>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="css/psx-app.css?v=17">
   <script>
-    const theme = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', theme);
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
     window.toggleTheme = function() {
-      const current = document.body.getAttribute('data-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.body.setAttribute('data-theme', next);
+      const body = document.body;
+      const next = (body.getAttribute('data-theme') || 'light') === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', next);
+      document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
       const btn = document.getElementById('theme-toggle');
       if (btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
-      if (window.Navigation && Navigation.applyTheme) Navigation.applyTheme(next);
-      if (window.App && App.applyTheme) App.applyTheme(next);
+      if (window.Navigation?.applyTheme) Navigation.applyTheme(next);
     };
   </script>
-  <div id="splash" class="splash">
-    <div class="splash-mark">₨</div>
-    <div class="splash-title">LedgerCap</div>
-    <div class="splash-sub">Investment OS</div>
-    <div class="splash-bar"><div id="splash-fill"></div></div>
-  </div>
-  <div id="install-hint" class="install-hint hidden">
-    <span>📲</span>
-    <p><strong>Install LedgerCap</strong> — Safari → Share → <strong>Add to Home Screen</strong></p>
-    <button type="button" class="btn-ghost" onclick="App.dismissInstall()">✕</button>
-  </div>
-  <div id="demo-banner" class="demo-banner hidden" role="status">
-    <span aria-hidden="true">🎯</span>
-    <p><strong>Demo mode</strong> — sample PSX portfolio with seed NAVs. Live price refresh is paused in demo.</p>
-    <button type="button" class="btn-ghost demo-banner__dismiss" onclick="App.dismissDemo()" aria-label="Dismiss demo banner">✕</button>
-  </div>
-  <div class="lc-shell">
-  <header id="app-header" class="app-header">
-    <div style="flex:1;text-align:center;font-size:0.9rem;opacity:0.6">₨</div>
-    <span id="app-title" style="font-weight:700">LedgerCap</span>
-    <button id="theme-toggle" class="theme-toggle" onclick="window.toggleTheme?.()" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-  </header>
-  <nav id="nav-sidebar" aria-label="Module navigation"></nav>
-  <div id="app">
-    <div id="screens">
-      <div id="screen-home" class="screen active"></div>
-      <div id="screen-research" class="screen"></div>
-      <div id="screen-watchlist" class="screen"></div>
-      <div id="screen-dividends" class="screen"></div>
-      <div id="screen-settings" class="screen"></div>
-      <div id="screen-dashboard" class="screen"></div>
-      <div id="screen-performance" class="screen"></div>
-      <div id="screen-portfolio" class="screen"></div>
-      <div id="screen-holdings" class="screen"></div>
-      <div id="screen-comparison" class="screen"></div>
-      <div id="screen-intelligence" class="screen"></div>
-      <div id="screen-journal" class="screen"></div>
-      <div id="screen-transactions" class="screen"></div>
-      <div id="screen-signals" class="screen"></div>
-      <div id="screen-pilot-tools" class="screen"></div>
-    </div>
-    <nav id="nav" aria-label="Main navigation"></nav>
-  </div>
+</head>
+<body class="psx-app" data-theme="light">
+  <a href="#screens" class="psx-skip-link">Skip to content</a>
+  <div id="splash" class="psx-splash">
+    <div class="psx-splash-logo">₨</div>
+    <div class="psx-splash-title">LedgerCap</div>
+    <div class="psx-splash-sub">Pakistan PSX · one ledger</div>
   </div>
 
-  <button class="fab hidden" id="fab" onclick="App.openAddTransaction()" aria-label="Add transaction">+</button>
+  <div id="demo-banner" class="psx-demo hidden" role="status">
+    <span>🎯</span>
+    <p><strong>Demo</strong> — sample portfolio · live refresh paused</p>
+    <button type="button" onclick="App.dismissDemo()" aria-label="Dismiss">✕</button>
+  </div>
+
+  <div class="psx-shell">
+    <aside id="nav-sidebar" class="psx-sidebar" aria-label="Sidebar"></aside>
+    <div class="psx-main">
+      <header class="psx-topbar">
+        <div class="psx-lang" id="lc-header-lang"></div>
+        <div class="psx-topbar-mid">
+          <div class="psx-brand">Ledger<span>Cap</span></div>
+          <div id="lc-app-ticker" class="psx-ticker" aria-live="polite"></div>
+        </div>
+        <div class="psx-topbar-actions">
+          <button type="button" id="theme-toggle" class="psx-icon-btn" onclick="window.toggleTheme?.()" aria-label="Toggle theme">☀️</button>
+        </div>
+      </header>
+
+      <div id="screens" class="psx-screens" role="main" aria-label="LedgerCap content">
+        <div id="screen-home" class="psx-screen active"></div>
+        <div id="screen-market" class="psx-screen"></div>
+        <div id="screen-funds" class="psx-screen"></div>
+        <div id="screen-portfolio" class="psx-screen"></div>
+        <div id="screen-research" class="psx-screen"></div>
+        <div id="screen-more" class="psx-screen"></div>
+        <div id="screen-screener" class="psx-screen"></div>
+        <div id="screen-watchlist" class="psx-screen"></div>
+        <div id="screen-dividends" class="psx-screen"></div>
+        <div id="screen-settings" class="psx-screen"></div>
+        <div id="screen-transactions" class="psx-screen"></div>
+        <div id="screen-signals" class="psx-screen"></div>
+        <div id="screen-comparison" class="psx-screen"></div>
+        <div id="screen-performance" class="psx-screen"></div>
+        <div id="screen-journal" class="psx-screen"></div>
+        <div id="screen-pilot-tools" class="psx-screen"></div>
+      </div>
+
+      <nav id="nav" class="psx-bottom-nav" aria-label="Main"></nav>
+    </div>
+  </div>
 
   <div class="bottom-sheet" id="bottom-sheet">
-    <div class="bs-backdrop"></div>
+    <div class="bs-backdrop" onclick="App.closeBottomSheet()"></div>
     <div class="bs-panel">
-      <div class="bs-handle"></div>
-      <div class="bs-header">
-        <div class="bs-title" id="bs-title"></div>
-        <button class="btn-ghost" style="padding:6px 12px;" onclick="App.closeBottomSheet()">✕</button>
-      </div>
-      <div class="bs-body" id="bs-body"></div>
+      <div class="bs-title" id="bs-title" style="font-weight:800;margin-bottom:12px"></div>
+      <div id="bs-body"></div>
+      <button type="button" class="psx-btn psx-btn-ghost" style="width:100%;margin-top:12px" onclick="App.closeBottomSheet()">Close</button>
     </div>
   </div>
-
-  <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
   <script src="js/data/holdings.js"></script>
   <script src="js/data/fundamentals.js"></script>
   <script src="js/data/dividends.js"></script>
   <script src="js/data/config.js"></script>
+  <script src="js/data/i18n-locales.js"></script>
+  <script src="js/core/i18n.js"></script>
   <script src="js/engines/ledger.js"></script>
   <script src="js/engines/prices.js"></script>
   <script src="js/engines/insights.js"></script>
@@ -125,36 +127,80 @@
   <script src="js/services/portfolio-analytics-service.js"></script>
   <script src="js/engines/pilot-engine.js"></script>
   <script src="js/ui/charts.js"></script>
-  <script src="js/ui/motion.js"></script>
-  <script src="js/ui/navigation.js"></script>
   <script src="js/ui/platform.js"></script>
+  <script src="js/ui/psx-ui.js"></script>
+  <script src="js/ui/market-ui.js"></script>
+  <script src="js/lc-desktop-nav.js"></script>
+  <script src="js/ui/navigation.js"></script>
   <script src="js/modules/state.js"></script>
-  <script src="js/modules/onboarding.js"></script>
   <script src="js/modules/investment.js"></script>
-  <script src="js/modules/home.js"></script>
-  <script src="js/modules/dashboard.js"></script>
-  <script src="js/modules/performance.js"></script>
-  <script src="js/modules/portfolio.js"></script>
-  <script src="js/modules/holdings.js"></script>
+  <script src="js/modules/hub.js"></script>
+  <script src="js/modules/market.js"></script>
+  <script src="js/modules/portfolio-screen.js"></script>
+  <script src="js/modules/funds.js"></script>
+  <script src="js/modules/screener.js"></script>
+  <script src="js/modules/more.js"></script>
   <script src="js/modules/research.js"></script>
-  <script src="js/modules/comparison.js"></script>
   <script src="js/modules/watchlist.js"></script>
   <script src="js/modules/dividends.js"></script>
-  <script src="js/modules/intelligence.js"></script>
-  <script src="js/modules/journal.js"></script>
   <script src="js/modules/transactions.js"></script>
   <script src="js/modules/settings.js"></script>
   <script src="js/modules/signals.js"></script>
+  <script src="js/modules/comparison.js"></script>
+  <script src="js/modules/performance.js"></script>
+  <script src="js/modules/journal.js"></script>
   <script src="js/modules/pilot-tools.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/modules/intelligence.js"></script>
   <script src="js/capricorn-motion.js"></script>
-  <script src="js/cap-demo-mode.js"></script>
-<script src="js/capricorn-premium-nav.js"></script>
+  <script>window.CapMotion = window.CapricornMotion;</script>
+  <script src="js/app.js"></script>
+
+<!-- PRO UPGRADE MODAL -->
+<div id="proUpgradeModal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:24px" role="dialog" aria-modal="true" aria-label="LedgerCap Pro">
+  <div style="background:rgba(11,14,17,0.98);border:1px solid rgba(245,158,11,0.35);border-radius:24px;max-width:400px;width:100%;padding:36px 32px;box-shadow:0 40px 80px rgba(0,0,0,0.7)">
+    <p style="font-size:11px;font-weight:700;letter-spacing:0.1em;color:#f59e0b;margin-bottom:8px">LEDGERCAP PRO</p>
+    <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:-0.02em">Your complete wealth terminal.</h2>
+    <p style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:28px">Your ledger stays on your device either way. Pro unlocks live PSX, Meezan funds, Zakat engine, and full net worth tracking.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:20px">
+        <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:12px">FREE</p>
+        <p style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:16px">$0</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;font-size:13px;color:rgba(255,255,255,0.5)">
+          <li>✓ 10 holdings tracked</li>
+          <li>✓ Basic PKR net worth</li>
+          <li>✓ Zakat calculator</li>
+          <li>✓ Offline PWA</li>
+        </ul>
+      </div>
+      <div style="background:rgba(245,158,11,0.08);border:2px solid rgba(245,158,11,0.4);border-radius:14px;padding:20px;position:relative">
+        <span style="position:absolute;top:-10px;left:16px;background:#f59e0b;color:#000;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:0.06em">PRO</span>
+        <p style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:2px">$3.99<span style="font-size:13px;font-weight:400;color:rgba(255,255,255,0.5)">/mo</span></p>
+        <p style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:12px">or $29.99/yr</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;font-size:13px;color:rgba(255,255,255,0.5)">
+          <li>✓ Unlimited holdings</li>
+          <li>✓ PSX live price feed</li>
+          <li>✓ Meezan fund positions</li>
+          <li>✓ IPO tracker</li>
+          <li>✓ Transaction history</li>
+          <li>✓ Income tracker</li>
+        </ul>
+      </div>
+    </div>
+    <button onclick="document.getElementById('proUpgradeModal').style.display='none'" style="width:100%;padding:14px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">Join Pro waitlist — coming soon →</button>
+    <button onclick="document.getElementById('proUpgradeModal').style.display='none'" style="width:100%;padding:10px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer">Continue with Free</button>
+  </div>
+</div>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      if (window.CapPremiumNav) CapPremiumNav.init();
-      if (window.CapricornMotion) CapricornMotion.init();
-    });
-  </script>
+(function () {
+  window.openProUpgrade = function () {
+    var m = document.getElementById('proUpgradeModal');
+    if (m) m.style.display = 'flex';
+  };
+  var modal = document.getElementById('proUpgradeModal');
+  if (modal) modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+})();
+</script>
 </body>
 </html>

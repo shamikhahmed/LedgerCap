@@ -31,6 +31,11 @@ export default {
     const target = url.searchParams.get('url');
     const path = url.pathname.replace(/^\//, '');
     let fetchUrl = target;
+
+    // Legacy /live alias — PSX removed bare /live; map to KSE-100 EOD
+    if (!fetchUrl && (path === 'live' || path === 'kse100' || path === 'index')) {
+      fetchUrl = `${PSX_ORIGIN}/timeseries/eod/KSE100`;
+    }
     if (!fetchUrl && path) {
       fetchUrl = `${PSX_ORIGIN}/${path}`;
     }

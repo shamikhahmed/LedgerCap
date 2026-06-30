@@ -1,152 +1,106 @@
 'use strict';
 const Navigation = (() => {
   const TABS = [
-    { id: 'home',       label: 'Home',       short: 'Home', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/></svg>` },
-    { id: 'research',   label: 'Research',   short: 'Res',  icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` },
-    { id: 'watchlist',  label: 'Watchlist',  short: 'Watch',icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>` },
-    { id: 'dividends',  label: 'Dividends',  short: 'Div',  icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
-    { id: 'settings',   label: 'Settings',   short: 'Set',  icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>` },
+    { id: 'home', labelKey: 'nav.hub', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/></svg>` },
+    { id: 'market', labelKey: 'nav.watch', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>` },
+    { id: 'funds', labelKey: 'nav.funds', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
+    { id: 'portfolio', labelKey: 'nav.pnl', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>` },
+    { id: 'research', labelKey: 'nav.analyze', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` },
   ];
 
-  const SIDEBAR_EXTRA = [
-    { id: 'signals', label: 'Signals', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` },
-    { id: 'pilot-tools', label: 'Pilot Tools', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>` },
-    { id: 'performance', label: 'Performance', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>` },
-    { id: 'comparison',  label: 'Compare',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>` },
-    { id: 'transactions', label: 'Transactions', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>` },
+  const MORE = [
+    { id: 'screener', labelKey: 'tools.screener.t' },
+    { id: 'dividends', labelKey: 'tools.dividends.t' },
+    { id: 'watchlist', labelKey: 'tools.watchlist.t' },
+    { id: 'signals', labelKey: 'tools.signals.t' },
+    { id: 'transactions', labelKey: 'tools.transactions.t' },
+    { id: 'settings', labelKey: 'more.title' },
   ];
 
-  const LEGACY_REDIRECT = {
-    income: 'home',
-    reports: 'research',
-    intelligence: 'research',
-    dashboard: 'home',
-    holdings: 'home',
-    portfolio: 'home',
-  };
-
-  const VALID_SCREENS = new Set([
-    ...TABS.map(t => t.id),
-    ...SIDEBAR_EXTRA.map(t => t.id),
-    'dashboard', 'holdings', 'portfolio', 'journal',
-  ]);
+  const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'screener', 'watchlist', 'dividends', 'settings', 'transactions', 'signals', 'comparison', 'performance', 'journal', 'pilot-tools']);
 
   let _current = 'home';
 
-  function _resolveTab(tabId) {
-    return LEGACY_REDIRECT[tabId] || tabId;
-  }
+  function _t(k) { return typeof I18n !== 'undefined' ? I18n.t(k) : k; }
 
-  function _tabBtn(t, cls) {
-    const active = t.id === _current ? ' active' : '';
-    const label = cls === 'nav-tab' ? t.short : t.label;
-    return `<button class="${cls}${active}" data-tab="${t.id}" aria-label="${t.label}">
-      <span class="nav-icon">${t.icon}</span>
-      <span class="nav-label">${label}</span>
+  function _navBtn(t) {
+    const on = t.id === _current ? ' active' : '';
+    return `<button type="button" class="psx-nav-btn${on}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
+      <span class="psx-nav-icon-wrap">${t.icon}</span>
+      <span>${_t(t.labelKey)}</span>
     </button>`;
   }
 
   function init() {
     const nav = document.getElementById('nav');
-    const sidebar = document.getElementById('nav-sidebar');
     if (nav) {
-      nav.innerHTML = TABS.map(t => _tabBtn(t, 'nav-tab')).join('');
-      nav.querySelectorAll('.nav-tab').forEach(btn => {
-        btn.addEventListener('click', () => go(btn.dataset.tab));
-      });
+      nav.innerHTML = TABS.map(_navBtn).join('');
+      nav.querySelectorAll('.psx-nav-btn').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
+    const sidebar = document.getElementById('nav-sidebar');
     if (sidebar) {
-      const theme = document.body.getAttribute('data-theme') || 'dark';
       sidebar.innerHTML = `
-        <div class="os-brand">LedgerCap</div>
-        <div class="nav-side-section" aria-hidden="true">Main</div>
-        ${TABS.map(t => _tabBtn(t, 'nav-side-btn')).join('')}
-        <div class="nav-side-divider" aria-hidden="true"></div>
-        <div class="nav-side-section" aria-hidden="true">Tools</div>
-        ${SIDEBAR_EXTRA.map(t => _tabBtn(t, 'nav-side-btn')).join('')}
-        <div class="nav-side-footer">
-          <button type="button" class="nav-side-btn nav-theme-btn" onclick="window.toggleTheme?.()" aria-label="Toggle theme">
-            <span class="nav-icon">${theme === 'dark' ? '🌙' : '☀️'}</span>
-            <span class="nav-label">${theme === 'dark' ? 'Dark mode' : 'Light mode'}</span>
-          </button>
-        </div>`;
-      sidebar.querySelectorAll('.nav-side-btn[data-tab]').forEach(btn => {
-        btn.addEventListener('click', () => go(btn.dataset.tab));
-      });
+        <div class="psx-brand" style="padding:8px 12px 20px">Ledger<span>Cap</span></div>
+        ${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}
+        <div style="height:1px;background:var(--psx-border);margin:12px 0"></div>
+        ${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}"><span>${_t(t.labelKey)}</span></button>`).join('')}
+        <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
+      sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
-
-    document.body.classList.add('os-theme');
-    document.body.classList.toggle('lc-desktop-nav', window.matchMedia('(min-width: 900px)').matches);
-    window.matchMedia('(min-width: 900px)').addEventListener('change', (e) => {
-      document.body.classList.toggle('lc-desktop-nav', e.matches);
-    });
     const saved = sessionStorage.getItem('ledgercap_tab');
-    if (saved) go(_resolveTab(saved), true);
+    if (saved) go(LEGACY[saved] || saved, true);
   }
 
   function applyTheme(theme) {
-    if (typeof App !== 'undefined' && App.applyTheme) App.applyTheme(theme);
-    const btn = document.querySelector('.nav-theme-btn');
-    if (btn) {
-      const isDark = theme === 'dark';
-      btn.querySelector('.nav-icon').textContent = isDark ? '🌙' : '☀️';
-      btn.querySelector('.nav-label').textContent = isDark ? 'Dark mode' : 'Light mode';
-    }
+    document.body.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
   }
 
   function go(tabId, silent, opts) {
-    const portfolioIntel = tabId === 'intelligence' || tabId === 'reports'
-      || (opts && opts.portfolioIntel)
-      || (tabId === 'research' && sessionStorage.getItem('ledgercap_research_mode') === 'portfolio');
-    tabId = _resolveTab(tabId);
-    if (!VALID_SCREENS.has(tabId)) tabId = 'home';
+    tabId = LEGACY[tabId] || tabId;
+    if (!VALID.has(tabId)) tabId = 'home';
     _current = tabId;
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-tab, .nav-side-btn[data-tab]').forEach(b => b.classList.remove('active'));
-    const screen = document.getElementById('screen-' + tabId);
-    if (screen) screen.classList.add('active');
+    document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    const el = document.getElementById('screen-' + tabId);
+    if (el) {
+      el.classList.add('active');
+      el.scrollTop = 0;
+    }
     document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
-
-    const fab = document.getElementById('fab');
-    if (fab) fab.classList.toggle('hidden', !['home', 'research', 'transactions'].includes(tabId));
-
     if (!silent) sessionStorage.setItem('ledgercap_tab', tabId);
-    _renderScreen(tabId, { portfolioIntel: portfolioIntel || !!(opts && opts.portfolioIntel) });
-    _refreshMotion();
+    const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
+    document.title = tabLabel + ' — LedgerCap';
+    _render(tabId, opts || {});
+    if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
   }
 
-  function _refreshMotion() {
-    if (typeof CapMotion !== 'undefined' && CapMotion.refresh) CapMotion.refresh();
-  }
-
-  function _renderScreen(id, opts) {
-    const o = opts || {};
+  function _render(id, opts) {
     const map = {
-      home: () => { if (window.Home) Home.render(); else if (window.Dashboard) Dashboard.render(); },
-      dashboard: () => { if (window.Dashboard) Dashboard.render(); else if (window.Home) Home.render(); },
-      research: () => {
-        if (window.Research) {
-          Research.setMode(o.portfolioIntel ? 'portfolio' : 'stock');
-          Research.render();
-        }
-      },
-      watchlist: () => { if (window.Watchlist) Watchlist.render(); },
-      dividends: () => { if (window.Dividends) Dividends.render(); },
-      settings: () => { if (window.Settings) Settings.render(); },
-      transactions: () => { if (window.Transactions) Transactions.render(); },
-      performance: () => { if (window.Performance) Performance.render(); },
-      comparison: () => { if (window.Comparison) Comparison.render(); },
-      holdings: () => { if (window.Holdings) Holdings.render(); },
-      portfolio: () => { if (window.Portfolio) Portfolio.render(); },
-      journal: () => { if (window.Journal) Journal.render(); },
-      signals: () => { if (window.Signals) Signals.render(); },
-      'pilot-tools': () => { if (window.PilotTools) PilotTools.render(); },
+      home: () => Hub.render(),
+      market: () => Market.render(),
+      funds: () => Funds.render(),
+      portfolio: () => PortfolioScreen.render(),
+      research: () => { Research.setMode(opts.portfolioIntel ? 'portfolio' : 'stock'); Research.render(); },
+      more: () => More.render(),
+      screener: () => Screener.render(),
+      watchlist: () => Watchlist.render(),
+      dividends: () => Dividends.render(),
+      settings: () => Settings.render(),
+      transactions: () => Transactions.render(),
+      signals: () => Signals.render(),
+      comparison: () => Comparison.render(),
+      performance: () => Performance.render(),
+      journal: () => Journal.render(),
+      'pilot-tools': () => PilotTools.render(),
     };
     if (map[id]) map[id]();
   }
 
   function current() { return _current; }
-
   return { init, go, current, applyTheme, TABS };
 })();
 window.Navigation = Navigation;

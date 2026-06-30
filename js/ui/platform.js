@@ -34,7 +34,10 @@ const PlatformUI = (() => {
   }
 
   function section(title, body) {
-    return `<div class="rt-section cap-reveal"><div class="rt-section-title">${title}</div>${body}</div>`;
+    const head = title
+      ? `<div class="lc-section-head lc-section-head--inline"><div class="lc-section-kicker">${title}</div></div>`
+      : '';
+    return `<div class="rt-section cap-reveal">${head}<div class="lc-section-body">${body}</div></div>`;
   }
 
   return { fmt, fmtNum, chgCls, ratingBadge, metricCell, metricGrid, section };

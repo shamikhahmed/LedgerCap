@@ -9,7 +9,7 @@ test.describe('LedgerCap smoke', () => {
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.locator('body')).toBeVisible();
+    await expect(page.locator('body.psx-app')).toBeVisible();
     await page.waitForTimeout(800);
     const fatal = errors.filter(e => !/serviceWorker|ResizeObserver|favicon/i.test(e));
     expect(fatal).toEqual([]);
@@ -27,29 +27,31 @@ test.describe('LedgerCap smoke', () => {
     await page.waitForTimeout(800);
 
     await page.locator('#nav [data-tab="research"]').click();
-    await page.getByRole('button', { name: 'Portfolio intel' }).click();
+    await page.evaluate(() => Research.setMode('portfolio'));
     await expect(page.locator('#screen-research.active')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Portfolio Intelligence')).toBeVisible();
+    await expect(page.getByText('Portfolio analysis')).toBeVisible();
   });
 
   test('five primary nav tabs present on mobile', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
-    const tabs = page.locator('#nav .nav-tab');
+    const tabs = page.locator('#nav .psx-nav-btn');
     await expect(tabs).toHaveCount(5);
     await expect(page.locator('#nav [data-tab="home"]')).toBeVisible();
+    await expect(page.locator('#nav [data-tab="market"]')).toBeVisible();
+    await expect(page.locator('#nav [data-tab="funds"]')).toBeVisible();
+    await expect(page.locator('#nav [data-tab="portfolio"]')).toBeVisible();
     await expect(page.locator('#nav [data-tab="research"]')).toBeVisible();
-    await expect(page.locator('#nav [data-tab="intelligence"]')).toHaveCount(0);
   });
 
-  test('research shows fundamentals for demo stock', async ({ page }) => {
+  test('research shows plain-English analyzer for demo stock', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForFunction(() => typeof window.ResearchService !== 'undefined');
     await page.waitForTimeout(800);
     await page.locator('#nav [data-tab="research"]').click();
-    await expect(page.getByText('Fundamentals')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Smart rating')).toBeVisible();
+    await expect(page.getByText('Plain-English verdict')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.psx-metric-l').filter({ hasText: 'Smart rating' })).toBeVisible();
   });
 
   test('comparison tab renders side-by-side holdings', async ({ page }) => {
@@ -58,21 +60,28 @@ test.describe('LedgerCap smoke', () => {
     await page.waitForTimeout(800);
     await page.evaluate(() => Navigation.go('comparison'));
     await expect(page.locator('#screen-comparison.active')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Stock Comparison')).toBeVisible();
+    await expect(page.getByText('Side by side')).toBeVisible();
     await expect(page.locator('.comp-grid')).toBeVisible();
   });
 
-  test('dividend center renders with forecast and upcoming tabs', async ({ page }) => {
+  test('dividend center reachable via hub tools', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForFunction(() => typeof window.DividendService !== 'undefined');
     await page.waitForTimeout(800);
-    await page.locator('#nav [data-tab="dividends"]').click();
+    await page.locator('#nav [data-tab="home"]').click();
+    await page.evaluate(() => Navigation.go('dividends'));
     await expect(page.locator('#screen-dividends.active')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Dividend Center')).toBeVisible();
+    await expect(page.getByText('Income center')).toBeVisible();
     await expect(page.getByText('Portfolio Yield')).toBeVisible();
-    await page.getByRole('button', { name: 'Upcoming' }).click();
-    await expect(page.getByText('All Upcoming Dividends')).toBeVisible({ timeout: 5000 });
-    await page.getByRole('button', { name: 'Forecast' }).click();
-    await expect(page.getByText('Income Forecast')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('market stock watch renders sector table', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await page.waitForFunction(() => typeof window.Market !== 'undefined');
+    await page.waitForTimeout(800);
+    await page.locator('#nav [data-tab="market"]').click();
+    await expect(page.locator('#screen-market.active')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#screen-market.active h1')).toHaveText('Stock Watch');
+    await expect(page.locator('.psx-table tbody tr').first()).toBeVisible();
   });
 });

@@ -75,7 +75,13 @@ Then commit/push if you want it baked into the deployed site.
 ## Test the proxy
 
 ```bash
-curl "https://ledgercap-psx-proxy.<your-subdomain>.workers.dev?url=https%3A%2F%2Fdps.psx.com.pk%2Flive" | head -c 500
+curl "https://ledgercap-psx-proxy.<your-subdomain>.workers.dev/timeseries/eod/KSE100" | head -c 500
 ```
 
-You should get JSON (PSX live data), not an HTML error page.
+Or health check:
+
+```bash
+curl "https://ledgercap-psx-proxy.<your-subdomain>.workers.dev/health"
+```
+
+Legacy `/live` path redirects to KSE-100 EOD timeseries (PSX removed the bare `/live` endpoint).

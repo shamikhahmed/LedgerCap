@@ -9,13 +9,9 @@ const Holdings = (() => {
     const total = rows.reduce((s, r) => s + r.value, 0);
 
     screen.innerHTML = `
-    <div class="os-page-header cap-reveal">
-      <div class="os-page-title">Holdings</div>
-      <div class="os-page-sub">${rows.length} positions · ${U.fmt(total)} total</div>
-    </div>
-    <div style="padding:12px 20px;display:flex;gap:8px;" class="cap-reveal">
-      <button class="os-btn os-btn-primary" onclick="App.openAddTransaction()">+ Add</button>
-      <button class="os-btn os-btn-ghost" onclick="Transactions.openLog()">Transaction log</button>
+    ${MarketUI.pageHeader('Holdings', 'Full table', `${rows.length} positions · ${U.fmt(total)} total`, { action: '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">+ Add</button>' })}
+    <div style="padding:0 20px 12px;display:flex;gap:8px;" class="cap-reveal">
+      <button type="button" class="os-btn os-btn-ghost" onclick="Transactions.openLog()">Transaction log</button>
     </div>
     ${rows.length ? `
     <div class="rt-table-wrap cap-reveal">
@@ -41,7 +37,7 @@ const Holdings = (() => {
       <div class="cap-empty__icon">📋</div>
       <div class="cap-empty__title">No holdings yet</div>
       <div class="cap-empty__body">Log a buy transaction to track your PSX portfolio, dividends, and net worth.</div>
-      <div class="cap-empty__cta"><button class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add first transaction</button></div>
+      <div class="cap-empty__cta"><button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add first transaction</button></div>
     </div>`}
     <div style="height:20px;"></div>`;
     CapMotion.refresh();

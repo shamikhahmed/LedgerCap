@@ -11,7 +11,7 @@ const StockComparison = (() => {
     const symbols = holdings.map(h => h.symbol);
 
     if (symbols.length < 2) {
-      screen.innerHTML = `<div class="os-empty cap-reveal"><div class="os-empty-icon">⚖️</div><div class="os-empty-title">Need 2+ holdings to compare</div><div class="os-empty-body">Add more stocks or funds to compare side-by-side performance.</div><button class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button></div>`;
+      screen.innerHTML = `${MarketUI.pageHeader('Compare', 'Side by side', 'Pick two holdings')}${MarketUI.emptyState('⚖️', 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}`;
       CapMotion.refresh();
       return;
     }
@@ -23,8 +23,8 @@ const StockComparison = (() => {
     const comp2 = _buildComparison(sym2);
 
     screen.innerHTML = `
-    <div class="comp-header cap-reveal">
-      <div class="comp-title">Stock Comparison</div>
+    ${MarketUI.pageHeader('Compare', 'Side by side', `${sym1} vs ${sym2}`)}
+    <div class="comp-header cap-reveal" style="padding-top:0">
       <div class="comp-selectors">
         <select class="comp-select" onchange="StockComparison._selectSymbol(1, this.value)">
           <option value="">Select Stock 1</option>

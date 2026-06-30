@@ -187,3 +187,6 @@
     init();
   }
 })();
+
+// Alias for modules that use CapMotion
+window.CapMotion = window.CapricornMotion;

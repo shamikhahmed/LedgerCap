@@ -80,17 +80,18 @@ const Settings = (() => {
     const pilot = state.pilotSettings || {};
 
     screen.innerHTML = `
-    <div class="os-page-header">
-      <div class="os-page-title">Settings</div>
-      <div class="os-page-sub">Preferences & data</div>
+    ${MarketUI.pageHeader('Settings', I18n.t('more.title'), I18n.t('more.sub'))}
+
+    <div class="sec-head"><span class="sec-title">${I18n.t('lang.label')}</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
+      ${I18n.langSwitcher('lc-settings-lang')}
     </div>
 
-    <div class="sec-head"><span class="sec-title">Appearance</span></div>
-    <div style="background:var(--os-bg-card);border-bottom:1px solid var(--os-border);padding:16px 20px;">
-      <div class="field-label" style="margin-bottom:10px;">Theme</div>
+    <div class="sec-head"><span class="sec-title">${I18n.t('theme.toggle')}</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <div class="os-theme-toggle">
-        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">Dark</button>
-        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">Light</button>
+        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">${I18n.t('theme.dark')}</button>
+        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">${I18n.t('theme.light')}</button>
       </div>
     </div>
 
@@ -114,7 +115,7 @@ const Settings = (() => {
           <input class="field-input" id="s-goldprice" type="number" value="${settings.goldPricePerGram || 18000}" placeholder="18000">
         </div>
       </div>
-      <button class="btn-primary" onclick="Settings._saveProfile()">Save Profile</button>
+      <button type="button" class="btn-primary" onclick="Settings._saveProfile()">Save Profile</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Return Assumptions</span></div>
@@ -141,8 +142,8 @@ const Settings = (() => {
       </div>
       <div class="field-hint" style="margin-bottom:12px;">4% rule: corpus needed = ₨${Math.round((settings.freedomTarget || 100000) * 12 / 0.04).toLocaleString()}</div>
       <div style="display:flex;gap:8px;">
-        <button class="btn-primary" style="flex:1;" onclick="Settings._saveAssumptions()">Save Assumptions</button>
-        <button class="btn-ghost" onclick="Settings._resetAssumptions()">Reset Defaults</button>
+        <button type="button" class="btn-primary" style="flex:1;" onclick="Settings._saveAssumptions()">Save Assumptions</button>
+        <button type="button" class="btn-ghost" onclick="Settings._resetAssumptions()">Reset Defaults</button>
       </div>
     </div>
 
@@ -204,8 +205,8 @@ const Settings = (() => {
           <input class="field-input" id="s-proxy" type="url" placeholder="https://ledgercap-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
           <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
         </div>
-        <button class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
-        <button class="btn-secondary" onclick="App.refreshPrices()">⟳ Refresh All Prices</button>
+        <button type="button" class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
+        <button type="button" class="btn-secondary" onclick="App.refreshPrices()">⟳ Refresh All Prices</button>
       </div>
     </div>
 
@@ -220,7 +221,7 @@ const Settings = (() => {
             <label class="field-label">${f.symbol}</label>
             <input class="field-input nav-inp" data-sym="${f.symbol}" type="number" step="0.01" value="${nav}">
           </div>
-          <button class="btn-ghost" style="padding:10px 14px;" onclick="Settings._saveNav('${f.symbol}')">Save</button>
+          <button type="button" class="btn-ghost" style="padding:10px 14px;" onclick="Settings._saveNav('${f.symbol}')">Save</button>
         </div>`;
       }).join('')}
     </div>
@@ -239,9 +240,9 @@ const Settings = (() => {
         </div>
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
-        <button class="btn-secondary" onclick="Settings._exportData()">↑ Export .ledgercap Backup</button>
-        <button class="btn-secondary" onclick="Settings._importData()">↓ Import .ledgercap Backup</button>
-        <button class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
+        <button type="button" class="btn-secondary" onclick="Settings._exportData()">↑ Export .ledgercap Backup</button>
+        <button type="button" class="btn-secondary" onclick="Settings._importData()">↓ Import .ledgercap Backup</button>
+        <button type="button" class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
       </div>
     </div>
 
@@ -271,7 +272,7 @@ const Settings = (() => {
         <input type="checkbox" id="p-filer" ${pilot.isFiler !== false ? 'checked' : ''}>
         Filer (15% CGT on short-term gains)
       </label>
-      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="Settings._savePilot()">Save Pilot settings</button>
+      <button type="button" class="btn-primary" style="width:100%;margin-top:8px" onclick="Settings._savePilot()">Save Pilot settings</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">About</span></div>
@@ -281,7 +282,9 @@ const Settings = (() => {
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
     </div>
     <div style="height:8px;"></div>`;
+    if (typeof I18n !== 'undefined') I18n.bindLangSwitch(screen);
     _pingProxy(proxyUrl);
+    if (typeof CapMotion !== 'undefined') CapMotion.refresh();
   }
 
   function _saveProfile() {

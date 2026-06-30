@@ -9,11 +9,14 @@
 
 ## Features
 
-- **Dashboard** — Bloomberg-style net worth, daily P&L, allocation, wealth insights
-- **Portfolio** — PSX + Islamic fund holdings (Rafi, AKD, Meezan) with live prices
-- **Transactions** — Ledger for buy, sell, contribution, and salary
-- **Income** — Salary log, projections, financial freedom target tracker
-- **Insights** — Concentration risk, contribution streaks, sector allocation
+- **Hub** — Net worth hero, KSE-100 strip, tools grid (market, funds, portfolio, research, screener, dividends, signals, watchlist, transactions)
+- **Stock Watch** — PSX sector tables with live/cached prices, Islamic filter
+- **Funds** — Meezan Islamic fund NAV table with 1Y/3Y/yield
+- **Portfolio** — Holdings, P&L, allocation, cash estimate
+- **Research** — Plain-English stock analyzer + portfolio intel mode
+- **Screener** — P/E, yield, growth filters (Islamic, high div, value)
+- **Income** — Dividend center, salary log, financial freedom tracker
+- **i18n** — English + Urdu (header switcher)
 - **PSX Proxy** — Optional Cloudflare Worker for live Yahoo/PSX quotes
 
 ## Install on iPhone

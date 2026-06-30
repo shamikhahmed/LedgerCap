@@ -51,21 +51,14 @@ const Transactions = (() => {
     const monthKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
     screen.innerHTML = `
-    <div style="padding:calc(env(safe-area-inset-top,16px) + 10px) 16px 12px;background:var(--bg2);border-bottom:1px solid var(--bg4);display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-        <button class="btn-ghost" style="min-width:44px;min-height:44px;font-size:1.2rem;padding:0" onclick="Navigation.go('holdings')" aria-label="Back to holdings">←</button>
-        <div style="font-size:1.1rem;font-weight:700;">Transactions</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-ghost" onclick="Transactions.exportCsv()" title="Export CSV">⬇ CSV</button>
-        <button class="btn-ghost" onclick="App.openAddTransaction()">+ Add</button>
-      </div>
-    </div>
-
-    <div class="filter-tabs cap-tab-bar" role="tablist" aria-label="Transaction filters">
+    ${MarketUI.pageHeader('Transactions', 'Ledger log', `${filtered.length} entries · filter by type`, { action: '<button type="button" class="lc-section-action" onclick="App.openAddTransaction()">+ Add</button>' })}
+    <div class="lc-filter-bar cap-reveal" style="border-top:none;padding-top:0">
+      <div class="lc-pill-group" style="margin-left:0;width:100%;flex-wrap:wrap">
       ${['all','buy','sell','dividend','salary','contribution','ipo'].map(f =>
-        `<button type="button" class="filter-tab cap-tab${_filter === f ? ' active' : ''}" role="tab" aria-selected="${_filter === f}" data-f="${f}">${f === 'ipo' ? 'IPO' : f.charAt(0).toUpperCase() + f.slice(1)}</button>`
+        `<button type="button" class="lc-view-pill${_filter === f ? ' active' : ''}" role="tab" data-f="${f}">${f === 'ipo' ? 'IPO' : f.charAt(0).toUpperCase() + f.slice(1)}</button>`
       ).join('')}
+      </div>
+      <button type="button" class="lc-section-action" onclick="Transactions.exportCsv()" style="margin-left:auto">Export CSV</button>
     </div>
 
     ${filtered.length === 0 ? `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Add your first transaction to get started</div></div>` : ''}
@@ -80,7 +73,7 @@ const Transactions = (() => {
     }).join('')}
     <div style="height:8px;"></div>`;
 
-    document.querySelectorAll('.filter-tab').forEach(tab => {
+    document.querySelectorAll('[data-f]').forEach(tab => {
       tab.addEventListener('click', () => { _filter = tab.dataset.f; render(); });
     });
     document.querySelectorAll('.tx-row[data-id]').forEach(row => {
@@ -142,14 +135,14 @@ const Transactions = (() => {
     ].filter(Boolean);
 
     const listBtn = isPendingIpo
-      ? `<button class="btn-primary" style="margin-bottom:8px;" onclick="App.openMarkIpoListed('${id}')">Mark as Listed → CDC</button>`
+      ? `<button type="button" class="btn-primary" style="margin-bottom:8px;" onclick="App.openMarkIpoListed('${id}')">Mark as Listed → CDC</button>`
       : '';
 
     const content = `<div style="padding:0 16px 16px;">
       ${fields.map(([l, v]) => `<div class="detail-stat"><span class="detail-stat-label">${l}</span><span class="detail-stat-value">${v}</span></div>`).join('')}
       <div style="margin-top:16px;">
         ${listBtn}
-        <button class="btn-danger" onclick="App.deleteTransaction('${id}')">Delete Transaction</button>
+        <button type="button" class="btn-danger" onclick="App.deleteTransaction('${id}')">Delete Transaction</button>
       </div>
     </div>`;
 

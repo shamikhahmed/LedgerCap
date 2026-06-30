@@ -3,101 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="description" content="PSX, funds, Zakat, net worth — terminal-grade, phone-native, private.">
-  <meta name="theme-color" content="#FF6B35">
-  <title>LedgerCap — Pakistani wealth. One ledger.</title>
-  <style>
-    :root{
-      --bg:#0B0E11;--bg2:#12161C;--bg3:#1E2329;
-      --text:#EAECEF;--dim:#848E9C;--muted:#5E6673;
-      --orange:#FF6B35;--green:#0ECB81;--red:#F6465D;--gold:#F0B90B;
-      --border:rgba(255,255,255,0.08);
-      --font:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);background:var(--bg);color:var(--text);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
-    a{color:inherit;text-decoration:none}
-    .nav{position:fixed;top:0;left:0;right:0;z-index:50;padding:14px 20px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;background:rgba(11,14,17,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-    .logo{font-size:17px;font-weight:800;letter-spacing:-0.02em}
-    .logo span{color:var(--orange)}
-    .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;touch-action:manipulation}
-    .btn-p{background:var(--orange);color:#fff}
-    .btn-s{background:var(--bg2);border:1px solid var(--border);color:var(--text)}
-    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:90px 24px 50px;text-align:center}
-    .ticker{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--dim);margin-bottom:24px}
-    .ticker .up{color:var(--green)}
-    .nw{font-size:clamp(48px,12vw,80px);font-weight:800;letter-spacing:-0.04em;line-height:1;margin-bottom:6px}
-    .nw span{font-size:0.45em;color:var(--dim);font-weight:600;vertical-align:super}
-    .nw-lbl{font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted);margin-bottom:20px}
-    h1{font-size:clamp(28px,6vw,42px);font-weight:800;letter-spacing:-0.03em;margin-bottom:14px}
-    .sub{font-size:16px;color:var(--dim);max-width:480px;line-height:1.55;margin-bottom:28px}
-    .metrics{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:32px}
-    .metric{padding:14px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;min-width:120px}
-    .metric-v{font-size:20px;font-weight:800}
-    .metric-v.g{color:var(--green)}.metric-v.o{color:var(--orange)}
-    .metric-l{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.08em}
-    .section{padding:64px 24px;max-width:920px;margin:0 auto}
-    .sh{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--orange);text-align:center;margin-bottom:8px}
-    .st{font-size:clamp(24px,5vw,34px);font-weight:800;text-align:center;margin-bottom:28px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-    .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px}
-    .card h3{font-size:15px;font-weight:700;margin-bottom:8px}
-    .card p{font-size:13px;color:var(--dim);line-height:1.55}
-    footer{padding:36px 24px;text-align:center;border-top:1px solid var(--border);color:var(--muted);font-size:13px}
-  </style>
-
+  <meta name="description" content="PSX, funds, Zakat, net worth — live KSE-100, dense tables, private ledger.">
+  <meta name="theme-color" content="#09090b">
+  <title>LedgerCap — Pakistan ka mukammal PSX tracker</title>
   <link rel="stylesheet" href="css/capricorn-core.css">
+  <link rel="stylesheet" href="css/ledger-os.css">
+  <link rel="stylesheet" href="css/home-market.css?v=3">
+  <link rel="stylesheet" href="css/ledger-v4.css?v=1">
+  <style>
+    :root { --os-accent: #09090b; }
+    body { background: var(--os-bg); color: var(--os-text); }
+    a { color: inherit; text-decoration: none; }
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      padding: 14px 20px; padding-top: calc(14px + env(safe-area-inset-top));
+      display: flex; justify-content: space-between; align-items: center;
+      background: color-mix(in srgb, var(--os-bg) 92%, transparent);
+      backdrop-filter: blur(20px); border-bottom: 1px solid var(--os-border);
+    }
+    .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+    .logo span { color: var(--os-accent); }
+    .btn {
+      padding: 11px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+      border: none; cursor: pointer; font-family: inherit;
+    }
+    .btn-p { background: var(--os-accent); color: #fff; }
+    .btn-s { background: var(--os-bg-card); border: 1px solid var(--os-border); color: var(--os-text); }
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 100px 24px 60px; text-align: center;
+    }
+    h1 {
+      font-size: clamp(28px, 6vw, 44px); font-weight: 800; letter-spacing: -0.03em;
+      margin-bottom: 14px; line-height: 1.1;
+    }
+    .sub {
+      font-size: 16px; color: var(--os-text-secondary); max-width: 520px;
+      line-height: 1.6; margin-bottom: 28px;
+    }
+    .hero-strip {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; width: 100%; max-width: 720px; margin: 28px 0 32px;
+    }
+    .section { padding: 64px 24px; max-width: 960px; margin: 0 auto; }
+    footer {
+      padding: 36px 24px; text-align: center; border-top: 1px solid var(--os-border);
+      color: var(--os-text-tertiary); font-size: 13px;
+    }
+  </style>
 </head>
-<body>
+<body data-theme="dark" class="lc-v4">
   <nav class="nav">
     <div class="logo">Ledger<span>Cap</span></div>
     <div style="display:flex;gap:8px">
       <a href="https://github.com/shamikhahmed/LedgerCap" class="btn btn-s">GitHub</a>
-      <a href="index.html" class="btn btn-p">Open LedgerCap</a>
+      <a href="index.html" class="btn btn-p">Open app</a>
     </div>
   </nav>
 
   <section class="hero">
-    <div class="ticker">KSE100 <span class="up">▲ Live via PSX proxy</span></div>
-    <div class="nw">₨<span>·</span>***</div>
-    <div class="nw-lbl">Net Worth · Personal Wealth OS</div>
-    <h1>Pakistani wealth.<br>One ledger.</h1>
-  <div class="hero-badge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:6px 16px;font-size:13px;font-weight:600;color:var(--dim,#adadad);margin-bottom:20px;">Offline-first PWA · v3.5.4</div>
-
-    <p class="sub">PSX, funds, Zakat, net worth — terminal-grade, phone-native, private. Your complete PKR wealth picture, offline on your iPhone.</p>
-    <div class="metrics">
-      <div class="metric"><div class="metric-v g">P&L</div><div class="metric-l">Daily</div></div>
-      <div class="metric"><div class="metric-v o">37</div><div class="metric-l">Holdings</div></div>
-      <div class="metric"><div class="metric-v">3</div><div class="metric-l">Brokers</div></div>
+    <div class="lc-live-badge" style="margin-bottom:20px">
+      <span class="lc-live-dot" aria-hidden="true"></span>Live market data · KSE-100 &amp; PSX holdings
     </div>
-    <a href="index.html"><button class="btn btn-p" style="font-size:16px;padding:14px 28px">View your ledger →</button></a>
+    <h1>Pakistan&apos;s complete tracker<br>for your PSX wealth</h1>
+    <p class="sub">Real portfolio P&amp;L, Meezan fund NAVs, dividend calendar, and research terminal — dense tables and live index data, offline on your device.</p>
+
+    <div class="hero-strip">
+      <div class="lc-index-card">
+        <div class="lc-index-label">KSE-100</div>
+        <div class="lc-index-value" style="font-size:1.4rem">Live index</div>
+        <div class="lc-index-meta"><span class="t-gain">Updated on refresh</span></div>
+      </div>
+      <div class="lc-index-card">
+        <div class="lc-index-label">Holdings</div>
+        <div class="lc-index-value" style="font-size:1.4rem">Dense tables</div>
+        <div class="lc-index-meta"><span>Stocks &amp; funds</span></div>
+      </div>
+      <div class="lc-index-card">
+        <div class="lc-index-label">Dividends</div>
+        <div class="lc-index-value" style="font-size:1.4rem">Income OS</div>
+        <div class="lc-index-meta"><span>Calendar &amp; forecast</span></div>
+      </div>
+    </div>
+
+    <a href="index.html?demo=1"><button class="btn btn-p" style="font-size:16px;padding:14px 28px">Open LedgerCap →</button></a>
+    <p style="margin-top:14px;font-size:13px;color:var(--os-text-tertiary)">Free · offline PWA · no account required</p>
   </section>
 
   <section class="section">
-    <div class="sh">Platform</div>
-    <div class="st">Terminal-grade. Phone-native.</div>
-    <div class="grid">
-      <div class="card"><h3>📊 Dashboard</h3><p>Net worth, allocation, concentration risk, contribution streaks.</p></div>
-      <div class="card"><h3>💼 Portfolio</h3><p>Rafi, AKD, and Meezan holdings with live Yahoo prices.</p></div>
-      <div class="card"><h3>📒 Ledger</h3><p>Buy, sell, contribution, salary — source of truth for cost basis.</p></div>
-      <div class="card"><h3>🎯 Freedom</h3><p>Project months to financial freedom at your contribution rate.</p></div>
-      <div class="card"><h3>☁️ PSX Proxy</h3><p>Cloudflare Worker bypasses CORS for live PSX quotes.</p></div>
-      <div class="card"><h3>📲 PWA</h3><p>Safari → Add to Home Screen. Tabular nums. 430px native feel.</p></div>
+    <div class="lc-section-kicker" style="text-align:center;margin-bottom:8px">Platform <span>· 9 tools</span></div>
+    <h2 style="text-align:center;font-size:clamp(22px,4vw,32px);font-weight:800;margin-bottom:24px">Everything a Pakistani investor needs</h2>
+    <div class="lc-tools-grid" style="padding:0">
+      <div class="lc-tool-card" style="cursor:default"><strong>Stock watch</strong><span>Live PSX prices · sector grouped</span></div>
+      <div class="lc-tool-card" style="cursor:default"><strong>Fund NAVs</strong><span>Meezan &amp; AMC holdings</span></div>
+      <div class="lc-tool-card" style="cursor:default"><strong>Loss tracking</strong><span>P&amp;L per position in PKR</span></div>
+      <div class="lc-tool-card" style="cursor:default"><strong>Research</strong><span>Charts · DMA · fundamentals</span></div>
+      <div class="lc-tool-card" style="cursor:default"><strong>Dividends</strong><span>Yield · calendar · growth</span></div>
+      <div class="lc-tool-card" style="cursor:default"><strong>Signals</strong><span>Rule-based morning brief</span></div>
     </div>
   </section>
 
   <footer>
     <p>LedgerCap © 2026 Capricorn Systems</p>
-    <p style="margin-top:8px"><a href="index.html">App</a> · <a href="privacy.html">Privacy</a> · <a href="changelog.html">Changelog</a> · <a href="presentation.html">Presentation</a> · <a href="pitch.html">Pitch</a> · <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a> · <a href="https://shamikhahmed.github.io/">Portfolio</a></p>
+    <p style="margin-top:8px">
+      <a href="index.html">App</a> ·
+      <a href="privacy.html">Privacy</a> ·
+      <a href="changelog.html">Changelog</a> ·
+      <a href="presentation.html">Presentation</a> ·
+      <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a>
+    </p>
   </footer>
-
-  <canvas id="cap-scene" class="cap-scene-canvas cap-scene-canvas--subtle" aria-hidden="true"></canvas>
-  <div class="cap-scroll-progress" aria-hidden="true"></div>
-  <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/vendor/ScrollTrigger.min.js"></script>
-  <script src="js/capricorn-scene.js"></script>
-  <script src="js/capricorn-motion.js"></script>
-  <script src="js/capricorn-cinematic.js"></script>
-  <script>document.addEventListener('DOMContentLoaded',function(){CapCinematic.init({canvas:'#cap-scene'});});</script>
 </body>
 </html>

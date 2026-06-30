@@ -2,7 +2,9 @@
 const Home = (() => {
   let _sortBy = 'value';
   let _filterSector = null;
-  let _viewMode = 'summary';
+  let _viewMode = 'table';
+  const M = () => window.MarketUI;
+  const U = () => window.PlatformUI;
 
   function render() {
     const screen = document.getElementById('screen-home');
@@ -10,16 +12,17 @@ const Home = (() => {
 
     const state = State.get();
     const hasHoldings = (state.transactions || []).length > 0;
+    const marketBlock = M().marketStripFull(hasHoldings ? PortfolioAnalyticsService.getHoldings() : []);
 
     if (!hasHoldings) {
       screen.innerHTML = `
-      <div class="os-empty cap-reveal">
-        <div class="os-empty-icon">📊</div>
-        <div class="os-empty-title">Your wealth OS starts here</div>
-        <div class="os-empty-body">Track PSX stocks, Meezan funds, dividends, and net worth.</div>
-        <button class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>
-        <button class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo</button>
-      </div>`;
+      ${marketBlock}
+      ${M().sectionHead('Portfolio', 'Start here')}
+      ${M().emptyState('📊', 'Track PSX like a pro', 'Stocks, Meezan funds, dividends, and net worth — dense tables and live index data, built for Pakistani investors.',
+        `<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>
+         <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo portfolio</button>`)}
+      ${M().sectionHead('Platform', 'Tools')}
+      ${M().defaultTools()}`;
       CapMotion.refresh();
       return;
     }
@@ -31,78 +34,62 @@ const Home = (() => {
     const intel = PortfolioAnalyticsService.getIntelligence(state);
 
     screen.innerHTML = `
-    <div class="home-header cap-reveal">
-      <div class="home-hero">
-        <div class="home-label">Portfolio Value</div>
-        <div class="home-value">${PlatformUI.fmt(summary.totalValue)}</div>
-        <div class="home-subtitle">
-          <span class="${dailyPnl >= 0 ? 't-gain' : 't-loss'}">Today ${dailyPnl >= 0 ? '+' : ''}${PlatformUI.fmt(dailyPnl)}</span> · 
-          <span class="${summary.totalReturn.pct >= 0 ? 't-gain' : 't-loss'}">All time ${summary.totalReturn.pct >= 0 ? '+' : ''}${PlatformUI.fmt(summary.totalReturn.pct, { pct: true })}</span>
-        </div>
+    ${marketBlock}
+
+    <div class="lc-portfolio-hero cap-reveal">
+      <div class="home-label">Portfolio value</div>
+      <div class="home-value">${U().fmt(summary.totalValue)}</div>
+      <div class="home-subtitle">
+        <span class="os-pill ${dailyPnl >= 0 ? 'gain' : 'loss'}">Today ${dailyPnl >= 0 ? '+' : ''}${U().fmt(dailyPnl)}</span>
+        <span class="os-pill ${summary.totalReturn.pct >= 0 ? 'gain' : 'loss'}">All time ${summary.totalReturn.pct >= 0 ? '+' : ''}${U().fmt(summary.totalReturn.pct, { pct: true })}</span>
       </div>
-      ${history.length > 1 ? `<div class="home-chart" id="home-chart" aria-label="Holdings value trend (today's prices)"></div><div class="home-chart-note" style="font-size:0.65rem;color:var(--text3);text-align:center;margin-top:4px;padding:0 12px">Trend uses today's prices on past holding dates — indicative shape only</div>` : ''}
+      ${history.length > 1 ? `<div class="home-chart" id="home-chart" style="margin-top:14px" aria-label="Portfolio value trend"></div>` : ''}
     </div>
 
-    ${window.Signals ? Signals.renderBriefCard() : ''}
-
-    <div class="home-stats cap-reveal">
-      <div class="stat-card">
-        <div class="stat-label">Annual Yield</div>
-        <div class="stat-value t-green">${summary.portfolioDivYield.toFixed(1)}%</div>
-        <div class="stat-sub">on invested capital</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Invested</div>
-        <div class="stat-value">${PlatformUI.fmt(summary.invested)}</div>
-        <div class="stat-sub">${holdings.length} positions</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Gain/Loss</div>
-        <div class="stat-value ${summary.totalReturn.abs >= 0 ? 't-gain' : 't-loss'}">${summary.totalReturn.abs >= 0 ? '+' : ''}${PlatformUI.fmt(summary.totalReturn.abs)}</div>
-        <div class="stat-sub">${summary.totalReturn.pct.toFixed(1)}%</div>
-      </div>
+    <div class="lc-stat-row cap-reveal">
+      <div class="lc-stat-card"><div class="stat-label">Annual yield</div><div class="stat-value t-gain">${summary.portfolioDivYield.toFixed(1)}%</div><div class="stat-sub">on invested capital</div></div>
+      <div class="lc-stat-card"><div class="stat-label">Invested</div><div class="stat-value">${U().fmt(summary.invested)}</div><div class="stat-sub">${holdings.length} positions</div></div>
+      <div class="lc-stat-card"><div class="stat-label">Gain / loss</div><div class="stat-value ${summary.totalReturn.abs >= 0 ? 't-gain' : 't-loss'}">${summary.totalReturn.abs >= 0 ? '+' : ''}${U().fmt(summary.totalReturn.abs)}</div><div class="stat-sub">${summary.totalReturn.pct.toFixed(1)}%</div></div>
+      <div class="lc-stat-card"><div class="stat-label">Cash est.</div><div class="stat-value">${U().fmt(Ledger.cashBalance(state.transactions || []))}</div><div class="stat-sub">uninvested</div></div>
     </div>
 
-    <div class="home-filters cap-reveal">
-      <select class="home-filter" onchange="Home.setSortBy(this.value)">
+    ${window.Signals ? M().morningBriefCard() : ''}
+
+    ${M().sectionHead('Holdings', `${holdings.length} positions`, '<button type="button" class="lc-section-action" onclick="Navigation.go(\'holdings\')">Full table →</button>')}
+
+    <div class="lc-filter-bar cap-reveal">
+      <select class="home-filter" aria-label="Sort holdings" onchange="Home.setSortBy(this.value)">
         <option value="value" ${_sortBy === 'value' ? 'selected' : ''}>Sort: Value</option>
         <option value="gain" ${_sortBy === 'gain' ? 'selected' : ''}>Sort: Gain %</option>
         <option value="yield" ${_sortBy === 'yield' ? 'selected' : ''}>Sort: Dividend %</option>
-        <option value="alphabet" ${_sortBy === 'alphabet' ? 'selected' : ''}>Sort: A-Z</option>
+        <option value="alphabet" ${_sortBy === 'alphabet' ? 'selected' : ''}>Sort: A–Z</option>
       </select>
-      <select class="home-filter" onchange="Home.setFilter(this.value)">
-        <option value="">All Sectors</option>
-        ${[...new Set(holdings.map(h => h.sector))].map(s => `<option value="${s}" ${_filterSector === s ? 'selected' : ''}>${s}</option>`).join('')}
+      <select class="home-filter" aria-label="Filter by sector" onchange="Home.setFilter(this.value)">
+        <option value="">All sectors</option>
+        ${[...new Set(holdings.map(h => h.sector).filter(Boolean))].map(s => `<option value="${s}" ${_filterSector === s ? 'selected' : ''}>${s}</option>`).join('')}
       </select>
-      <button class="home-view-btn ${_viewMode === 'list' ? 'active' : ''}" onclick="Home.setViewMode('list')">List</button>
-      <button class="home-view-btn ${_viewMode === 'grid' ? 'active' : ''}" onclick="Home.setViewMode('grid')">Grid</button>
+      <div class="lc-pill-group" role="group" aria-label="View mode">
+        <button type="button" class="lc-view-pill ${_viewMode === 'table' ? 'active' : ''}" onclick="Home.setViewMode('table')">Table</button>
+        <button type="button" class="lc-view-pill ${_viewMode === 'list' ? 'active' : ''}" onclick="Home.setViewMode('list')">List</button>
+        <button type="button" class="lc-view-pill ${_viewMode === 'grid' ? 'active' : ''}" onclick="Home.setViewMode('grid')">Grid</button>
+      </div>
     </div>
 
-    <div class="home-holdings cap-reveal">
-      ${_renderHoldings(holdings)}
-    </div>
+    <div class="lc-holdings-wrap cap-reveal">${_renderHoldings(holdings)}</div>
 
-    <div class="home-insights cap-reveal">
-      <div class="home-section-title">Quick insights</div>
+    ${M().sectionHead('Insights', 'Brief', '<button type="button" class="lc-section-action" onclick="Navigation.go(\'research\', false, { portfolioIntel: true })">Full analysis →</button>')}
+    <div class="home-insights cap-reveal" style="padding:0 20px 8px">
       ${intel.insights.slice(0, 3).map(i => `<div class="insight-item ${i.severity}">${i.text}</div>`).join('')}
-      <button class="home-btn-secondary" onclick="Navigation.go('research', false, { portfolioIntel: true })">Full analysis →</button>
     </div>
 
-    <div class="home-quick-nav cap-reveal">
-      <button type="button" class="home-quick-link" onclick="Navigation.go('signals')">Signals</button>
-      <button type="button" class="home-quick-link" onclick="Navigation.go('pilot-tools')">Pilot Tools</button>
-      <button type="button" class="home-quick-link" onclick="Navigation.go('performance')">Performance</button>
-      <button type="button" class="home-quick-link" onclick="Navigation.go('comparison')">Compare</button>
-      <button type="button" class="home-quick-link" onclick="Navigation.go('transactions')">Transactions</button>
-    </div>
-
+    ${M().sectionHead('Platform', 'Tools')}
+    ${M().defaultTools()}
     <div style="height:var(--space-4);"></div>`;
 
-    // Render chart
     if (history.length > 1) {
       const chart = document.getElementById('home-chart');
       if (chart && Charts.lineChart) {
-        chart.innerHTML = Charts.lineChart(history, { color: '#2563eb', height: 100, fill: true });
+        chart.innerHTML = Charts.lineChart(history, { color: 'var(--os-accent)', height: 88, fill: true });
       }
     }
     CapMotion.refresh();
@@ -118,51 +105,55 @@ const Home = (() => {
     else if (_sortBy === 'alphabet') sorted.sort((a, b) => a.symbol.localeCompare(b.symbol));
     else sorted.sort((a, b) => b.value - a.value);
 
+    const U = PlatformUI;
+
+    if (_viewMode === 'table') {
+      return `<div class="rt-table-wrap"><table class="rt-table">
+        <thead><tr><th>Symbol</th><th>Last</th><th>Qty</th><th>Value</th><th>Today</th><th>G/L</th><th>Alloc</th></tr></thead>
+        <tbody>${sorted.map(h => {
+          const day = MarketUI.dailyChgPct(h.symbol, h.price);
+          return `<tr onclick="Navigation.go('research');Research.open('${h.symbol}')">
+            <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.name || h.sector || h.broker}</div></td>
+            <td>${U.fmt(h.price)}</td>
+            <td>${h.kind === 'fund' ? h.quantity.toFixed(2) : h.quantity}</td>
+            <td>${U.fmt(h.value)}</td>
+            <td class="${day == null ? '' : U.chgCls(day)}">${day == null ? '—' : U.fmt(day, { pct: true, signed: true })}</td>
+            <td class="${U.chgCls(h.pnlPct)}">${U.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+            <td>${h.allocPct.toFixed(1)}%</td>
+          </tr>`;
+        }).join('')}</tbody></table></div>`;
+    }
+
     if (_viewMode === 'grid') {
       return `<div class="holdings-grid">${sorted.map(h => `
-        <div class="holding-card" onclick="Navigation.go('research');Research.open('${h.symbol}')">
+        <div class="holding-card" role="button" tabindex="0" aria-label="View ${h.symbol}" onclick="Navigation.go('research');Research.open('${h.symbol}')">
           <div class="holding-symbol">${h.symbol}</div>
-          <div class="holding-price">${PlatformUI.fmt(h.price)}</div>
+          <div class="holding-price">${U.fmt(h.price)}</div>
           <div class="holding-qty">${h.quantity} units</div>
-          <div class="holding-value">${PlatformUI.fmt(h.value)}</div>
+          <div class="holding-value">${U.fmt(h.value)}</div>
           <div class="holding-gain ${h.pnlPct >= 0 ? 't-gain' : 't-loss'}">${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(1)}%</div>
-          ${h.divYield ? `<div class="holding-yield" style="font-size:0.75rem;color:var(--text2);margin-top:4px">${h.divYield.toFixed(1)}% div</div>` : ''}
-        </div>
-      `).join('')}</div>`;
+        </div>`).join('')}</div>`;
     }
 
     return `<div class="holdings-list">${sorted.map(h => `
-      <div class="holding-row" onclick="Navigation.go('research');Research.open('${h.symbol}')">
-        <div class="holding-left">
-          <div class="holding-symbol">${h.symbol}</div>
-          <div class="holding-detail">${h.quantity} @ ${PlatformUI.fmt(h.price)}</div>
-        </div>
-        <div class="holding-right">
-          <div class="holding-value">${PlatformUI.fmt(h.value)}</div>
-          <div class="holding-gain ${h.pnlPct >= 0 ? 't-gain' : 't-loss'}">${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(1)}%</div>
-        </div>
-      </div>
-    `).join('')}</div>`;
+      <div class="holding-row" role="button" tabindex="0" aria-label="View ${h.symbol}" onclick="Navigation.go('research');Research.open('${h.symbol}')">
+        <div class="holding-left"><div class="holding-symbol">${h.symbol}</div><div class="holding-detail">${h.quantity} @ ${U.fmt(h.price)}</div></div>
+        <div class="holding-right"><div class="holding-value">${U.fmt(h.value)}</div><div class="holding-gain ${h.pnlPct >= 0 ? 't-gain' : 't-loss'}">${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(1)}%</div></div>
+      </div>`).join('')}</div>`;
   }
 
   function _generateHistoryFromTransactions(state) {
     const history = [];
     let lastDate = null;
-    const txns = (state.transactions || []).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    txns.forEach(txn => {
+    (state.transactions || []).sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(txn => {
       if (txn.type !== 'BUY' && txn.type !== 'SELL') return;
       const date = new Date(txn.date).toISOString().split('T')[0];
       if (date === lastDate) return;
       lastDate = date;
       history.push(_calcPortfolioValueAtDate(state, date));
     });
-
     const total = State.calcTotalValue();
-    if (!history.length || history[history.length - 1] !== total) {
-      history.push(total);
-    }
-
+    if (!history.length || history[history.length - 1] !== total) history.push(total);
     return history.length < 2 ? [total, total] : history;
   }
 
@@ -176,12 +167,8 @@ const Home = (() => {
   function _calcPortfolioValueAtDate(state, date) {
     const txs = (state.transactions || []).filter(t => t.date <= date);
     let value = 0;
-    Ledger.calcHoldings(txs).forEach(h => {
-      value += h.shares * _priceAt(state, h.symbol, h.avgCost);
-    });
-    Ledger.calcFundHoldings(txs).forEach(f => {
-      value += f.units * _priceAt(state, f.symbol, f.avgNav);
-    });
+    Ledger.calcHoldings(txs).forEach(h => { value += h.shares * _priceAt(state, h.symbol, h.avgCost); });
+    Ledger.calcFundHoldings(txs).forEach(f => { value += f.units * _priceAt(state, f.symbol, f.avgNav); });
     return value;
   }
 

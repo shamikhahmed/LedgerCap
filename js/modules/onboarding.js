@@ -27,7 +27,7 @@ const Onboarding = (() => {
       <div class="ob-shell">
         <div class="ob-top">
           <div class="ob-brand">Ledger<em>Cap</em></div>
-          <button class="ob-skip-top" onclick="Onboarding.skip()">Skip</button>
+          <button type="button" class="ob-skip-top" onclick="Onboarding.skip()">Skip</button>
         </div>
         <div class="ob-progress">${_dots(1)}</div>
 
@@ -40,7 +40,7 @@ const Onboarding = (() => {
             <li><span>💰</span> Investment tracker</li>
             <li><span>🎯</span> SIP &amp; freedom planning</li>
           </ul>
-          <button class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
+          <button type="button" class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
         </div>
 
         <div class="ob-panel" id="ob-panel-2">
@@ -68,8 +68,8 @@ const Onboarding = (() => {
             </div>
           </div>
           <div class="ob-nav">
-            <button class="btn-ghost" onclick="Onboarding.back()">Back</button>
-            <button class="btn-primary" onclick="Onboarding.next()">Continue</button>
+            <button type="button" class="btn-ghost" onclick="Onboarding.back()">Back</button>
+            <button type="button" class="btn-primary" onclick="Onboarding.next()">Continue</button>
           </div>
         </div>
 
@@ -90,8 +90,8 @@ const Onboarding = (() => {
             PSX proxy ready — prices refresh on open
           </div>
           <div class="ob-nav">
-            <button class="btn-ghost" onclick="Onboarding.back()">Back</button>
-            <button class="btn-primary" onclick="Onboarding.finish()">Open dashboard</button>
+            <button type="button" class="btn-ghost" onclick="Onboarding.back()">Back</button>
+            <button type="button" class="btn-primary" onclick="Onboarding.finish()">Open dashboard</button>
           </div>
         </div>
       </div>`;

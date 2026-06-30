@@ -2,7 +2,6 @@
 const Research = (() => {
   let _symbol = null;
   let _mode = 'stock';
-  const U = PlatformUI;
 
   function setMode(mode) {
     _mode = mode === 'portfolio' ? 'portfolio' : 'stock';
@@ -14,13 +13,14 @@ const Research = (() => {
     _symbol = symbol;
     _mode = 'stock';
     try { sessionStorage.setItem('ledgercap_research_mode', 'stock'); } catch (_) {}
+    if (typeof Navigation !== 'undefined') Navigation.go('research', true);
     render();
   }
 
-  function modeBar() {
-    return `<div class="rt-mode-bar cap-tab-bar--segmented cap-reveal">
-      <button type="button" class="rt-mode-btn cap-tab${_mode === 'stock' ? ' active' : ''}" onclick="Research.setMode('stock')">Stock analysis</button>
-      <button type="button" class="rt-mode-btn cap-tab${_mode === 'portfolio' ? ' active' : ''}" onclick="Research.setMode('portfolio')">Portfolio intel</button>
+  function _modeBar() {
+    return `<div class="psx-filters">
+      <button type="button" class="psx-filter${_mode === 'stock' ? ' on' : ''}" onclick="Research.setMode('stock')">Stock</button>
+      <button type="button" class="psx-filter${_mode === 'portfolio' ? ' on' : ''}" onclick="Research.setMode('portfolio')">Portfolio intel</button>
     </div>`;
   }
 
@@ -28,132 +28,79 @@ const Research = (() => {
     const screen = document.getElementById('screen-research');
     if (!screen) return;
 
-    if (_mode === 'stock') {
-      try {
-        const saved = sessionStorage.getItem('ledgercap_research_mode');
-        if (saved === 'portfolio') _mode = 'portfolio';
-      } catch (_) {}
-    }
-
     if (_mode === 'portfolio') {
-      screen.innerHTML = `${modeBar()}<div id="research-portfolio-host"></div>`;
+      screen.innerHTML = `${PsxUI.strip()}${_modeBar()}<div id="research-portfolio-host" style="padding:0 16px"></div>`;
       if (window.Intelligence) Intelligence.render(document.getElementById('research-portfolio-host'));
       return;
     }
 
     const symbols = StockService.listSymbols();
     if (!_symbol && symbols.length) _symbol = symbols[0];
-
     if (!_symbol) {
-      screen.innerHTML = `${modeBar()}<div class="rt-terminal"><div class="rt-header"><div class="rt-sym">Research</div><div class="rt-name">Add holdings to begin stock analysis</div></div></div>`;
+      screen.innerHTML = `${PsxUI.strip()}${PsxUI.pageTitle(I18n.t('analyze.title'), 'Add holdings to analyze')}`;
       return;
     }
 
     const r = ResearchService.getStockReport(_symbol);
-    const { profile, fundamentals: f, quote, changes, ai, divHist, position } = r;
+    const { profile, fundamentals: f, quote, changes, ai, position } = r;
     const isFund = f.type === 'fund';
+    const sd = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === r.symbol);
+    const shLabel = sd?.isShariah ? I18n.t('analyze.shariahCompliant') : I18n.t('analyze.notShariah');
 
     screen.innerHTML = `
-    ${modeBar()}
-    <div class="rt-terminal">
-      <div class="rt-header cap-reveal">
-        <div class="rt-header-top">
-          <div>
-            <div class="rt-sym">${r.symbol}</div>
-            <div class="rt-name">${profile.name} · ${profile.sector || profile.category || ''}</div>
-          </div>
-          <div>
-            <div class="rt-price">${U.fmt(quote.price)}</div>
-            <div class="rt-chg ${U.chgCls(quote.changePct)}">${quote.changePct >= 0 ? '+' : ''}${quote.changePct.toFixed(2)}% today</div>
-          </div>
-        </div>
+      ${PsxUI.strip()}
+      ${_modeBar()}
+      <div class="psx-page-title">
+        <h1>${r.symbol}</h1>
+        <p>${profile.name} · ${profile.sector || profile.category || ''}</p>
       </div>
-
-      <div class="rt-search"><input type="search" placeholder="Search symbol…" id="rt-search" oninput="Research._onSearch(this.value)"></div>
-      <div class="rt-sym-pills" id="rt-pills">
-        ${symbols.slice(0, 20).map(s => `<button class="rt-pill${s === r.symbol ? ' active' : ''}" onclick="Research.open('${s}')">${s}</button>`).join('')}
+      <div class="psx-hero" style="margin-top:0">
+        <div class="psx-hero-val">${PsxUI.fmt(quote.price)}</div>
+        <div class="psx-hero-pills"><span class="psx-pill ${quote.changePct >= 0 ? 'up' : 'down'}">${PsxUI.fmt(quote.changePct, { pct: true, signed: true })} today</span></div>
       </div>
-
-      <div class="rt-ai-bar">
-        <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Smart rating</div><div class="rt-ai-stat-val">${U.ratingBadge(ai.action)}</div></div>
-        <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Confidence</div><div class="rt-ai-stat-val">${ai.confidence}%</div></div>
-        <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Fair Value</div><div class="rt-ai-stat-val">${U.fmt(ai.fairValue)}</div></div>
-        <div class="rt-ai-stat"><div class="rt-ai-stat-lbl">Risk</div><div class="rt-ai-stat-val">${ai.riskScore}/100</div></div>
+      <div class="psx-analyze">
+        <h3>${I18n.t('analyze.plainEnglish')}</h3>
+        <p>${ai.summary}</p>
+        <p style="margin-top:8px;font-size:13px;color:var(--psx-text-3)">${shLabel}</p>
       </div>
-
-      ${U.section('Price Performance', U.metricGrid([
-        U.metricCell('Daily', U.fmt(changes.daily, { pct: true, signed: true }), null, U.chgCls(changes.daily)),
-        U.metricCell('Weekly', U.fmt(changes.weekly, { pct: true, signed: true }), null, U.chgCls(changes.weekly)),
-        U.metricCell('Monthly', U.fmt(changes.monthly, { pct: true, signed: true }), null, U.chgCls(changes.monthly)),
-        U.metricCell('Yearly', U.fmt(changes.yearly, { pct: true, signed: true }), null, U.chgCls(changes.yearly)),
-      ], 4))}
-
-      ${isFund ? U.section('Fund Analytics', U.metricGrid([
-        U.metricCell('NAV', U.fmt(f.nav)),
-        U.metricCell('Category', f.category || '—'),
-        U.metricCell('1Y Return', U.fmt(f.oneYearReturn, { pct: true }), null, U.chgCls(f.oneYearReturn)),
-        U.metricCell('3Y Return', U.fmt(f.threeYearReturn, { pct: true })),
-        U.metricCell('YTD', U.fmt(f.ytdReturn, { pct: true, signed: true }), null, U.chgCls(f.ytdReturn)),
-        U.metricCell('Expense', (f.expenseRatio || '—') + '%'),
-        U.metricCell('Div Yield', U.fmt(f.divYield, { pct: true })),
-        U.metricCell('Sharpe', f.sharpe ?? '—'),
-      ], 4)) : U.section('Fundamentals', U.metricGrid([
-        U.metricCell('Market Cap', f.marketCap ? U.fmt(f.marketCap * 1000, { compact: true }) : '—', '₨ thousands'),
-        U.metricCell('P/E', f.pe ?? '—'),
-        U.metricCell('P/B', f.pb ?? '—'),
-        U.metricCell('ROE', f.roe ? f.roe + '%' : '—'),
-        U.metricCell('Div Yield', f.divYield ? f.divYield + '%' : '—'),
-        U.metricCell('EPS', f.eps ? '₨' + f.eps : '—'),
-        U.metricCell('Rev Growth', f.revGrowth ? f.revGrowth + '%' : '—', null, U.chgCls(f.revGrowth)),
-        U.metricCell('Profit Growth', f.profitGrowth ? f.profitGrowth + '%' : '—', null, U.chgCls(f.profitGrowth)),
-      ], 4))}
-
-      ${!isFund && f.available ? U.section('Valuation Scenarios', `
-        <div class="rt-scenario">
-          <div class="rt-scenario-card bull"><div class="rt-metric-lbl">Bull Case</div><div class="rt-metric-val t-gain">${U.fmt(ai.bull)}</div><div class="rt-metric-sub">+${((ai.bull - quote.price) / quote.price * 100).toFixed(0)}%</div></div>
-          <div class="rt-scenario-card"><div class="rt-metric-lbl">Base Case</div><div class="rt-metric-val">${U.fmt(ai.base)}</div></div>
-          <div class="rt-scenario-card bear"><div class="rt-metric-lbl">Bear Case</div><div class="rt-metric-val t-loss">${U.fmt(ai.bear)}</div><div class="rt-metric-sub">${((ai.bear - quote.price) / quote.price * 100).toFixed(0)}%</div></div>
-        </div>`) : ''}
-
-      ${position ? U.section('Your Position', U.metricGrid([
-        U.metricCell('Shares', position.shares),
-        U.metricCell('Avg Cost', U.fmt(position.avgCost)),
-        U.metricCell('Value', U.fmt(position.value)),
-        U.metricCell('P&L', U.fmt(position.pnl, { signed: false }), U.fmt(position.pnlPct, { pct: true, signed: true }), U.chgCls(position.pnl)),
-        U.metricCell('Yield on Cost', position.yieldOnCost ? position.yieldOnCost.toFixed(1) + '%' : '—'),
-        U.metricCell('Broker', position.broker),
-      ], 3)) : ''}
-
-      ${!isFund && divHist.seedAnnual?.length ? U.section('Dividend History', `
-        <div class="rt-table-wrap"><table class="rt-table"><thead><tr><th>Year</th><th>Annual DPS</th><th>Growth</th></tr></thead><tbody>
-        ${divHist.seedAnnual.map((d, i) => {
-          const prev = divHist.seedAnnual[i + 1];
-          const g = prev ? ((d.amount - prev.amount) / prev.amount * 100).toFixed(1) : '—';
-          return `<tr><td>${d.year}</td><td>₨${d.amount}</td><td class="${typeof g === 'string' ? '' : U.chgCls(parseFloat(g))}">${g}${typeof g === 'number' || (g !== '—' && !isNaN(g)) ? '%' : ''}</td></tr>`;
-        }).join('')}
-        </tbody></table></div>`) : ''}
-
-      ${U.section('Analysis', `<div class="os-ai-box" style="margin:0;">${ai.summary}</div>`)}
-
-      ${U.section('Research Notes', `
-        <textarea class="field-input" id="rs-notes" rows="4" style="width:100%;">${r.notes}</textarea>
-        <button class="os-btn os-btn-primary" style="margin-top:10px;" onclick="Research.saveNotes('${r.symbol}')">Save notes</button>`)}
-    </div>`;
-    CapMotion.refresh();
+      <div class="psx-search"><input type="search" placeholder="Search symbol…" id="rt-search" oninput="Research._onSearch(this.value)"></div>
+      <div class="psx-sym-row" id="rt-pills">${symbols.slice(0, 24).map(s => `<button type="button" class="psx-sym-chip${s === r.symbol ? ' on' : ''}" onclick="Research.open('${s}')">${s}</button>`).join('')}</div>
+      <div class="psx-metrics">
+        <div class="psx-metric"><div class="psx-metric-l">Smart rating</div><div class="psx-metric-v">${ai.action}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Confidence</div><div class="psx-metric-v">${ai.confidence}%</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Fair value</div><div class="psx-metric-v">${PsxUI.fmt(ai.fairValue)}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Risk</div><div class="psx-metric-v">${ai.riskScore}/100</div></div>
+      </div>
+      ${!isFund ? `<div class="psx-section"><h2>${I18n.t('analyze.fundamentals')}</h2></div>
+      <div class="psx-metrics">
+        <div class="psx-metric"><div class="psx-metric-l">P/E</div><div class="psx-metric-v">${f.pe ?? '—'}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Div yield</div><div class="psx-metric-v">${f.divYield ? f.divYield + '%' : '—'}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">ROE</div><div class="psx-metric-v">${f.roe ? f.roe + '%' : '—'}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">EPS</div><div class="psx-metric-v">${f.eps ? '₨' + f.eps : '—'}</div></div>
+      </div>` : ''}
+      <div class="psx-metrics">
+        <div class="psx-metric"><div class="psx-metric-l">Daily</div><div class="psx-metric-v ${PsxUI.chgCls(changes.daily)}">${PsxUI.fmt(changes.daily, { pct: true, signed: true })}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Weekly</div><div class="psx-metric-v ${PsxUI.chgCls(changes.weekly)}">${PsxUI.fmt(changes.weekly, { pct: true, signed: true })}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Monthly</div><div class="psx-metric-v ${PsxUI.chgCls(changes.monthly)}">${PsxUI.fmt(changes.monthly, { pct: true, signed: true })}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Yearly</div><div class="psx-metric-v ${PsxUI.chgCls(changes.yearly)}">${PsxUI.fmt(changes.yearly, { pct: true, signed: true })}</div></div>
+      </div>
+      ${position ? `<div class="psx-section"><h2>Your position</h2></div>
+      <div class="psx-metrics">
+        <div class="psx-metric"><div class="psx-metric-l">Shares</div><div class="psx-metric-v">${position.shares}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">Value</div><div class="psx-metric-v">${PsxUI.fmt(position.value)}</div></div>
+        <div class="psx-metric"><div class="psx-metric-l">P&L</div><div class="psx-metric-v ${PsxUI.chgCls(position.pnl)}">${PsxUI.fmt(position.pnlPct, { pct: true, signed: true })}</div></div>
+      </div>` : ''}
+      <div style="height:24px"></div>`;
   }
 
   function _onSearch(q) {
     const el = document.getElementById('rt-pills');
     if (!el) return;
-    const hits = ResearchService.search(q).slice(0, 20);
-    el.innerHTML = hits.map(s => `<button class="rt-pill${s === _symbol ? ' active' : ''}" onclick="Research.open('${s}')">${s}</button>`).join('');
+    el.innerHTML = ResearchService.search(q).slice(0, 24).map(s =>
+      `<button type="button" class="psx-sym-chip${s === _symbol ? ' on' : ''}" onclick="Research.open('${s}')">${s}</button>`
+    ).join('');
   }
 
-  function saveNotes(symbol) {
-    State.update(s => { if (!s.researchNotes) s.researchNotes = {}; s.researchNotes[symbol] = document.getElementById('rs-notes')?.value || ''; });
-    App.showToast('Notes saved', 'success');
-  }
-
-  return { render, open, setMode, saveNotes, _onSearch };
+  return { render, open, setMode, _onSearch };
 })();
 window.Research = Research;

@@ -9,7 +9,7 @@ const Watchlist = (() => {
     <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${w.name || ''}"></div>
     <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
     <div class="field"><label class="field-label">Target price</label><input class="field-input" id="wl-target" type="number" value="${w.targetPrice || ''}"></div>
-    <button class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
+    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
   }
 
   function openAdd() { App.openBottomSheet('watchlist-add', 'Add to Watchlist', _form()); }
@@ -39,11 +39,8 @@ const Watchlist = (() => {
     const list = State.get('watchlist') || [];
 
     screen.innerHTML = `
-    <div class="os-page-header cap-reveal">
-      <div class="os-page-title">Watchlist</div>
-      <div class="os-page-sub">${list.length} symbols tracked</div>
-    </div>
-    <div style="padding:12px 20px;" class="cap-reveal"><button class="os-btn os-btn-primary" onclick="Watchlist.openAdd()">+ Add symbol</button></div>
+    ${MarketUI.pageHeader('Watchlist', 'Track before you buy', `${list.length} symbols · fair value & upside`)}
+    <div style="padding:0 20px 12px;" class="cap-reveal"><button type="button" class="os-btn os-btn-primary" onclick="Watchlist.openAdd()">+ Add symbol</button></div>
     ${list.length ? list.map(w => {
       const quote = MarketDataService.getQuote(w.symbol);
       const ai = AIAnalysis.analyze(w.symbol);
@@ -65,8 +62,8 @@ const Watchlist = (() => {
         </div>
       </div>
       <div style="padding:0 20px 8px;display:flex;gap:8px;">
-        <button class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.openEdit('${w.id}')">Edit</button>
-        <button class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.remove('${w.id}')">Remove</button>
+        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.openEdit('${w.id}')">Edit</button>
+        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.remove('${w.id}')">Remove</button>
       </div>`;
     }).join('') : `<div class="os-section" style="color:var(--os-text-secondary);">Empty watchlist. Track symbols before you buy.</div>`}
     <div style="height:20px;"></div>`;

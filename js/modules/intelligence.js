@@ -10,10 +10,7 @@ const Intelligence = (() => {
 
     const fmtScore = n => Math.round(Number(n) || 0);
     screen.innerHTML = `
-    <div class="os-page-header cap-reveal">
-      <div class="os-page-title">Portfolio Intelligence</div>
-      <div class="os-page-sub">Actionable analysis for your wealth</div>
-    </div>
+    ${MarketUI.pageHeader('Intelligence', 'Portfolio analysis', 'Scores · insights · sector exposure')}
 
     ${U.section('Portfolio Scores', U.metricGrid([
       U.metricCell('Health', fmtScore(scores.health) + '/100', null, scores.health >= 60 ? 't-gain' : 't-loss'),

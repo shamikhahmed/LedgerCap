@@ -364,9 +364,24 @@ const Ledger = (() => {
 
   function newId() { return 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
 
+  /** Approximate uninvested cash: salary + dividends + sell proceeds - buys - contributions. */
+  function cashBalance(transactions) {
+    let cash = 0;
+    (transactions || []).forEach(t => {
+      if (t.type === 'SALARY')          cash += t.amount || 0;
+      else if (t.type === 'DIVIDEND')   cash += t.amount || 0;
+      else if (t.type === 'SELL')       cash += (t.shares || 0) * (t.price || 0);
+      else if (t.type === 'REDEMPTION') cash += t.amount || 0;
+      else if (t.type === 'BUY' && !t.internal)          cash -= t.amount || 0;
+      else if (t.type === 'CONTRIBUTION' && !t.internal) cash -= t.amount || 0;
+      else if (t.type === 'IPO_SUBSCRIBE' && !t.internal && t.status !== 'refunded') cash -= t.amount || 0;
+    });
+    return Math.max(0, cash);
+  }
+
   return { CDC_BROKER, calcHoldings, calcFundHoldings, calcIpoPending, monthlyContributions, monthlySalary,
     totalInvested, currentCostBasis, unrealisedPnl, totalDividends, realisedPnl, realisedPnlByDate,
     portfolioValueTimeline, dailyPnlSeries, monthlyPnlSeries, currentMonthContribution,
-    investmentTimeline, monthlyInvestmentBars, newId };
+    investmentTimeline, monthlyInvestmentBars, newId, cashBalance };
 })();
 window.Ledger = Ledger;

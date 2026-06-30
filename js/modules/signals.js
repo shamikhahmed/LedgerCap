@@ -29,24 +29,7 @@ const Signals = (() => {
   }
 
   function renderBriefCard() {
-    const brief = PilotEngine.buildMorningBrief();
-    const counts = brief.action_counts || {};
-    const urgent = brief.urgent_signals || [];
-    const top = urgent[0];
-    return `<div class="card card-solid cap-reveal" style="margin:0 16px 16px;border:1px solid rgba(37,99,235,.25);background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(15,23,42,.02))">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px">
-        <div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--os-accent)">Morning Brief</div>
-          <div style="font-size:15px;font-weight:800;color:var(--os-text);margin-top:4px">Rule-based action queue</div>
-        </div>
-        <button class="btn-ghost btn-sm" onclick="Navigation.go('signals')">Open →</button>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        ${['STRONG BUY','ADD','HOLD','WATCH','TRIM','SELL'].map(a => counts[a] ? `<span class="badge" style="font-size:10px">${a} ${counts[a]}</span>` : '').join('')}
-      </div>
-      ${top ? `<div style="font-size:13px;color:var(--os-text-secondary);line-height:1.5"><strong>${top.symbol}</strong> — ${top.action}: ${top.rationale.slice(0, 120)}…</div>` : '<div style="font-size:13px;color:var(--os-text-secondary)">No urgent actions — portfolio in hold zone.</div>'}
-      <div style="font-size:10px;color:var(--os-text-tertiary);margin-top:10px">${brief.disclaimer}</div>
-    </div>`;
+    return typeof MarketUI !== 'undefined' ? MarketUI.morningBriefCard() : '';
   }
 
   function render(target) {
@@ -57,10 +40,7 @@ const Signals = (() => {
     const summary = PilotEngine.portfolioSummary();
 
     screen.innerHTML = `
-    <div class="os-page-header cap-reveal">
-      <div class="os-page-title">Signals</div>
-      <div class="os-page-sub">Morning brief · Core & Swing books · transparent rules</div>
-    </div>
+    ${MarketUI.pageHeader('Signals', 'Morning brief', 'Core & Swing books · transparent rules')}
 
     ${U.metricGrid([
       U.metricCell('Pilot Score', score.grade + ' · ' + score.score, null, score.score >= 70 ? 't-gain' : 't-warn'),
@@ -95,8 +75,8 @@ const Signals = (() => {
       return `<div class="os-row">
         <div class="os-row-sym">${h.symbol}</div>
         <div style="display:flex;gap:6px">
-          <button class="btn-sm ${book === 'core' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','core')">Core</button>
-          <button class="btn-sm ${book === 'swing' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','swing')">Swing</button>
+          <button type="button" class="btn-sm ${book === 'core' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','core')">Core</button>
+          <button type="button" class="btn-sm ${book === 'swing' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','swing')">Swing</button>
         </div>
       </div>`;
     }).join('');

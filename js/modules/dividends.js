@@ -253,10 +253,7 @@ const Dividends = (() => {
     };
 
     screen.innerHTML = `
-    <div class="os-page-header cap-reveal">
-      <div class="os-page-title">Dividend Center</div>
-      <div class="os-page-sub">Earned · forecast · top holdings</div>
-    </div>
+    ${MarketUI.pageHeader('Dividends', 'Income center', 'Earned · forecast · calendar · growth')}
     ${_tabBar()}
     <div class="div-panel cap-reveal">${panels[_tab] || panels.overview}</div>
     <div style="height:24px;"></div>`;
