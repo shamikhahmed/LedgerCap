@@ -45,37 +45,53 @@ export default {
     }
 
     try {
-      const res = await fetch(fetchUrl, {
-        headers: PSX_HEADERS,
-        cf: { cacheTtl: 90, cacheEverything: true },
-      });
-      const body = await res.text();
-      const trimmed = body.trim();
-      if (!trimmed) {
-        return json({ error: 'Empty PSX response', url: fetchUrl }, 502);
-      }
-      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
-        return json({ error: 'PSX returned HTML (endpoint may have moved)', url: fetchUrl }, 404);
-      }
-      let out = trimmed;
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed) || parsed?.data) {
-          const rows = Array.isArray(parsed) ? parsed : parsed.data;
-          if (Array.isArray(rows) && rows.length) {
-            const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
-            out = JSON.stringify(Array.isArray(parsed) ? sorted : { ...parsed, data: sorted });
+      let lastErr = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(fetchUrl, {
+            headers: PSX_HEADERS,
+            cf: { cacheTtl: 90 },
+          });
+          const body = await res.text();
+          const trimmed = body.trim();
+          if (!trimmed) {
+            lastErr = 'Empty PSX response';
+            if (attempt < 2) { await new Promise(r => setTimeout(r, 200 * (attempt + 1))); continue; }
+            return json({ error: lastErr, url: fetchUrl }, 502);
           }
+          if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+            return json({ error: 'PSX returned HTML (endpoint may have moved)', url: fetchUrl }, 404);
+          }
+          if (/^error code:\s*\d+/i.test(trimmed)) {
+            lastErr = trimmed;
+            if (attempt < 2) { await new Promise(r => setTimeout(r, 250 * (attempt + 1))); continue; }
+            return json({ error: 'PSX upstream error', detail: trimmed.slice(0, 80), url: fetchUrl }, 502);
+          }
+          let out = trimmed;
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed) || parsed?.data) {
+              const rows = Array.isArray(parsed) ? parsed : parsed.data;
+              if (Array.isArray(rows) && rows.length) {
+                const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+                out = JSON.stringify(Array.isArray(parsed) ? sorted : { ...parsed, data: sorted });
+              }
+            }
+          } catch { /* pass through raw */ }
+          return new Response(out, {
+            status: 200,
+            headers: {
+              ...CORS,
+              'Content-Type': res.headers.get('Content-Type') || 'application/json',
+              'Cache-Control': 'public, max-age=90',
+            },
+          });
+        } catch (e) {
+          lastErr = e.message || 'Proxy fetch failed';
+          if (attempt < 2) { await new Promise(r => setTimeout(r, 200 * (attempt + 1))); continue; }
         }
-      } catch { /* pass through raw */ }
-      return new Response(out, {
-        status: res.ok ? 200 : res.status,
-        headers: {
-          ...CORS,
-          'Content-Type': res.headers.get('Content-Type') || 'application/json',
-          'Cache-Control': 'public, max-age=90',
-        },
-      });
+      }
+      return json({ error: lastErr || 'Proxy fetch failed', url: fetchUrl }, 502);
     } catch (e) {
       return json({ error: e.message || 'Proxy fetch failed', url: fetchUrl }, 502);
     }

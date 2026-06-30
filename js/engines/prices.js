@@ -20,9 +20,32 @@ const Prices = (() => {
 
   const FUND_SYMBOLS = new Set(['KMIF','MAAF','MBF','MDAAF-MDYP','MIF','MIIF-B','MIIF-MMKA','MIIETF','MZNPETF']);
 
+  let _proxyFailStreak = 0;
   let _proxyDownUntil = 0;
   let _proxyWarned = false;
   const _yahooSkip = new Set();
+  const WORKER_RETRIES = 2;
+  const WORKER_RETRY_MS = 350;
+
+  function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function _markProxySuccess() {
+    _proxyFailStreak = 0;
+    _proxyDownUntil = 0;
+  }
+
+  function _markProxyDown(status) {
+    _proxyFailStreak++;
+    // One flaky 520 should not ban worker for 5 minutes — that forces public CORS proxies.
+    if (_proxyFailStreak >= 4) _proxyDownUntil = Date.now() + 60000;
+    if (!_proxyWarned && _proxyFailStreak >= 2) {
+      console.warn('LedgerCap: PSX proxy flaky — retrying; public fallbacks disabled for PSX.');
+      _proxyWarned = true;
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast('Live PSX feed slow — using cached prices where needed', 'warning');
+      }
+    }
+  }
 
   function _isHtml(text) {
     const t = (text || '').trim();
@@ -72,7 +95,7 @@ const Prices = (() => {
     }
   }
 
-  async function _fetchAppProxy(url) {
+  async function _fetchAppProxy(url, attempt = 0) {
     if (Date.now() < _proxyDownUntil) return null;
 
     const bases = [...(window.LedgerCapConfig?.psxProxyBases?.() || [])];
@@ -90,19 +113,41 @@ const Prices = (() => {
       try {
         const res = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
         if (!res.ok) {
+          if (attempt < WORKER_RETRIES) {
+            await _sleep(WORKER_RETRY_MS * (attempt + 1));
+            return _fetchAppProxy(url, attempt + 1);
+          }
           _markProxyDown(res.status);
           continue;
         }
         const text = await res.text();
-        if (_isBadPayload(text)) { _markProxyDown(res.ok ? 520 : res.status); continue; }
+        if (_isBadPayload(text)) {
+          if (attempt < WORKER_RETRIES) {
+            await _sleep(WORKER_RETRY_MS * (attempt + 1));
+            return _fetchAppProxy(url, attempt + 1);
+          }
+          _markProxyDown(520);
+          continue;
+        }
         const parsed = _parseJson(text);
-        if (parsed) return parsed;
-      } catch { _markProxyDown(502); }
+        if (parsed) {
+          _markProxySuccess();
+          return parsed;
+        }
+      } catch {
+        if (attempt < WORKER_RETRIES) {
+          await _sleep(WORKER_RETRY_MS * (attempt + 1));
+          return _fetchAppProxy(url, attempt + 1);
+        }
+        _markProxyDown(502);
+      }
     }
     return null;
   }
 
+  /** Public CORS proxies — Yahoo only. PSX via allorigins/corsproxy is rate-limited and noisy. */
   async function _fetchPublicProxy(url) {
+    if (/dps\.psx\.com\.pk/i.test(url)) return null;
     for (const proxyUrl of PROXIES) {
       try {
         const res = await fetch(proxyUrl + encodeURIComponent(url), {
@@ -136,9 +181,10 @@ const Prices = (() => {
 
   async function fetchPsxSymbol(symbol) {
     const sym = symbol.toUpperCase();
+    // EOD first — more stable through worker; int as upgrade when market open
     const urls = [
-      { url: `https://dps.psx.com.pk/timeseries/int/${sym}`, source: 'psx_int' },
       { url: `https://dps.psx.com.pk/timeseries/eod/${sym}`, source: 'psx_eod' },
+      { url: `https://dps.psx.com.pk/timeseries/int/${sym}`, source: 'psx_int' },
     ];
     for (const { url, source } of urls) {
       const data = await _fetchRaw(url);
@@ -151,15 +197,15 @@ const Prices = (() => {
 
   async function fetchPsxLive(symbols) {
     const results = {};
-    const batchSize = 5;
+    const batchSize = 2;
     for (let i = 0; i < symbols.length; i += batchSize) {
       const chunk = symbols.slice(i, i + batchSize);
-      await Promise.all(chunk.map(async sym => {
-        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
-        const parsed = _parseTimeseries(data, 'psx_int');
+      for (const sym of chunk) {
+        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+        const parsed = _parseTimeseries(data, 'psx_eod');
         if (parsed) results[sym] = { ...parsed, symbol: sym };
-      }));
-      if (i + batchSize < symbols.length) await new Promise(r => setTimeout(r, 80));
+      }
+      if (i + batchSize < symbols.length) await _sleep(120);
     }
     return results;
   }
