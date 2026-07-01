@@ -35,15 +35,47 @@ function formatMorningBrief(brief, extras) {
   };
   const fmtPkr = n => '₨' + Math.round(n || 0).toLocaleString('en-PK');
   const lines = [
-    `📊 *LedgerCap — Morning Brief* (${escapeMarkdown(day)} ${escapeMarkdown(pkt)})`,
-    `Net worth: *${escapeMarkdown(fmtPkr(netWorth))}* (${sign}${Number(dailyPct).toFixed(1)}%)`,
-    '',
+    `📊 *LedgerCap — Daily Brief* (${escapeMarkdown(day)} ${escapeMarkdown(pkt)})`,
+    `Net worth: *${escapeMarkdown(fmtPkr(netWorth))}* (${sign}${Number(dailyPct).toFixed(1)}% today)`,
   ];
-  (brief?.urgent_signals || []).slice(0, 5).forEach(s => {
-    const em = actionEmoji[s.action] || '•';
-    const rat = escapeMarkdown((s.rationale || '').slice(0, 140));
-    lines.push(`${em} ${escapeMarkdown(s.action)}: *${escapeMarkdown(s.symbol)}* — ${rat}`);
-  });
+  if (extras.invested) lines.push(`Invested: *${escapeMarkdown(fmtPkr(extras.invested))}*`);
+  if (extras.dailyPnl != null) {
+    const dSign = extras.dailyPnl >= 0 ? '+' : '';
+    lines.push(`Today P&L: *${dSign}${escapeMarkdown(fmtPkr(extras.dailyPnl))}*`);
+  }
+  if (extras.totalPnl != null) {
+    const tSign = extras.totalPnl >= 0 ? '+' : '';
+    const tPct = extras.totalPnlPct != null ? ` (${tSign}${Number(extras.totalPnlPct).toFixed(1)}%)` : '';
+    lines.push(`All-time P&L: *${tSign}${escapeMarkdown(fmtPkr(extras.totalPnl))}*${tPct}`);
+  }
+  if (extras.portfolios?.length) {
+    lines.push('', '*Portfolios*');
+    extras.portfolios.slice(0, 6).forEach(p => {
+      const ps = (p.pnlPct || 0) >= 0 ? '+' : '';
+      lines.push(`• *${escapeMarkdown(p.name)}* ${escapeMarkdown(fmtPkr(p.value))} (${ps}${Number(p.pnlPct || 0).toFixed(1)}%)`);
+    });
+  }
+  if (extras.dividends?.length) {
+    lines.push('', '*Upcoming dividends*');
+    extras.dividends.slice(0, 5).forEach(d => {
+      lines.push(`• *${escapeMarkdown(d.symbol)}* ex in ${d.days}d · ${escapeMarkdown(fmtPkr(d.amountPkr))}/sh`);
+    });
+  }
+  if (extras.news?.length) {
+    lines.push('', '*News — your holdings*');
+    extras.news.slice(0, 4).forEach(n => {
+      lines.push(`• [${escapeMarkdown(n.tag || 'News')}] *${escapeMarkdown(n.symbol)}* ${escapeMarkdown(n.title)}`);
+    });
+  }
+  const signals = (brief?.urgent_signals || []).slice(0, 4);
+  if (signals.length) {
+    lines.push('', '*Signals*');
+    signals.forEach(s => {
+      const em = actionEmoji[s.action] || '•';
+      const rat = escapeMarkdown((s.rationale || '').slice(0, 100));
+      lines.push(`${em} ${escapeMarkdown(s.action)}: *${escapeMarkdown(s.symbol)}* — ${rat}`);
+    });
+  }
   const counts = brief?.action_counts || {};
   lines.push(
     '',

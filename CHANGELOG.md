@@ -1,5 +1,20 @@
 # Changelog — LedgerCap
 
+## 3.33.0 (2026-07-01) — Hub UI + rich Telegram daily brief
+
+### Hub UI
+- Capital deployed table — clear Deployed / Value / P&L columns, separate Txs buttons
+- KSE-100 ticker pill — readable in light and dark mode
+- Market breadth pills — borders and contrast fixes
+- Light/dark theme polish across deploy grid and pulse row
+
+### Telegram
+- Daily brief now includes portfolios, P&L, upcoming dividends, holding news, signals
+- Cloud sync payload carries full extras for worker cron
+
+### Service worker
+- `ledgercap-v99`
+
 ## 3.32.0 (2026-06-30) — Phase 4 UI polish
 
 ### Design

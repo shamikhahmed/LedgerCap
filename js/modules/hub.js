@@ -52,11 +52,11 @@ const Hub = (() => {
       <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'declining' ? ' on' : ''}" onclick="Hub.openMarketFilter('declining')" aria-pressed="${active === 'declining'}">
         <label>Declining</label><b class="psx-down">${stats.dec}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'unchanged' ? ' on' : ''}" onclick="Hub.openMarketFilter('unchanged')" aria-pressed="${active === 'unchanged'}">
-        <label>Flat</label><b>${stats.unch}</b>
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--flat${active === 'unchanged' ? ' on' : ''}" onclick="Hub.openMarketFilter('unchanged')" aria-pressed="${active === 'unchanged'}">
+        <label>Flat</label><b class="lc-pulse-neutral">${stats.unch}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'all' ? ' on' : ''}" onclick="Hub.openMarketFilter('all')" aria-pressed="${active === 'all'}">
-        <label>Listed</label><b>${stats.listed}</b>
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--listed${active === 'all' ? ' on' : ''}" onclick="Hub.openMarketFilter('all')" aria-pressed="${active === 'all'}">
+        <label>Listed</label><b class="lc-pulse-listed">${stats.listed}</b>
       </button>
     </div>`;
   }
@@ -91,16 +91,45 @@ const Hub = (() => {
     if (typeof PortfolioBuckets === 'undefined' || !PortfolioBuckets.investmentSummary) return '';
     const sum = PortfolioBuckets.investmentSummary(state);
     const txSum = typeof TransactionLedger !== 'undefined' ? TransactionLedger.summary(state.transactions || []) : null;
-    if (!sum.rows.some(r => r.deployedPkr > 0)) return '';
+    const rows = sum.rows.filter(r => r.deployedPkr > 0 || r.value > 0 || r.positions > 0);
+    if (!rows.length) return '';
+    const fmtPnl = (r) => {
+      const sign = r.pnl >= 0 ? '+' : '';
+      return `${sign}${PsxUI.fmt(r.pnl, { signed: r.pnl > 0 })} (${sign}${Number(r.pnlPct || 0).toFixed(1)}%)`;
+    };
     return `<div class="lc-dash-section">
-      <div class="lc-dash-section-head"><h3>Capital deployed</h3><span>Total ${PsxUI.fmt(sum.totalDeployed)}${txSum ? ` · tax/fees ${PsxUI.fmt(txSum.charges)}` : ''}</span></div>
-      <div class="lc-sector-card">
-        ${sum.rows.filter(r => r.deployedPkr > 0).map(r => `
-          <button type="button" class="lc-market-row" onclick="Hub.openPortfolio('${r.id}')">
-            <div><div class="lc-market-sym">${r.name}</div><div class="lc-market-name">${r.deployedNote || ''}</div></div>
-            <div class="lc-market-price">${r.id === 'usa' && r.deployedUsd ? FxService.fmtUsdPkr(r.deployedUsd) : PsxUI.fmt(r.deployedPkr)}</div>
-            <div class="lc-market-chg">${PsxUI.fmt(r.value)} · <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openBucket('${r.id}')">Txs</button></div>
-          </button>`).join('')}
+      <div class="lc-dash-section-head lc-dash-section-head--stack">
+        <h3>Capital deployed</h3>
+        <div class="lc-deploy-totals">
+          <span>Total deployed <strong>${PsxUI.fmt(sum.totalDeployed)}</strong></span>
+          <span>Market value <strong>${PsxUI.fmt(sum.totalValue)}</strong></span>
+          ${txSum ? `<span>Tax/fees <strong>${PsxUI.fmt(txSum.charges)}</strong></span>` : ''}
+        </div>
+      </div>
+      <div class="lc-sector-card lc-deploy-card">
+        <div class="lc-deploy-grid lc-deploy-grid--head" aria-hidden="true">
+          <span>Portfolio</span>
+          <span>Deployed</span>
+          <span>Value</span>
+          <span>P&amp;L</span>
+          <span></span>
+        </div>
+        ${rows.map(r => {
+          const dep = r.id === 'usa' && r.deployedUsd
+            ? FxService.fmtUsdPkr(r.deployedUsd)
+            : PsxUI.fmt(r.deployedPkr);
+          const pnlCls = r.pnl >= 0 ? 'psx-up' : 'psx-down';
+          return `<div class="lc-deploy-grid lc-deploy-row">
+            <button type="button" class="lc-deploy-name-btn" onclick="Hub.openPortfolio('${r.id}')">
+              <div class="lc-market-sym">${r.name}</div>
+              <div class="lc-market-name">${r.deployedNote || ''}</div>
+            </button>
+            <div class="lc-deploy-num lc-deploy-deployed">${dep}</div>
+            <div class="lc-deploy-num lc-deploy-num--strong lc-deploy-value">${PsxUI.fmt(r.value)}</div>
+            <div class="lc-deploy-pnl ${pnlCls}">${fmtPnl(r)}</div>
+            <button type="button" class="lc-deploy-txs" onclick="Transactions.openBucket('${r.id}')">Txs</button>
+          </div>`;
+        }).join('')}
       </div>
       ${txSum ? `<div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('transactions')">All transactions (${txSum.count})</button>

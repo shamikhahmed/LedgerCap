@@ -119,11 +119,11 @@ const PortfolioBuckets = (() => {
 
   function investmentSummary(state) {
     state = state || (typeof State !== 'undefined' ? State.get() : {});
-    const ids = ['rafi', 'akd', 'funds', 'usa'];
+    const ids = ['rafi', 'akd', 'cdc', 'funds', 'usa'];
     const rows = ids.map(id => {
       const b = BUILTIN.find(x => x.id === id);
       const s = statsForBucket(state, id);
-      return { id, name: b?.name || id, ...s };
+      return { id, name: b?.name || id, deployedNote: grossCashDeployed(state, id).note, ...s };
     });
     const totalDeployed = rows.reduce((sum, r) => sum + (r.deployedPkr || 0), 0);
     const totalValue = rows.reduce((sum, r) => sum + (r.value || 0), 0);

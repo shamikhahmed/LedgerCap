@@ -37,11 +37,30 @@ const brief = {
   action_counts: { SELL: 1, ADD: 1, HOLD: 10 },
 };
 const msg = Ts.formatMorningBrief(brief, { netWorth: 2000000, dailyPct: 1.2, pilotScore: { grade: 'B', score: 72 }, weekdayLabel: 'Tue', pktLabel: '9:00 PKT' });
-assert(msg.includes('Morning Brief'), 'brief title');
+assert(msg.includes('Daily Brief'), 'brief title');
 assert(msg.includes('LUCK'), 'brief symbol');
 assert(msg.includes('Pilot Score'), 'brief score');
 assert(msg.length <= 4096, 'brief within limit');
 assert(!msg.includes('a_b'), 'brief escaped content');
+
+const rich = Ts.formatMorningBrief(brief, {
+  netWorth: 2000000,
+  dailyPct: 1.2,
+  invested: 1800000,
+  dailyPnl: 24000,
+  totalPnl: 49000,
+  totalPnlPct: 2.4,
+  pilotScore: { grade: 'B', score: 72 },
+  portfolios: [{ name: 'Rafi', value: 570000, pnlPct: 2.3 }],
+  dividends: [{ symbol: 'HUBC', days: 5, amountPkr: 12.5 }],
+  news: [{ symbol: 'LUCK', title: 'Earnings beat', tag: 'Earnings' }],
+  weekdayLabel: 'Tue',
+  pktLabel: '9:00 PKT',
+});
+assert(rich.includes('Portfolios'), 'brief portfolios section');
+assert(rich.includes('Upcoming dividends'), 'brief dividends section');
+assert(rich.includes('News'), 'brief news section');
+assert(rich.includes('Today P&L'), 'brief daily pnl');
 
 const div = Ts.formatDividendReminder([{ symbol: 'HUBC', days: 5, amountPkr: 12.5 }]);
 assert(div.includes('HUBC'), 'dividend symbol');

@@ -61,7 +61,7 @@ const App = (() => {
     const spark = hist.length >= 2 && typeof Charts !== 'undefined'
       ? `<span class="lc-ticker-spark">${Charts.lineChart(hist, { height: 28, width: 80, fill: false, color: k.cls === 'psx-up' ? '#22c55e' : '#ef4444' })}</span>`
       : '';
-    el.innerHTML = `${spark}KSE-100 <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>`;
+    el.innerHTML = `<span class="lc-ticker-pill">${spark}<span class="lc-ticker-label">KSE-100</span> <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></span>`;
   }
 
   function checkPriceAlerts() {
