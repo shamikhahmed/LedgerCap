@@ -2,6 +2,7 @@
 const PortfolioScreen = (() => {
   let _filter = null;
   let _lastHoldings = [];
+  let _chartRange = '1M';
 
   function setFilter(id, opts) {
     opts = opts || {};
@@ -11,6 +12,61 @@ const PortfolioScreen = (() => {
   }
   function clearFilter() { _filter = null; }
   function currentFilter() { return _filter; }
+
+  function _daysAgo(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function _chartData(range, currentValue) {
+    const state = State.get();
+    const hist = (state.priceHistory || []).filter((p) => p.value > 0);
+    const intra = state.intradayHistory || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const nowVal = currentValue || State.calcTotalValue();
+
+    if (range === '1D') {
+      const pts = intra.filter((p) => (p.date || '') === today).map((p) => p.value);
+      if (pts.length >= 2) return pts;
+      if (pts.length === 1 && hist.length) return [hist[hist.length - 1].value, pts[0]];
+      if (hist.length >= 2) return [hist[hist.length - 2].value, nowVal];
+      return [nowVal * 0.995, nowVal];
+    }
+    if (range === '1W') {
+      const cutoff = _daysAgo(7);
+      const week = hist.filter((p) => p.date >= cutoff).map((p) => p.value);
+      if (week.length) { week[week.length - 1] = nowVal; return week; }
+      return hist.slice(-7).map((p) => p.value).concat(nowVal).slice(-8);
+    }
+    if (range === '1M') {
+      const cutoff = _daysAgo(30);
+      const m = hist.filter((p) => p.date >= cutoff).map((p) => p.value);
+      if (m.length >= 2) { m[m.length - 1] = nowVal; return m; }
+      const sliced = hist.slice(-30).map((p) => p.value);
+      if (sliced.length) { sliced[sliced.length - 1] = nowVal; return sliced; }
+      return [nowVal * 0.95, nowVal];
+    }
+    if (range === '1Y') {
+      const cutoff = _daysAgo(365);
+      const y = hist.filter((p) => p.date >= cutoff).map((p) => p.value);
+      if (y.length >= 2) { y[y.length - 1] = nowVal; return y; }
+      const sliced = hist.slice(-365).map((p) => p.value);
+      if (sliced.length) { sliced[sliced.length - 1] = nowVal; return sliced; }
+      return [nowVal * 0.85, nowVal];
+    }
+    if (hist.length >= 2) {
+      const all = hist.map((p) => p.value);
+      all[all.length - 1] = nowVal;
+      return all;
+    }
+    return [nowVal * 0.9, nowVal];
+  }
+
+  function setChartRange(r) {
+    _chartRange = r || '1M';
+    render();
+  }
 
   function render(opts) {
     opts = opts || {};
@@ -52,6 +108,20 @@ const PortfolioScreen = (() => {
     const daily = State.calcDailyPnl();
     const heroValue = bucketStats ? bucketStats.value : s.totalValue;
     const heroPnlPct = bucketStats ? bucketStats.pnlPct : s.totalReturn.pct;
+    const chartSeries = _chartData(_chartRange, heroValue);
+    const chartUp = chartSeries.length >= 2 && chartSeries[chartSeries.length - 1] >= chartSeries[0];
+    const ranges = ['1D', '1W', '1M', '1Y', 'All'];
+    const chartBlock = typeof Charts !== 'undefined' ? `
+          <div class="lc-pnl-chart-wrap">
+            <div class="lc-range-picker" role="tablist" aria-label="Chart range">
+              ${ranges.map((r) => `<button type="button" role="tab" class="lc-range-btn${_chartRange === r ? ' on' : ''}" aria-selected="${_chartRange === r}" onclick="PortfolioScreen.setChartRange('${r}')">${r}</button>`).join('')}
+            </div>
+            ${Charts.lineChartBlock(chartSeries, {
+              height: 128,
+              color: chartUp ? '#22c55e' : '#ef4444',
+              ariaLabel: `Portfolio value ${_chartRange}`,
+            })}
+          </div>` : '';
 
     screen.innerHTML = `
       <div class="lc-dash">
@@ -73,6 +143,7 @@ const PortfolioScreen = (() => {
             <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
             <span class="lc-dash-chip ${heroPnlPct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</span>
           </div>
+          ${chartBlock}
         </div>
         <div class="lc-pulse-row">
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(2)}%</b></div>
@@ -102,6 +173,7 @@ const PortfolioScreen = (() => {
             <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
             <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
             <td style="white-space:nowrap">
+              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();App.openPriceAlert('${h.symbol}')">Alert</button>
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>
             </td>
@@ -125,6 +197,6 @@ const PortfolioScreen = (() => {
     if (h && typeof App !== 'undefined') App.openReconcilePosition(h);
   }
 
-  return { render, setFilter, clearFilter, currentFilter, reconcile };
+  return { render, setFilter, clearFilter, currentFilter, reconcile, setChartRange };
 })();
 window.PortfolioScreen = PortfolioScreen;

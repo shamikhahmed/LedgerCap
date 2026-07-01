@@ -4,6 +4,7 @@
  */
 import { handleTelegramRequest, runTelegramCron } from './telegram.js';
 import { handleNewsRequest } from './news.js';
+import { handleSsePrices } from './sse-prices.js';
 
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const CORS = {
@@ -29,7 +30,7 @@ export default {
     const path = url.pathname.replace(/^\//, '');
 
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news'] });
+      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news', 'sse'] });
     }
 
     const tg = await handleTelegramRequest(request, env, url);
@@ -37,6 +38,9 @@ export default {
 
     const news = await handleNewsRequest(request, url);
     if (news) return news;
+
+    const sse = await handleSsePrices(request, url);
+    if (sse) return sse;
 
     // FX: USD/PKR
     if (path === 'fx/usdpkr') {

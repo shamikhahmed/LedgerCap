@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LedgerCap Glance">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon-512.png">
+  <title>LedgerCap Glance</title>
+  <style>
+    :root { color-scheme: dark; --bg: #09090b; --card: #18181b; --text: #fafafa; --muted: #a1a1aa; --gain: #22c55e; --loss: #ef4444; --accent: #0a84ff; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100dvh; font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .glance {
+      width: min(360px, 100%); background: var(--card); border-radius: 20px;
+      padding: 28px 24px; border: 1px solid #27272a; text-align: center;
+    }
+    .kicker { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .nw { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .daily { margin-top: 12px; font-size: 1rem; font-variant-numeric: tabular-nums; }
+    .up { color: var(--gain); }
+    .down { color: var(--loss); }
+    .meta { margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .live { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--gain); margin-right: 6px; vertical-align: middle; }
+    a { color: var(--accent); }
+    .empty { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="glance" id="root">
+    <div class="kicker">LedgerCap</div>
+    <div class="empty" id="msg">Open main app first to sync glance data.</div>
+  </div>
+  <script>
+    const KEY = 'ledgercap_glance';
+    function fmt(n, cur, rate) {
+      if (n == null || !Number.isFinite(n)) return '—';
+      if (cur === 'USD') {
+        const usd = n / (rate || 280);
+        return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      return '₨' + n.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+    function render(data) {
+      const root = document.getElementById('root');
+      if (!data || !data.netWorth) {
+        document.getElementById('msg').textContent = 'Open LedgerCap once — net worth syncs here for home-screen glance.';
+        return;
+      }
+      const cur = data.currency || 'PKR';
+      const daily = data.dailyPnl || 0;
+      const pct = data.dailyPct || 0;
+      const cls = daily >= 0 ? 'up' : 'down';
+      const sign = daily >= 0 ? '+' : '';
+      const live = data.live && data.live.connected;
+      const age = data.ts ? Math.round((Date.now() - data.ts) / 60000) : null;
+      root.innerHTML = `
+        <div class="kicker">Net worth · ${cur}</div>
+        <div class="nw">${fmt(data.netWorth, cur, data.usdRate)}</div>
+        <div class="daily ${cls}">${sign}${fmt(daily, cur, data.usdRate)} (${sign}${pct.toFixed(2)}%)</div>
+        <div class="meta">
+          ${live ? '<span class="live"></span>Live stream' : 'Last sync'}${age != null ? ' · ' + age + 'm ago' : ''}
+          <br><a href="./">Open LedgerCap</a>
+        </div>`;
+    }
+    function read() {
+      try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
+    }
+    render(read());
+    if (typeof BroadcastChannel !== 'undefined') {
+      const ch = new BroadcastChannel('ledgercap_glance');
+      ch.onmessage = (ev) => { if (ev.data) render(ev.data); };
+    }
+    window.addEventListener('storage', (ev) => {
+      if (ev.key === KEY) render(read());
+    });
+    setInterval(() => render(read()), 30000);
+  </script>
+</body>
+</html>

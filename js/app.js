@@ -73,12 +73,17 @@ const App = (() => {
     if (!ts && !offline) return '';
     const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
     const stale = ts && (Date.now() - ts > 24 * 3600000);
-    const label = offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
-    const cls = offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
+    const live = typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
+    const label = live ? 'Live' : offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
+    const cls = live ? 'lc-freshness--live' : offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
     return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
+    if (typeof PriceAlertsService !== 'undefined') {
+      PriceAlertsService.checkAll();
+      return;
+    }
     const list = State.get('watchlist') || [];
     const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
     const now = Date.now();
@@ -367,6 +372,9 @@ const App = (() => {
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     if (typeof LcPolish !== 'undefined') LcPolish.init();
+    if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    _updateCurrencyToggleBtn();
     _scheduleAutoRefresh();
     _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
@@ -434,6 +442,13 @@ const App = (() => {
         if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
       }
     } catch (_) { /* offline / blocked */ }
+  }
+
+  function _scheduleAutoRefresh() {
+    clearTimeout(_refreshTimer);
+    _refreshTimer = setTimeout(() => {
+      if (!document.hidden && navigator.onLine) refreshPrices();
+    }, 30 * 60 * 1000);
   }
 
   async function refreshPrices() {
@@ -510,16 +525,90 @@ const App = (() => {
     }
 
     renderCurrent();
+    State.logPortfolioSnapshot?.();
+    State.recordIntradaySnapshot?.();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
     if (typeof LcPolish !== 'undefined' && typeof PortfolioAnalyticsService !== 'undefined') {
       const sum = PortfolioAnalyticsService.getSummary(State.get());
       LcPolish.announcePrices(sum.totalValue, State.calcDailyPnl());
       LcPolish.afterRender();
     }
   }
-    clearTimeout(_refreshTimer);
-    _refreshTimer = setTimeout(() => {
-      if (!document.hidden && navigator.onLine) refreshPrices();
-    }, 30 * 60 * 1000);
+
+  function _updateCurrencyToggleBtn() {
+    const btn = document.getElementById('lc-currency-toggle');
+    if (!btn) return;
+    const cur = State.get('settings')?.displayCurrency || 'PKR';
+    btn.textContent = cur;
+    btn.setAttribute('aria-label', `Display currency ${cur}. Tap to switch.`);
+    btn.title = `Show ${cur === 'PKR' ? 'USD' : 'PKR'}`;
+  }
+
+  function toggleDisplayCurrency() {
+    const cur = State.get('settings')?.displayCurrency || 'PKR';
+    const next = cur === 'USD' ? 'PKR' : 'USD';
+    State.update((s) => { s.settings.displayCurrency = next; });
+    _updateCurrencyToggleBtn();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    renderCurrent();
+    showToast(`Showing ${next}`, 'success');
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
+  }
+
+  function openPriceAlert(symbol) {
+    const holdings = PortfolioAnalyticsService.getHoldings(State.get());
+    const row = holdings.find((x) => x.symbol === symbol) || { symbol, price: State.getPrice(symbol) };
+    const existing = (State.get('priceAlerts') || []).find((a) => a.symbol === symbol && a.enabled !== false);
+    const dir = existing?.direction || 'below';
+    const price = existing?.price || row.price || '';
+    openBottomSheet('price-alert', `Alert — ${symbol}`, `
+      <p class="field-hint" style="margin-bottom:12px">Notify when price crosses target. Toast, notification, optional Telegram.</p>
+      <div class="field">
+        <label class="field-label">Direction</label>
+        <select class="field-select" id="pa-dir">
+          <option value="below" ${dir === 'below' ? 'selected' : ''}>At or below</option>
+          <option value="above" ${dir === 'above' ? 'selected' : ''}>At or above</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Target price (PKR)</label>
+        <input class="field-input" id="pa-price" type="number" step="0.01" value="${price}">
+      </div>
+      <button type="button" class="btn-primary" style="width:100%;margin-top:12px" onclick="App._submitPriceAlert('${symbol.replace(/'/g, "\\'")}')">Save alert</button>
+      ${existing ? `<button type="button" class="btn-ghost" style="width:100%;margin-top:8px" onclick="App._removePriceAlert('${existing.id}')">Remove alert</button>` : ''}
+    `);
+    requestAlertPermission();
+  }
+
+  function _submitPriceAlert(symbol) {
+    const dir = document.getElementById('pa-dir')?.value || 'below';
+    const price = parseFloat(document.getElementById('pa-price')?.value);
+    if (!(price > 0)) {
+      showToast('Enter valid target price', 'warning');
+      return;
+    }
+    if (typeof PriceAlertsService === 'undefined') {
+      showToast('Alerts service not loaded', 'error');
+      return;
+    }
+    PriceAlertsService.upsert({
+      id: `pa:${symbol}`,
+      symbol,
+      direction: dir,
+      price,
+      enabled: true,
+      source: 'holding',
+      createdAt: Date.now(),
+    });
+    closeBottomSheet();
+    showToast(`Alert set for ${symbol}`, 'success');
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
+  }
+
+  function _removePriceAlert(id) {
+    if (typeof PriceAlertsService !== 'undefined') PriceAlertsService.remove(id);
+    closeBottomSheet();
+    showToast('Alert removed', 'info');
   }
 
   function openBottomSheet(id, title, content) {
@@ -1031,7 +1120,8 @@ const App = (() => {
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,
-    openReconcilePosition, _submitReconcile };
+    openReconcilePosition, _submitReconcile,
+    toggleDisplayCurrency, _updateCurrencyToggleBtn, openPriceAlert, _submitPriceAlert, _removePriceAlert };
 })();
 window.App = App;
 

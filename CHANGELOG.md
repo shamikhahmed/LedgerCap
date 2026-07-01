@@ -1,5 +1,15 @@
 # Changelog — LedgerCap
 
+## 3.40.0 (2026-07-01) — Live terminal features
+
+- **SSE live prices** — worker `GET /sse/prices` pushes quotes during PSX session; client `LivePriceStream` via EventSource (poll fallback when disconnected)
+- **PKR↔USD display toggle** — topbar one-tap + Settings; `PlatformUI.fmt` converts all amounts app-wide
+- **P&L hero chart** — range picker 1D/1W/1M/1Y/All on Portfolio; `intradayHistory` + 365-day `priceHistory`
+- **Price alerts** — holding-level below/above triggers; unified `PriceAlertsService` (watchlist + holdings); toast, notification, Telegram
+- **Tax/audit export** — `StatementExport` CSV + printable HTML/PDF from Settings
+- **Glance widget** — `widget-glance.html` + `GlanceBridge` localStorage sync; manifest shortcut (native iOS widget = future Capacitor)
+- Service worker `ledgercap-v106`
+
 ## 3.39.0 (2026-07-01) — Terminal polish
 
 - Count-up tween on net worth (`data-lc-count`, respects reduced-motion)

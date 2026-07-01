@@ -1051,3 +1051,16 @@ body.lc-pro[data-theme="dark"] {
 
 @media (max-width: 899px) { .lc-cmdk { display: none !important; } }
 
+.lc-pnl-chart-wrap { margin-top: 16px; }
+.lc-range-picker {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.lc-range-btn {
+  padding: 4px 10px; border-radius: 999px; border: 1px solid var(--psx-border);
+  background: transparent; color: var(--psx-text-2); font-size: 11px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.lc-range-btn.on { background: var(--psx-accent-soft); color: var(--psx-accent); border-color: var(--psx-accent); }
+.lc-freshness--live { border-color: #22c55e !important; color: #22c55e !important; }
+.lc-currency-btn { font-size: 11px; font-weight: 700; min-width: 44px; letter-spacing: 0.02em; }
+

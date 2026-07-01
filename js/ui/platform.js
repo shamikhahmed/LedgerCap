@@ -6,6 +6,12 @@ const PlatformUI = (() => {
     } catch (_) { return 'full'; }
   }
 
+  function displayCurrency() {
+    try {
+      return (typeof State !== 'undefined' && State.get('settings')?.displayCurrency) || 'PKR';
+    } catch (_) { return 'PKR'; }
+  }
+
   function fmt(n, opts) {
     if (n == null || Number.isNaN(n)) return '—';
     if (typeof PinVault !== 'undefined' && PinVault.isDecoyMode() && !(opts && opts.allowDecoy)) return '₨ —';
@@ -15,19 +21,27 @@ const PlatformUI = (() => {
       const sign = opts.signed && n > 0 ? '+' : '';
       return sign + Number(n).toFixed(d) + '%';
     }
+    const cur = opts.currency || displayCurrency();
+    let val = n;
+    if (cur === 'USD' && typeof FxService !== 'undefined') val = FxService.pkrToUsd(n);
     const compact = opts.compact ?? (_numberFormat() === 'compact');
-    const abs = Math.abs(n);
+    const abs = Math.abs(val);
+    const sym = opts.noCurrency ? '' : (cur === 'USD' ? '$' : '₨');
     if (compact) {
-      if (abs >= 1e7) return '₨' + (n / 1e7).toFixed(2) + 'cr';
-      if (abs >= 1e5) return '₨' + (n / 1e5).toFixed(2) + 'L';
-      if (abs >= 1e3) return '₨' + (n / 1e3).toFixed(2) + 'k';
+      if (cur === 'USD') {
+        if (abs >= 1e6) return sym + (val / 1e6).toFixed(2) + 'M';
+        if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
+      } else {
+        if (abs >= 1e7) return sym + (val / 1e7).toFixed(2) + 'cr';
+        if (abs >= 1e5) return sym + (val / 1e5).toFixed(2) + 'L';
+        if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
+      }
     }
     const d = opts.decimals ?? 2;
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
-    const prefix = opts.noCurrency ? '' : '₨';
-    if (opts.signed && n > 0) return '+' + prefix + formatted;
-    if (n < 0) return '-' + prefix + formatted;
-    return prefix + formatted;
+    if (opts.signed && val > 0) return '+' + sym + formatted;
+    if (val < 0) return '-' + sym + formatted;
+    return sym + formatted;
   }
 
   /** Index / points — no currency prefix, 2 decimals */
@@ -65,6 +79,6 @@ const PlatformUI = (() => {
     return `<div class="rt-section cap-reveal">${head}<div class="lc-section-body">${body}</div></div>`;
   }
 
-  return { fmt, fmtNum, fmtIndex, chgCls, ratingBadge, metricCell, metricGrid, section };
+  return { fmt, fmtNum, fmtIndex, chgCls, ratingBadge, metricCell, metricGrid, section, displayCurrency };
 })();
 window.PlatformUI = PlatformUI;

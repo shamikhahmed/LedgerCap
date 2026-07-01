@@ -22,6 +22,7 @@ const State = (() => {
     kseIndex: {},
     kseHistory: [],
     priceHistory: [],
+    intradayHistory: [],
     watchlist: [],
     journal: [],
     researchNotes: {},
@@ -52,6 +53,8 @@ const State = (() => {
       hapticsEnabled: false,
       theme: 'dark',
       numberFormat: 'full',
+      displayCurrency: 'PKR',
+      liveStreamEnabled: true,
     },
     holdingMeta: {},
     ipoEvents: [],
@@ -67,7 +70,7 @@ const State = (() => {
     cashLedger: [],
     manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 },
     portfolios: [],
-    version: 9,
+    version: 10,
     seedDataVersion: 0,
   };
 
@@ -103,6 +106,13 @@ const State = (() => {
       });
     }
     _s.version = 9;
+  }
+
+  function _migrateV10() {
+    if (!_s.intradayHistory) _s.intradayHistory = [];
+    if (!_s.settings.displayCurrency) _s.settings.displayCurrency = 'PKR';
+    if (_s.settings.liveStreamEnabled == null) _s.settings.liveStreamEnabled = true;
+    _s.version = 10;
   }
 
   function _migrateV8() {
@@ -273,6 +283,10 @@ const State = (() => {
           _migrateV9();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 10) {
+          _migrateV10();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -396,7 +410,25 @@ const State = (() => {
     const idx = _s.priceHistory.findIndex(p => p.date === today);
     if (idx >= 0) _s.priceHistory[idx].value = total;
     else _s.priceHistory.push({ date: today, value: total });
-    _s.priceHistory = _s.priceHistory.slice(-90);
+    _s.priceHistory = _s.priceHistory.slice(-365);
+  }
+
+  function recordIntradaySnapshot() {
+    if (!_s) load();
+    const total = calcTotalValue();
+    if (total <= 0) return;
+    const now = Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    if (!_s.intradayHistory) _s.intradayHistory = [];
+    const last = _s.intradayHistory[_s.intradayHistory.length - 1];
+    if (last && (last.date || '') === today && now - (last.ts || 0) < 60000) return;
+    _s.intradayHistory.push({ date: today, ts: now, value: total });
+    const weekAgo = now - 8 * 86400000;
+    _s.intradayHistory = _s.intradayHistory.filter((p) => {
+      const d = p.date || (p.ts ? new Date(p.ts).toISOString().slice(0, 10) : '');
+      return d === today || (p.ts || 0) >= weekAgo;
+    }).slice(-500);
+    save();
   }
 
   function logPortfolioSnapshot() {
@@ -511,7 +543,7 @@ const State = (() => {
 
   const api = { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
-    isPriceStale, priceAgeLabel, logPortfolioSnapshot,
+    isPriceStale, priceAgeLabel, logPortfolioSnapshot, recordIntradaySnapshot,
     calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
   window.State = api;
   load();

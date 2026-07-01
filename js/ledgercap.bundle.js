@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 72 modules — run: npm run bundle */
+/* LedgerCap bundle — 76 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4719,9 +4719,9 @@ window.DIVIDEND_DATA = DIVIDEND_DATA;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.39.0',
-  sw: 105,
-  cache: 'ledgercap-v105',
+  app: '3.40.0',
+  sw: 106,
+  cache: 'ledgercap-v106',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -9522,6 +9522,319 @@ const NotificationScheduler = (() => {
 })();
 window.NotificationScheduler = NotificationScheduler;
 
+;/* === js/services/glance-bridge.js === */
+'use strict';
+/** Home-screen / lock-screen glance snapshot (localStorage + BroadcastChannel). */
+const GlanceBridge = (() => {
+  const KEY = 'ledgercap_glance';
+  const CH = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('ledgercap_glance') : null;
+
+  function publish() {
+    if (typeof State === 'undefined' || typeof PortfolioAnalyticsService === 'undefined') return;
+    const s = PortfolioAnalyticsService.getSummary(State.get());
+    const daily = State.calcDailyPnl();
+    const settings = State.get('settings') || {};
+    const payload = {
+      netWorth: s.totalValue,
+      dailyPnl: daily,
+      dailyPct: s.totalValue > 0 ? (daily / s.totalValue) * 100 : 0,
+      currency: settings.displayCurrency || 'PKR',
+      usdRate: settings.usdRate || FxService?.getUsdRate?.() || 280,
+      ts: Date.now(),
+      live: typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {},
+    };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(payload));
+      CH?.postMessage(payload);
+    } catch (_) {}
+    return payload;
+  }
+
+  function read() {
+    try {
+      return JSON.parse(localStorage.getItem(KEY) || 'null');
+    } catch { return null; }
+  }
+
+  return { publish, read, KEY };
+})();
+window.GlanceBridge = GlanceBridge;
+
+;/* === js/services/statement-export.js === */
+'use strict';
+/** Tax / audit annual statement — CSV + printable HTML */
+const StatementExport = (() => {
+  function _year() { return new Date().getFullYear(); }
+
+  function _rows(state) {
+    const txs = state.transactions || [];
+    const sum = typeof TransactionLedger !== 'undefined' ? TransactionLedger.summary(txs) : {};
+    const holdings = PortfolioAnalyticsService.getSummary(state);
+    return { txs, sum, holdings };
+  }
+
+  function exportCsv(year) {
+    year = year || _year();
+    const state = State.get();
+    const { txs, sum, holdings } = _rows(state);
+    const lines = [
+      `LedgerCap Annual Statement ${year}`,
+      `Generated,${new Date().toISOString()}`,
+      `Net worth (PKR),${Math.round(holdings.totalValue)}`,
+      `Invested (PKR),${Math.round(holdings.invested)}`,
+      `Unrealized P&L (PKR),${Math.round(holdings.totalReturn?.abs || 0)}`,
+      `Taxes logged (PKR),${Math.round(sum.taxes || 0)}`,
+      `Fees logged (PKR),${Math.round(sum.fees || 0)}`,
+      `Dividends logged (PKR),${Math.round(sum.loggedDividends || 0)}`,
+      '',
+      'Date,Type,Symbol,Broker,Qty,Amount,Notes',
+    ];
+    txs.filter((t) => String(t.date || '').startsWith(String(year))).forEach((t) => {
+      lines.push([
+        t.date, t.type, t.symbol || '', t.broker || '',
+        t.shares ?? t.units ?? '', t.amount ?? '', (t.notes || '').replace(/,/g, ';'),
+      ].join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ledgercap-statement-${year}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    return lines.length;
+  }
+
+  function exportHtml(year) {
+    year = year || _year();
+    const state = State.get();
+    const { txs, sum, holdings } = _rows(state);
+    const fmt = (n) => PlatformUI.fmt(n);
+    const yearTxs = txs.filter((t) => String(t.date || '').startsWith(String(year)));
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap ${year}</title>
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
+@media print{body{padding:12px}}</style></head><body>
+<h1>LedgerCap — Annual Statement ${year}</h1>
+<p>Generated ${new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' })} PKT · Rule-based export — verify with broker statements.</p>
+<div class="summary">
+<div><strong>Net worth</strong><br>${fmt(holdings.totalValue)}</div>
+<div><strong>Invested</strong><br>${fmt(holdings.invested)}</div>
+<div><strong>Unrealized P&L</strong><br>${fmt(holdings.totalReturn?.abs || 0)}</div>
+<div><strong>Taxes / fees / divs</strong><br>${fmt(sum.taxes || 0)} / ${fmt(sum.fees || 0)} / ${fmt(sum.loggedDividends || 0)}</div>
+</div>
+<table><thead><tr><th>Date</th><th>Type</th><th>Symbol</th><th>Broker</th><th>Qty</th><th>Amount</th></tr></thead><tbody>
+${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || ''}</td><td>${t.broker || ''}</td><td>${t.shares ?? t.units ?? ''}</td><td>${t.amount ?? ''}</td></tr>`).join('')}
+</tbody></table>
+<p style="font-size:11px;color:#666;margin-top:24px">Not tax advice. For Zakat use in-app Zakat module.</p>
+<script>window.onload=function(){window.print()}</script></body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) return false;
+    w.document.write(html);
+    w.document.close();
+    return true;
+  }
+
+  return { exportCsv, exportHtml };
+})();
+window.StatementExport = StatementExport;
+
+;/* === js/services/price-alerts-service.js === */
+'use strict';
+/** Price triggers — holdings + watchlist, below/above, toast + Telegram */
+const PriceAlertsService = (() => {
+  function _firedKey(id) { return `ledgercap_alert_fired:${id}`; }
+
+  function list() {
+    const state = State.get();
+    const holdingAlerts = (state.priceAlerts || []).filter((a) => a.enabled !== false);
+    const watch = (state.watchlist || [])
+      .filter((w) => w.alertEnabled !== false && w.targetPrice > 0)
+      .map((w) => ({
+        id: `wl:${w.id}`,
+        symbol: w.symbol,
+        direction: 'below',
+        price: w.targetPrice,
+        source: 'watchlist',
+      }));
+    return [...holdingAlerts, ...watch];
+  }
+
+  function checkAll() {
+    const alerts = list();
+    if (!alerts.length) return;
+    const now = Date.now();
+    const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
+    alerts.forEach((a) => {
+      const q = MarketDataService.getQuote(a.symbol);
+      if (!q.price) return;
+      const hit = a.direction === 'above'
+        ? q.price >= a.price
+        : q.price <= a.price;
+      if (!hit) return;
+      const key = _firedKey(a.id);
+      if (fired[key] && now - fired[key] < 86400000) return;
+      fired[key] = now;
+      const dir = a.direction === 'above' ? 'above' : 'below';
+      const msg = `${a.symbol} ${PlatformUI.fmt(q.price)} — ${dir} ${PlatformUI.fmt(a.price)}`;
+      if (typeof App !== 'undefined') App.showToast(msg, 'success');
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try { new Notification('LedgerCap alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
+      }
+      if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
+      if (typeof TelegramService !== 'undefined' && TelegramService.isConfigured()
+        && State.get('settings')?.telegramPriceAlertsEnabled) {
+        TelegramService.sendMessage(TelegramService.formatPriceAlert({
+          symbol: a.symbol,
+          price: q.price,
+          target: a.price,
+        })).catch(() => {});
+      }
+    });
+    localStorage.setItem('ledgercap_alerts_fired', JSON.stringify(fired));
+  }
+
+  function upsert(alert) {
+    State.update((s) => {
+      if (!s.priceAlerts) s.priceAlerts = [];
+      const i = s.priceAlerts.findIndex((x) => x.id === alert.id);
+      if (i >= 0) s.priceAlerts[i] = { ...s.priceAlerts[i], ...alert };
+      else s.priceAlerts.push(alert);
+    });
+  }
+
+  function remove(id) {
+    State.update((s) => {
+      s.priceAlerts = (s.priceAlerts || []).filter((a) => a.id !== id);
+    });
+  }
+
+  return { list, checkAll, upsert, remove };
+})();
+window.PriceAlertsService = PriceAlertsService;
+
+;/* === js/services/live-price-stream.js === */
+'use strict';
+/** Live price SSE — worker push during PSX session (replaces blind poll when connected). */
+const LivePriceStream = (() => {
+  let _es = null;
+  let _connected = false;
+  let _lastTick = 0;
+
+  function _proxyBase() {
+    const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    const raw = typeof resolvePsxProxyUrl === 'function'
+      ? resolvePsxProxyUrl(settings.psxProxyUrl)
+      : (window.LEDGERCAP_CONFIG?.psxProxyUrl || '').trim();
+    return raw.replace(/\/$/, '');
+  }
+
+  function _symbols() {
+    const state = State.get();
+    const txs = state.transactions || [];
+    const holdings = Ledger.calcHoldings(txs);
+    const funds = Ledger.calcFundHoldings(txs);
+    const wl = (state.watchlist || []).map((w) => w.symbol);
+    return [...new Set([
+      ...holdings.map((h) => h.symbol),
+      ...funds.map((f) => f.symbol),
+      ...wl,
+    ])].slice(0, 24);
+  }
+
+  function _enabled() {
+    const s = State.get('settings') || {};
+    if (s.liveStreamEnabled === false) return false;
+    return !!_proxyBase();
+  }
+
+  function _applyQuotes(quotes) {
+    if (!quotes || typeof quotes !== 'object') return 0;
+    let n = 0;
+    Object.entries(quotes).forEach(([sym, q]) => {
+      if (!q?.price) return;
+      State.updatePrice(sym, {
+        price: q.price,
+        prevClose: q.prevClose || q.price,
+        source: 'live-sse',
+        ts: q.ts || Date.now(),
+      });
+      n++;
+    });
+    if (n > 0) {
+      State.recordIntradaySnapshot?.();
+      State.logPortfolioSnapshot?.();
+      if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+      window.dispatchEvent(new CustomEvent('ledgercap:live-prices', { detail: { count: n, ts: Date.now() } }));
+    }
+    return n;
+  }
+
+  function stop() {
+    if (_es) {
+      _es.close();
+      _es = null;
+    }
+    _connected = false;
+  }
+
+  function start() {
+    stop();
+    if (!_enabled() || typeof document !== 'undefined' && document.hidden) return { ok: false, reason: 'disabled or hidden' };
+    const syms = _symbols();
+    if (!syms.length) return { ok: false, reason: 'no symbols' };
+    const base = _proxyBase();
+    const url = `${base}/sse/prices?symbols=${encodeURIComponent(syms.join(','))}&interval=20`;
+    try {
+      _es = new EventSource(url);
+      _es.onopen = () => { _connected = true; };
+      _es.onmessage = (ev) => {
+        _lastTick = Date.now();
+        try {
+          const data = JSON.parse(ev.data);
+          _applyQuotes(data.quotes);
+        } catch (_) {}
+      };
+      _es.onerror = () => {
+        _connected = false;
+        stop();
+        setTimeout(() => { if (!document.hidden) start(); }, 45000);
+      };
+      return { ok: true, symbols: syms.length };
+    } catch (e) {
+      return { ok: false, reason: e.message };
+    }
+  }
+
+  function status() {
+    return { connected: _connected, lastTick: _lastTick, enabled: _enabled() };
+  }
+
+  function init() {
+    if (typeof document === 'undefined') return;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else start();
+    });
+    window.addEventListener('ledgercap:live-prices', () => {
+      if (typeof App !== 'undefined') {
+        App._renderTicker?.();
+        if (Navigation?.current?.() === 'portfolio' && typeof PortfolioScreen !== 'undefined') {
+          PortfolioScreen.render();
+        }
+        if (Navigation?.current?.() === 'home' && typeof Hub !== 'undefined') Hub.render();
+      }
+      if (typeof PriceAlertsService !== 'undefined') PriceAlertsService.checkAll();
+    });
+    setTimeout(start, 2500);
+  }
+
+  return { init, start, stop, status };
+})();
+window.LivePriceStream = LivePriceStream;
+
 ;/* === js/services/intraday-signals.js === */
 'use strict';
 /** PSX session move scanner — rule-based intraday flags (no live API). */
@@ -10437,6 +10750,12 @@ const PlatformUI = (() => {
     } catch (_) { return 'full'; }
   }
 
+  function displayCurrency() {
+    try {
+      return (typeof State !== 'undefined' && State.get('settings')?.displayCurrency) || 'PKR';
+    } catch (_) { return 'PKR'; }
+  }
+
   function fmt(n, opts) {
     if (n == null || Number.isNaN(n)) return '—';
     if (typeof PinVault !== 'undefined' && PinVault.isDecoyMode() && !(opts && opts.allowDecoy)) return '₨ —';
@@ -10446,19 +10765,27 @@ const PlatformUI = (() => {
       const sign = opts.signed && n > 0 ? '+' : '';
       return sign + Number(n).toFixed(d) + '%';
     }
+    const cur = opts.currency || displayCurrency();
+    let val = n;
+    if (cur === 'USD' && typeof FxService !== 'undefined') val = FxService.pkrToUsd(n);
     const compact = opts.compact ?? (_numberFormat() === 'compact');
-    const abs = Math.abs(n);
+    const abs = Math.abs(val);
+    const sym = opts.noCurrency ? '' : (cur === 'USD' ? '$' : '₨');
     if (compact) {
-      if (abs >= 1e7) return '₨' + (n / 1e7).toFixed(2) + 'cr';
-      if (abs >= 1e5) return '₨' + (n / 1e5).toFixed(2) + 'L';
-      if (abs >= 1e3) return '₨' + (n / 1e3).toFixed(2) + 'k';
+      if (cur === 'USD') {
+        if (abs >= 1e6) return sym + (val / 1e6).toFixed(2) + 'M';
+        if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
+      } else {
+        if (abs >= 1e7) return sym + (val / 1e7).toFixed(2) + 'cr';
+        if (abs >= 1e5) return sym + (val / 1e5).toFixed(2) + 'L';
+        if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
+      }
     }
     const d = opts.decimals ?? 2;
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
-    const prefix = opts.noCurrency ? '' : '₨';
-    if (opts.signed && n > 0) return '+' + prefix + formatted;
-    if (n < 0) return '-' + prefix + formatted;
-    return prefix + formatted;
+    if (opts.signed && val > 0) return '+' + sym + formatted;
+    if (val < 0) return '-' + sym + formatted;
+    return sym + formatted;
   }
 
   /** Index / points — no currency prefix, 2 decimals */
@@ -10496,7 +10823,7 @@ const PlatformUI = (() => {
     return `<div class="rt-section cap-reveal">${head}<div class="lc-section-body">${body}</div></div>`;
   }
 
-  return { fmt, fmtNum, fmtIndex, chgCls, ratingBadge, metricCell, metricGrid, section };
+  return { fmt, fmtNum, fmtIndex, chgCls, ratingBadge, metricCell, metricGrid, section, displayCurrency };
 })();
 window.PlatformUI = PlatformUI;
 
@@ -11156,6 +11483,7 @@ const State = (() => {
     kseIndex: {},
     kseHistory: [],
     priceHistory: [],
+    intradayHistory: [],
     watchlist: [],
     journal: [],
     researchNotes: {},
@@ -11186,6 +11514,8 @@ const State = (() => {
       hapticsEnabled: false,
       theme: 'dark',
       numberFormat: 'full',
+      displayCurrency: 'PKR',
+      liveStreamEnabled: true,
     },
     holdingMeta: {},
     ipoEvents: [],
@@ -11201,7 +11531,7 @@ const State = (() => {
     cashLedger: [],
     manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 },
     portfolios: [],
-    version: 9,
+    version: 10,
     seedDataVersion: 0,
   };
 
@@ -11237,6 +11567,13 @@ const State = (() => {
       });
     }
     _s.version = 9;
+  }
+
+  function _migrateV10() {
+    if (!_s.intradayHistory) _s.intradayHistory = [];
+    if (!_s.settings.displayCurrency) _s.settings.displayCurrency = 'PKR';
+    if (_s.settings.liveStreamEnabled == null) _s.settings.liveStreamEnabled = true;
+    _s.version = 10;
   }
 
   function _migrateV8() {
@@ -11407,6 +11744,10 @@ const State = (() => {
           _migrateV9();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 10) {
+          _migrateV10();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -11530,7 +11871,25 @@ const State = (() => {
     const idx = _s.priceHistory.findIndex(p => p.date === today);
     if (idx >= 0) _s.priceHistory[idx].value = total;
     else _s.priceHistory.push({ date: today, value: total });
-    _s.priceHistory = _s.priceHistory.slice(-90);
+    _s.priceHistory = _s.priceHistory.slice(-365);
+  }
+
+  function recordIntradaySnapshot() {
+    if (!_s) load();
+    const total = calcTotalValue();
+    if (total <= 0) return;
+    const now = Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    if (!_s.intradayHistory) _s.intradayHistory = [];
+    const last = _s.intradayHistory[_s.intradayHistory.length - 1];
+    if (last && (last.date || '') === today && now - (last.ts || 0) < 60000) return;
+    _s.intradayHistory.push({ date: today, ts: now, value: total });
+    const weekAgo = now - 8 * 86400000;
+    _s.intradayHistory = _s.intradayHistory.filter((p) => {
+      const d = p.date || (p.ts ? new Date(p.ts).toISOString().slice(0, 10) : '');
+      return d === today || (p.ts || 0) >= weekAgo;
+    }).slice(-500);
+    save();
   }
 
   function logPortfolioSnapshot() {
@@ -11645,7 +12004,7 @@ const State = (() => {
 
   const api = { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
-    isPriceStale, priceAgeLabel, logPortfolioSnapshot,
+    isPriceStale, priceAgeLabel, logPortfolioSnapshot, recordIntradaySnapshot,
     calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
   window.State = api;
   load();
@@ -12242,6 +12601,7 @@ window.Market = Market;
 const PortfolioScreen = (() => {
   let _filter = null;
   let _lastHoldings = [];
+  let _chartRange = '1M';
 
   function setFilter(id, opts) {
     opts = opts || {};
@@ -12251,6 +12611,61 @@ const PortfolioScreen = (() => {
   }
   function clearFilter() { _filter = null; }
   function currentFilter() { return _filter; }
+
+  function _daysAgo(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function _chartData(range, currentValue) {
+    const state = State.get();
+    const hist = (state.priceHistory || []).filter((p) => p.value > 0);
+    const intra = state.intradayHistory || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const nowVal = currentValue || State.calcTotalValue();
+
+    if (range === '1D') {
+      const pts = intra.filter((p) => (p.date || '') === today).map((p) => p.value);
+      if (pts.length >= 2) return pts;
+      if (pts.length === 1 && hist.length) return [hist[hist.length - 1].value, pts[0]];
+      if (hist.length >= 2) return [hist[hist.length - 2].value, nowVal];
+      return [nowVal * 0.995, nowVal];
+    }
+    if (range === '1W') {
+      const cutoff = _daysAgo(7);
+      const week = hist.filter((p) => p.date >= cutoff).map((p) => p.value);
+      if (week.length) { week[week.length - 1] = nowVal; return week; }
+      return hist.slice(-7).map((p) => p.value).concat(nowVal).slice(-8);
+    }
+    if (range === '1M') {
+      const cutoff = _daysAgo(30);
+      const m = hist.filter((p) => p.date >= cutoff).map((p) => p.value);
+      if (m.length >= 2) { m[m.length - 1] = nowVal; return m; }
+      const sliced = hist.slice(-30).map((p) => p.value);
+      if (sliced.length) { sliced[sliced.length - 1] = nowVal; return sliced; }
+      return [nowVal * 0.95, nowVal];
+    }
+    if (range === '1Y') {
+      const cutoff = _daysAgo(365);
+      const y = hist.filter((p) => p.date >= cutoff).map((p) => p.value);
+      if (y.length >= 2) { y[y.length - 1] = nowVal; return y; }
+      const sliced = hist.slice(-365).map((p) => p.value);
+      if (sliced.length) { sliced[sliced.length - 1] = nowVal; return sliced; }
+      return [nowVal * 0.85, nowVal];
+    }
+    if (hist.length >= 2) {
+      const all = hist.map((p) => p.value);
+      all[all.length - 1] = nowVal;
+      return all;
+    }
+    return [nowVal * 0.9, nowVal];
+  }
+
+  function setChartRange(r) {
+    _chartRange = r || '1M';
+    render();
+  }
 
   function render(opts) {
     opts = opts || {};
@@ -12292,6 +12707,20 @@ const PortfolioScreen = (() => {
     const daily = State.calcDailyPnl();
     const heroValue = bucketStats ? bucketStats.value : s.totalValue;
     const heroPnlPct = bucketStats ? bucketStats.pnlPct : s.totalReturn.pct;
+    const chartSeries = _chartData(_chartRange, heroValue);
+    const chartUp = chartSeries.length >= 2 && chartSeries[chartSeries.length - 1] >= chartSeries[0];
+    const ranges = ['1D', '1W', '1M', '1Y', 'All'];
+    const chartBlock = typeof Charts !== 'undefined' ? `
+          <div class="lc-pnl-chart-wrap">
+            <div class="lc-range-picker" role="tablist" aria-label="Chart range">
+              ${ranges.map((r) => `<button type="button" role="tab" class="lc-range-btn${_chartRange === r ? ' on' : ''}" aria-selected="${_chartRange === r}" onclick="PortfolioScreen.setChartRange('${r}')">${r}</button>`).join('')}
+            </div>
+            ${Charts.lineChartBlock(chartSeries, {
+              height: 128,
+              color: chartUp ? '#22c55e' : '#ef4444',
+              ariaLabel: `Portfolio value ${_chartRange}`,
+            })}
+          </div>` : '';
 
     screen.innerHTML = `
       <div class="lc-dash">
@@ -12313,6 +12742,7 @@ const PortfolioScreen = (() => {
             <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
             <span class="lc-dash-chip ${heroPnlPct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</span>
           </div>
+          ${chartBlock}
         </div>
         <div class="lc-pulse-row">
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(2)}%</b></div>
@@ -12342,6 +12772,7 @@ const PortfolioScreen = (() => {
             <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
             <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
             <td style="white-space:nowrap">
+              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();App.openPriceAlert('${h.symbol}')">Alert</button>
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>
             </td>
@@ -12365,7 +12796,7 @@ const PortfolioScreen = (() => {
     if (h && typeof App !== 'undefined') App.openReconcilePosition(h);
   }
 
-  return { render, setFilter, clearFilter, currentFilter, reconcile };
+  return { render, setFilter, clearFilter, currentFilter, reconcile, setChartRange };
 })();
 window.PortfolioScreen = PortfolioScreen;
 
@@ -13762,6 +14193,27 @@ const Settings = (() => {
       </div>
     </div>
 
+    <div class="sec-head"><span class="sec-title">Display &amp; live data</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. Live stream uses worker SSE during PSX hours (9:15–15:45 PKT).</p>
+      <div class="os-theme-toggle" style="margin-bottom:14px">
+        <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('PKR')">PKR ₨</button>
+        <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('USD')">USD $</button>
+      </div>
+      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE)</label>
+      <p class="field-hint" style="margin-top:8px">Stream: ${typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected ? '● connected' : '○ poll fallback'}</p>
+      <p class="field-hint" style="margin-top:4px"><a href="./widget-glance.html" target="_blank" rel="noopener">Glance widget page</a> — add to home screen for 3-second net worth check. Native iOS widget needs Capacitor build.</p>
+    </div>
+
+    <div class="sec-head"><span class="sec-title">Tax &amp; audit export</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Annual statement CSV or printable PDF. Verify against broker statements — not tax advice.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button type="button" class="btn-secondary" onclick="Settings._exportStatementCsv()">CSV statement</button>
+        <button type="button" class="btn-secondary" onclick="Settings._exportStatementPdf()">PDF / print</button>
+      </div>
+    </div>
+
     <div class="sec-head"><span class="sec-title">Investor Profile</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <div class="field">
@@ -14370,6 +14822,41 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
+  function _setDisplayCurrency(cur) {
+    if (cur !== 'PKR' && cur !== 'USD') return;
+    State.update(s => { s.settings.displayCurrency = cur; });
+    App._updateCurrencyToggleBtn?.();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    App.renderCurrent();
+    App.showToast(`Display: ${cur}`, 'success');
+    render();
+  }
+
+  function _setLiveStream(on) {
+    State.update(s => { s.settings.liveStreamEnabled = !!on; });
+    if (on && typeof LivePriceStream !== 'undefined') LivePriceStream.start();
+    else if (typeof LivePriceStream !== 'undefined') LivePriceStream.stop();
+    App.showToast(on ? 'Live stream on' : 'Live stream off', 'success');
+    render();
+  }
+
+  function _exportStatementCsv() {
+    if (typeof StatementExport === 'undefined') {
+      App.showToast('Export not loaded', 'error');
+      return;
+    }
+    StatementExport.exportCsv();
+    App.showToast('CSV exported', 'success');
+  }
+
+  function _exportStatementPdf() {
+    if (typeof StatementExport === 'undefined') {
+      App.showToast('Export not loaded', 'error');
+      return;
+    }
+    if (!StatementExport.exportHtml()) App.showToast('Allow popups for PDF', 'warning');
+  }
+
   function _setHaptics(on) {
     State.update(s => { s.settings.hapticsEnabled = !!on; });
     App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
@@ -14521,7 +15008,7 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
 
@@ -16714,12 +17201,17 @@ const App = (() => {
     if (!ts && !offline) return '';
     const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
     const stale = ts && (Date.now() - ts > 24 * 3600000);
-    const label = offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
-    const cls = offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
+    const live = typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
+    const label = live ? 'Live' : offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
+    const cls = live ? 'lc-freshness--live' : offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
     return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
+    if (typeof PriceAlertsService !== 'undefined') {
+      PriceAlertsService.checkAll();
+      return;
+    }
     const list = State.get('watchlist') || [];
     const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
     const now = Date.now();
@@ -17008,6 +17500,9 @@ const App = (() => {
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     if (typeof LcPolish !== 'undefined') LcPolish.init();
+    if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    _updateCurrencyToggleBtn();
     _scheduleAutoRefresh();
     _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
@@ -17075,6 +17570,13 @@ const App = (() => {
         if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
       }
     } catch (_) { /* offline / blocked */ }
+  }
+
+  function _scheduleAutoRefresh() {
+    clearTimeout(_refreshTimer);
+    _refreshTimer = setTimeout(() => {
+      if (!document.hidden && navigator.onLine) refreshPrices();
+    }, 30 * 60 * 1000);
   }
 
   async function refreshPrices() {
@@ -17151,16 +17653,90 @@ const App = (() => {
     }
 
     renderCurrent();
+    State.logPortfolioSnapshot?.();
+    State.recordIntradaySnapshot?.();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
     if (typeof LcPolish !== 'undefined' && typeof PortfolioAnalyticsService !== 'undefined') {
       const sum = PortfolioAnalyticsService.getSummary(State.get());
       LcPolish.announcePrices(sum.totalValue, State.calcDailyPnl());
       LcPolish.afterRender();
     }
   }
-    clearTimeout(_refreshTimer);
-    _refreshTimer = setTimeout(() => {
-      if (!document.hidden && navigator.onLine) refreshPrices();
-    }, 30 * 60 * 1000);
+
+  function _updateCurrencyToggleBtn() {
+    const btn = document.getElementById('lc-currency-toggle');
+    if (!btn) return;
+    const cur = State.get('settings')?.displayCurrency || 'PKR';
+    btn.textContent = cur;
+    btn.setAttribute('aria-label', `Display currency ${cur}. Tap to switch.`);
+    btn.title = `Show ${cur === 'PKR' ? 'USD' : 'PKR'}`;
+  }
+
+  function toggleDisplayCurrency() {
+    const cur = State.get('settings')?.displayCurrency || 'PKR';
+    const next = cur === 'USD' ? 'PKR' : 'USD';
+    State.update((s) => { s.settings.displayCurrency = next; });
+    _updateCurrencyToggleBtn();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    renderCurrent();
+    showToast(`Showing ${next}`, 'success');
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
+  }
+
+  function openPriceAlert(symbol) {
+    const holdings = PortfolioAnalyticsService.getHoldings(State.get());
+    const row = holdings.find((x) => x.symbol === symbol) || { symbol, price: State.getPrice(symbol) };
+    const existing = (State.get('priceAlerts') || []).find((a) => a.symbol === symbol && a.enabled !== false);
+    const dir = existing?.direction || 'below';
+    const price = existing?.price || row.price || '';
+    openBottomSheet('price-alert', `Alert — ${symbol}`, `
+      <p class="field-hint" style="margin-bottom:12px">Notify when price crosses target. Toast, notification, optional Telegram.</p>
+      <div class="field">
+        <label class="field-label">Direction</label>
+        <select class="field-select" id="pa-dir">
+          <option value="below" ${dir === 'below' ? 'selected' : ''}>At or below</option>
+          <option value="above" ${dir === 'above' ? 'selected' : ''}>At or above</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Target price (PKR)</label>
+        <input class="field-input" id="pa-price" type="number" step="0.01" value="${price}">
+      </div>
+      <button type="button" class="btn-primary" style="width:100%;margin-top:12px" onclick="App._submitPriceAlert('${symbol.replace(/'/g, "\\'")}')">Save alert</button>
+      ${existing ? `<button type="button" class="btn-ghost" style="width:100%;margin-top:8px" onclick="App._removePriceAlert('${existing.id}')">Remove alert</button>` : ''}
+    `);
+    requestAlertPermission();
+  }
+
+  function _submitPriceAlert(symbol) {
+    const dir = document.getElementById('pa-dir')?.value || 'below';
+    const price = parseFloat(document.getElementById('pa-price')?.value);
+    if (!(price > 0)) {
+      showToast('Enter valid target price', 'warning');
+      return;
+    }
+    if (typeof PriceAlertsService === 'undefined') {
+      showToast('Alerts service not loaded', 'error');
+      return;
+    }
+    PriceAlertsService.upsert({
+      id: `pa:${symbol}`,
+      symbol,
+      direction: dir,
+      price,
+      enabled: true,
+      source: 'holding',
+      createdAt: Date.now(),
+    });
+    closeBottomSheet();
+    showToast(`Alert set for ${symbol}`, 'success');
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
+  }
+
+  function _removePriceAlert(id) {
+    if (typeof PriceAlertsService !== 'undefined') PriceAlertsService.remove(id);
+    closeBottomSheet();
+    showToast('Alert removed', 'info');
   }
 
   function openBottomSheet(id, title, content) {
@@ -17672,7 +18248,8 @@ const App = (() => {
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,
-    openReconcilePosition, _submitReconcile };
+    openReconcilePosition, _submitReconcile,
+    toggleDisplayCurrency, _updateCurrencyToggleBtn, openPriceAlert, _submitPriceAlert, _removePriceAlert };
 })();
 window.App = App;
 

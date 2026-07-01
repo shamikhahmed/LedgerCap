@@ -107,6 +107,27 @@ const Settings = (() => {
       </div>
     </div>
 
+    <div class="sec-head"><span class="sec-title">Display &amp; live data</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. Live stream uses worker SSE during PSX hours (9:15–15:45 PKT).</p>
+      <div class="os-theme-toggle" style="margin-bottom:14px">
+        <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('PKR')">PKR ₨</button>
+        <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('USD')">USD $</button>
+      </div>
+      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE)</label>
+      <p class="field-hint" style="margin-top:8px">Stream: ${typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected ? '● connected' : '○ poll fallback'}</p>
+      <p class="field-hint" style="margin-top:4px"><a href="./widget-glance.html" target="_blank" rel="noopener">Glance widget page</a> — add to home screen for 3-second net worth check. Native iOS widget needs Capacitor build.</p>
+    </div>
+
+    <div class="sec-head"><span class="sec-title">Tax &amp; audit export</span></div>
+    <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Annual statement CSV or printable PDF. Verify against broker statements — not tax advice.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button type="button" class="btn-secondary" onclick="Settings._exportStatementCsv()">CSV statement</button>
+        <button type="button" class="btn-secondary" onclick="Settings._exportStatementPdf()">PDF / print</button>
+      </div>
+    </div>
+
     <div class="sec-head"><span class="sec-title">Investor Profile</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <div class="field">
@@ -715,6 +736,41 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
+  function _setDisplayCurrency(cur) {
+    if (cur !== 'PKR' && cur !== 'USD') return;
+    State.update(s => { s.settings.displayCurrency = cur; });
+    App._updateCurrencyToggleBtn?.();
+    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    App.renderCurrent();
+    App.showToast(`Display: ${cur}`, 'success');
+    render();
+  }
+
+  function _setLiveStream(on) {
+    State.update(s => { s.settings.liveStreamEnabled = !!on; });
+    if (on && typeof LivePriceStream !== 'undefined') LivePriceStream.start();
+    else if (typeof LivePriceStream !== 'undefined') LivePriceStream.stop();
+    App.showToast(on ? 'Live stream on' : 'Live stream off', 'success');
+    render();
+  }
+
+  function _exportStatementCsv() {
+    if (typeof StatementExport === 'undefined') {
+      App.showToast('Export not loaded', 'error');
+      return;
+    }
+    StatementExport.exportCsv();
+    App.showToast('CSV exported', 'success');
+  }
+
+  function _exportStatementPdf() {
+    if (typeof StatementExport === 'undefined') {
+      App.showToast('Export not loaded', 'error');
+      return;
+    }
+    if (!StatementExport.exportHtml()) App.showToast('Allow popups for PDF', 'warning');
+  }
+
   function _setHaptics(on) {
     State.update(s => { s.settings.hapticsEnabled = !!on; });
     App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
@@ -866,6 +922,6 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
