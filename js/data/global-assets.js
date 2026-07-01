@@ -18,7 +18,7 @@ window.GLOBAL_BROKERS = ['IBKR', 'Schwab', 'Fidelity', 'Robinhood', 'Binance', '
   window.INTL_STOCKS = us;
   const fb = {
     AAPL: 228, MSFT: 420, NVDA: 135, GOOGL: 175, AMZN: 195, META: 580, TSLA: 280,
-    VOO: 520, QQQ: 490, VT: 118, SPY: 520, BTC: 97000, ETH: 3400, USDT: 1, SOL: 180, BNB: 650, XRP: 2.2,
+    VOO: 520, QQQ: 490, VT: 118, SPY: 520, TTWO: 245, BTC: 97000, ETH: 3400, USDT: 1, SOL: 180, BNB: 650, XRP: 2.2,
   };
   us.forEach(s => { if (fb[s.symbol] == null) fb[s.symbol] = 100; });
   window.CRYPTO_ASSETS.forEach(c => { if (fb[c.symbol] == null) fb[c.symbol] = 1; });

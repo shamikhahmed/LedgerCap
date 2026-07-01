@@ -34,7 +34,7 @@ const Global = (() => {
       ${shown.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
         <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
         <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${typeof Prices !== 'undefined' && Prices.priceBadge ? Prices.priceBadge(r.symbol) : ''}</div>
-        <div class="lc-market-chg">${r.held ? r.qty + ' held' : PsxUI.fmt(r.pkr)}</div>
+        <div class="lc-market-chg">${r.held ? r.qty + ' held · ' + PsxUI.fmt(r.pkr) : PsxUI.fmt(r.pkr)}</div>
       </button>`).join('')}
       ${list.length > 80 ? `<p class="lc-search-empty">Showing 80 of ${list.length} — keep typing to narrow</p>` : ''}
       ${!list.length ? `<p class="lc-search-empty">No matches for “${_query.replace(/"/g, '&quot;')}”</p>` : ''}`;
@@ -53,10 +53,15 @@ const Global = (() => {
     const screen = document.getElementById('screen-global');
     if (!screen) return;
     const usdRate = FxService.getUsdRate();
+    const fxMeta = FxService.getMeta ? FxService.getMeta() : {};
+    const state = State.get();
+    const usaStats = typeof PortfolioBuckets !== 'undefined' ? PortfolioBuckets.statsForBucket(state, 'usa') : null;
+    const globalHoldings = Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(state.transactions || []) : [];
+    const ttwo = globalHoldings.find(h => h.symbol === 'TTWO');
     const { list, holdings, count } = _rows();
     const heldCount = holdings.filter(h => _tab === 'crypto' ? h.assetClass === 'crypto' : h.assetClass !== 'crypto').length;
 
-    screen.innerHTML = PsxUI.lcDash('Global markets', `USD/PKR ₨${usdRate.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${count} US symbols + crypto`, `
+    screen.innerHTML = PsxUI.lcDash('Global markets', `USD/PKR ₨${usdRate.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${fxMeta.source ? ' · ' + fxMeta.source : ''} · ${count} US symbols + crypto`, `
       ${PsxUI.segment([
         { id: 'intl', label: 'US equities' },
         { id: 'crypto', label: 'Crypto' },
@@ -66,6 +71,8 @@ const Global = (() => {
         <p class="lc-search-hint">Type to shortlist — list updates without leaving the field</p>
       </div>
       <div class="lc-pulse-row">
+        ${usaStats?.deployedUsd ? `<div class="lc-pulse-pill"><label>IBKR invested</label><b>${FxService.fmtUsdPkr(usaStats.deployedUsd)}</b></div>` : ''}
+        ${ttwo ? `<div class="lc-pulse-pill"><label>TTWO cost</label><b>${FxService.fmtUsdPkr(ttwo.totalCostUsd || ttwo.qty * (ttwo.avgCostUsd || 0))}</b></div>` : ''}
         <div class="lc-pulse-pill"><label>Your positions</label><b>${heldCount}</b></div>
         <div class="lc-pulse-pill"><label>Catalog</label><b>${count}</b></div>
         <div class="lc-pulse-pill"><label>Showing</label><b id="global-showing">${Math.min(80, list.length)}${list.length > 80 ? '+' : ''}</b></div>

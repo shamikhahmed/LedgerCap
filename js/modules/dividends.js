@@ -167,6 +167,26 @@ const Dividends = (() => {
         </tbody></table></div>`);
     }
 
+    body += U.section('Logged in LedgerCap', (() => {
+      const divTx = (State.get().transactions || []).filter(t => t.type === 'DIVIDEND').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      if (!divTx.length) return '<p class="lc-empty-note">No dividend transactions logged yet.</p>';
+      return `<div class="rt-table-wrap"><table class="rt-table"><thead><tr>
+        <th>Date</th><th>Symbol</th><th>Broker</th><th>Received</th><th></th>
+      </tr></thead><tbody>
+      ${divTx.map(t => `
+        <tr>
+          <td>${t.date}</td>
+          <td><strong>${t.symbol}</strong></td>
+          <td>${t.broker || '—'}</td>
+          <td class="t-gain">${U.fmt(t.amount)}</td>
+          <td><button type="button" class="lc-link-btn" onclick="Transactions.openSymbol('${t.symbol}')">Txs</button></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+      <div class="lc-dash-actions" style="margin-top:8px">
+        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('dividend')">All dividend txs</button>
+      </div>`;
+    })());
+
     body += U.section('Corporate Actions Timeline', `
       <div class="rt-table-wrap"><table class="rt-table"><thead><tr>
         <th>Symbol</th><th>Type</th><th>Amount</th><th>Ex-Date</th><th>Record</th><th>Payment</th><th>Status</th>

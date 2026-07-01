@@ -4,14 +4,14 @@ const {
   resize,
   assertLedgerCapMobile,
   assertLedgerCapDesktop,
-} = require('../../capricorn-tooling/shared/testing/viewport-helpers');
+  waitForNavReady,
+} = require('./helpers/viewport-helpers');
 
 test.describe('LedgerCap viewport contract', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
-    await page.waitForTimeout(600);
+    await waitForNavReady(page);
   });
 
   test('375px — bottom tab bar, sidebar hidden', async ({ page }) => {

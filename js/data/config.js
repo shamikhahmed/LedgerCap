@@ -1,4 +1,11 @@
 'use strict';
+/** Bump app + sw + cache together (also sync VERSION.json). */
+window.LEDGERCAP_VERSION = {
+  app: '3.32.0',
+  sw: 98,
+  cache: 'ledgercap-v98',
+};
+
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
 window.LEDGERCAP_CONFIG = {
   /** Primary LedgerCap worker (preferred) */

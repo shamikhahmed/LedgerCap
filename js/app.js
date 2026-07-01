@@ -305,17 +305,18 @@ const App = (() => {
     }
   }
 
-  function launch() {
+  async function launch() {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
     if (demo) {
       try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
     }
-    _applyTheme(localStorage.getItem('theme') || State.get('settings')?.theme || 'dark');
+    _applyTheme(localStorage.getItem('theme') || window.State?.get('settings')?.theme || 'dark');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
     }
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=85').then(reg => reg.update()).catch(() => {});
+      const swV = window.LEDGERCAP_VERSION?.sw || 93;
+      navigator.serviceWorker.register(`./sw.js?v=${swV}`).then(reg => reg.update()).catch(() => {});
     }
     _validateAndCleanPrices();
     _migrateLegacyBranding();
@@ -324,6 +325,9 @@ const App = (() => {
       window.LEDGERCAP_CONFIG.psxProxyUrl = window.LedgerCapConfig?.resolvePsxProxyUrl(cfg) || cfg;
     }
     _hideSplash();
+    if (typeof PinLock !== 'undefined' && typeof PinVault !== 'undefined' && PinVault.isEnabled()) {
+      await PinLock.gate();
+    }
     if (typeof I18n !== 'undefined') {
       I18n.init();
       const langHost = document.getElementById('lc-header-lang');
@@ -347,19 +351,37 @@ const App = (() => {
     _checkDeployVersion();
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
+    if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     _scheduleAutoRefresh();
     _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
+    if (typeof FxService !== 'undefined') FxService.refreshUsdPkr().then(() => _renderTicker());
     if (hasProxy && !demo) {
       setTimeout(() => refreshPrices(), 1200);
-      if (typeof FxService !== 'undefined') FxService.refreshUsdPkr();
+    }
+    else if (!demo && (State.get().transactions || []).length) {
+      setTimeout(() => refreshPrices(), 1200);
     }
     else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
     _maybeDemoBanner();
     _maybeInstallHint();
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) _scheduleAutoRefresh();
+      if (document.hidden) {
+        PinVault?.noteBackground?.();
+      } else {
+        if (PinVault?.isEnabled?.() && PinVault.shouldReLock()) {
+          PinVault.lock();
+          PinLock?.gate?.();
+        }
+        _scheduleAutoRefresh();
+      }
     });
+    setInterval(() => {
+      if (PinVault?.isEnabled?.() && PinVault.isUnlocked() && PinVault.shouldReLock()) {
+        PinVault.lock();
+        PinLock?.gate?.();
+      }
+    }, 20000);
   }
 
   function _checkDeployVersion() {

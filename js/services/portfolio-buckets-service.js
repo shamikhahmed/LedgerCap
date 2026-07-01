@@ -56,6 +56,29 @@ const PortfolioBuckets = (() => {
     return txs.filter(t => t.portfolioId === bucketId);
   }
 
+  function grossCashDeployed(state, bucketId) {
+    const txs = txsForBucket(state, bucketId);
+    if (bucketId === 'rafi' && window.RAFI_TOTAL_INVESTED_PKR > 0) {
+      return { pkr: window.RAFI_TOTAL_INVESTED_PKR, usd: null, note: 'Your total capital deployed' };
+    }
+    if (bucketId === 'akd' && window.AKD_TOTAL_INVESTED_PKR > 0) {
+      return { pkr: window.AKD_TOTAL_INVESTED_PKR, usd: null, note: 'Your AKD deposits (excl. friend custodial)' };
+    }
+    if (bucketId === 'funds' && window.MEEZAN_TOTAL_PURCHASES_PKR > 0) {
+      return { pkr: window.MEEZAN_TOTAL_PURCHASES_PKR, usd: null, note: 'AMC total purchases 733102-1' };
+    }
+    if (bucketId === 'usa') {
+      const usd = window.TTWO_TOTAL_INVESTED_USD || txs
+        .filter(t => ['INTL_BUY', 'CRYPTO_BUY'].includes(t.type) && !t.internal)
+        .reduce((s, t) => s + (t.costUsd || (t.priceUsd || 0) * (t.shares || t.qty || 0)), 0);
+      return { pkr: FxService.usdToPkr(usd), usd, note: 'IBKR cost basis (incl. fees)' };
+    }
+    const pkr = txs
+      .filter(t => ['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type) && !t.internal)
+      .reduce((s, t) => s + (t.amount || 0), 0);
+    return { pkr, usd: null, note: 'Ledger purchases' };
+  }
+
   function statsForBucket(state, bucketId) {
     const txs = txsForBucket(state, bucketId);
     const bucket = list(state).find(b => b.id === bucketId);
@@ -84,12 +107,27 @@ const PortfolioBuckets = (() => {
 
     const value = rows.reduce((s, r) => s + r.value, 0);
     const invested = rows.reduce((s, r) => s + r.cost, 0);
+    const deployed = grossCashDeployed(state, bucketId);
     const pnl = value - invested;
     return {
-      value, invested, pnl,
+      value, invested, deployedPkr: deployed.pkr, deployedUsd: deployed.usd, deployedNote: deployed.note,
+      pnl,
       pnlPct: invested > 0 ? (pnl / invested) * 100 : 0,
       positions: rows.length,
     };
+  }
+
+  function investmentSummary(state) {
+    state = state || (typeof State !== 'undefined' ? State.get() : {});
+    const ids = ['rafi', 'akd', 'funds', 'usa'];
+    const rows = ids.map(id => {
+      const b = BUILTIN.find(x => x.id === id);
+      const s = statsForBucket(state, id);
+      return { id, name: b?.name || id, ...s };
+    });
+    const totalDeployed = rows.reduce((sum, r) => sum + (r.deployedPkr || 0), 0);
+    const totalValue = rows.reduce((sum, r) => sum + (r.value || 0), 0);
+    return { rows, totalDeployed, totalValue };
   }
 
   function bucketSparkline(state, bucketId) {
@@ -156,8 +194,9 @@ const PortfolioBuckets = (() => {
           ${sparkHtml}
         </div>
         <div class="lc-portfolio-card-meta">
-          <em>${empty ? '—' : PsxUI.fmt(s.value)}</em>
-          <span class="${empty ? '' : PsxUI.chgCls(s.pnlPct)}">${empty ? 'Set up' : PsxUI.fmt(s.pnlPct, { pct: true, signed: true })}</span>
+          <em class="lc-portfolio-card-value">${empty ? '—' : PsxUI.fmt(s.value)}</em>
+          ${!empty ? `<span class="lc-portfolio-invested" title="${typeof I18n !== 'undefined' ? I18n.t('portfolio.investedFootnote') : 'Invested = cost basis'}">${I18n?.t?.('portfolio.invested') || 'Invested'} ${PsxUI.fmt(s.invested)}</span>
+          <span class="lc-portfolio-pnl ${PsxUI.chgCls(s.pnl)}">${I18n?.t?.('portfolio.gainLoss') || 'P&L'} ${PsxUI.fmt(s.pnl, { signed: true })} · ${PsxUI.fmt(s.pnlPct, { pct: true, signed: true })}</span>` : ''}
           <label>${s.positions} pos</label>
         </div>
       </button>`;
@@ -170,7 +209,8 @@ const PortfolioBuckets = (() => {
   }
 
   return {
-    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, bucketSparkline,
+    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, grossCashDeployed, investmentSummary,
+    bucketSparkline,
     getHoldingsForBucket, defaultTxType, defaultBroker, cardsHtml, _brokerMatch,
   };
 })();

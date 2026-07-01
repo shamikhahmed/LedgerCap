@@ -1,12 +1,14 @@
 /**
- * LedgerCap Market Proxy — PSX, Yahoo, CoinGecko, FX
+ * LedgerCap Market Proxy — PSX, Yahoo, CoinGecko, FX, Telegram cron
  * wrangler deploy (from worker/)
  */
+import { handleTelegramRequest, runTelegramCron } from './telegram.js';
+
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Telegram-Bot-Token, X-LedgerCap-Sync-Key',
 };
 
 const PSX_HEADERS = {
@@ -17,7 +19,7 @@ const PSX_HEADERS = {
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS });
     }
@@ -26,8 +28,11 @@ export default {
     const path = url.pathname.replace(/^\//, '');
 
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx'] });
+      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram'] });
     }
+
+    const tg = await handleTelegramRequest(request, env, url);
+    if (tg) return tg;
 
     // FX: USD/PKR
     if (path === 'fx/usdpkr') {
@@ -87,6 +92,10 @@ export default {
         headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=90' },
       });
     });
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runTelegramCron(env).catch(e => console.error('telegram cron', e)));
   },
 };
 

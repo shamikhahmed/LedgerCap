@@ -14,19 +14,33 @@ function loadLedger() {
 }
 
 test.describe('Ledger math (seed)', () => {
-  test('PASM AKD shares = 1555 only', () => {
+  test('PASM AKD — bought and sold (0 shares; friend 9,445 custodial)', () => {
     const { Ledger, txs } = loadLedger();
-    const pasm = Ledger.calcHoldings(txs).find(h => h.symbol === 'PASM');
-    expect(pasm?.shares).toBe(1555);
-    expect(pasm?.avgCost).toBeCloseTo(8.41, 2);
+    const pasm = Ledger.calcHoldings(txs).find(h => h.symbol === 'PASM' && h.broker === 'AKD');
+    expect(pasm).toBeFalsy();
+    const buy = txs.find(t => t.id === 't_pasm');
+    const sell = txs.find(t => t.id === 't_pasm_s');
+    expect(buy?.shares).toBe(1555);
+    expect(sell?.shares).toBe(1555);
+    expect(sell?.price).toBeCloseTo(10.31, 2);
   });
 
-  test('Meezan fund units match AMC statement', () => {
+  test('AKD holdings match COAF55870 statement (14 symbols)', () => {
+    const { Ledger, txs } = loadLedger();
+    const akd = Ledger.calcHoldings(txs).filter(h => h.broker === 'AKD').sort((a, b) => a.symbol.localeCompare(b.symbol));
+    expect(akd.length).toBe(14);
+    expect(akd.find(h => h.symbol === 'MLCF')?.shares).toBe(200);
+    expect(akd.find(h => h.symbol === 'MLCF')?.avgCost).toBeCloseTo(102.22, 2);
+    expect(akd.find(h => h.symbol === 'PSO')?.shares).toBe(50);
+    expect(akd.find(h => h.symbol === 'PAEL')?.shares).toBe(100);
+  });
+
+  test('Meezan fund units match AMC statement 29-Jun-2026', () => {
     const { Ledger, txs } = loadLedger();
     const funds = Ledger.calcFundHoldings(txs);
     const expected = [
-      ['KMIF', 1534.3564], ['MAAF', 95.1548], ['MBF', 2118.7307],
-      ['MDAAF-MDYP', 129.0669], ['MIF', 812.9073], ['MIIF-B', 2384.5933], ['MIIF-MMKA', 377.9407],
+      ['KMIF', 1585.2451], ['MAAF', 95.1548], ['MBF', 2184.6673],
+      ['MDAAF-MDYP', 129.0669], ['MIF', 816.3851], ['MIIF-B', 2529.8167], ['MIIF-MMKA', 403.5027],
     ];
     for (const [sym, units] of expected) {
       const f = funds.find(x => x.symbol === sym);
@@ -35,12 +49,13 @@ test.describe('Ledger math (seed)', () => {
     }
   });
 
-  test('currentCostBasis is less than gross totalInvested (no double-count fiction)', () => {
+  test('cost basis >= gross invested (Meezan internal converts inflate basis)', () => {
     const { Ledger, txs } = loadLedger();
     const basis = Ledger.currentCostBasis(txs);
     const gross = Ledger.totalInvested(txs);
-    expect(basis).toBeLessThan(gross);
-    expect(basis).toBeGreaterThan(1_500_000);
+    expect(basis).toBeGreaterThanOrEqual(gross);
+    expect(basis).toBeGreaterThan(1_900_000);
+    expect(gross).toBeGreaterThan(1_300_000);
   });
 
   test('sell clamping prevents negative holdings', () => {
@@ -75,6 +90,27 @@ test.describe('Ledger math (seed)', () => {
     expect(trades[0].symbol).toBe('AAPL');
   });
 
+  test('Rafi portfolio matches vTrade snapshot (21 symbols)', () => {
+    const { Ledger, txs } = loadLedger();
+    const rafi = Ledger.calcHoldings(txs).filter(h => h.broker === 'Rafi');
+    expect(rafi.length).toBe(21);
+    expect(rafi.find(h => h.symbol === 'TRG')).toBeFalsy();
+    const luck = rafi.find(h => h.symbol === 'LUCK');
+    expect(luck?.shares).toBe(275);
+    expect(luck?.avgCost).toBeCloseTo(428.68, 2);
+    const pso = rafi.find(h => h.symbol === 'PSO');
+    expect(pso?.shares).toBe(35);
+    expect(pso?.avgCost).toBeCloseTo(331.39, 2);
+  });
+
+  test('TTWO IBKR — two buys, fees in cost basis', () => {
+    const { Ledger, txs } = loadLedger();
+    const ttwo = Ledger.calcGlobalHoldings(txs).find(h => h.symbol === 'TTWO');
+    expect(ttwo?.qty).toBeCloseTo(9.67, 2);
+    expect(ttwo?.totalCostUsd).toBeCloseTo(2365.45, 2);
+    expect(ttwo?.avgCostUsd).toBeCloseTo(244.6174, 2);
+  });
+
   test('PSX txs split by broker bucket', () => {
     const root = path.join(__dirname, '..');
     const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280, getUsdRate: () => 280 } } };
@@ -91,5 +127,17 @@ test.describe('Ledger math (seed)', () => {
     expect(PB.inferBuiltinId(state.transactions[1])).toBe('akd');
     expect(PB.txsForBucket(state, 'rafi').length).toBe(1);
     expect(PB.txsForBucket(state, 'akd').length).toBe(1);
+  });
+
+  test('logged dividends and Meezan taxes in seed v10', () => {
+    const { Ledger, txs } = loadLedger();
+    const divs = txs.filter(t => t.type === 'DIVIDEND');
+    expect(divs.length).toBeGreaterThanOrEqual(9);
+    expect(Ledger.totalDividends(txs)).toBeGreaterThan(3000);
+    expect(Ledger.totalTaxes(txs)).toBeGreaterThan(2000);
+    expect(Ledger.totalFees(txs)).toBeGreaterThan(5000);
+    const kmifTax = txs.find(t => t.id === 't_ch_kmif_dtx');
+    expect(kmifTax?.relatedId).toBe('t_div_kmif');
+    expect(kmifTax?.amount).toBe(453);
   });
 });

@@ -118,22 +118,28 @@ const Settings = (() => {
       <div class="field-row">
         <div class="field">
           <label class="field-label">USD/PKR Rate</label>
-          <input class="field-input" id="s-usdrate" type="number" value="${settings.usdRate || 280}" placeholder="280">
+          <input class="field-input" id="s-usdrate" type="number" step="0.01" value="${settings.usdRate || 280}" placeholder="280">
+          <p style="font-size:0.7rem;color:var(--text3);margin-top:4px">Live: ExchangeRate-API (free)${settings.usdRateSource ? ' · ' + settings.usdRateSource : ''}</p>
         </div>
         <div class="field">
           <label class="field-label">Gold Price (₨/gram)</label>
           <input class="field-input" id="s-goldprice" type="number" value="${settings.goldPricePerGram || 18000}" placeholder="18000">
         </div>
       </div>
+      <div class="field">
+        <label class="field-label">GNews API key (optional)</label>
+        <input class="field-input" id="s-gnews-key" type="password" autocomplete="off" value="${settings.gnewsApiKey || ''}" placeholder="For Pakistan PSX headlines — gnews.io">
+      </div>
+      <button type="button" class="btn-ghost" style="margin-bottom:8px" onclick="Settings._refreshFx()">Refresh USD/PKR now</button>
       <button type="button" class="btn-primary" onclick="Settings._saveProfile()">Save Profile</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Cash &amp; manual assets</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
-      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">Uninvested broker cash (e.g. AKD ~₨9k) counts toward net worth. Not auto-synced from broker.</p>
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">Uninvested broker cash (Rafi + your AKD slice). AKD ledger ₨138,045 includes ~₨97,946 friend custodial — excluded here.</p>
       <div class="field">
         <label class="field-label">Broker cash (₨)</label>
-        <input class="field-input" id="s-broker-cash" type="number" min="0" step="1" value="${ma.brokerCashPkr || 0}" placeholder="9412">
+        <input class="field-input" id="s-broker-cash" type="number" min="0" step="1" value="${ma.brokerCashPkr || 0}" placeholder="40960">
       </div>
       <div class="field-row">
         <div class="field">
@@ -240,6 +246,50 @@ const Settings = (() => {
       </div>
     </div>
 
+    <div class="sec-head"><span class="sec-title">Telegram</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">
+        Bot: <a href="https://t.me/LedgerCap_Bot" target="_blank" rel="noopener noreferrer">@LedgerCap_Bot</a> — message it once, then detect chat ID.
+        <strong> Pakistan:</strong> Bot API routes via your LedgerCap worker proxy (not api.telegram.org).
+      </p>
+      <div class="field">
+        <label class="field-label">Bot token</label>
+        <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
+      </div>
+      <div class="field">
+        <label class="field-label">Chat ID</label>
+        <input class="field-input" id="tg-chat" type="text" inputmode="numeric" placeholder="e.g. 123456789" value="${settings.telegramChatId || ''}">
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <button type="button" class="btn-ghost btn-sm" onclick="Settings._detectTelegramChat()">Detect chat ID</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="Settings._checkTelegramProxy()">Test proxy</button>
+      </div>
+      <div class="field-hint" style="margin-bottom:12px;">Numeric chat_id only — not your phone number. Use @userinfobot if detect fails.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+        <label class="lc-check-row"><input type="checkbox" id="tg-morning" ${settings.telegramMorningEnabled ? 'checked' : ''}> Morning brief (weekdays 9:00–9:15 PKT)</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-intraday" ${settings.telegramIntradayEnabled ? 'checked' : ''}> Intraday digest (PSX session, max 1/hour)</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-dividend" ${settings.telegramDividendEnabled ? 'checked' : ''}> Dividend reminders (7 days before ex-date)</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-price" ${settings.telegramPriceAlertsEnabled ? 'checked' : ''}> Watchlist price alerts</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-cloud" ${settings.telegramCloudSyncEnabled ? 'checked' : ''}> Cloud brief sync (background 9am PKT via worker)</label>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label class="field-label">Cloud sync key</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input class="field-input" id="tg-sync-key" type="text" autocomplete="off" placeholder="Generate or paste wrangler secret" value="${settings.telegramSyncKey || ''}" style="flex:1;min-width:180px">
+          <button type="button" class="btn-ghost btn-sm" onclick="Settings._genTelegramSyncKey()">Generate</button>
+        </div>
+        <div class="field-hint">Match <code>TELEGRAM_SYNC_KEY</code> on Cloudflare worker. Syncs urgent signals only — never full ledger.</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <button type="button" class="btn-ghost" onclick="Settings._syncTelegramCloud()">Sync brief to cloud</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button type="button" class="btn-primary" onclick="Settings._saveTelegram()">Save Telegram</button>
+        <button type="button" class="btn-secondary" onclick="Settings._sendTelegramTest()">Send test message</button>
+        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramBrief()">Send brief now</button>
+      </div>
+    </div>
+
     <div class="sec-head"><span class="sec-title">Manual Fund NAV</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;">Meezan funds aren't on PSX — update NAV when AMC publishes new values.</p>
@@ -259,6 +309,36 @@ const Settings = (() => {
     <div class="sec-head"><span class="sec-title">Try demo</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <p style="font-size:0.75rem;color:var(--text3);margin-bottom:0;line-height:1.5;">Open <strong>?demo=1</strong> for a sample PSX + Meezan portfolio without replacing your ledger from Settings.</p>
+    </div>
+
+    <div class="sec-head"><span class="sec-title">Security &amp; PIN</span></div>
+    <div style="background:var(--psx-bg-card);border-bottom:1px solid var(--psx-border);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">
+        Optional 4–6 digit PIN. Hash stored locally — never sent to a server. Decoy PIN shows masked balances.
+      </p>
+      <div class="setting-row" style="padding:0 0 12px;border:none;">
+        <div>
+          <div class="setting-label">App lock</div>
+          <div class="setting-sub">${PinVault?.isEnabled?.() ? 'Enabled' : 'Off'}${PinVault?.hasDecoy?.() ? ' · decoy set' : ''}</div>
+        </div>
+        <span class="setting-value ${PinVault?.isEnabled?.() ? 't-gain' : ''}">${PinVault?.isEnabled?.() ? '● On' : '○ Off'}</span>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label class="field-label">Auto-lock after</label>
+        <select class="field-input" id="pin-autolock" onchange="Settings._setPinAutoLock(this.value)">
+          ${[0, 1, 5, 15, 60].map(m => `<option value="${m}"${(PinVault?.getAutoLock?.() ?? 5) === m ? ' selected' : ''}>${m === 0 ? 'Never (manual only)' : m === 60 ? '1 hour' : m + ' min'}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${PinVault?.isEnabled?.() ? `
+          <button type="button" class="btn-secondary btn-sm" onclick="Settings._changePin()">Change PIN</button>
+          <button type="button" class="btn-ghost btn-sm" onclick="Settings._setDecoyPin()">Decoy PIN</button>
+          <button type="button" class="btn-ghost btn-sm" onclick="Settings._lockNow()">Lock now</button>
+          <button type="button" class="btn-danger btn-sm" onclick="Settings._disablePin()">Disable PIN</button>
+        ` : `
+          <button type="button" class="btn-primary btn-sm" onclick="Settings._enablePin()">Set PIN</button>
+        `}
+      </div>
     </div>
 
     <div class="sec-head"><span class="sec-title">Data Management</span></div>
@@ -332,16 +412,28 @@ const Settings = (() => {
     render();
   }
 
+  async function _refreshFx() {
+    if (typeof FxService === 'undefined') return;
+    const rate = await FxService.refreshUsdPkr();
+    const inp = document.getElementById('s-usdrate');
+    if (inp && rate) inp.value = Number(rate).toFixed(2);
+    App.showToast(`USD/PKR ₨${Number(rate).toFixed(2)} (${FxService.getMeta?.().source || 'updated'})`, 'success');
+    render();
+  }
+
   function _saveProfile() {
     const salary = parseInt(document.getElementById('s-salary')?.value, 10) || 150000;
     const targetSIP = parseInt(document.getElementById('s-sip')?.value, 10) || 75000;
-    const usdRate = parseInt(document.getElementById('s-usdrate')?.value, 10) || 280;
+    const usdRate = parseFloat(document.getElementById('s-usdrate')?.value) || 280;
     const goldPricePerGram = parseInt(document.getElementById('s-goldprice')?.value, 10) || 18000;
+    const gnewsApiKey = document.getElementById('s-gnews-key')?.value?.trim() || '';
     State.update(s => {
       s.settings.salary = salary;
       s.settings.targetSIP = targetSIP;
       s.settings.usdRate = usdRate;
       s.settings.goldPricePerGram = goldPricePerGram;
+      if (gnewsApiKey) s.settings.gnewsApiKey = gnewsApiKey;
+      else delete s.settings.gnewsApiKey;
     });
     App.showToast(`Saved: ₨${salary.toLocaleString()}/mo salary`, 'success');
     App.renderCurrent();
@@ -376,7 +468,95 @@ const Settings = (() => {
     render();
   }
 
+  function _pinPrompt(title, fields) {
+    const body = fields.map(f =>
+      `<div class="field"><label class="field-label">${f.label}</label><input class="field-input" id="${f.id}" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="4–6 digits"></div>`
+    ).join('');
+    App.openBottomSheet('pin-sheet', title, `${body}<button type="button" class="btn-primary" style="width:100%;margin-top:12px" id="pin-sheet-submit">Continue</button>`);
+    return new Promise(resolve => {
+      document.getElementById('pin-sheet-submit')?.addEventListener('click', () => {
+        const vals = {};
+        fields.forEach(f => { vals[f.id] = document.getElementById(f.id)?.value || ''; });
+        resolve(vals);
+      }, { once: true });
+    });
+  }
+
+  async function _enablePin() {
+    const vals = await _pinPrompt('Set app PIN', [
+      { id: 'pin-new', label: 'New PIN' },
+      { id: 'pin-confirm', label: 'Confirm PIN' },
+    ]);
+    try {
+      await PinVault.enablePin(vals['pin-new'], vals['pin-confirm']);
+      App.closeBottomSheet();
+      App.showToast('PIN enabled', 'success');
+      render();
+    } catch (e) {
+      App.showToast(e.message || 'Could not set PIN', 'error');
+    }
+  }
+
+  async function _changePin() {
+    const vals = await _pinPrompt('Change PIN', [
+      { id: 'pin-old', label: 'Current PIN' },
+      { id: 'pin-new', label: 'New PIN' },
+      { id: 'pin-confirm', label: 'Confirm new PIN' },
+    ]);
+    try {
+      await PinVault.changePin(vals['pin-old'], vals['pin-new'], vals['pin-confirm']);
+      App.closeBottomSheet();
+      App.showToast('PIN updated', 'success');
+    } catch (e) {
+      App.showToast(e.message || 'Could not change PIN', 'error');
+    }
+  }
+
+  async function _disablePin() {
+    const vals = await _pinPrompt('Disable PIN', [{ id: 'pin-old', label: 'Current PIN' }]);
+    try {
+      await PinVault.disablePin(vals['pin-old']);
+      App.closeBottomSheet();
+      App.showToast('PIN disabled', 'success');
+      render();
+    } catch (e) {
+      App.showToast(e.message || 'PIN incorrect', 'error');
+    }
+  }
+
+  async function _setDecoyPin() {
+    if (PinVault.hasDecoy()) {
+      if (!confirm('Replace existing decoy PIN?')) return;
+    }
+    const vals = await _pinPrompt('Decoy PIN', [
+      { id: 'pin-main', label: 'Main PIN (verify)' },
+      { id: 'pin-decoy', label: 'Decoy PIN' },
+    ]);
+    try {
+      await PinVault.setDecoyPin(vals['pin-decoy'], vals['pin-main']);
+      App.closeBottomSheet();
+      App.showToast('Decoy PIN saved', 'success');
+      render();
+    } catch (e) {
+      App.showToast(e.message || 'Could not save decoy', 'error');
+    }
+  }
+
+  function _setPinAutoLock(val) {
+    PinVault.setAutoLock(parseInt(val, 10) || 0);
+    App.showToast('Auto-lock updated', 'success');
+  }
+
+  function _lockNow() {
+    PinVault.lock();
+    PinLock.show();
+  }
+
   function _exportData() {
+    if (PinVault?.isDecoyMode?.()) {
+      App.showToast('Export blocked in decoy view — use main PIN', 'warning');
+      return;
+    }
     const json = State.exportJSON();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -426,10 +606,18 @@ const Settings = (() => {
   }
 
   function _snapshotBeforeDestructive() {
-    try { localStorage.setItem('ledgercap_pin_backup', State.exportJSON()); } catch (e) {}
+    try {
+      const json = State.exportJSON();
+      if (typeof PinVault !== 'undefined') PinVault.snapshotBeforeDestructive(json);
+      else localStorage.setItem('ledgercap_pin_backup', json);
+    } catch (e) {}
   }
 
   function _resetVault() {
+    if (PinVault?.isDecoyMode?.()) {
+      App.showToast('Reset blocked in decoy view', 'warning');
+      return;
+    }
     if (!confirm('Reset all data? Export a .ledgercap backup first if you need to recover.')) return;
     _snapshotBeforeDestructive();
     if (!confirm('Final confirmation — delete all ledger data on this device?')) return;
@@ -447,6 +635,13 @@ const Settings = (() => {
       s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
       s.settings.onboardingDone = true;
       s.seedDataVersion = window.SEED_DATA_VERSION || 0;
+      if (window.USER_BROKER_CASH_PKR != null) {
+        s.manualAssets = s.manualAssets || {};
+        s.manualAssets.brokerCashPkr = window.USER_BROKER_CASH_PKR;
+      } else if (window.RAFI_BROKER_CASH_PKR != null) {
+        s.manualAssets = s.manualAssets || {};
+        s.manualAssets.brokerCashPkr = window.RAFI_BROKER_CASH_PKR;
+      }
       if (window.MEEZAN_FUNDS) {
         (window.MEEZAN_FUNDS || []).forEach(f => {
           if (f.currentNav) {
@@ -522,6 +717,120 @@ const Settings = (() => {
     render();
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat };
+  function _saveTelegram() {
+    const tokenIn = document.getElementById('tg-token')?.value?.trim() || '';
+    const chatId = document.getElementById('tg-chat')?.value?.trim() || '';
+    const morning = !!document.getElementById('tg-morning')?.checked;
+    const intraday = !!document.getElementById('tg-intraday')?.checked;
+    const dividend = !!document.getElementById('tg-dividend')?.checked;
+    const price = !!document.getElementById('tg-price')?.checked;
+    const cloud = !!document.getElementById('tg-cloud')?.checked;
+    const syncKey = document.getElementById('tg-sync-key')?.value?.trim() || '';
+    State.update(s => {
+      if (tokenIn) s.settings.telegramBotToken = tokenIn;
+      s.settings.telegramChatId = chatId;
+      s.settings.telegramMorningEnabled = morning;
+      s.settings.telegramIntradayEnabled = intraday;
+      s.settings.telegramDividendEnabled = dividend;
+      s.settings.telegramPriceAlertsEnabled = price;
+      s.settings.telegramCloudSyncEnabled = cloud;
+      if (syncKey) s.settings.telegramSyncKey = syncKey;
+    });
+    App.showToast('Telegram settings saved', 'success');
+    render();
+  }
+
+  async function _sendTelegramTest() {
+    if (typeof TelegramService === 'undefined') {
+      App.showToast('Telegram service not loaded', 'error');
+      return;
+    }
+    const tokenIn = document.getElementById('tg-token')?.value?.trim();
+    if (tokenIn) {
+      State.update(s => { s.settings.telegramBotToken = tokenIn; });
+    }
+    const chatId = document.getElementById('tg-chat')?.value?.trim();
+    if (chatId) {
+      State.update(s => { s.settings.telegramChatId = chatId; });
+    }
+    if (!TelegramService.isConfigured()) {
+      App.showToast('Enter bot token + chat ID first', 'warning');
+      return;
+    }
+    App.showToast('Sending test…', 'info');
+    const res = await TelegramService.sendTestMessage();
+    App.showToast(res.ok ? 'Test message sent' : (res.error || 'Send failed'), res.ok ? 'success' : 'error');
+  }
+
+  async function _sendTelegramBrief() {
+    if (!TelegramService?.isConfigured()) {
+      App.showToast('Configure Telegram first', 'warning');
+      return;
+    }
+    App.showToast('Building brief…', 'info');
+    const res = await TelegramService.sendMorningBriefNow();
+    App.showToast(res.ok ? 'Morning brief sent' : (res.error || 'Send failed'), res.ok ? 'success' : 'error');
+  }
+
+  async function _detectTelegramChat() {
+    const tokenIn = document.getElementById('tg-token')?.value?.trim();
+    if (tokenIn) State.update(s => { s.settings.telegramBotToken = tokenIn; });
+    if (!TelegramService?.resolveChatIds) {
+      App.showToast('Telegram service not loaded', 'error');
+      return;
+    }
+    App.showToast('Checking bot updates…', 'info');
+    const res = await TelegramService.resolveChatIds();
+    if (!res.ok) {
+      App.showToast(res.error || 'Detect failed — message @LedgerCap_Bot first', 'error');
+      return;
+    }
+    if (!res.chatIds?.length) {
+      App.showToast('No chats yet — open t.me/LedgerCap_Bot and tap Start', 'warning');
+      return;
+    }
+    const first = res.chatIds[0].id;
+    State.update(s => { s.settings.telegramChatId = String(first); });
+    const el = document.getElementById('tg-chat');
+    if (el) el.value = String(first);
+    App.showToast(`Chat ID ${first} detected`, 'success');
+  }
+
+  function _genTelegramSyncKey() {
+    const key = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID().replace(/-/g, '')
+      : 'lc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    const el = document.getElementById('tg-sync-key');
+    if (el) el.value = key;
+    State.update(s => { s.settings.telegramSyncKey = key; });
+    App.showToast('Sync key generated — save Telegram settings', 'success');
+  }
+
+  async function _syncTelegramCloud() {
+    _saveTelegram();
+    if (!TelegramService?.syncBriefToCloud) {
+      App.showToast('Cloud sync not available', 'error');
+      return;
+    }
+    App.showToast('Syncing brief…', 'info');
+    const res = await TelegramService.syncBriefToCloud();
+    App.showToast(res.ok ? `Synced (${res.bytes || 0} bytes)` : (res.error || 'Sync failed'), res.ok ? 'success' : 'error');
+  }
+
+  async function _checkTelegramProxy() {
+    if (!TelegramService?.checkProxy) {
+      App.showToast('Telegram service not loaded', 'error');
+      return;
+    }
+    App.showToast('Checking worker proxy…', 'info');
+    const res = await TelegramService.checkProxy();
+    if (!res.ok) {
+      App.showToast(res.error || 'Proxy failed — redeploy worker & check PSX proxy URL', 'error');
+      return;
+    }
+    App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
+  }
+
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;

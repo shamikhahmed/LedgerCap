@@ -1,5 +1,206 @@
 # Changelog — LedgerCap
 
+## 3.32.0 (2026-06-30) — Phase 4 UI polish
+
+### Design
+- Hub tool icons — color-coded tones (gold / blue / green / violet) instead of mixed emoji
+- Net worth chart — period caption, start→end values, % change row
+- Charts use theme `--psx-accent` / `--lc-chart-stroke` (no hardcoded blue)
+- Design tokens: `--lc-brand`, `--lc-chart-stroke`, light-mode icon tones
+- Settings Security section uses `lc-pro` surface tokens
+
+### Version sync
+- `manifest.json`, `VERSION.json`, landing footer, presentation slide
+
+### Service worker
+- `ledgercap-v98`
+
+## 3.31.0 (2026-06-30) — App PIN lock (Phase 6)
+
+### Security
+- Optional **4–6 digit PIN** — SHA-256 hash in `localStorage`, never plaintext
+- Full-screen lock overlay on launch + **auto-lock** (1 / 5 / 15 / 60 min or never)
+- **Decoy PIN** — masked balances (`₨ —`); export/reset blocked
+- 5 wrong attempts → 30s lockout
+- Settings: set / change / disable PIN, lock now
+
+### Service worker
+- `ledgercap-v97`
+
+## 3.30.0 (2026-07-01) — Telegram Pakistan proxy
+
+### Bot API via worker (permanent PK fix)
+- All client Telegram calls route through `…/telegram/bot/{method}` on the LedgerCap Cloudflare worker
+- Worker forwards to `api.telegram.org` from edge (not blocked in Pakistan)
+- Whitelist: `sendMessage`, `getUpdates`, `getMe` only
+- Settings: **Test proxy** button; direct API fallback only if proxy fails
+
+### Deploy required
+- `cd worker && npx wrangler deploy` to activate `/telegram/bot/*` routes
+
+### Service worker
+- `ledgercap-v96`
+
+## 3.29.0 (2026-06-30) — Phase 2.4–2.6 + Telegram cloud (3.3)
+
+### Pilot / rebalance (2.4)
+- **Target weights UI** in Tax & Rebalance — per-symbol target % + acquisition date for CGT
+
+### Wealth calendar (2.5)
+- **Wealth calendar** screen — dividends, IPO, corporate actions by month
+
+### Research (2.6)
+- **Portfolio context** on stock Research — Pilot signal + rebalance row when held
+
+### Telegram cloud (3.3)
+- Settings: **Detect chat ID**, link to @LedgerCap_Bot, cloud sync key + brief upload
+- Worker: `POST /telegram/sync`, cron weekdays 9:00 PKT, `GET /telegram/ping`
+- Syncs urgent signals only — never full transaction ledger
+
+### Service worker
+- `ledgercap-v95`
+
+## 3.28.0 (2026-06-30) — Phase 2.1–2.3 signals & risk
+
+### Signals (3 tabs)
+- **Morning** — existing Pilot brief (unchanged content)
+- **Intraday** — `intraday-signals.js` session scan vs prev close (≥2% / gap 4%)
+- **Buy more** — `buy-recommendations.js` merges rebalance ADD + morning STRONG BUY / ADD, PSX 100-lot rounding
+
+### New screens
+- **Risk audit** (`risk-audit.js` + `risk-audit-service.js`) — sector/name/broker/CGT/drift checklist
+- **Insights** (`insights.js` / `InsightsScreen`) — Pilot score, MZNPETF proxy benchmark, value chart, Zakat snapshot
+- Hub + Research portfolio links; sidebar More entries
+
+### Tests
+- `tests/signals-logic.test.js` — intraday classify + lot rounding + risk report
+
+### Service worker
+- `ledgercap-v94`
+
+## 3.27.0 (2026-06-30) — Telegram client (Phase 3.1–3.2)
+
+### Telegram (free Bot API)
+- **Settings → Telegram**: bot token, chat_id, toggles (morning / intraday / dividend / price)
+- `telegram-service.js` — send test, format morning brief, Markdown escape, 4096 cap
+- `notification-scheduler.js` — weekday 9:00–9:15 PKT brief while PWA open; dividend + watchlist hooks
+- CSP: `api.telegram.org` connect-src
+- Unit test: `tests/telegram-format.test.js`
+
+### Service worker
+- `ledgercap-v93`
+
+## 3.26.0 (2026-06-30) — Phase 1 critical fixes
+
+### Navigation & tools
+- **Tax & Rebalance** (`pilot-tools`) in Hub tools grid + sidebar More — ≤2 taps from Hub
+- i18n EN + Urdu for pilot tools label
+
+### Portfolio buckets
+- Bucket cards show **cost basis (invested)** + **P&L** per Rafi, AKD, Funds, US
+- Hub footnote: invested = cost basis, not gross deposits
+
+### Onboarding
+- `onboarding.js` loaded + styled 3-step first-run flow (skip if ledger exists)
+
+### Honesty & UX
+- Rule-based copy: no “AI stance” on Signals/Research tools
+- Pro modal → **Support development** (no fake $3.99 paywall)
+
+### CI & cache
+- Vendored `tests/helpers/viewport-helpers.js` (Playwright viewport contract)
+- Single version constant in `js/data/config.js` → SW `ledgercap-v92`
+- Fix `window.State` bootstrap before seed load (strict-mode `FxService` + TTWO seed)
+
+## 3.25.0 (2026-07-01) — Full transaction ledger + taxes (seed v10)
+
+### Transactions
+- **All types** shown: buys, sells, dividends, deposits, fees, taxes, fund converts, US/IBKR, internal (toggle)
+- Summary bar: cash in/out, net flow, dividends, taxes, fees
+- **Linked detail**: portfolio bucket, related fee/tax rows, Research + filter shortcuts
+- Meezan **AMC fees & taxes** from statement 733102-1 (~50 linked rows)
+- Portfolio / Hub / Dividends screens link to filtered transaction views
+
+### Ledger
+- `TAX` type in cash balance · `totalTaxes()` / `totalFees()` helpers
+- `TransactionLedger` service — single source for display math
+
+### Service worker
+- `ledgercap-v91`
+
+## 3.24.0 (2026-07-01) — Invested totals, live FX, news, dividends (seed v9)
+
+### Capital deployed per bucket
+- **Rafi** ₨540,000 · **AKD** ₨200,000 (your deposits) · **Meezan** ₨634,000 · **TTWO** $2,365.45 (shown in USD + PKR)
+- Bucket cards, Hub “Capital deployed”, Portfolio pulse, Funds & Global screens
+
+### FX
+- Live **USD/PKR** via [ExchangeRate-API](https://open.er-api.com) (free, no key) + worker fallback
+- Settings → refresh rate · TTWO and IBKR values in PKR
+
+### News
+- **Yahoo Finance** headlines for your holdings + rule-based impact tags (earnings, dividend, macro, etc.)
+- Optional **GNews** API key in Settings for PSX coverage
+- Hub + Intelligence “News impact” sections
+
+### Dividends logged (your data)
+- PSX Rafi: PPL, OGDC, MEBL, EFERT + ₨255 May 14 (symbol TBC)
+- Meezan cash: KMIF, MIF, MBF, MDYP (27-Jun-2026)
+- TTWO buys dated **24-Jun-2026**
+
+### Service worker
+- `ledgercap-v90`
+
+## 3.23.0 (2026-07-01) — Meezan AMC statement 733102-1 (seed v8)
+
+### Meezan portfolio 733102-1 (as at 29-Jun-2026)
+- **7 funds** reconciled to AMC statement: KMIF, MAAF, MBF, MDAAF-MDYP, MIF, MIIF GROWTH-B, MIIF MMKA
+- **Total portfolio value:** ₨661,600 | **Total purchases (Jun-25–Jun-26):** ₨634,000 | **Withdrawals:** ₨0
+- **Unit balances** updated; **6 corporate actions** (ROC + dividend reinvest) as internal `CONTRIBUTION` txs
+- Verify script + tests assert exact units and ₨661,600 fallback NAV total
+
+### Service worker
+- `ledgercap-v89`
+
+## 3.22.0 (2026-07-01) — AKD COAF55870 full statement (seed v7)
+
+### AKD account COAF55870 (Apr–Jul 2026)
+- **All trades** from statement: HINO, Jun-8 block, FATIMA, Jun-15 block, MUGHAL, **PAEL**, **PSO**, MLCF sell/rebuy, **PASM exit**
+- **Deposits:** ₨150k (May 22), ₨50k (Jun 16), friend ₨80k (Jun 5, custodial)
+- **PASM:** your **1,555** bought @ 8.41, sold @ **10.31** (Jun 24) — **0 shares** now
+- **Friend 9,445 sh:** funded via ₨80k RAAST — **₨97,945.50 custodial cash** in AKD ledger (excluded from your net worth)
+- **AKD ledger cash:** ₨138,045 | **Your AKD cash:** ₨40,099.50 | **Broker cash (net worth):** ₨40,959.75 (Rafi + your AKD)
+- **14 holdings:** FATIMA, FFC, HINO, LUCK, MLCF×200@102.22, MUGHAL, PAEL, PIBTL, PICT, PNSC, PPL, PSO, SLGL, TREET
+
+### Service worker
+- `ledgercap-v88`
+
+## 3.21.0 (2026-07-01) — TTWO IBKR seed
+
+### Seed v6
+- **TTWO** (Take-Two Interactive) — two IBKR `INTL_BUY` rows:
+  - 4.7 shares @ $235.68, fees $2.77, total **$1,110.45**
+  - 4.97 shares, total **$1,255.00**
+- Blended position: **9.67 shares** · **$2,365.45** cost · **~$244.62** avg
+- `GLOBAL_FALLBACK_USD.TTWO` set to $245
+
+### Service worker
+- `ledgercap-v87`
+
+## 3.20.0 (2026-07-01) — Rafi vTrade reconciliation (seed v5)
+
+### Fix
+- **Rafi portfolio** — replaced inflated trade-log seed with exact **vTrade snapshot** (account 6773, 01 Jul 2026): **21 holdings**, correct qty/avg (PSO 35@331.39, PTC 100@58.50, SSGC 200@28.74, etc.)
+- Removed **TRG** from Rafi seed (sold; not in vTrade)
+- **Fallback prices** updated to Jul 1 market prices from vTrade
+- **Broker cash** seeds to **₨860.25** on seed load / migration (Settings → Cash & manual assets)
+
+### Verify
+- `node scripts/verify-ledger.js` — Rafi position + PASM + Meezan checks
+
+### Service worker
+- `ledgercap-v86` — hard refresh after deploy
+
 ## 3.19.0 (2026-06-30) — Rafi / AKD / CDC split + US picker fix
 
 ### Portfolios

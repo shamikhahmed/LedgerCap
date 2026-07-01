@@ -128,6 +128,23 @@ const Research = (() => {
     }
   }
 
+  function _portfolioContext(symbol) {
+    if (typeof PilotEngine === 'undefined') return '';
+    const state = State.get();
+    const brief = PilotEngine.buildMorningBrief(state);
+    const sig = (brief.all_signals || []).find(s => s.symbol === symbol);
+    const reb = PilotEngine.buildRebalancePlan(state).rows.find(r => r.symbol === symbol);
+    if (!sig && !reb) return '';
+    const rows = [];
+    if (sig) {
+      rows.push(`<div class="lc-verdict cap-reveal"><strong>Pilot signal:</strong> ${sig.action} — ${sig.rationale}</div>`);
+    }
+    if (reb && reb.action !== 'OK') {
+      rows.push(`<div class="lc-verdict lc-verdict--warn cap-reveal"><strong>Rebalance:</strong> ${reb.action} · actual ${reb.actual_pct.toFixed(1)}%${reb.target_pct != null ? ` vs target ${reb.target_pct.toFixed(1)}%` : ''}</div>`);
+    }
+    return `<div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Portfolio context</h3><span>Rule-based</span></div>${rows.join('')}</div>`;
+  }
+
   function _onSearch(q) {
     _searchQ = q;
     const el = document.getElementById('rt-search-results');
@@ -155,6 +172,10 @@ const Research = (() => {
           </div>
           ${_modeSegment()}
           ${bucketsHtml}
+          <div class="lc-dash-actions" style="padding:0 var(--lc-space-4) 8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('risk-audit')">Full risk audit →</button>
+            <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('insights')">Portfolio insights →</button>
+          </div>
           <div id="research-portfolio-host" style="padding:0 var(--lc-space-4)"></div>
         </div>`;
       if (window.Intelligence) Intelligence.render(document.getElementById('research-portfolio-host'));
@@ -253,7 +274,7 @@ const Research = (() => {
           `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" onclick="Research.pickSymbol('${s}')">${s}</button>`
         ).join('')}</div>
         ${_metricGrid([
-          { l: 'Rating', v: ai.action },
+          { l: 'Smart rating (rules)', v: ai.action },
           { l: 'Confidence', v: ai.confidence + '%' },
           { l: 'Fair value', v: PsxUI.fmt(ai.fairValue) },
           { l: 'Risk', v: ai.riskScore + '/100' },
@@ -261,6 +282,7 @@ const Research = (() => {
         ${!isFund ? `<div class="lc-dash-section"><div class="lc-dash-section-head"><h3>${I18n.t('analyze.fundamentals')}</h3></div></div>${fundMetrics}` : ''}
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Performance</h3><span>% change</span></div></div>
         ${perfMetrics}
+        ${_portfolioContext(r.symbol)}
         ${positionBlock}
         <div class="lc-chart-block">
           <div class="lc-dash-section-head"><h3>Price history</h3><span>Last ~30 sessions</span></div>

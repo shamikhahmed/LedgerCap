@@ -675,6 +675,95 @@ body.lc-rtl .psx-sidebar {
   font-weight: 500;
 }
 
+.lc-portfolio-invested {
+  font-size: 10px !important;
+  color: var(--psx-orange, #f97316) !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-portfolio-pnl {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-portfolio-footnote {
+  font-size: 11px;
+  color: var(--psx-text-2);
+  margin: 8px 4px 0;
+  line-height: 1.4;
+}
+
+@media (min-width: 900px) {
+  .lc-portfolio-card-meta {
+    min-width: 108px;
+    text-align: right;
+  }
+  .lc-portfolio-card-meta .lc-portfolio-card-value {
+    font-size: 15px;
+  }
+}
+
+/* Onboarding overlay */
+.ob-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: env(safe-area-inset-top) 12px calc(12px + env(safe-area-inset-bottom));
+}
+.ob-shell {
+  width: min(480px, 100%);
+  max-height: 92dvh;
+  overflow: auto;
+  background: var(--psx-surface, #18181b);
+  border: 1px solid var(--psx-border, rgba(255,255,255,0.08));
+  border-radius: 20px 20px 12px 12px;
+  padding: 20px 20px 28px;
+}
+.ob-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ob-brand { font-size: 18px; font-weight: 800; }
+.ob-brand em { color: var(--psx-accent, #6366f1); font-style: normal; }
+.ob-skip-top { background: none; border: none; color: var(--psx-text-2); font-size: 13px; cursor: pointer; }
+.ob-progress { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; }
+.ob-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+.ob-dot.on { background: var(--psx-accent, #6366f1); }
+.ob-panel { display: none; }
+.ob-panel.on { display: block; }
+.ob-hero-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.ob-title { font-size: 1.35rem; font-weight: 800; margin: 0 0 8px; }
+.ob-desc { font-size: 14px; color: var(--psx-text-2); line-height: 1.5; margin: 0 0 16px; }
+.ob-features { list-style: none; padding: 0; margin: 0 0 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.ob-cta { width: 100%; }
+.ob-nav { display: flex; gap: 10px; margin-top: 16px; }
+.ob-nav .btn-primary { flex: 1; }
+.ob-proxy-note { font-size: 12px; color: var(--psx-text-2); display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+.ob-proxy-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+
+.lc-news-row {
+  display: block;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--lc-border, rgba(255,255,255,0.06));
+  text-decoration: none;
+  color: inherit;
+}
+.lc-news-row:last-child { border-bottom: none; }
+.lc-news-row:hover { background: rgba(255,255,255,0.03); }
+.lc-news-title { font-size: 13px; font-weight: 600; line-height: 1.35; margin-bottom: 4px; }
+.lc-news-meta { font-size: 11px; color: var(--psx-text-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lc-news-hint { font-size: 11px; color: var(--psx-text-2); margin: 6px 0 0; line-height: 1.4; }
+.tx-type-dot.tax { background: rgba(239, 68, 68, 0.15); }
+.tx-type-dot.fee { background: rgba(251, 146, 60, 0.15); }
+.tx-tag { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle; }
+.tx-tag--internal { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+.tx-tag--custodial { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.tx-link { background: none; border: none; padding: 0; color: var(--psx-orange, #f97316); font-weight: 600; cursor: pointer; font-size: inherit; }
+.t-muted { color: var(--psx-text-2); }
+
 .lc-portfolio-card { position: relative; }
 .lc-portfolio-spark { margin-top: 6px; opacity: 0.9; }
 .lc-portfolio-spark .lc-chart-svg { max-height: 28px; }
@@ -721,3 +810,100 @@ body.lc-rtl .psx-sidebar {
 [data-theme="light"] .lc-stale-chip { background: rgba(245, 158, 11, 0.15); }
 .lc-sector-head { position: sticky; top: 0; z-index: 2; background: var(--psx-surface, #141414); }
 [data-theme="light"] .lc-sector-head { background: #fff; }
+
+.lc-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--psx-text-1, #e4e4e7);
+  cursor: pointer;
+}
+.lc-check-row input { width: 18px; height: 18px; accent-color: var(--psx-accent, #6366f1); }
+
+/* PIN lock overlay */
+body.lc-pin-active { overflow: hidden; }
+.lc-pin-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
+}
+.lc-pin-lock.hidden { display: none; }
+.lc-pin-card {
+  width: min(100%, 340px);
+  text-align: center;
+}
+.lc-pin-logo { font-size: 2.5rem; margin-bottom: 12px; }
+.lc-pin-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+.lc-pin-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 24px;
+}
+.lc-pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  min-height: 16px;
+}
+.lc-pin-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  transition: background 0.15s, border-color 0.15s;
+}
+.lc-pin-dot--on {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+.lc-pin-error {
+  font-size: 13px;
+  color: #f87171;
+  min-height: 20px;
+  margin: 0 0 12px;
+}
+.lc-pin-error.hidden { display: none; }
+.lc-pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 280px;
+  margin: 0 auto;
+}
+.lc-pin-key {
+  height: 56px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.lc-pin-key:active { background: rgba(245, 158, 11, 0.25); }
+.lc-pin-key--spacer { visibility: hidden; pointer-events: none; }
+[data-theme="light"] .lc-pin-lock { background: rgba(250, 250, 250, 0.96); }
+[data-theme="light"] .lc-pin-title { color: #09090b; }
+[data-theme="light"] .lc-pin-sub { color: rgba(0, 0, 0, 0.5); }
+[data-theme="light"] .lc-pin-key {
+  background: #fff;
+  color: #09090b;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .lc-pin-dot { border-color: rgba(0, 0, 0, 0.25); }

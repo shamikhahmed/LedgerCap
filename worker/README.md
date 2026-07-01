@@ -85,3 +85,36 @@ curl "https://ledgercap-psx-proxy.<your-subdomain>.workers.dev/health"
 ```
 
 Legacy `/live` path redirects to KSE-100 EOD timeseries (PSX removed the bare `/live` endpoint).
+
+## Telegram morning brief (background)
+
+Weekday **9:00 PKT** briefs while the PWA is closed:
+
+1. `npx wrangler kv namespace create TELEGRAM_BRIEF` — uncomment KV block in `wrangler.toml`
+2. `npx wrangler secret put TELEGRAM_BOT_TOKEN` (from @BotFather — never commit)
+3. `npx wrangler secret put TELEGRAM_CHAT_ID` (numeric — use app **Detect chat ID**)
+4. `npx wrangler secret put TELEGRAM_SYNC_KEY` (same as Settings → Telegram → Cloud sync key)
+5. `npx wrangler deploy`
+
+In the app: message [@LedgerCap_Bot](https://t.me/LedgerCap_Bot), enable **Cloud brief sync**, tap **Sync brief to cloud**.
+
+Check: `GET …/telegram/ping`
+
+## Pakistan — Telegram Bot API proxy
+
+`api.telegram.org` is often blocked from Pakistani ISPs. The PWA **never calls it directly** when a proxy URL is set (default: LedgerCap worker).
+
+```
+Browser (PK) → ledgercap-psx-proxy.workers.dev/telegram/bot/sendMessage
+            → Cloudflare edge → api.telegram.org → your phone
+```
+
+After code changes, redeploy:
+
+```bash
+cd LedgerCap/worker && npx wrangler deploy
+```
+
+In app: **Settings → Telegram → Test proxy** should show “Proxy OK”.
+
+Optional: `GET …/telegram/ping` returns `{ "proxy": true }`.

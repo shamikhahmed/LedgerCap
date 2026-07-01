@@ -1,18 +1,22 @@
 'use strict';
 const Hub = (() => {
   const TOOLS = () => [
-    { id: 'market', key: 'stockWatch', icon: '◆' },
-    { id: 'portfolio', key: 'lossTrack', icon: '₨' },
-    { id: 'funds', key: 'fundNavs', icon: '◎' },
-    { id: 'research', key: 'technical', icon: '⌕' },
-    { id: 'global', key: 'globalMarkets', icon: '◉' },
-    { id: 'dividends', key: 'dividends', icon: '↗' },
-    { id: 'screener', key: 'screener', icon: '▦' },
-    { id: 'zakat', key: 'zakatTool', icon: '☪' },
-    { id: 'watchlist', key: 'watchlist', icon: '★' },
-    { id: 'signals', key: 'signals', icon: '⚡' },
-    { id: 'transactions', key: 'transactions', icon: '≡' },
-    { id: 'import', key: 'import', icon: '↓' },
+    { id: 'market', key: 'stockWatch', icon: 'M', tone: 'blue' },
+    { id: 'portfolio', key: 'lossTrack', icon: '₨', tone: 'gold' },
+    { id: 'funds', key: 'fundNavs', icon: 'F', tone: 'green' },
+    { id: 'research', key: 'technical', icon: 'R', tone: 'violet' },
+    { id: 'global', key: 'globalMarkets', icon: 'G', tone: 'cyan' },
+    { id: 'dividends', key: 'dividends', icon: 'D', tone: 'green' },
+    { id: 'calendar', key: 'calendar', icon: 'C', tone: 'blue' },
+    { id: 'screener', key: 'screener', icon: 'S', tone: 'slate' },
+    { id: 'zakat', key: 'zakatTool', icon: 'Z', tone: 'gold' },
+    { id: 'watchlist', key: 'watchlist', icon: '★', tone: 'amber' },
+    { id: 'signals', key: 'signals', icon: '⚡', tone: 'orange' },
+    { id: 'risk-audit', key: 'riskAudit', icon: '!', tone: 'rose' },
+    { id: 'insights', key: 'insightsTool', icon: 'I', tone: 'violet' },
+    { id: 'pilot-tools', key: 'pilotTools', icon: 'P', tone: 'blue' },
+    { id: 'transactions', key: 'transactions', icon: '≡', tone: 'slate' },
+    { id: 'import', key: 'import', icon: '↓', tone: 'slate' },
   ];
 
   function _greeting() {
@@ -83,11 +87,70 @@ const Hub = (() => {
     return `<button type="button" class="lc-stale-chip" onclick="App.refreshPrices()">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
   }
 
+  function _investmentSummary(state) {
+    if (typeof PortfolioBuckets === 'undefined' || !PortfolioBuckets.investmentSummary) return '';
+    const sum = PortfolioBuckets.investmentSummary(state);
+    const txSum = typeof TransactionLedger !== 'undefined' ? TransactionLedger.summary(state.transactions || []) : null;
+    if (!sum.rows.some(r => r.deployedPkr > 0)) return '';
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Capital deployed</h3><span>Total ${PsxUI.fmt(sum.totalDeployed)}${txSum ? ` · tax/fees ${PsxUI.fmt(txSum.charges)}` : ''}</span></div>
+      <div class="lc-sector-card">
+        ${sum.rows.filter(r => r.deployedPkr > 0).map(r => `
+          <button type="button" class="lc-market-row" onclick="Hub.openPortfolio('${r.id}')">
+            <div><div class="lc-market-sym">${r.name}</div><div class="lc-market-name">${r.deployedNote || ''}</div></div>
+            <div class="lc-market-price">${r.id === 'usa' && r.deployedUsd ? FxService.fmtUsdPkr(r.deployedUsd) : PsxUI.fmt(r.deployedPkr)}</div>
+            <div class="lc-market-chg">${PsxUI.fmt(r.value)} · <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openBucket('${r.id}')">Txs</button></div>
+          </button>`).join('')}
+      </div>
+      ${txSum ? `<div class="lc-dash-actions">
+        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('transactions')">All transactions (${txSum.count})</button>
+        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('tax')">Taxes ${PsxUI.fmt(txSum.taxes)}</button>
+        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('dividend')">Dividends ${PsxUI.fmt(txSum.loggedDividends)}</button>
+      </div>` : ''}
+    </div>`;
+  }
+
+  let _newsHtml = '<p class="lc-empty-note">Loading market news…</p>';
+
+  async function _loadNews(state) {
+    if (typeof NewsService === 'undefined') return;
+    try {
+      const items = await NewsService.fetchPortfolioNews(state);
+      if (!items.length) {
+        _newsHtml = '<p class="lc-empty-note">No headlines right now — refresh later or add GNews API key in Settings.</p>';
+        return;
+      }
+      _newsHtml = items.slice(0, 6).map(n => `
+        <a class="lc-news-row" href="${n.url}" target="_blank" rel="noopener noreferrer">
+          <div class="lc-news-title">${n.title}</div>
+          <div class="lc-news-meta">${n.portfolioSymbol || n.symbol} · ${n.publisher || n.source}${NewsService.impactBadge(n.impact)}</div>
+          <p class="lc-news-hint">${n.impact?.hint || ''}</p>
+        </a>`).join('');
+    } catch (_) {
+      _newsHtml = '<p class="lc-empty-note">News unavailable offline.</p>';
+    }
+  }
+
+  function _newsSection() {
+    return `<div class="lc-dash-section" id="hub-news-section">
+      <div class="lc-dash-section-head"><h3>Market news</h3><span>Impact on your holdings</span></div>
+      <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
+      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" onclick="Hub.refreshNews()">Refresh news</button></div>
+    </div>`;
+  }
+
+  async function refreshNews() {
+    await _loadNews(State.get());
+    const el = document.getElementById('hub-news-list');
+    if (el) el.innerHTML = _newsHtml;
+  }
+
   function _portfolioSection(state) {
     if (typeof PortfolioBuckets === 'undefined') return '';
     return `<div class="lc-dash-section">
       <div class="lc-dash-section-head"><h3>${I18n.t('portfolio.bucketsTitle')}</h3><span>${I18n.t('portfolio.bucketsSub')}</span></div>
       <div class="lc-portfolio-grid">${PortfolioBuckets.cardsHtml(state)}</div>
+      <p class="lc-portfolio-footnote">${I18n.t('portfolio.investedFootnote')}</p>
     </div>`;
   }
 
@@ -109,15 +172,6 @@ const Hub = (() => {
     </div>`;
   }
 
-  function _portfolioChart(state) {
-    const hist = (state.priceHistory || []).map(h => h.value).filter(v => v > 0);
-    if (hist.length < 2 || typeof Charts === 'undefined') return '';
-    return `<div class="lc-chart-block hub-chart">
-      <div class="lc-dash-section-head"><h3>Net worth</h3><span>${hist.length} days</span></div>
-      ${Charts.lineChart(hist, { height: 110, color: '#2563eb' })}
-    </div>`;
-  }
-
   function _kseCard(k, sign) {
     return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('market')" aria-label="Open stock watch">
       <span>KSE-100</span>
@@ -129,10 +183,33 @@ const Hub = (() => {
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
       <button type="button" class="lc-tool-card" onclick="Navigation.go('${t.id}')">
-        <div class="lc-tool-icon" aria-hidden="true">${t.icon}</div>
+        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${t.icon}</div>
         <strong>${I18n.t(`tools.${t.key}.t`)}</strong>
         <span>${I18n.t(`tools.${t.key}.d`)}</span>
       </button>`).join('')}</div>`;
+  }
+
+  function _portfolioChart(state) {
+    const histRaw = state.priceHistory || [];
+    const hist = histRaw.map(h => h.value).filter(v => v > 0);
+    if (hist.length < 2 || typeof Charts === 'undefined') return '';
+    const first = hist[0];
+    const last = hist[hist.length - 1];
+    const chg = first ? ((last - first) / first) * 100 : 0;
+    const fmt = n => (typeof PlatformUI !== 'undefined' ? PlatformUI.fmt(n) : `₨${Number(n).toLocaleString('en-PK')}`);
+    const startLabel = histRaw[0]?.date || '';
+    const endLabel = histRaw[histRaw.length - 1]?.date || '';
+    const period = startLabel && endLabel ? `${startLabel} → ${endLabel}` : `${hist.length} days`;
+    return `<div class="lc-chart-block hub-chart">
+      <div class="lc-dash-section-head"><h3>Net worth</h3><span>${period}</span></div>
+      ${Charts.lineChartBlock(hist, {
+        height: 110,
+        caption: `${fmt(first)} → ${fmt(last)}`,
+        subcaption: `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`,
+        subcaptionCls: chg >= 0 ? 'up' : 'down',
+        ariaLabel: `Net worth trend from ${fmt(first)} to ${fmt(last)}`,
+      })}
+    </div>`;
   }
 
   function render() {
@@ -210,7 +287,9 @@ const Hub = (() => {
           </button>
         </div>
         ${_marketPulse(stats)}
+        ${_investmentSummary(state)}
         ${_portfolioSection(state)}
+        ${_newsSection()}
         ${_portfolioChart(state)}
         ${_portfolioMovers()}
         <div class="lc-dash-section">
@@ -218,9 +297,12 @@ const Hub = (() => {
           ${_toolGrid()}
         </div>
       </div>`;
+    _loadNews(state).then(() => {
+      if (Navigation?.current?.() === 'home') refreshNews();
+    });
   }
 
-  return { render, openMarketFilter, openPortfolio };
+  return { render, openMarketFilter, openPortfolio, refreshNews };
 })();
 window.Hub = Hub;
 window.Home = Hub;

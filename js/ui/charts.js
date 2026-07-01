@@ -1,16 +1,26 @@
 'use strict';
 const Charts = (() => {
 
+  function _chartColor(fallback) {
+    if (typeof document !== 'undefined' && document.body) {
+      const v = getComputedStyle(document.body).getPropertyValue('--lc-chart-stroke').trim()
+        || getComputedStyle(document.body).getPropertyValue('--psx-accent').trim();
+      if (v) return v;
+    }
+    return fallback || '#0a84ff';
+  }
+
   function _gradId(color) {
-    return 'lg_' + String(color || '#2563eb').replace(/[^a-zA-Z0-9]/g, '');
+    return 'lg_' + String(color || _chartColor()).replace(/[^a-zA-Z0-9]/g, '');
   }
 
   function lineChart(data, opts) {
     opts = opts || {};
-    const color = opts.color || '#2563eb';
+    const color = opts.color || _chartColor();
     const height = opts.height || 100;
     const fill = opts.fill !== false;
     const width = 400;
+    const label = opts.ariaLabel || 'Line chart';
 
     if (!data || data.length < 2) {
       return `<div class="lc-chart-empty" style="height:${height}px">Not enough data for chart</div>`;
@@ -32,7 +42,7 @@ const Charts = (() => {
     const linePath = pts.map((p, i) => (i === 0 ? `M${p[0].toFixed(1)},${p[1].toFixed(1)}` : `L${p[0].toFixed(1)},${p[1].toFixed(1)}`)).join(' ');
     const fillPath = fill ? `${linePath} L${width},${height} L0,${height} Z` : '';
 
-    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:100%;height:${height}px;display:block;" role="img" aria-label="Line chart">
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:100%;height:${height}px;display:block;" role="img" aria-label="${label}">
       <defs>
         <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
@@ -44,12 +54,28 @@ const Charts = (() => {
     </svg>`;
   }
 
+  function lineChartBlock(data, opts) {
+    opts = opts || {};
+    const caption = opts.caption || '';
+    const sub = opts.subcaption || '';
+    const subCls = opts.subcaptionCls || '';
+    const chart = lineChart(data, opts);
+    if (!caption && !sub) return chart;
+    return `<div class="lc-chart-inner">${chart}
+      <div class="lc-chart-caption">
+        <span>${caption}</span>
+        ${sub ? `<span class="lc-chart-caption-sub ${subCls}">${sub}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
   function barChart(data, opts) {
     opts = opts || {};
-    const color = opts.color || '#2563eb';
+    const color = opts.color || _chartColor();
     const height = opts.height || 80;
     const width = 400;
     const gap = 3;
+    const label = opts.ariaLabel || 'Bar chart';
 
     if (!data || data.length === 0) {
       return `<div class="lc-chart-empty" style="height:${height}px">No data to chart</div>`;
@@ -66,12 +92,12 @@ const Charts = (() => {
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${fill}"/>`;
     }).join('');
 
-    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:100%;height:${height}px;display:block;" role="img" aria-label="Bar chart">${bars}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:100%;height:${height}px;display:block;" role="img" aria-label="${label}">${bars}</svg>`;
   }
 
   function ringProgress(pct, color, size, strokeWidth) {
     pct = Math.min(100, Math.max(0, pct || 0));
-    color = color || '#2563eb';
+    color = color || _chartColor();
     size = size || 56;
     strokeWidth = strokeWidth || 5;
     const r = (size - strokeWidth) / 2;
@@ -87,6 +113,6 @@ const Charts = (() => {
     </svg>`;
   }
 
-  return { lineChart, barChart, ringProgress };
+  return { lineChart, lineChartBlock, barChart, ringProgress, _chartColor };
 })();
 window.Charts = Charts;

@@ -3,6 +3,9 @@ const Onboarding = (() => {
   let step = 1;
 
   function isDone() {
+    try {
+      if (sessionStorage.getItem('ledgercap_demo_mode') === '1') return true;
+    } catch (_) {}
     const s = State.get('settings') || {};
     if (s.onboardingDone) return true;
     if ((State.get('transactions') || []).length > 0) return true;

@@ -14,14 +14,18 @@ const Navigation = (() => {
     { id: 'import', labelKey: 'tools.import.t' },
     { id: 'screener', labelKey: 'tools.screener.t' },
     { id: 'dividends', labelKey: 'tools.dividends.t' },
+    { id: 'calendar', labelKey: 'tools.calendar.t' },
     { id: 'watchlist', labelKey: 'tools.watchlist.t' },
     { id: 'signals', labelKey: 'tools.signals.t' },
+    { id: 'risk-audit', labelKey: 'tools.riskAudit.t' },
+    { id: 'insights', labelKey: 'tools.insightsTool.t' },
+    { id: 'pilot-tools', labelKey: 'tools.pilotTools.t' },
     { id: 'transactions', labelKey: 'tools.transactions.t' },
     { id: 'settings', labelKey: 'more.title' },
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'settings', 'transactions', 'signals', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
 
   let _current = 'home';
 
@@ -97,9 +101,12 @@ const Navigation = (() => {
       screener: () => Screener.render(),
       watchlist: () => Watchlist.render(),
       dividends: () => Dividends.render(),
+      calendar: () => WealthCalendar.render(),
       settings: () => Settings.render(),
       transactions: () => Transactions.render(),
       signals: () => Signals.render(),
+      'risk-audit': () => RiskAudit.render(),
+      insights: () => InsightsScreen.render(),
       comparison: () => Comparison.render(),
       performance: () => Performance.render(),
       journal: () => Journal.render(),

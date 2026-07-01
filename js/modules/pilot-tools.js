@@ -38,14 +38,52 @@ const PilotTools = (() => {
   function _rebalance() {
     const plan = PilotEngine.buildRebalancePlan();
     return U.section('Target weight drift', plan.summary) +
+      _targetWeightEditor() +
       (plan.rows.length ? plan.rows.map(r => `
         <div class="os-row cap-reveal">
           <div><div class="os-row-sym">${r.symbol}</div>
           <div style="font-size:11px;color:var(--os-text-tertiary)">${r.actual_pct.toFixed(1)}% actual${r.target_pct != null ? ' · target ' + r.target_pct.toFixed(1) + '%' : ''}</div></div>
           <div style="text-align:right"><span class="badge">${r.action}</span>
           ${r.suggested_pkr ? `<div style="font-size:11px;margin-top:4px">~${U.fmt(r.suggested_pkr)}</div>` : ''}</div>
-        </div>`).join('') : '<div style="padding:12px;color:var(--os-text-secondary)">Set target weights in Signals → book tags (coming: per-symbol targets in holdings).</div>') +
-      `<div style="padding:12px 16px;font-size:12px;color:var(--os-text-tertiary)">Tip: assign <code>targetWeight</code> in holding meta via Settings → Pilot for drift alerts.</div>`;
+        </div>`).join('') : '<div style="padding:12px;color:var(--os-text-secondary)">Set target % below to enable drift alerts.</div>');
+  }
+
+  function _targetWeightEditor() {
+    const rows = PortfolioAnalyticsService.getHoldings().filter(h => h.kind === 'stock').slice(0, 24);
+    if (!rows.length) return '';
+    return U.section('Target weights &amp; CGT dates', `
+      <p style="font-size:12px;color:var(--os-text-secondary);margin:0 0 10px;line-height:1.45">Set target % for rebalance ADD/TRIM. Acquisition date improves CGT tier estimates.</p>
+      ${rows.map(h => {
+        const meta = PilotEngine.holdingMeta(h.symbol, h.broker);
+        const tw = meta.targetWeight != null ? meta.targetWeight : '';
+        const acq = meta.acquiredAt || '';
+        const broker = (h.broker || 'default').replace(/'/g, '');
+        return `<div class="os-row cap-reveal" style="flex-wrap:wrap;gap:8px">
+          <div class="os-row-sym" style="min-width:64px">${h.symbol}</div>
+          <label style="font-size:11px;color:var(--os-text-tertiary)">Target %
+            <input type="number" class="field-input" style="width:72px;margin-left:4px;padding:6px 8px" min="0" max="100" step="0.5" value="${tw}" placeholder="—"
+              onchange="PilotTools.setTarget('${h.symbol}','${broker}',this.value)">
+          </label>
+          <label style="font-size:11px;color:var(--os-text-tertiary)">Bought
+            <input type="date" class="field-input" style="width:130px;margin-left:4px;padding:6px 8px" value="${acq}"
+              onchange="PilotTools.setAcquired('${h.symbol}','${broker}',this.value)">
+          </label>
+        </div>`;
+      }).join('')}
+    `);
+  }
+
+  function setTarget(symbol, broker, pct) {
+    const v = parseFloat(pct);
+    PilotEngine.setHoldingMeta(symbol, broker, { targetWeight: Number.isFinite(v) && v > 0 ? v : null });
+    if (window.App?.showToast) App.showToast(`${symbol} target ${v > 0 ? v + '%' : 'cleared'}`, 'ok');
+    render(null, 'rebalance');
+  }
+
+  function setAcquired(symbol, broker, date) {
+    PilotEngine.setHoldingMeta(symbol, broker, { acquiredAt: date || null });
+    if (window.App?.showToast) App.showToast(`${symbol} buy date saved`, 'ok');
+    render(null, 'rebalance');
   }
 
   function _cgt() {
@@ -173,6 +211,6 @@ const PilotTools = (() => {
     render(null, 'cash');
   }
 
-  return { render, runScreen, calc, addIpo, delIpo, addCash };
+  return { render, runScreen, calc, addIpo, delIpo, addCash, setTarget, setAcquired };
 })();
 window.PilotTools = PilotTools;

@@ -213,11 +213,11 @@ const Performance = (() => {
   function _renderCharts(daily, monthly, predictive) {
     if (_tab === 'daily' && document.getElementById('daily-chart')) {
       const values = (daily.days || []).slice().reverse().map(d => d.pnl);
-      document.getElementById('daily-chart').innerHTML = Charts.barChart ? Charts.barChart(values.slice(-30), { height: 160, color: '#2563eb' }) : '';
+      document.getElementById('daily-chart').innerHTML = Charts.barChart ? Charts.barChart(values.slice(-30), { height: 160, ariaLabel: 'Daily returns' }) : '';
     }
     if (_tab === 'monthly' && document.getElementById('monthly-chart')) {
       const values = (monthly.months || []).map(m => m.pnl);
-      document.getElementById('monthly-chart').innerHTML = Charts.barChart ? Charts.barChart(values, { height: 160, color: '#2563eb' }) : '';
+      document.getElementById('monthly-chart').innerHTML = Charts.barChart ? Charts.barChart(values, { height: 160, ariaLabel: 'Monthly returns' }) : '';
     }
     if (_tab === 'predictive' && document.getElementById('predictive-chart')) {
       const projections = [predictive.currentValue, predictive.currentValue * 1.18, predictive.currentValue * Math.pow(1.18, 2), predictive.currentValue * Math.pow(1.18, 5)];

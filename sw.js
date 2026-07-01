@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v85';
+const CACHE = 'ledgercap-v98';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',
@@ -13,7 +13,9 @@ const ASSETS = [
   './js/services/market-data.js', './js/services/stock-service.js',
   './js/services/corporate-actions-service.js', './js/services/dividend-analytics-service.js',
   './js/services/dividend-service.js', './js/services/research-service.js',
-  './js/services/portfolio-analytics-service.js', './js/services/portfolio-buckets-service.js', './js/services/fx-service.js',
+  './js/services/portfolio-analytics-service.js',   './js/services/portfolio-buckets-service.js', './js/services/fx-service.js',
+  './js/services/telegram-service.js', './js/services/pin-vault.js', './js/services/notification-scheduler.js',
+  './js/services/intraday-signals.js', './js/services/buy-recommendations.js', './js/services/risk-audit-service.js',
   './js/engines/pilot-engine.js',
   './js/ui/charts.js', './js/ui/debounce.js', './js/ui/platform.js', './js/ui/psx-ui.js', './js/ui/tradingview.js', './js/ui/market-ui.js',
   './js/lc-desktop-nav.js', './js/lc-terminal.js', './js/ui/navigation.js',
@@ -22,9 +24,10 @@ const ASSETS = [
   './js/modules/funds.js', './js/modules/screener.js', './js/modules/more.js',
   './js/modules/global.js', './js/modules/zakat.js', './js/modules/import.js',
   './js/modules/comparison.js', './js/modules/research.js', './js/modules/watchlist.js',
-  './js/modules/dividends.js', './js/modules/intelligence.js', './js/modules/journal.js',
-  './js/modules/transactions.js', './js/modules/settings.js', './js/modules/signals.js',
-  './js/modules/performance.js', './js/modules/pilot-tools.js',
+  './js/modules/dividends.js', './js/modules/wealth-calendar.js', './js/modules/intelligence.js', './js/modules/journal.js',
+  './js/modules/transactions.js', './js/modules/settings.js', './js/modules/pin-lock.js', './js/modules/signals.js',
+  './js/modules/risk-audit.js', './js/modules/insights.js',
+  './js/modules/performance.js', './js/modules/pilot-tools.js', './js/modules/onboarding.js',
   './js/capricorn-motion.js', './js/app.js',
 ];
 

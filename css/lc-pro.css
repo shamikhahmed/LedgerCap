@@ -14,6 +14,8 @@
   --lc-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --lc-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
   --lc-shadow-dark: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 40px rgba(0, 0, 0, 0.45);
+  --lc-brand: #f59e0b;
+  --lc-chart-stroke: var(--psx-accent, #0a84ff);
 }
 
 body.lc-pro {
@@ -484,7 +486,27 @@ body.lc-pro .toast {
   color: var(--psx-accent);
   font-size: 17px;
   font-weight: 700;
+  flex-shrink: 0;
 }
+
+.lc-tool-icon--gold { background: rgba(245, 158, 11, 0.16); color: #f59e0b; }
+.lc-tool-icon--blue { background: rgba(10, 132, 255, 0.16); color: #0a84ff; }
+.lc-tool-icon--green { background: rgba(48, 209, 88, 0.16); color: #30d158; }
+.lc-tool-icon--violet { background: rgba(175, 82, 222, 0.16); color: #bf5af2; }
+.lc-tool-icon--cyan { background: rgba(100, 210, 255, 0.16); color: #64d2ff; }
+.lc-tool-icon--orange { background: rgba(255, 149, 0, 0.16); color: #ff9f0a; }
+.lc-tool-icon--rose { background: rgba(255, 69, 58, 0.16); color: #ff453a; }
+.lc-tool-icon--amber { background: rgba(255, 214, 10, 0.16); color: #ffd60a; }
+.lc-tool-icon--slate { background: var(--psx-bg-muted); color: var(--psx-text-2); }
+
+[data-theme="light"] .lc-tool-icon--gold { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+[data-theme="light"] .lc-tool-icon--blue { background: rgba(0, 122, 255, 0.12); color: #007aff; }
+[data-theme="light"] .lc-tool-icon--green { background: rgba(52, 199, 89, 0.12); color: #248a3d; }
+[data-theme="light"] .lc-tool-icon--violet { background: rgba(175, 82, 222, 0.1); color: #8944ab; }
+[data-theme="light"] .lc-tool-icon--cyan { background: rgba(50, 173, 230, 0.12); color: #0071a4; }
+[data-theme="light"] .lc-tool-icon--orange { background: rgba(255, 149, 0, 0.12); color: #c93400; }
+[data-theme="light"] .lc-tool-icon--rose { background: rgba(255, 59, 48, 0.1); color: #d70015; }
+[data-theme="light"] .lc-tool-icon--amber { background: rgba(255, 204, 0, 0.14); color: #a28400; }
 
 .lc-tool-card strong {
   font-size: 15px;
@@ -887,6 +909,39 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
 .lc-chart-block .lc-dash-section-head {
   padding: var(--lc-space-4) var(--lc-space-4) var(--lc-space-2);
   margin: 0;
+}
+
+.lc-chart-inner {
+  padding: 0 var(--lc-space-3) var(--lc-space-3);
+}
+
+.lc-chart-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lc-space-3);
+  padding: var(--lc-space-2) var(--lc-space-2) var(--lc-space-1);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--psx-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-chart-caption-sub {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lc-chart-caption-sub.up { color: var(--psx-up); }
+.lc-chart-caption-sub.down { color: var(--psx-down); }
+
+.lc-chart-empty {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--psx-text-3);
+  background: var(--psx-bg-muted);
+  border-radius: var(--lc-radius-sm);
 }
 
 .lc-research-hero {

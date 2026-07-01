@@ -2,6 +2,7 @@
 const { defineConfig } = require('@playwright/test');
 module.exports = defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.js',
   timeout: 60000,
   workers: 1,
   use: { baseURL: 'http://127.0.0.1:8769', viewport: { width: 390, height: 844 } },

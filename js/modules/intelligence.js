@@ -56,7 +56,24 @@ const Intelligence = (() => {
             </div>`).join('')}
         </div>
       </div>
+
+      <div class="lc-dash-section" id="intel-news-section">
+        <div class="lc-dash-section-head"><h3>News impact</h3><span>Rule-based signals — not AI advice</span></div>
+        <div class="lc-sector-card" id="intel-news-list"><p class="lc-empty-note">Loading…</p></div>
+      </div>
     `);
+    if (typeof NewsService !== 'undefined') {
+      NewsService.fetchPortfolioNews(State.get()).then(items => {
+        const el = document.getElementById('intel-news-list');
+        if (!el) return;
+        el.innerHTML = items.length ? items.slice(0, 8).map(n => `
+          <a class="lc-news-row" href="${n.url}" target="_blank" rel="noopener noreferrer">
+            <div class="lc-news-title">${n.title}</div>
+            <div class="lc-news-meta">${n.portfolioSymbol} · ${n.impact?.tags?.join(' · ') || 'General'}</div>
+            <p class="lc-news-hint">${n.impact?.hint || ''}</p>
+          </a>`).join('') : '<p class="lc-empty-note">No headlines — check connection or add GNews key in Settings.</p>';
+      }).catch(() => {});
+    }
     CapMotion.refresh();
   }
 

@@ -184,6 +184,18 @@ const Ledger = (() => {
       .reduce((sum, t) => sum + (t.amount || 0), 0);
   }
 
+  function totalTaxes(transactions) {
+    return (transactions || [])
+      .filter(t => t.type === 'TAX' && !t.custodial)
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+  }
+
+  function totalFees(transactions) {
+    return (transactions || [])
+      .filter(t => t.type === 'FEE' && !t.custodial)
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+  }
+
   function _walkStockLedger(transactions, onSell) {
     const holdings = {};
     (transactions || [])
@@ -540,6 +552,9 @@ const Ledger = (() => {
     let cash = 0;
     (transactions || []).forEach(t => {
       if (t.type === 'SALARY')          cash += t.amount || 0;
+      else if (t.type === 'DEPOSIT' && !t.custodial) cash += t.amount || 0;
+      else if (t.type === 'FEE')       cash -= t.amount || 0;
+      else if (t.type === 'TAX')       cash -= t.amount || 0;
       else if (t.type === 'DIVIDEND')   cash += t.amount || 0;
       else if (t.type === 'SELL')       cash += (t.shares || 0) * (t.price || 0);
       else if (t.type === 'REDEMPTION') cash += t.amount || 0;
@@ -559,7 +574,7 @@ const Ledger = (() => {
   }
 
   return { CDC_BROKER, calcHoldings, calcFundHoldings, calcGlobalHoldings, calcIpoPending, monthlyContributions, monthlySalary,
-    totalInvested, currentCostBasis, unrealisedPnl, totalDividends, realisedPnl, realisedPnlByDate, realisedTrades,
+    totalInvested, currentCostBasis, unrealisedPnl, totalDividends, totalTaxes, totalFees, realisedPnl, realisedPnlByDate, realisedTrades,
     portfolioValueTimeline, dailyPnlSeries, monthlyPnlSeries, currentMonthContribution,
     investmentTimeline, monthlyInvestmentBars, newId, cashBalance };
 })();

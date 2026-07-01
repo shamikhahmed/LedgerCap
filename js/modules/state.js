@@ -39,6 +39,15 @@ const State = (() => {
       primaryBroker: 'Mixed',
       onboardingDone: false,
       psxProxyUrl: '',
+      telegramBotToken: '',
+      telegramChatId: '',
+      telegramMorningEnabled: false,
+      telegramIntradayEnabled: false,
+      telegramDividendEnabled: false,
+      telegramPriceAlertsEnabled: false,
+      telegramCloudSyncEnabled: false,
+      telegramSyncKey: '',
+      telegramUseDirect: false,
       theme: 'dark',
       numberFormat: 'full',
     },
@@ -143,6 +152,13 @@ const State = (() => {
     _s.transactions = window.INITIAL_TRANSACTIONS.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
     _s.seedDataVersion = target;
     _s.settings.onboardingDone = true;
+    if (window.USER_BROKER_CASH_PKR != null) {
+      _s.manualAssets = _s.manualAssets || {};
+      _s.manualAssets.brokerCashPkr = window.USER_BROKER_CASH_PKR;
+    } else if (window.RAFI_BROKER_CASH_PKR != null) {
+      _s.manualAssets = _s.manualAssets || {};
+      _s.manualAssets.brokerCashPkr = window.RAFI_BROKER_CASH_PKR;
+    }
     Object.entries(window.FALLBACK_PRICES || {}).forEach(([sym, price]) => {
       _s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };
     });
@@ -452,10 +468,12 @@ const State = (() => {
     save();
   }
 
-  load();
-  return { get, set, update, save, reset, exportJSON, importJSON,
+  const api = { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
     isPriceStale, priceAgeLabel, logPortfolioSnapshot,
     calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
+  window.State = api;
+  load();
+  return api;
 })();
-window.State = State;
+window.State = window.State || State;

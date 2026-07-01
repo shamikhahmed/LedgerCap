@@ -2,7 +2,7 @@
   "name": "ledgercap",
   "private": true,
   "scripts": {
-    "test": "playwright test",
+    "test": "node tests/telegram-format.test.js && node tests/signals-logic.test.js && node tests/pin-vault.test.js && node tests/charts.test.js && playwright test",
     "serve": "python3 -m http.server 8769",
     "cap:init": "npx cap add ios 2>/dev/null || true && npx cap sync ios",
     "cap:sync": "npx cap sync ios",

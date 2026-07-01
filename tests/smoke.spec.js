@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { waitForNavReady } = require('./helpers/viewport-helpers');
 
 test.describe('LedgerCap smoke', () => {
   test.use({ viewport: { width: 390, height: 844 } });
@@ -23,8 +24,7 @@ test.describe('LedgerCap smoke', () => {
   test('portfolio intel in research tab is accessible', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
-    await page.waitForTimeout(800);
+    await waitForNavReady(page);
 
     await page.locator('#nav [data-tab="research"]').click();
     await page.evaluate(() => Research.setMode('portfolio'));
@@ -35,7 +35,7 @@ test.describe('LedgerCap smoke', () => {
   test('five primary nav tabs present on mobile', async ({ page }) => {
     await page.goto('/?demo=1');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
+    await waitForNavReady(page);
     const tabs = page.locator('#nav .psx-nav-btn');
     await expect(tabs).toHaveCount(5);
     await expect(page.locator('#nav [data-tab="home"]')).toBeVisible();
@@ -47,17 +47,15 @@ test.describe('LedgerCap smoke', () => {
 
   test('research shows plain-English analyzer for demo stock', async ({ page }) => {
     await page.goto('/?demo=1');
-    await page.waitForFunction(() => typeof window.ResearchService !== 'undefined');
-    await page.waitForTimeout(800);
+    await waitForNavReady(page);
     await page.locator('#nav [data-tab="research"]').click();
     await expect(page.locator('.lc-verdict h3')).toHaveText('Plain-English verdict');
-    await expect(page.locator('.lc-metric-cell label').filter({ hasText: 'Rating' })).toBeVisible();
+    await expect(page.locator('.lc-metric-cell label').filter({ hasText: 'Smart rating' })).toBeVisible();
   });
 
   test('comparison tab renders side-by-side holdings', async ({ page }) => {
     await page.goto('/?demo=1');
-    await page.waitForFunction(() => typeof window.Comparison !== 'undefined');
-    await page.waitForTimeout(800);
+    await waitForNavReady(page);
     await page.evaluate(() => Navigation.go('comparison'));
     await expect(page.locator('#screen-comparison.active')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Side by side')).toBeVisible();
@@ -66,8 +64,7 @@ test.describe('LedgerCap smoke', () => {
 
   test('dividend center reachable via hub tools', async ({ page }) => {
     await page.goto('/?demo=1');
-    await page.waitForFunction(() => typeof window.DividendService !== 'undefined');
-    await page.waitForTimeout(800);
+    await waitForNavReady(page);
     await page.locator('#nav [data-tab="home"]').click();
     await page.evaluate(() => Navigation.go('dividends'));
     await expect(page.locator('#screen-dividends.active')).toBeVisible({ timeout: 10000 });
@@ -77,11 +74,18 @@ test.describe('LedgerCap smoke', () => {
 
   test('market stock watch renders sector table', async ({ page }) => {
     await page.goto('/?demo=1');
-    await page.waitForFunction(() => typeof window.Market !== 'undefined');
-    await page.waitForTimeout(800);
+    await waitForNavReady(page);
     await page.locator('#nav [data-tab="market"]').click();
     await expect(page.locator('#screen-market.active')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#screen-market.active h1')).toHaveText('Stock Watch');
-    await expect(page.locator('.lc-market-row').first()).toBeVisible();
+    await expect(page.locator('#screen-market.active .lc-market-row').first()).toBeVisible();
+  });
+
+  test('pilot tools reachable from hub', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await waitForNavReady(page);
+    await page.locator('#nav [data-tab="home"]').click();
+    await page.getByRole('button', { name: /Tax & Rebalance/i }).click();
+    await expect(page.locator('#screen-pilot-tools.active')).toBeVisible({ timeout: 10000 });
   });
 });

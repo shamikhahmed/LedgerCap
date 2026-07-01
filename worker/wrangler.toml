@@ -3,5 +3,15 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
 
+# Weekdays 04:00 UTC ≈ 09:00 PKT — morning brief when secrets + KV configured
+[triggers]
+crons = ["0 4 * * 1-5"]
+
+# Optional — create with: npx wrangler kv namespace create TELEGRAM_BRIEF
+# [[kv_namespaces]]
+# binding = "TELEGRAM_BRIEF"
+# id = "YOUR_KV_NAMESPACE_ID"
+
 [vars]
-# No secrets required — public PSX data only
+# Secrets (wrangler secret put):
+# TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_SYNC_KEY

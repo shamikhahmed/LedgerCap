@@ -18,7 +18,7 @@ window.I18N_LOCALES = {
       hero: 'Pakistan\'s most complete tracker for stocks & mutual funds',
       sub: 'KSE-100 live · portfolio P&L · Meezan funds · dividends · screener — one stop for every Pakistani investor.',
       toolsTitle: 'Platform',
-      toolsSub: '9 tools · one ledger',
+      toolsSub: '16 tools · one ledger',
     },
     tools: {
       stockWatch: { t: 'Stock Watch', d: 'KSE-100 · sector grouped · live prices' },
@@ -35,6 +35,10 @@ window.I18N_LOCALES = {
       import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },
       globalMarkets: { t: 'Global markets', d: 'US equities · crypto · FX' },
       zakatTool: { t: 'Zakat calculator', d: 'Nisab · debts · gold' },
+      pilotTools: { t: 'Tax & Rebalance', d: 'CGT · rebalance · IPO · calculators' },
+      riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
+      insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
+      calendar: { t: 'Wealth calendar', d: 'Dividends · IPO · corporate' },
     },
     market: {
       title: 'Stock Watch',
@@ -50,6 +54,7 @@ window.I18N_LOCALES = {
       invested: 'Invested', gainLoss: 'Gain / loss', yield: 'Annual yield',
       bucketsTitle: 'Portfolios', bucketsSub: 'PSX · Funds · US · custom',
       addBucket: 'Add portfolio',
+      investedFootnote: 'Invested = cost basis (not gross deposits). Meezan internal converts differ from AMC purchases.',
     },
     analyze: {
       title: 'Analyze',
@@ -97,6 +102,9 @@ window.I18N_LOCALES = {
       signals: { t: 'مارکیٹ strategy', d: 'روزانہ pulse · buy/hold/sell' },
       watchlist: { t: 'watchlist', d: 'خريدنے سے پہلے track' },
       transactions: { t: 'لین دین', d: 'buy · sell · dividend log' },
+      pilotTools: { t: 'ٹیکس اور rebalance', d: 'CGT · rebalance · IPO · calculators' },
+      riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
+      insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
     },
     market: {
       title: 'اسٹاک وach',
@@ -112,6 +120,7 @@ window.I18N_LOCALES = {
       invested: 'invested', gainLoss: 'منافع / نقصان', yield: 'سالانہ yield',
       bucketsTitle: 'پورٹ فولiyo', bucketsSub: 'PSX · Funds · US',
       addBucket: 'پورٹ فولiyo شامل',
+      investedFootnote: 'Invested = cost basis (gross deposits سے مختلف ہو سکتا ہے)',
     },
     analyze: {
       title: 'تجزیہ',
@@ -156,6 +165,9 @@ window.I18N_LOCALES = {
       signals: { t: 'Market Strategy', d: 'Rozana pulse · buy/hold/sell' },
       watchlist: { t: 'Watchlist', d: 'Kharidne se pehle track karein' },
       transactions: { t: 'Transactions', d: 'Buy · sell · dividend log' },
+      pilotTools: { t: 'Tax & Rebalance', d: 'CGT · rebalance · IPO · calculators' },
+      riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
+      insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
       global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
       zakat: { t: 'Zakat', d: 'Nisab · 2.5% estimate' },
       import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },

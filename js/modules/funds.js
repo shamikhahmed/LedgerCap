@@ -18,10 +18,11 @@ const Funds = (() => {
     return funds.map(f => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
       const nav = State.getPrice(f.symbol) || f.currentNav || 0;
+      const invested = f.investedValue || 0;
       return `<button type="button" class="lc-market-row" onclick="Research.open('${f.symbol}')">
         <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
-        <div class="lc-market-chg ${PsxUI.chgCls(a.oneYearReturn)}">${a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—'}</div>
+        <div class="lc-market-chg ${PsxUI.chgCls(a.oneYearReturn)}">${invested ? 'Inv ' + PsxUI.fmt(invested) : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—')}</div>
       </button>`;
     }).join('');
   }
@@ -36,8 +37,16 @@ const Funds = (() => {
     const screen = document.getElementById('screen-funds');
     if (!screen) return;
     const funds = _filteredFunds();
+    const meezanInvested = window.MEEZAN_TOTAL_PURCHASES_PKR || 0;
+    const meezanValue = window.MEEZAN_PORTFOLIO_VALUE_PKR || funds.reduce((s, f) => s + (f.currentValue || 0), 0);
 
     screen.innerHTML = PsxUI.lcDash(I18n.t('tools.fundNavs.t'), I18n.t('tools.fundNavs.d'), `
+      <div class="lc-pulse-row">
+        <div class="lc-pulse-pill"><label>Total invested</label><b>${PsxUI.fmt(meezanInvested)}</b></div>
+        <div class="lc-pulse-pill"><label>Portfolio value</label><b>${PsxUI.fmt(meezanValue)}</b></div>
+        <div class="lc-pulse-pill"><label>Funds</label><b>${funds.length}</b></div>
+        <div class="lc-pulse-pill"><label>Gain</label><b class="${meezanValue >= meezanInvested ? 'psx-up' : 'psx-down'}">${PsxUI.fmt(meezanValue - meezanInvested, { signed: true })}</b></div>
+      </div>
       ${PsxUI.segment([
         { id: 'all', label: I18n.t('screener.all') },
         { id: 'islamic', label: I18n.t('screener.islamic') },

@@ -73,7 +73,8 @@ const PortfolioScreen = (() => {
         </div>
         <div class="lc-pulse-row">
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(2)}%</b></div>
-          <div class="lc-pulse-pill"><label>${I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(bucketStats ? bucketStats.invested : s.invested)}</b></div>
+          <div class="lc-pulse-pill"><label>${I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(bucketStats ? bucketStats.deployedPkr : s.invested)}</b></div>
+          <div class="lc-pulse-pill"><label>Cost basis</label><b>${PsxUI.fmt(bucketStats ? bucketStats.invested : s.invested)}</b></div>
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.gainLoss')}</label><b class="${(bucketStats ? bucketStats.pnl : s.totalReturn.abs) >= 0 ? 'psx-up' : 'psx-down'}">${PsxUI.fmt(bucketStats ? bucketStats.pnl : s.totalReturn.abs, { signed: true })}</b></div>
           <div class="lc-pulse-pill"><label>Positions</label><b>${holdings.length}</b></div>
         </div>
@@ -88,14 +89,15 @@ const PortfolioScreen = (() => {
         </div>
         ${holdings.length ? `<div class="psx-table-wrap" style="margin:0 var(--lc-space-4);border-radius:var(--lc-radius);overflow:hidden;box-shadow:var(--lc-shadow)">
           <table class="psx-table"><thead><tr>
-            <th>Symbol</th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th>
+            <th>Symbol</th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
           </tr></thead><tbody>
-          ${holdings.map(h => `<tr onclick="Navigation.go('research');Research.open('${h.symbol}')">
-            <td><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
-            <td>${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td>${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) : PsxUI.fmt(h.price)}</td>
-            <td>${PsxUI.fmt(h.value)}</td>
-            <td class="${PsxUI.chgCls(h.pnlPct)}">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+          ${holdings.map(h => `<tr>
+            <td onclick="Navigation.go('research');Research.open('${h.symbol}')"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
+            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
+            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
+            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
+            <td onclick="Navigation.go('research');Research.open('${h.symbol}')" class="${PsxUI.chgCls(h.pnlPct)}">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+            <td><button type="button" class="lc-link-btn" onclick="Transactions.openSymbol('${h.symbol}')">Txs</button></td>
           </tr>`).join('')}
           </tbody></table>
         </div>` : `<div class="lc-empty-state" style="margin-top:0">

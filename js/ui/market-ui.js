@@ -148,9 +148,10 @@ const MarketUI = (() => {
 
   function defaultTools() {
     return toolsGrid([
-      { title: 'Signals', sub: 'AI stance on your holdings', on: "Navigation.go('signals')" },
+      { title: 'Signals', sub: 'Rule-based brief on holdings', on: "Navigation.go('signals')" },
       { title: 'Dividends', sub: 'Income calendar & yield', on: "Navigation.go('dividends')" },
-      { title: 'Research', sub: 'Charts, DMA, and AI stats', on: "Navigation.go('research')" },
+      { title: 'Research', sub: 'Charts, DMA, smart rating', on: "Navigation.go('research')" },
+      { title: 'Tax & Rebalance', sub: 'CGT · rebalance · IPO tools', on: "Navigation.go('pilot-tools')" },
       { title: 'Performance', sub: 'XIRR & benchmark compare', on: "Navigation.go('performance')" },
       { title: 'Compare', sub: 'Side-by-side holdings', on: "Navigation.go('comparison')" },
       { title: 'Transactions', sub: 'Full buy/sell log', on: "Navigation.go('transactions')" },

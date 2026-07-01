@@ -8,6 +8,7 @@ const PlatformUI = (() => {
 
   function fmt(n, opts) {
     if (n == null || Number.isNaN(n)) return '—';
+    if (typeof PinVault !== 'undefined' && PinVault.isDecoyMode() && !(opts && opts.allowDecoy)) return '₨ —';
     opts = opts || {};
     if (opts.pct) {
       const d = opts.decimals ?? 2;

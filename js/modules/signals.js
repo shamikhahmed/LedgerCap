@@ -1,6 +1,7 @@
 'use strict';
 const Signals = (() => {
   const U = PlatformUI;
+  let _tab = 'morning';
 
   function _actionClass(action) {
     const a = (action || '').toUpperCase();
@@ -8,6 +9,14 @@ const Signals = (() => {
     if (a.includes('BUY') || a === 'ADD') return 't-gain';
     if (a === 'WATCH') return 't-warn';
     return '';
+  }
+
+  function _segment() {
+    return `<div class="lc-segment perf-tabs cap-tab-bar" role="tablist" style="margin-bottom:12px">
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'morning' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'morning'}" onclick="Signals.setTab('morning')">Morning</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'intraday' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'intraday'}" onclick="Signals.setTab('intraday')">Intraday</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'buy' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'buy'}" onclick="Signals.setTab('buy')">Buy more</button>
+    </div>`;
   }
 
   function _signalRow(s, onSymbol) {
@@ -22,8 +31,41 @@ const Signals = (() => {
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px;line-height:1.45">${s.rationale}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div class="${s.pl_pct >= 0 ? 't-gain' : 't-loss'}" style="font-weight:700;font-size:13px">${s.pl_pct >= 0 ? '+' : ''}${s.pl_pct.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--os-text-tertiary)">${s.weight_pct.toFixed(1)}% wt</div>
+        <div class="${s.pl_pct >= 0 ? 't-gain' : 't-loss'}" style="font-weight:700;font-size:13px">${s.pl_pct >= 0 ? '+' : ''}${Number(s.pl_pct).toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--os-text-tertiary)">${Number(s.weight_pct).toFixed(1)}% wt</div>
+      </div>
+    </div>`;
+  }
+
+  function _intradayRow(s) {
+    const cls = s.movePct >= 0 ? 't-gain' : 't-loss';
+    return `<div class="os-row cap-reveal" style="cursor:pointer" onclick="Research.open('${s.symbol}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="os-row-sym">${s.symbol}</span>
+          <span class="badge" style="font-size:10px">${s.kind}</span>
+          <span class="badge" style="font-size:10px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px">${s.label}</div>
+      </div>
+      <div class="${cls}" style="font-weight:700;font-size:13px">${s.movePct >= 0 ? '+' : ''}${Number(s.movePct).toFixed(1)}%</div>
+    </div>`;
+  }
+
+  function _buyRow(r) {
+    const src = r.source === 'both' ? 'Rebalance + morning' : r.source === 'morning' ? 'Morning brief' : 'Rebalance';
+    return `<div class="os-row cap-reveal" style="cursor:pointer" onclick="Research.open('${r.symbol}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="os-row-sym">${r.symbol}</span>
+          <span class="badge t-gain" style="font-size:10px;font-weight:700">${r.action}</span>
+          <span class="badge" style="font-size:10px;opacity:.75">${src}</span>
+        </div>
+        <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px;line-height:1.45">${r.rationale}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-weight:700;font-size:13px">${r.buy_shares} sh</div>
+        <div style="font-size:11px;color:var(--os-text-tertiary)">${PsxUI.fmt(r.buy_pkr)} @ ${PsxUI.fmt(r.ltp)}</div>
       </div>
     </div>`;
   }
@@ -32,9 +74,7 @@ const Signals = (() => {
     return typeof MarketUI !== 'undefined' ? MarketUI.morningBriefCard() : '';
   }
 
-  function render(target) {
-    const screen = target || document.getElementById('screen-signals');
-    if (!screen) return;
+  function _renderMorning(screen) {
     const brief = PilotEngine.buildMorningBrief();
     const score = PilotEngine.buildPilotScore();
     const summary = PilotEngine.portfolioSummary();
@@ -42,6 +82,7 @@ const Signals = (() => {
     screen.innerHTML = `
     <div class="lc-dash">
     <div class="lc-screen-head"><h1>Signals</h1><p>Morning brief · Core &amp; Swing books</p></div>
+    ${_segment()}
     ${U.metricGrid([
       U.metricCell('Pilot Score', score.grade + ' · ' + score.score, null, score.score >= 70 ? 't-gain' : 't-warn'),
       U.metricCell('Core book', summary.core_pct.toFixed(0) + '%', 'Long-term positions'),
@@ -63,7 +104,62 @@ const Signals = (() => {
 
     <div class="lc-disclaimer">${brief.disclaimer}</div>
     </div>`;
+  }
+
+  function _renderIntraday(screen) {
+    const rows = typeof IntradaySignals !== 'undefined' ? IntradaySignals.scan() : [];
+    screen.innerHTML = `
+    <div class="lc-dash">
+      <div class="lc-screen-head"><h1>Signals</h1><p>PSX session moves vs previous close</p></div>
+      ${_segment()}
+      ${U.metricGrid([
+        U.metricCell('Flags', String(rows.length), '≥2% move or rule hit'),
+        U.metricCell('Threshold', '2%', 'Session change'),
+        U.metricCell('Gap', '4%', 'Gap up/down'),
+        U.metricCell('Source', 'Cached prices', 'No paid API'),
+      ], 2)}
+      ${U.section('Intraday flags', rows.length
+        ? rows.map(_intradayRow).join('')
+        : '<div style="color:var(--os-text-secondary);padding:8px 0">No PSX moves above thresholds in your holdings.</div>')}
+      <div class="lc-disclaimer">Rule-based session scan — refresh prices during market hours. Not financial advice.</div>
+    </div>`;
+  }
+
+  function _renderBuy(screen) {
+    const recs = typeof BuyRecommendations !== 'undefined' ? BuyRecommendations.getRecommendations() : [];
+    const totalPkr = recs.reduce((a, r) => a + (r.buy_pkr || 0), 0);
+    screen.innerHTML = `
+    <div class="lc-dash">
+      <div class="lc-screen-head"><h1>Signals</h1><p>Buy more — rebalance ADD + morning STRONG BUY / ADD</p></div>
+      ${_segment()}
+      ${U.metricGrid([
+        U.metricCell('Ideas', String(recs.length), 'Merged sources'),
+        U.metricCell('Est. deploy', PsxUI.fmt(totalPkr), 'PSX 100-lot rounded'),
+        U.metricCell('Lot rule', '100 shares', 'PSX minimum'),
+        U.metricCell('Targets', 'Optional', 'Set in Pilot Tools'),
+      ], 2)}
+      ${U.section('Buy list', recs.length
+        ? recs.map(_buyRow).join('')
+        : '<div style="color:var(--os-text-secondary);padding:8px 0">No ADD signals — set target weights in Tax &amp; Rebalance or wait for morning brief upgrades.</div>')}
+      <div class="lc-dash-actions">
+        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">Set target weights</button>
+      </div>
+      <div class="lc-disclaimer">Illustrative lot sizes — verify cash and broker limits before trading.</div>
+    </div>`;
+  }
+
+  function render(target) {
+    const screen = target || document.getElementById('screen-signals');
+    if (!screen) return;
+    if (_tab === 'intraday') _renderIntraday(screen);
+    else if (_tab === 'buy') _renderBuy(screen);
+    else _renderMorning(screen);
     CapMotion.refresh();
+  }
+
+  function setTab(tab) {
+    _tab = tab === 'intraday' || tab === 'buy' ? tab : 'morning';
+    render();
   }
 
   function _bookTagEditor() {
@@ -89,6 +185,6 @@ const Signals = (() => {
     if (window.Home) Home.render();
   }
 
-  return { render, renderBriefCard, setBook };
+  return { render, renderBriefCard, setBook, setTab };
 })();
 window.Signals = Signals;

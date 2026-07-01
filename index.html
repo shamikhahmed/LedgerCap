@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://s.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://s3.tradingview.com https://s.tradingview.com; connect-src 'self' https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://query1.finance.yahoo.com https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev https://s3.tradingview.com https://s.tradingview.com https://symbol-search.tradingview.com https://prodata.tradingview.com https://notifications.tradingview.com; frame-src https://s3.tradingview.com https://www.tradingview.com https://s.tradingview.com; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://s.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://s3.tradingview.com https://s.tradingview.com; connect-src 'self' https://api.telegram.org https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://query1.finance.yahoo.com https://open.er-api.com https://gnews.io https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev https://s3.tradingview.com https://s.tradingview.com https://symbol-search.tradingview.com https://prodata.tradingview.com https://notifications.tradingview.com; frame-src https://s3.tradingview.com https://www.tradingview.com https://s.tradingview.com; object-src 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,9 +29,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="css/psx-app.css?v=19">
-  <link rel="stylesheet" href="css/lc-pro.css?v=3">
-  <link rel="stylesheet" href="css/lc-pro-phase.css?v=2">
+  <link rel="stylesheet" href="css/psx-app.css?v=20">
+  <link rel="stylesheet" href="css/lc-pro.css?v=4">
+  <link rel="stylesheet" href="css/lc-pro-phase.css?v=3">
   <script>
     const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', theme);
@@ -53,6 +53,17 @@
     <div class="psx-splash-logo">₨</div>
     <div class="psx-splash-title">LedgerCap</div>
     <div class="psx-splash-sub">Wealth terminal · Pakistan</div>
+  </div>
+
+  <div id="pin-lock" class="lc-pin-lock hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Unlock LedgerCap">
+    <div class="lc-pin-card">
+      <div class="lc-pin-logo" aria-hidden="true">🔒</div>
+      <h2 class="lc-pin-title">Enter PIN</h2>
+      <p class="lc-pin-sub">Your ledger stays on this device</p>
+      <div class="lc-pin-dots" id="pin-dots" aria-live="polite"></div>
+      <p class="lc-pin-error hidden" id="pin-error" role="alert"></p>
+      <div class="lc-pin-pad" id="pin-pad"></div>
+    </div>
   </div>
 
   <div id="demo-banner" class="psx-demo hidden" role="status">
@@ -86,6 +97,7 @@
         <div id="screen-screener" class="psx-screen"></div>
         <div id="screen-watchlist" class="psx-screen"></div>
         <div id="screen-dividends" class="psx-screen"></div>
+        <div id="screen-calendar" class="psx-screen"></div>
         <div id="screen-settings" class="psx-screen"></div>
         <div id="screen-transactions" class="psx-screen"></div>
         <div id="screen-signals" class="psx-screen"></div>
@@ -93,6 +105,8 @@
         <div id="screen-performance" class="psx-screen"></div>
         <div id="screen-journal" class="psx-screen"></div>
         <div id="screen-pilot-tools" class="psx-screen"></div>
+        <div id="screen-risk-audit" class="psx-screen"></div>
+        <div id="screen-insights" class="psx-screen"></div>
         <div id="screen-global" class="psx-screen"></div>
         <div id="screen-zakat" class="psx-screen"></div>
         <div id="screen-import" class="psx-screen"></div>
@@ -134,7 +148,15 @@
   <script src="js/services/research-service.js"></script>
   <script src="js/services/portfolio-analytics-service.js"></script>
   <script src="js/services/portfolio-buckets-service.js"></script>
+  <script src="js/services/transaction-ledger-service.js"></script>
   <script src="js/services/fx-service.js"></script>
+  <script src="js/services/news-service.js"></script>
+  <script src="js/services/telegram-service.js"></script>
+  <script src="js/services/pin-vault.js"></script>
+  <script src="js/services/notification-scheduler.js"></script>
+  <script src="js/services/intraday-signals.js"></script>
+  <script src="js/services/buy-recommendations.js"></script>
+  <script src="js/services/risk-audit-service.js"></script>
   <script src="js/engines/pilot-engine.js"></script>
   <script src="js/ui/charts.js"></script>
   <script src="js/ui/debounce.js"></script>
@@ -156,13 +178,18 @@
   <script src="js/modules/research.js"></script>
   <script src="js/modules/watchlist.js"></script>
   <script src="js/modules/dividends.js"></script>
+  <script src="js/modules/wealth-calendar.js"></script>
   <script src="js/modules/transactions.js"></script>
   <script src="js/modules/settings.js"></script>
+  <script src="js/modules/pin-lock.js"></script>
   <script src="js/modules/signals.js"></script>
+  <script src="js/modules/risk-audit.js"></script>
+  <script src="js/modules/insights.js"></script>
   <script src="js/modules/comparison.js"></script>
   <script src="js/modules/performance.js"></script>
   <script src="js/modules/journal.js"></script>
   <script src="js/modules/pilot-tools.js"></script>
+  <script src="js/modules/onboarding.js"></script>
   <script src="js/modules/global.js"></script>
   <script src="js/modules/zakat.js"></script>
   <script src="js/modules/import.js"></script>
@@ -171,42 +198,24 @@
   <script>window.CapMotion = window.CapricornMotion;</script>
   <script src="js/app.js"></script>
 
-<!-- PRO UPGRADE MODAL -->
-<div id="proUpgradeModal" class="lc-pro-modal" role="dialog" aria-modal="true" aria-label="LedgerCap Pro">
+<!-- Support modal (no paywall until Stripe) -->
+<div id="proUpgradeModal" class="lc-pro-modal" role="dialog" aria-modal="true" aria-label="Support LedgerCap">
   <div class="lc-pro-modal-card">
-    <p class="lc-pro-modal-kicker">LEDGERCAP PRO</p>
-    <h2>Your complete wealth terminal.</h2>
-    <p class="lc-pro-modal-sub">Your ledger stays on your device either way. Pro unlocks live PSX, Meezan funds, Zakat engine, global markets, and full net worth tracking.</p>
-    <div class="lc-pro-plans">
-      <div class="lc-pro-plan">
-        <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:12px">FREE</p>
-        <p style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:16px">$0</p>
-        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
-          <li>✓ 10 holdings tracked</li>
-          <li>✓ Basic PKR net worth</li>
-          <li>✓ Zakat calculator</li>
-          <li>✓ Offline PWA</li>
-        </ul>
-      </div>
-      <div class="lc-pro-plan lc-pro-plan--highlight">
-        <span class="lc-pro-plan-badge">PRO</span>
-        <p style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:2px">$3.99<span style="font-size:13px;font-weight:400;color:rgba(255,255,255,0.5)">/mo</span></p>
-        <p style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:12px">or $29.99/yr</p>
-        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
-          <li>✓ Unlimited holdings</li>
-          <li>✓ PSX + US stocks (S&amp;P 500)</li>
-          <li>✓ Meezan fund positions</li>
-          <li>✓ IPO tracker</li>
-          <li>✓ Transaction history</li>
-        </ul>
-      </div>
-    </div>
-    <button type="button" class="lc-pro-btn-waitlist" onclick="document.getElementById('proUpgradeModal').classList.remove('open')">Join Pro waitlist — coming soon →</button>
-    <button type="button" class="lc-pro-btn-dismiss" onclick="document.getElementById('proUpgradeModal').classList.remove('open')">Continue with Free</button>
+    <p class="lc-pro-modal-kicker">LEDGERCAP</p>
+    <h2>Free wealth terminal — always.</h2>
+    <p class="lc-pro-modal-sub">Your ledger stays on your device. LedgerCap is $0 to use: PSX, Meezan funds, Zakat, global markets, and full net worth tracking. Optional support helps fund hosting and new features.</p>
+    <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:rgba(255,255,255,0.85)">
+      <li>✓ Unlimited holdings · offline PWA</li>
+      <li>✓ Rule-based signals &amp; rebalance tools</li>
+      <li>✓ Transaction ledger · CGT estimates</li>
+      <li>✓ No subscription required</li>
+    </ul>
+    <a href="https://github.com/shamikhahmed/LedgerCap" target="_blank" rel="noopener" class="lc-pro-btn-waitlist" style="display:block;text-align:center;text-decoration:none" onclick="document.getElementById('proUpgradeModal').classList.remove('open')">Star on GitHub — support development →</a>
+    <button type="button" class="lc-pro-btn-dismiss" onclick="document.getElementById('proUpgradeModal').classList.remove('open')">Continue</button>
   </div>
 </div>
 <script>
-window.APP_VERSION = '3.19.0';
+window.APP_VERSION = window.LEDGERCAP_VERSION?.app || '3.27.0';
 (function () {
   window.openProUpgrade = function () {
     var m = document.getElementById('proUpgradeModal');
