@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 76 modules — run: npm run bundle */
+/* LedgerCap bundle — 77 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -149,7 +149,7 @@ const FALLBACK_PRICES = {
   'SLGL': 16.48,
   'SSGC': 31.27,
   'TREET': 26.25,
-  'TRG': 70.42,
+  'TRG': 64.31,
 };
 
 const WATCHLIST = [
@@ -4719,9 +4719,9 @@ window.DIVIDEND_DATA = DIVIDEND_DATA;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.40.0',
-  sw: 106,
-  cache: 'ledgercap-v106',
+  app: '3.40.1',
+  sw: 107,
+  cache: 'ledgercap-v107',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -6833,10 +6833,23 @@ const MarketDataService = (() => {
     };
   }
 
+  function _quoteMeta(symbol, source) {
+    const st = State.get()?.prices?.[symbol] || {};
+    const ts = st.ts || 0;
+    const seeded = ['fallback', 'seed', 'meezan_seed'].includes(source)
+      && (!ts || Date.now() - ts > 86400000);
+    const quoteLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : 'Last close';
+    const sessionOpen = typeof PsxSession !== 'undefined' ? PsxSession.isOpen() : false;
+    return { ts, seeded, quoteLabel, sessionOpen };
+  }
+
   function getQuote(symbol) {
     if (_isGlobal(symbol)) {
       const g = _globalQuote(symbol);
-      if (g) return g;
+      if (g) {
+        const meta = _quoteMeta(symbol, g.source);
+        return { ...g, ...meta };
+      }
     }
     const price = _price(symbol);
     const prevClose = _prevClose(symbol);
@@ -6844,7 +6857,8 @@ const MarketDataService = (() => {
     let changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
     if (Math.abs(changePct) > MAX_SANE_DAILY_PCT) changePct = 0;
     const source = State.getPriceSource(symbol) || 'seed';
-    return { symbol, price, prevClose, change, changePct, source, ts: Date.now() };
+    const meta = _quoteMeta(symbol, source);
+    return { symbol, price, prevClose, change, changePct, source, ...meta };
   }
 
   function getPriceChanges(symbol) {
@@ -8302,6 +8316,55 @@ const FxService = (() => {
 })();
 window.FxService = FxService;
 
+;/* === js/services/psx-session.js === */
+'use strict';
+/** PSX session clock — Asia/Karachi, weekdays 9:15–15:45 */
+const PsxSession = (() => {
+  const TZ = 'Asia/Karachi';
+  const OPEN_MIN = 9 * 60 + 15;
+  const CLOSE_MIN = 15 * 60 + 45;
+
+  function pktParts(now) {
+    now = now || new Date();
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: TZ,
+      weekday: 'short',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    });
+    const parts = fmt.formatToParts(now);
+    const get = (t) => parts.find((p) => p.type === t)?.value;
+    const weekday = get('weekday') || '';
+    const hour = parseInt(get('hour') || '0', 10);
+    const minute = parseInt(get('minute') || '0', 10);
+    const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(now);
+    return { weekday, hour, minute, dateKey, mins: hour * 60 + minute };
+  }
+
+  function isWeekday(pkt) {
+    pkt = pkt || pktParts();
+    return pkt.weekday && !['Sat', 'Sun'].includes(pkt.weekday);
+  }
+
+  function isOpen(pkt) {
+    pkt = pkt || pktParts();
+    if (!isWeekday(pkt)) return false;
+    return pkt.mins >= OPEN_MIN && pkt.mins < CLOSE_MIN;
+  }
+
+  function priceLabel(pkt) {
+    pkt = pkt || pktParts();
+    if (isOpen(pkt)) return 'Live';
+    if (!isWeekday(pkt)) return 'Last close';
+    if (pkt.mins < OPEN_MIN) return 'Pre-market';
+    return 'Last close';
+  }
+
+  return { pktParts, isWeekday, isOpen, priceLabel };
+})();
+window.PsxSession = PsxSession;
+
 ;/* === js/services/news-service.js === */
 'use strict';
 /**
@@ -8822,7 +8885,9 @@ const TelegramService = (() => {
         if (!ex) return null;
         const days = Math.ceil((new Date(ex) - new Date()) / 86400000);
         if (days < 0 || days > 21) return null;
-        return { symbol: u.symbol, days, amountPkr: u.dps || u.amount || 0 };
+        const amountPkr = u.amountPerShare ?? u.dps ?? u.amount ?? 0;
+        if (!(amountPkr > 0)) return null;
+        return { symbol: u.symbol, days, amountPkr };
       }).filter(Boolean);
     }
 
@@ -8904,10 +8969,13 @@ const TelegramService = (() => {
 
   function formatPriceAlert(alert) {
     const a = alert || {};
+    const dir = a.direction === 'above' ? 'crossed above' : 'crossed below';
+    const stale = a.quoteLabel === 'Last close' ? ' (last close)' : '';
     return truncate([
       '🔔 *Price alert*',
-      `*${escapeMarkdown(a.symbol)}* at ${escapeMarkdown(_fmtPkr(a.price))}`,
-      `Target ${escapeMarkdown(_fmtPkr(a.target))}`,
+      `*${escapeMarkdown(a.symbol)}* ${dir} ${escapeMarkdown(_fmtPkr(a.target))}`,
+      `Now ${escapeMarkdown(_fmtPkr(a.price))}${escapeMarkdown(stale)}`,
+      '_PSX session crossover — rule-based, not financial advice._',
     ].join('\n'));
   }
 
@@ -9353,30 +9421,17 @@ const NotificationScheduler = (() => {
   let _timer = null;
 
   function pktParts() {
-    const now = new Date();
-    const fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Karachi',
-      weekday: 'short',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    });
-    const parts = fmt.formatToParts(now);
-    const get = t => parts.find(p => p.type === t)?.value;
-    const weekday = get('weekday') || '';
-    const hour = parseInt(get('hour') || '0', 10);
-    const minute = parseInt(get('minute') || '0', 10);
-    const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(now);
-    return { weekday, hour, minute, dateKey };
+    return typeof PsxSession !== 'undefined'
+      ? PsxSession.pktParts()
+      : { weekday: '', hour: 0, minute: 0, dateKey: '', mins: 0 };
   }
 
-  function _isWeekday(wd) {
-    return wd && !['Sat', 'Sun'].includes(wd);
+  function _isWeekday(pkt) {
+    return typeof PsxSession !== 'undefined' ? PsxSession.isWeekday(pkt) : false;
   }
 
   function _isPsxSession(pkt) {
-    const mins = pkt.hour * 60 + pkt.minute;
-    return mins >= 9 * 60 + 30 && mins < 15 * 60 + 30;
+    return typeof PsxSession !== 'undefined' ? PsxSession.isOpen(pkt) : false;
   }
 
   function _settings() {
@@ -9407,7 +9462,7 @@ const NotificationScheduler = (() => {
     if (!s.telegramMorningEnabled) return;
     if (!window.TelegramService?.isConfigured()) return;
     if (_cloudCronActive()) return;
-    if (!_isWeekday(pkt.weekday)) return;
+    if (!_isWeekday(pkt)) return;
     if (pkt.hour !== 9 || pkt.minute >= 15) return;
     const claimKey = `brief:${pkt.dateKey}`;
     if (!(await _claimOnce(claimKey, 90000))) return;
@@ -9424,17 +9479,21 @@ const NotificationScheduler = (() => {
   async function _maybeDividendReminders(pkt) {
     const s = _settings();
     if (!s.telegramDividendEnabled || !TelegramService?.isConfigured()) return;
+    if (!_isWeekday(pkt)) return;
+    if (pkt.hour !== 9 || pkt.minute >= 30) return;
     const claimKey = `dividend:${pkt.dateKey}`;
     if (!(await _claimOnce(claimKey, 90000))) return;
     if (typeof DividendService === 'undefined') return;
     const upcoming = DividendService.getUpcoming() || [];
     const soon = upcoming
-      .map(u => {
+      .map((u) => {
         const ex = u.exDate || u.ex_date;
         if (!ex) return null;
-        const days = Math.ceil((new Date(ex) - new Date()) / 86400000);
+        const days = Math.ceil((new Date(ex + 'T12:00:00') - new Date()) / 86400000);
         if (days < 0 || days > 7) return null;
-        return { symbol: u.symbol, days, amountPkr: u.dps || u.amount || 0 };
+        const amountPkr = u.amountPerShare ?? u.dps ?? u.amount ?? 0;
+        if (!(amountPkr > 0)) return null;
+        return { symbol: u.symbol, days, amountPkr };
       })
       .filter(Boolean);
     if (!soon.length) return;
@@ -9445,26 +9504,17 @@ const NotificationScheduler = (() => {
 
   async function _maybePriceAlerts(pkt) {
     const s = _settings();
-    if (!s.telegramPriceAlertsEnabled || !TelegramService?.isConfigured()) return;
-    const list = State.get('watchlist') || [];
-    for (const w of list) {
-      if (!w.targetPrice || w.targetPrice <= 0) continue;
-      const q = MarketDataService.getQuote(w.symbol);
-      if (!q.price || q.price > w.targetPrice) continue;
-      const claimKey = `price:${w.id}:${w.targetPrice}:${pkt.dateKey}`;
-      if (!(await _claimOnce(claimKey, 86400))) continue;
-      await TelegramService.sendMessage(TelegramService.formatPriceAlert({
-        symbol: w.symbol,
-        price: q.price,
-        target: w.targetPrice,
-      }));
+    if (!s.telegramPriceAlertsEnabled) return;
+    if (!_isWeekday(pkt) || !_isPsxSession(pkt)) return;
+    if (typeof PriceAlertsService !== 'undefined') {
+      PriceAlertsService.checkAll({ telegramOnly: true });
     }
   }
 
   async function _maybeIntradayNews(pkt) {
     const s = _settings();
     if (!s.telegramIntradayNewsEnabled || !TelegramService?.isConfigured()) return;
-    if (!_isWeekday(pkt.weekday) || !_isPsxSession(pkt)) return;
+    if (!_isWeekday(pkt) || !_isPsxSession(pkt)) return;
     const claimKey = `news:${pkt.dateKey}-${pkt.hour}`;
     if (!(await _claimOnce(claimKey, 7200))) return;
     if (typeof NewsService === 'undefined') return;
@@ -9643,9 +9693,14 @@ window.StatementExport = StatementExport;
 
 ;/* === js/services/price-alerts-service.js === */
 'use strict';
-/** Price triggers — holdings + watchlist, below/above, toast + Telegram */
+/** Price triggers — crossover during PSX session; toast + Telegram */
 const PriceAlertsService = (() => {
-  function _firedKey(id) { return `ledgercap_alert_fired:${id}`; }
+  const ARM_PREFIX = 'ledgercap_alert_arm:';
+  const FIRED_PREFIX = 'ledgercap_alert_fired:';
+  const SEED_SOURCES = new Set(['fallback', 'seed', 'meezan_seed']);
+
+  function _armKey(id) { return ARM_PREFIX + id; }
+  function _firedKey(id) { return FIRED_PREFIX + id; }
 
   function list() {
     const state = State.get();
@@ -9662,38 +9717,99 @@ const PriceAlertsService = (() => {
     return [...holdingAlerts, ...watch];
   }
 
-  function checkAll() {
+  function _quoteReliable(q) {
+    if (!q?.price) return false;
+    if (q.seeded) return false;
+    if (SEED_SOURCES.has(q.source) && !(q.ts > 0)) return false;
+    return true;
+  }
+
+  /** Arm/re-arm — fire only on crossover into hit zone */
+  function _crossed(a, price) {
+    const key = _armKey(a.id);
+    let armed = localStorage.getItem(key);
+    if (armed === null) {
+      if (a.direction === 'above') armed = price < a.price ? '1' : '0';
+      else armed = price > a.price ? '1' : '0';
+      localStorage.setItem(key, armed);
+      return false;
+    }
+    armed = armed === '1';
+    if (a.direction === 'below') {
+      if (price > a.price) {
+        localStorage.setItem(key, '1');
+        return false;
+      }
+      if (armed && price <= a.price) {
+        localStorage.setItem(key, '0');
+        return true;
+      }
+      return false;
+    }
+    if (price < a.price) {
+      localStorage.setItem(key, '1');
+      return false;
+    }
+    if (armed && price >= a.price) {
+      localStorage.setItem(key, '0');
+      return true;
+    }
+    return false;
+  }
+
+  function checkAll(opts) {
+    opts = opts || {};
+    const pkt = typeof PsxSession !== 'undefined' ? PsxSession.pktParts() : null;
+    const sessionOpen = opts.forceSession || (pkt && PsxSession.isOpen(pkt));
+    if (!opts.skipSession && !sessionOpen) return { skipped: 'market closed' };
+
     const alerts = list();
-    if (!alerts.length) return;
+    if (!alerts.length) return { checked: 0 };
+
     const now = Date.now();
     const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
+    let n = 0;
+
     alerts.forEach((a) => {
       const q = MarketDataService.getQuote(a.symbol);
-      if (!q.price) return;
-      const hit = a.direction === 'above'
-        ? q.price >= a.price
-        : q.price <= a.price;
-      if (!hit) return;
+      if (!_quoteReliable(q)) return;
+      if (!_crossed(a, q.price)) return;
+
       const key = _firedKey(a.id);
-      if (fired[key] && now - fired[key] < 86400000) return;
+      if (fired[key] && now - fired[key] < 3600000) return;
       fired[key] = now;
+      n++;
+
       const dir = a.direction === 'above' ? 'above' : 'below';
-      const msg = `${a.symbol} ${PlatformUI.fmt(q.price)} — ${dir} ${PlatformUI.fmt(a.price)}`;
-      if (typeof App !== 'undefined') App.showToast(msg, 'success');
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        try { new Notification('LedgerCap alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
+      const stale = q.quoteLabel === 'Last close' ? ' (last close)' : '';
+      const msg = `${a.symbol} ${PlatformUI.fmt(q.price)}${stale} — crossed ${dir} ${PlatformUI.fmt(a.price)}`;
+
+      if (!opts.telegramOnly) {
+        if (typeof App !== 'undefined') App.showToast(msg, 'success');
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try { new Notification('LedgerCap alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
+        }
+        if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
       }
-      if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
-      if (typeof TelegramService !== 'undefined' && TelegramService.isConfigured()
-        && State.get('settings')?.telegramPriceAlertsEnabled) {
+
+      const sendTg = opts.telegram !== false
+        && typeof TelegramService !== 'undefined'
+        && TelegramService.isConfigured()
+        && State.get('settings')?.telegramPriceAlertsEnabled;
+
+      if (sendTg) {
         TelegramService.sendMessage(TelegramService.formatPriceAlert({
           symbol: a.symbol,
           price: q.price,
           target: a.price,
+          direction: dir,
+          quoteLabel: q.quoteLabel,
         })).catch(() => {});
       }
     });
+
     localStorage.setItem('ledgercap_alerts_fired', JSON.stringify(fired));
+    return { checked: alerts.length, fired: n };
   }
 
   function upsert(alert) {
@@ -9703,15 +9819,20 @@ const PriceAlertsService = (() => {
       if (i >= 0) s.priceAlerts[i] = { ...s.priceAlerts[i], ...alert };
       else s.priceAlerts.push(alert);
     });
+    try { localStorage.removeItem(_armKey(alert.id)); } catch (_) {}
   }
 
   function remove(id) {
     State.update((s) => {
       s.priceAlerts = (s.priceAlerts || []).filter((a) => a.id !== id);
     });
+    try {
+      localStorage.removeItem(_armKey(id));
+      localStorage.removeItem(_firedKey(id));
+    } catch (_) {}
   }
 
-  return { list, checkAll, upsert, remove };
+  return { list, checkAll, upsert, remove, _crossed };
 })();
 window.PriceAlertsService = PriceAlertsService;
 
@@ -13116,10 +13237,15 @@ const Research = (() => {
     }
     if (chgEl) {
       const chgTxt = _fmtPct(q.changePct);
-      chgEl.textContent = chgTxt === '—' ? 'Change unavailable' : `${chgTxt} today`;
+      const dayLbl = q.sessionOpen ? 'today' : 'vs prev close';
+      chgEl.textContent = chgTxt === '—' ? 'Change unavailable' : `${chgTxt} ${dayLbl}`;
       chgEl.className = `lc-research-chg ${q.changePct >= 0 ? 'up' : 'down'}`;
     }
-    if (srcEl) srcEl.textContent = `Source: ${Prices.sourceLabel(q.source || 'seed')}`;
+    if (srcEl) {
+      const lbl = q.quoteLabel || 'Last close';
+      const age = q.ts && typeof Prices !== 'undefined' ? Prices.formatTs(q.ts) : '';
+      srcEl.textContent = `${lbl}${age ? ' · ' + age : ''} · ${Prices.sourceLabel(q.source || 'seed')}`;
+    }
   }
 
   async function _refreshQuote(sym) {
@@ -13337,7 +13463,7 @@ const Watchlist = (() => {
     <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${w.name || ''}"></div>
     <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
     <div class="field"><label class="field-label">Alert target price (PKR)</label><input class="field-input" id="wl-target" type="number" step="0.01" value="${w.targetPrice || ''}" placeholder="Buy below this price"></div>
-    <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Notify when price ≤ target</label>
+    <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Alert on crossover ≤ target (PSX session)</label>
     <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
   }
 
@@ -17201,36 +17327,20 @@ const App = (() => {
     if (!ts && !offline) return '';
     const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
     const stale = ts && (Date.now() - ts > 24 * 3600000);
-    const live = typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
-    const label = live ? 'Live' : offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
-    const cls = live ? 'lc-freshness--live' : offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
+    const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
+    const live = sessionOpen && typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
+    const pktLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : null;
+    let label;
+    if (offline) label = 'Offline';
+    else if (live) label = 'Live';
+    else if (pktLabel === 'Last close' || pktLabel === 'Pre-market') label = `${pktLabel} · ${age}`;
+    else label = stale ? `Prices ${age}` : `Updated ${age}`;
+    const cls = live ? 'lc-freshness--live' : offline || stale || pktLabel === 'Last close' ? 'lc-freshness--warn' : 'lc-freshness--ok';
     return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
-    if (typeof PriceAlertsService !== 'undefined') {
-      PriceAlertsService.checkAll();
-      return;
-    }
-    const list = State.get('watchlist') || [];
-    const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
-    const now = Date.now();
-    list.forEach(w => {
-      if (!w.targetPrice || w.targetPrice <= 0) return;
-      const q = MarketDataService.getQuote(w.symbol);
-      if (!q.price) return;
-      const hit = q.price <= w.targetPrice;
-      if (!hit) return;
-      const key = `${w.id}:${w.targetPrice}`;
-      if (fired[key] && now - fired[key] < 86400000) return;
-      fired[key] = now;
-      const msg = `${w.symbol} at ${PlatformUI.fmt(q.price)} — target ${PlatformUI.fmt(w.targetPrice)}`;
-      showToast(msg, 'success');
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        try { new Notification('LedgerCap price alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
-      }
-    });
-    localStorage.setItem('ledgercap_alerts_fired', JSON.stringify(fired));
+    if (typeof PriceAlertsService !== 'undefined') PriceAlertsService.checkAll();
   }
 
   function requestAlertPermission() {

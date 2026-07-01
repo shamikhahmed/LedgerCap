@@ -124,7 +124,9 @@ const TelegramService = (() => {
         if (!ex) return null;
         const days = Math.ceil((new Date(ex) - new Date()) / 86400000);
         if (days < 0 || days > 21) return null;
-        return { symbol: u.symbol, days, amountPkr: u.dps || u.amount || 0 };
+        const amountPkr = u.amountPerShare ?? u.dps ?? u.amount ?? 0;
+        if (!(amountPkr > 0)) return null;
+        return { symbol: u.symbol, days, amountPkr };
       }).filter(Boolean);
     }
 
@@ -206,10 +208,13 @@ const TelegramService = (() => {
 
   function formatPriceAlert(alert) {
     const a = alert || {};
+    const dir = a.direction === 'above' ? 'crossed above' : 'crossed below';
+    const stale = a.quoteLabel === 'Last close' ? ' (last close)' : '';
     return truncate([
       '🔔 *Price alert*',
-      `*${escapeMarkdown(a.symbol)}* at ${escapeMarkdown(_fmtPkr(a.price))}`,
-      `Target ${escapeMarkdown(_fmtPkr(a.target))}`,
+      `*${escapeMarkdown(a.symbol)}* ${dir} ${escapeMarkdown(_fmtPkr(a.target))}`,
+      `Now ${escapeMarkdown(_fmtPkr(a.price))}${escapeMarkdown(stale)}`,
+      '_PSX session crossover — rule-based, not financial advice._',
     ].join('\n'));
   }
 

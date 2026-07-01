@@ -6,30 +6,17 @@ const NotificationScheduler = (() => {
   let _timer = null;
 
   function pktParts() {
-    const now = new Date();
-    const fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Karachi',
-      weekday: 'short',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    });
-    const parts = fmt.formatToParts(now);
-    const get = t => parts.find(p => p.type === t)?.value;
-    const weekday = get('weekday') || '';
-    const hour = parseInt(get('hour') || '0', 10);
-    const minute = parseInt(get('minute') || '0', 10);
-    const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(now);
-    return { weekday, hour, minute, dateKey };
+    return typeof PsxSession !== 'undefined'
+      ? PsxSession.pktParts()
+      : { weekday: '', hour: 0, minute: 0, dateKey: '', mins: 0 };
   }
 
-  function _isWeekday(wd) {
-    return wd && !['Sat', 'Sun'].includes(wd);
+  function _isWeekday(pkt) {
+    return typeof PsxSession !== 'undefined' ? PsxSession.isWeekday(pkt) : false;
   }
 
   function _isPsxSession(pkt) {
-    const mins = pkt.hour * 60 + pkt.minute;
-    return mins >= 9 * 60 + 30 && mins < 15 * 60 + 30;
+    return typeof PsxSession !== 'undefined' ? PsxSession.isOpen(pkt) : false;
   }
 
   function _settings() {
@@ -60,7 +47,7 @@ const NotificationScheduler = (() => {
     if (!s.telegramMorningEnabled) return;
     if (!window.TelegramService?.isConfigured()) return;
     if (_cloudCronActive()) return;
-    if (!_isWeekday(pkt.weekday)) return;
+    if (!_isWeekday(pkt)) return;
     if (pkt.hour !== 9 || pkt.minute >= 15) return;
     const claimKey = `brief:${pkt.dateKey}`;
     if (!(await _claimOnce(claimKey, 90000))) return;
@@ -77,17 +64,21 @@ const NotificationScheduler = (() => {
   async function _maybeDividendReminders(pkt) {
     const s = _settings();
     if (!s.telegramDividendEnabled || !TelegramService?.isConfigured()) return;
+    if (!_isWeekday(pkt)) return;
+    if (pkt.hour !== 9 || pkt.minute >= 30) return;
     const claimKey = `dividend:${pkt.dateKey}`;
     if (!(await _claimOnce(claimKey, 90000))) return;
     if (typeof DividendService === 'undefined') return;
     const upcoming = DividendService.getUpcoming() || [];
     const soon = upcoming
-      .map(u => {
+      .map((u) => {
         const ex = u.exDate || u.ex_date;
         if (!ex) return null;
-        const days = Math.ceil((new Date(ex) - new Date()) / 86400000);
+        const days = Math.ceil((new Date(ex + 'T12:00:00') - new Date()) / 86400000);
         if (days < 0 || days > 7) return null;
-        return { symbol: u.symbol, days, amountPkr: u.dps || u.amount || 0 };
+        const amountPkr = u.amountPerShare ?? u.dps ?? u.amount ?? 0;
+        if (!(amountPkr > 0)) return null;
+        return { symbol: u.symbol, days, amountPkr };
       })
       .filter(Boolean);
     if (!soon.length) return;
@@ -98,26 +89,17 @@ const NotificationScheduler = (() => {
 
   async function _maybePriceAlerts(pkt) {
     const s = _settings();
-    if (!s.telegramPriceAlertsEnabled || !TelegramService?.isConfigured()) return;
-    const list = State.get('watchlist') || [];
-    for (const w of list) {
-      if (!w.targetPrice || w.targetPrice <= 0) continue;
-      const q = MarketDataService.getQuote(w.symbol);
-      if (!q.price || q.price > w.targetPrice) continue;
-      const claimKey = `price:${w.id}:${w.targetPrice}:${pkt.dateKey}`;
-      if (!(await _claimOnce(claimKey, 86400))) continue;
-      await TelegramService.sendMessage(TelegramService.formatPriceAlert({
-        symbol: w.symbol,
-        price: q.price,
-        target: w.targetPrice,
-      }));
+    if (!s.telegramPriceAlertsEnabled) return;
+    if (!_isWeekday(pkt) || !_isPsxSession(pkt)) return;
+    if (typeof PriceAlertsService !== 'undefined') {
+      PriceAlertsService.checkAll({ telegramOnly: true });
     }
   }
 
   async function _maybeIntradayNews(pkt) {
     const s = _settings();
     if (!s.telegramIntradayNewsEnabled || !TelegramService?.isConfigured()) return;
-    if (!_isWeekday(pkt.weekday) || !_isPsxSession(pkt)) return;
+    if (!_isWeekday(pkt) || !_isPsxSession(pkt)) return;
     const claimKey = `news:${pkt.dateKey}-${pkt.hour}`;
     if (!(await _claimOnce(claimKey, 7200))) return;
     if (typeof NewsService === 'undefined') return;

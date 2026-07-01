@@ -73,36 +73,20 @@ const App = (() => {
     if (!ts && !offline) return '';
     const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
     const stale = ts && (Date.now() - ts > 24 * 3600000);
-    const live = typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
-    const label = live ? 'Live' : offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
-    const cls = live ? 'lc-freshness--live' : offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
+    const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
+    const live = sessionOpen && typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
+    const pktLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : null;
+    let label;
+    if (offline) label = 'Offline';
+    else if (live) label = 'Live';
+    else if (pktLabel === 'Last close' || pktLabel === 'Pre-market') label = `${pktLabel} · ${age}`;
+    else label = stale ? `Prices ${age}` : `Updated ${age}`;
+    const cls = live ? 'lc-freshness--live' : offline || stale || pktLabel === 'Last close' ? 'lc-freshness--warn' : 'lc-freshness--ok';
     return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
-    if (typeof PriceAlertsService !== 'undefined') {
-      PriceAlertsService.checkAll();
-      return;
-    }
-    const list = State.get('watchlist') || [];
-    const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
-    const now = Date.now();
-    list.forEach(w => {
-      if (!w.targetPrice || w.targetPrice <= 0) return;
-      const q = MarketDataService.getQuote(w.symbol);
-      if (!q.price) return;
-      const hit = q.price <= w.targetPrice;
-      if (!hit) return;
-      const key = `${w.id}:${w.targetPrice}`;
-      if (fired[key] && now - fired[key] < 86400000) return;
-      fired[key] = now;
-      const msg = `${w.symbol} at ${PlatformUI.fmt(q.price)} — target ${PlatformUI.fmt(w.targetPrice)}`;
-      showToast(msg, 'success');
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        try { new Notification('LedgerCap price alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
-      }
-    });
-    localStorage.setItem('ledgercap_alerts_fired', JSON.stringify(fired));
+    if (typeof PriceAlertsService !== 'undefined') PriceAlertsService.checkAll();
   }
 
   function requestAlertPermission() {

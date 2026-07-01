@@ -9,7 +9,7 @@ const Watchlist = (() => {
     <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${w.name || ''}"></div>
     <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
     <div class="field"><label class="field-label">Alert target price (PKR)</label><input class="field-input" id="wl-target" type="number" step="0.01" value="${w.targetPrice || ''}" placeholder="Buy below this price"></div>
-    <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Notify when price ≤ target</label>
+    <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Alert on crossover ≤ target (PSX session)</label>
     <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
   }
 

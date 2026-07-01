@@ -30,6 +30,7 @@ const files = [
   'js/services/portfolio-buckets-service.js',
   'js/services/transaction-ledger-service.js',
   'js/services/fx-service.js',
+  'js/services/psx-session.js',
   'js/services/news-service.js',
   'js/shared/telegram-brief-format.js',
   'js/services/telegram-service.js',

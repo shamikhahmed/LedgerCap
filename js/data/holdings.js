@@ -147,7 +147,7 @@ const FALLBACK_PRICES = {
   'SLGL': 16.48,
   'SSGC': 31.27,
   'TREET': 26.25,
-  'TRG': 70.42,
+  'TRG': 64.31,
 };
 
 const WATCHLIST = [

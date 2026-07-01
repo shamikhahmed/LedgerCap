@@ -1,5 +1,13 @@
 # Changelog — LedgerCap
 
+## 3.40.1 (2026-07-01) — Price alert & staleness fixes
+
+- Price alerts: **PSX session only** (9:15–15:45 PKT), **crossover** not persistent below-target
+- Skip alerts on seed/fallback-only quotes; TRG fallback updated to 64.31
+- Dividend Telegram: morning window only; fix `amountPerShare` (was Rs0 for FFC)
+- `getQuote` returns real `ts` + `quoteLabel` (Live / Last close / Pre-market)
+- Topbar + Research show last-close when market closed
+
 ## 3.40.0 (2026-07-01) — Live terminal features
 
 - **SSE live prices** — worker `GET /sse/prices` pushes quotes during PSX session; client `LivePriceStream` via EventSource (poll fallback when disconnected)

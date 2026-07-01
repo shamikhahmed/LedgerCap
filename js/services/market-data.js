@@ -66,10 +66,23 @@ const MarketDataService = (() => {
     };
   }
 
+  function _quoteMeta(symbol, source) {
+    const st = State.get()?.prices?.[symbol] || {};
+    const ts = st.ts || 0;
+    const seeded = ['fallback', 'seed', 'meezan_seed'].includes(source)
+      && (!ts || Date.now() - ts > 86400000);
+    const quoteLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : 'Last close';
+    const sessionOpen = typeof PsxSession !== 'undefined' ? PsxSession.isOpen() : false;
+    return { ts, seeded, quoteLabel, sessionOpen };
+  }
+
   function getQuote(symbol) {
     if (_isGlobal(symbol)) {
       const g = _globalQuote(symbol);
-      if (g) return g;
+      if (g) {
+        const meta = _quoteMeta(symbol, g.source);
+        return { ...g, ...meta };
+      }
     }
     const price = _price(symbol);
     const prevClose = _prevClose(symbol);
@@ -77,7 +90,8 @@ const MarketDataService = (() => {
     let changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
     if (Math.abs(changePct) > MAX_SANE_DAILY_PCT) changePct = 0;
     const source = State.getPriceSource(symbol) || 'seed';
-    return { symbol, price, prevClose, change, changePct, source, ts: Date.now() };
+    const meta = _quoteMeta(symbol, source);
+    return { symbol, price, prevClose, change, changePct, source, ...meta };
   }
 
   function getPriceChanges(symbol) {

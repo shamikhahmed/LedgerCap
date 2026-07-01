@@ -106,10 +106,15 @@ const Research = (() => {
     }
     if (chgEl) {
       const chgTxt = _fmtPct(q.changePct);
-      chgEl.textContent = chgTxt === '—' ? 'Change unavailable' : `${chgTxt} today`;
+      const dayLbl = q.sessionOpen ? 'today' : 'vs prev close';
+      chgEl.textContent = chgTxt === '—' ? 'Change unavailable' : `${chgTxt} ${dayLbl}`;
       chgEl.className = `lc-research-chg ${q.changePct >= 0 ? 'up' : 'down'}`;
     }
-    if (srcEl) srcEl.textContent = `Source: ${Prices.sourceLabel(q.source || 'seed')}`;
+    if (srcEl) {
+      const lbl = q.quoteLabel || 'Last close';
+      const age = q.ts && typeof Prices !== 'undefined' ? Prices.formatTs(q.ts) : '';
+      srcEl.textContent = `${lbl}${age ? ' · ' + age : ''} · ${Prices.sourceLabel(q.source || 'seed')}`;
+    }
   }
 
   async function _refreshQuote(sym) {
