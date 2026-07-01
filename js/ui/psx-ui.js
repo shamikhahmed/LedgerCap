@@ -116,6 +116,43 @@ const PsxUI = (() => {
     return `<div class="lc-skeleton-wrap" aria-hidden="true">${Array.from({ length: lines }, () => '<div class="lc-skeleton-line"></div>').join('')}</div>`;
   }
 
+  function skeletonNews() {
+    return `<div class="psx-skel-news" aria-busy="true" aria-label="Loading news">
+      ${[1, 2, 3].map(() => `<div class="psx-skel-row"><div class="psx-skel psx-skel-text lg"></div><div class="psx-skel psx-skel-text sm"></div></div>`).join('')}
+    </div>`;
+  }
+
+  function skeletonHoldings(n) {
+    n = n || 4;
+    return `<div class="psx-skel-table" aria-busy="true">${Array.from({ length: n }, () =>
+      `<div class="psx-skel-hold-row"><div class="psx-skel psx-skel-pill"></div><div class="psx-skel psx-skel-text"></div><div class="psx-skel psx-skel-text sm"></div></div>`
+    ).join('')}</div>`;
+  }
+
+  function emptyState(title, sub, cta) {
+    cta = cta || '';
+    return `<div class="lc-empty-state">
+      <div class="lc-empty-icon" aria-hidden="true">◇</div>
+      <h2>${title}</h2>
+      <p>${sub || ''}</p>
+      ${cta}
+    </div>`;
+  }
+
+  function errorState(title, sub, retryOn) {
+    const btn = retryOn
+      ? `<button type="button" class="psx-btn psx-btn-ghost" onclick="${retryOn}">Try again</button>`
+      : '';
+    return `<div class="lc-error-state" role="alert">
+      <div class="lc-error-icon" aria-hidden="true">!</div>
+      <h2>${title}</h2>
+      <p>${sub || ''}</p>
+      ${btn}
+    </div>`;
+  }
+
+  function num(cls) { return `lc-num ${cls || ''}`.trim(); }
+
   function refreshPortfolioMini() {
     const el = document.getElementById('psx-portfolio-mini');
     const sub = document.getElementById('psx-portfolio-mini-sub');
@@ -127,6 +164,6 @@ const PsxUI = (() => {
     if (sub) sub.textContent = `${I18n.t('portfolio.allTime')} ${fmt(s.totalReturn.pct, { pct: true, signed: true })}`;
   }
 
-  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, refreshPortfolioMini };
+  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, skeletonNews, skeletonHoldings, emptyState, errorState, num, refreshPortfolioMini };
 })();
 window.PsxUI = PsxUI;

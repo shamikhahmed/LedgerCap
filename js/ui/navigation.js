@@ -95,6 +95,7 @@ const Navigation = (() => {
     _render(tabId, opts || {});
     if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
     if (typeof CapMotion !== 'undefined') CapMotion.refresh();
+    if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
   }
 
   function _render(id, opts) {

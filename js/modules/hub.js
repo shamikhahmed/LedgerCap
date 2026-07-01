@@ -139,14 +139,14 @@ const Hub = (() => {
     </div>`;
   }
 
-  let _newsHtml = '<p class="lc-empty-note">Loading market news…</p>';
+  let _newsHtml = typeof PsxUI !== 'undefined' ? PsxUI.skeletonNews() : '<p class="lc-empty-note">Loading…</p>';
 
   async function _loadNews(state) {
     if (typeof NewsService === 'undefined') return;
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = '<p class="lc-empty-note">No headlines — set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key.</p>';
+        _newsHtml = PsxUI.emptyState('No headlines yet', 'Set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key in Settings.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
@@ -155,8 +155,8 @@ const Hub = (() => {
           <div class="lc-news-meta">${n.portfolioSymbol || n.symbol} · ${n.publisher || n.source}${NewsService.impactBadge(n.impact)}</div>
           <p class="lc-news-hint">${n.impact?.hint || ''}</p>
         </a>`).join('');
-    } catch (_) {
-      _newsHtml = '<p class="lc-empty-note">News unavailable offline.</p>';
+    } catch (e) {
+      _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? (e.message || 'Feed error — try again.') : 'You appear offline.', 'Hub.refreshNews()');
     }
   }
 
@@ -172,6 +172,7 @@ const Hub = (() => {
     await _loadNews(State.get());
     const el = document.getElementById('hub-news-list');
     if (el) el.innerHTML = _newsHtml;
+    if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
   }
 
   function _portfolioSection(state) {
@@ -295,7 +296,7 @@ const Hub = (() => {
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>
-          <div class="lc-dash-hero-val">${PsxUI.fmt(s.totalValue)}</div>
+          <div class="lc-dash-hero-val lc-num" data-lc-count="${s.totalValue}" data-lc-count-key="hub-total">${PsxUI.fmt(s.totalValue)}</div>
           <div class="lc-dash-hero-row">
             <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
             <span class="lc-dash-chip ${s.totalReturn.pct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(s.totalReturn.pct, { pct: true, signed: true })}</span>

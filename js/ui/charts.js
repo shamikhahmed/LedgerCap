@@ -113,6 +113,34 @@ const Charts = (() => {
     </svg>`;
   }
 
-  return { lineChart, lineChartBlock, barChart, ringProgress, _chartColor };
+  function sparkline(data, opts) {
+    opts = opts || {};
+    const h = opts.height || 20;
+    const w = opts.width || 56;
+    if (!data || data.length < 2) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const up = opts.positive != null ? opts.positive : data[data.length - 1] >= data[0];
+    const color = opts.color || (up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)');
+    const pts = data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - 2 - ((v - min) / range) * (h - 4);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="lc-sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  function holdingSpark(h) {
+    const px = h.price || 0;
+    if (px <= 0) return '';
+    const prev = (typeof State !== 'undefined' ? State.getPrevClose(h.symbol) : null) || px;
+    const avg = h.quantity > 0 ? h.costBasis / h.quantity : px;
+    const data = [avg, (avg + prev) / 2, prev, px].filter((v) => v > 0);
+    if (data.length < 2) return sparkline([px, px], { positive: (h.pnlPct || 0) >= 0 });
+    return sparkline(data, { positive: (h.pnlPct || 0) >= 0 });
+  }
+
+  return { lineChart, lineChartBlock, barChart, ringProgress, sparkline, holdingSpark, _chartColor };
 })();
 window.Charts = Charts;

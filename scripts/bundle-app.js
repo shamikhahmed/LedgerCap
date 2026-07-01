@@ -76,6 +76,7 @@ const files = [
   'js/modules/import.js',
   'js/modules/intelligence.js',
   'js/capricorn-motion.js',
+  'js/ui/motion-polish.js',
   'js/app.js',
 ];
 

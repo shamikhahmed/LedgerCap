@@ -366,6 +366,7 @@ const App = (() => {
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
+    if (typeof LcPolish !== 'undefined') LcPolish.init();
     _scheduleAutoRefresh();
     _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
@@ -509,9 +510,12 @@ const App = (() => {
     }
 
     renderCurrent();
+    if (typeof LcPolish !== 'undefined' && typeof PortfolioAnalyticsService !== 'undefined') {
+      const sum = PortfolioAnalyticsService.getSummary(State.get());
+      LcPolish.announcePrices(sum.totalValue, State.calcDailyPnl());
+      LcPolish.afterRender();
+    }
   }
-
-  function _scheduleAutoRefresh() {
     clearTimeout(_refreshTimer);
     _refreshTimer = setTimeout(() => {
       if (!document.hidden && navigator.onLine) refreshPrices();
@@ -854,6 +858,7 @@ const App = (() => {
 
   function deleteTransaction(id) {
     if (!confirm('Delete this transaction?')) return;
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticDelete();
     State.deleteTransaction(id);
     closeBottomSheet();
     showToast('Transaction deleted', 'warning');
@@ -990,6 +995,7 @@ const App = (() => {
       }
     }
     closeBottomSheet();
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
     showToast(`${holding.symbol} reconciled`, 'success');
     renderCurrent();
   }

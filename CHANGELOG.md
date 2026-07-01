@@ -1,5 +1,16 @@
 # Changelog — LedgerCap
 
+## 3.39.0 (2026-07-01) — Terminal polish
+
+- Count-up tween on net worth (`data-lc-count`, respects reduced-motion)
+- Tabular nums on all price columns; sparkline per holding row
+- Skeleton news shimmer; `.lc-error-state` vs empty CTA states
+- Haptics off by default (Settings toggle); tap scale feedback
+- Theme-var elevation (`--lc-elev-*`); focus-visible rings
+- Cmd+K / Ctrl+K quick actions (desktop ≥900px)
+- `aria-live` price announcer for screen readers
+- Service worker `ledgercap-v105`
+
 ## 3.38.0 (2026-07-01) — Multi-source news + test digests + worker deploy
 
 ### News (free sources)

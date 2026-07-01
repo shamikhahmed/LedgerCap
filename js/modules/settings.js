@@ -94,6 +94,8 @@ const Settings = (() => {
         <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">${I18n.t('theme.dark')}</button>
         <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">${I18n.t('theme.light')}</button>
       </div>
+      <label class="lc-check-row" style="margin-top:14px"><input type="checkbox" id="s-haptics" ${settings.hapticsEnabled ? 'checked' : ''} onchange="Settings._setHaptics(this.checked)"> Haptic feedback on taps (off by default)</label>
+      <p class="field-hint" style="margin-top:6px">Desktop: <kbd>⌘K</kbd> or <kbd>Ctrl+K</kbd> quick nav when width ≥900px</p>
     </div>
 
     <div class="sec-head"><span class="sec-title">Number format</span></div>
@@ -713,6 +715,11 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
+  function _setHaptics(on) {
+    State.update(s => { s.settings.hapticsEnabled = !!on; });
+    App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
+  }
+
   function _setTheme(theme) {
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
@@ -859,6 +866,6 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;

@@ -36,6 +36,7 @@ const PortfolioScreen = (() => {
           <div class="lc-empty-state">
             <h2>No positions yet</h2>
             <p>Pick a portfolio above or add your first holding.</p>
+            <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
       return;
@@ -67,7 +68,7 @@ const PortfolioScreen = (() => {
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${active ? active.name : I18n.t('portfolio.value')}</div>
-          <div class="lc-dash-hero-val">${PsxUI.fmt(heroValue)}</div>
+          <div class="lc-dash-hero-val lc-num" data-lc-count="${heroValue}" data-lc-count-key="pf-hero">${PsxUI.fmt(heroValue)}</div>
           <div class="lc-dash-hero-row">
             <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
             <span class="lc-dash-chip ${heroPnlPct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</span>
@@ -91,14 +92,15 @@ const PortfolioScreen = (() => {
         </div>
         ${holdings.length ? `<div class="psx-table-wrap" style="margin:0 var(--lc-space-4);border-radius:var(--lc-radius);overflow:hidden;box-shadow:var(--lc-shadow)">
           <table class="psx-table"><thead><tr>
-            <th>Symbol</th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
+            <th>Symbol</th><th class="lc-spark-cell" aria-hidden="true"></th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
           </tr></thead><tbody>
           ${holdings.map(h => `<tr>
             <td onclick="Navigation.go('research');Research.open('${h.symbol}')"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')" class="${PsxUI.chgCls(h.pnlPct)}">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+            <td class="lc-spark-cell">${typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : ''}</td>
+            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
+            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
+            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
+            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
             <td style="white-space:nowrap">
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>

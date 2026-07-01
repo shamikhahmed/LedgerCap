@@ -31,7 +31,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/psx-app.css?v=20">
   <link rel="stylesheet" href="css/lc-pro.css?v=5">
-  <link rel="stylesheet" href="css/lc-pro-phase.css?v=3">
+  <link rel="stylesheet" href="css/lc-pro-phase.css?v=4">
   <script>
     const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', theme);
@@ -83,7 +83,7 @@
         </div>
         <div class="psx-topbar-actions">
           <button type="button" id="lc-fullscreen-btn" class="psx-icon-btn" onclick="LcTerminal.toggle()" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button>
-          <button type="button" id="theme-toggle" class="psx-icon-btn" onclick="window.toggleTheme?.()" aria-label="Toggle theme">🌙</button>
+          <button type="button" id="theme-toggle" class="psx-icon-btn" onclick="window.toggleTheme?.()" aria-label="Toggle light or dark theme">🌙</button>
         </div>
       </header>
 
@@ -115,6 +115,7 @@
       <nav id="nav" class="psx-bottom-nav" aria-label="Main"></nav>
     </div>
   </div>
+  <div id="lc-price-announcer" class="lc-sr-only" aria-live="polite" aria-atomic="true"></div>
 
   <div class="bottom-sheet" id="bottom-sheet">
     <div class="bs-backdrop" onclick="App.closeBottomSheet()"></div>
@@ -126,7 +127,7 @@
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
-  <script defer src="js/ledgercap.bundle.js?v=2"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3"></script>
   <script>window.CapMotion = window.CapricornMotion;</script>
 
 <!-- Support modal (no paywall until Stripe) -->

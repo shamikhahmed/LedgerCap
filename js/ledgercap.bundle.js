@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 71 modules — run: npm run bundle */
+/* LedgerCap bundle — 72 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4719,9 +4719,9 @@ window.DIVIDEND_DATA = DIVIDEND_DATA;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.38.0',
-  sw: 104,
-  cache: 'ledgercap-v104',
+  app: '3.39.0',
+  sw: 105,
+  cache: 'ledgercap-v105',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -10382,7 +10382,35 @@ const Charts = (() => {
     </svg>`;
   }
 
-  return { lineChart, lineChartBlock, barChart, ringProgress, _chartColor };
+  function sparkline(data, opts) {
+    opts = opts || {};
+    const h = opts.height || 20;
+    const w = opts.width || 56;
+    if (!data || data.length < 2) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const up = opts.positive != null ? opts.positive : data[data.length - 1] >= data[0];
+    const color = opts.color || (up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)');
+    const pts = data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - 2 - ((v - min) / range) * (h - 4);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="lc-sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  function holdingSpark(h) {
+    const px = h.price || 0;
+    if (px <= 0) return '';
+    const prev = (typeof State !== 'undefined' ? State.getPrevClose(h.symbol) : null) || px;
+    const avg = h.quantity > 0 ? h.costBasis / h.quantity : px;
+    const data = [avg, (avg + prev) / 2, prev, px].filter((v) => v > 0);
+    if (data.length < 2) return sparkline([px, px], { positive: (h.pnlPct || 0) >= 0 });
+    return sparkline(data, { positive: (h.pnlPct || 0) >= 0 });
+  }
+
+  return { lineChart, lineChartBlock, barChart, ringProgress, sparkline, holdingSpark, _chartColor };
 })();
 window.Charts = Charts;
 
@@ -10591,6 +10619,43 @@ const PsxUI = (() => {
     return `<div class="lc-skeleton-wrap" aria-hidden="true">${Array.from({ length: lines }, () => '<div class="lc-skeleton-line"></div>').join('')}</div>`;
   }
 
+  function skeletonNews() {
+    return `<div class="psx-skel-news" aria-busy="true" aria-label="Loading news">
+      ${[1, 2, 3].map(() => `<div class="psx-skel-row"><div class="psx-skel psx-skel-text lg"></div><div class="psx-skel psx-skel-text sm"></div></div>`).join('')}
+    </div>`;
+  }
+
+  function skeletonHoldings(n) {
+    n = n || 4;
+    return `<div class="psx-skel-table" aria-busy="true">${Array.from({ length: n }, () =>
+      `<div class="psx-skel-hold-row"><div class="psx-skel psx-skel-pill"></div><div class="psx-skel psx-skel-text"></div><div class="psx-skel psx-skel-text sm"></div></div>`
+    ).join('')}</div>`;
+  }
+
+  function emptyState(title, sub, cta) {
+    cta = cta || '';
+    return `<div class="lc-empty-state">
+      <div class="lc-empty-icon" aria-hidden="true">◇</div>
+      <h2>${title}</h2>
+      <p>${sub || ''}</p>
+      ${cta}
+    </div>`;
+  }
+
+  function errorState(title, sub, retryOn) {
+    const btn = retryOn
+      ? `<button type="button" class="psx-btn psx-btn-ghost" onclick="${retryOn}">Try again</button>`
+      : '';
+    return `<div class="lc-error-state" role="alert">
+      <div class="lc-error-icon" aria-hidden="true">!</div>
+      <h2>${title}</h2>
+      <p>${sub || ''}</p>
+      ${btn}
+    </div>`;
+  }
+
+  function num(cls) { return `lc-num ${cls || ''}`.trim(); }
+
   function refreshPortfolioMini() {
     const el = document.getElementById('psx-portfolio-mini');
     const sub = document.getElementById('psx-portfolio-mini-sub');
@@ -10602,7 +10667,7 @@ const PsxUI = (() => {
     if (sub) sub.textContent = `${I18n.t('portfolio.allTime')} ${fmt(s.totalReturn.pct, { pct: true, signed: true })}`;
   }
 
-  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, refreshPortfolioMini };
+  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, skeletonNews, skeletonHoldings, emptyState, errorState, num, refreshPortfolioMini };
 })();
 window.PsxUI = PsxUI;
 
@@ -11030,6 +11095,7 @@ const Navigation = (() => {
     _render(tabId, opts || {});
     if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
     if (typeof CapMotion !== 'undefined') CapMotion.refresh();
+    if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
   }
 
   function _render(id, opts) {
@@ -11117,6 +11183,7 @@ const State = (() => {
       telegramCloudSyncEnabled: false,
       telegramSyncKey: '',
       telegramUseDirect: false,
+      hapticsEnabled: false,
       theme: 'dark',
       numberFormat: 'full',
     },
@@ -11803,14 +11870,14 @@ const Hub = (() => {
     </div>`;
   }
 
-  let _newsHtml = '<p class="lc-empty-note">Loading market news…</p>';
+  let _newsHtml = typeof PsxUI !== 'undefined' ? PsxUI.skeletonNews() : '<p class="lc-empty-note">Loading…</p>';
 
   async function _loadNews(state) {
     if (typeof NewsService === 'undefined') return;
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = '<p class="lc-empty-note">No headlines — set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key.</p>';
+        _newsHtml = PsxUI.emptyState('No headlines yet', 'Set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key in Settings.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
@@ -11819,8 +11886,8 @@ const Hub = (() => {
           <div class="lc-news-meta">${n.portfolioSymbol || n.symbol} · ${n.publisher || n.source}${NewsService.impactBadge(n.impact)}</div>
           <p class="lc-news-hint">${n.impact?.hint || ''}</p>
         </a>`).join('');
-    } catch (_) {
-      _newsHtml = '<p class="lc-empty-note">News unavailable offline.</p>';
+    } catch (e) {
+      _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? (e.message || 'Feed error — try again.') : 'You appear offline.', 'Hub.refreshNews()');
     }
   }
 
@@ -11836,6 +11903,7 @@ const Hub = (() => {
     await _loadNews(State.get());
     const el = document.getElementById('hub-news-list');
     if (el) el.innerHTML = _newsHtml;
+    if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
   }
 
   function _portfolioSection(state) {
@@ -11959,7 +12027,7 @@ const Hub = (() => {
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>
-          <div class="lc-dash-hero-val">${PsxUI.fmt(s.totalValue)}</div>
+          <div class="lc-dash-hero-val lc-num" data-lc-count="${s.totalValue}" data-lc-count-key="hub-total">${PsxUI.fmt(s.totalValue)}</div>
           <div class="lc-dash-hero-row">
             <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
             <span class="lc-dash-chip ${s.totalReturn.pct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(s.totalReturn.pct, { pct: true, signed: true })}</span>
@@ -12208,6 +12276,7 @@ const PortfolioScreen = (() => {
           <div class="lc-empty-state">
             <h2>No positions yet</h2>
             <p>Pick a portfolio above or add your first holding.</p>
+            <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
       return;
@@ -12239,7 +12308,7 @@ const PortfolioScreen = (() => {
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${active ? active.name : I18n.t('portfolio.value')}</div>
-          <div class="lc-dash-hero-val">${PsxUI.fmt(heroValue)}</div>
+          <div class="lc-dash-hero-val lc-num" data-lc-count="${heroValue}" data-lc-count-key="pf-hero">${PsxUI.fmt(heroValue)}</div>
           <div class="lc-dash-hero-row">
             <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
             <span class="lc-dash-chip ${heroPnlPct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</span>
@@ -12263,14 +12332,15 @@ const PortfolioScreen = (() => {
         </div>
         ${holdings.length ? `<div class="psx-table-wrap" style="margin:0 var(--lc-space-4);border-radius:var(--lc-radius);overflow:hidden;box-shadow:var(--lc-shadow)">
           <table class="psx-table"><thead><tr>
-            <th>Symbol</th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
+            <th>Symbol</th><th class="lc-spark-cell" aria-hidden="true"></th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
           </tr></thead><tbody>
           ${holdings.map(h => `<tr>
             <td onclick="Navigation.go('research');Research.open('${h.symbol}')"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')" class="${PsxUI.chgCls(h.pnlPct)}">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+            <td class="lc-spark-cell">${typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : ''}</td>
+            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
+            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
+            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
+            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
             <td style="white-space:nowrap">
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
               <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>
@@ -13679,6 +13749,8 @@ const Settings = (() => {
         <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">${I18n.t('theme.dark')}</button>
         <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">${I18n.t('theme.light')}</button>
       </div>
+      <label class="lc-check-row" style="margin-top:14px"><input type="checkbox" id="s-haptics" ${settings.hapticsEnabled ? 'checked' : ''} onchange="Settings._setHaptics(this.checked)"> Haptic feedback on taps (off by default)</label>
+      <p class="field-hint" style="margin-top:6px">Desktop: <kbd>⌘K</kbd> or <kbd>Ctrl+K</kbd> quick nav when width ≥900px</p>
     </div>
 
     <div class="sec-head"><span class="sec-title">Number format</span></div>
@@ -14298,6 +14370,11 @@ const Settings = (() => {
     App.renderCurrent();
   }
 
+  function _setHaptics(on) {
+    State.update(s => { s.settings.hapticsEnabled = !!on; });
+    App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
+  }
+
   function _setTheme(theme) {
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
@@ -14444,7 +14521,7 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
 
@@ -16368,6 +16445,199 @@ window.Intelligence = Intelligence;
 // Alias for modules that use CapMotion
 window.CapMotion = window.CapricornMotion;
 
+;/* === js/ui/motion-polish.js === */
+'use strict';
+/** Count-up, haptics, tap feedback, Cmd-K palette, post-render polish */
+const LcPolish = (() => {
+  const _countStore = new Map();
+  let _cmdkOpen = false;
+
+  const CMD_ACTIONS = () => [
+    { q: 'hub home', label: 'Hub', run: () => Navigation.go('home') },
+    { q: 'portfolio pnl', label: 'P&L / Portfolio', run: () => Navigation.go('portfolio') },
+    { q: 'market watch stocks', label: 'Stock watch', run: () => Navigation.go('market') },
+    { q: 'funds meezan nav', label: 'Fund NAVs', run: () => Navigation.go('funds') },
+    { q: 'research analyze', label: 'Research', run: () => Navigation.go('research') },
+    { q: 'transactions ledger', label: 'Transactions', run: () => Navigation.go('transactions') },
+    { q: 'settings', label: 'Settings', run: () => Navigation.go('settings') },
+    { q: 'refresh prices', label: 'Refresh all prices', run: () => App.refreshPrices() },
+    { q: 'add holding buy', label: 'Add holding', run: () => App.openAddTransaction() },
+    { q: 'import csv', label: 'Import CSV', run: () => Navigation.go('import') },
+    { q: 'telegram', label: 'Telegram settings', run: () => Navigation.go('settings') },
+    { q: 'zakat', label: 'Zakat calculator', run: () => Navigation.go('zakat') },
+    { q: 'dividends', label: 'Dividends', run: () => Navigation.go('dividends') },
+    { q: 'signals pilot', label: 'Market strategy', run: () => Navigation.go('signals') },
+  ];
+
+  function hapticsOn() {
+    return !!(typeof State !== 'undefined' && State.get('settings')?.hapticsEnabled);
+  }
+
+  function haptic(ms) {
+    if (!hapticsOn()) return;
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(ms || 10); } catch (_) {}
+    }
+  }
+
+  function hapticConfirm() { haptic([8, 40, 12]); }
+  function hapticDelete() { haptic([12, 30, 18]); }
+
+  function bindTapFeedback(root) {
+    root = root || document;
+    root.querySelectorAll('.psx-btn, .psx-nav-btn, .psx-side-btn, .lc-tool-card, .lc-link-btn, .lc-pulse-pill--btn, .lc-dash-market-card--btn').forEach((el) => {
+      if (el.dataset.lcTapBound) return;
+      el.dataset.lcTapBound = '1';
+      el.addEventListener('pointerdown', () => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        el.classList.add('lc-tap-active');
+      }, { passive: true });
+      el.addEventListener('pointerup', () => el.classList.remove('lc-tap-active'), { passive: true });
+      el.addEventListener('pointerleave', () => el.classList.remove('lc-tap-active'), { passive: true });
+      el.addEventListener('click', () => haptic(8), { passive: true });
+    });
+  }
+
+  function animateCounts(root) {
+    root = root || document;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    root.querySelectorAll('[data-lc-count]').forEach((el) => {
+      const target = parseFloat(el.getAttribute('data-lc-count'));
+      if (!Number.isFinite(target)) return;
+      const key = el.getAttribute('data-lc-count-key') || el.id || 'c';
+      const prev = _countStore.has(key) ? _countStore.get(key) : target;
+      _countStore.set(key, target);
+      const isPct = el.getAttribute('data-lc-count-pct') === '1';
+      const signed = el.getAttribute('data-lc-count-signed') === '1';
+      const fmt = (v) => {
+        if (isPct) return `${v >= 0 && signed ? '+' : ''}${v.toFixed(2)}%`;
+        if (typeof PsxUI !== 'undefined') return PsxUI.fmt(v, { signed: signed && v !== 0 });
+        return Math.round(v).toLocaleString('en-PK');
+      };
+      if (reduced || Math.abs(target - prev) < 0.005) {
+        el.textContent = fmt(target);
+        return;
+      }
+      const start = performance.now();
+      const dur = parseInt(el.getAttribute('data-lc-count-ms') || '520', 10);
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(prev + (target - prev) * ease);
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = fmt(target);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  function _ensureCmdk() {
+    if (document.getElementById('lc-cmdk')) return;
+    const el = document.createElement('div');
+    el.id = 'lc-cmdk';
+    el.className = 'lc-cmdk hidden';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'Quick actions');
+    el.innerHTML = `
+      <div class="lc-cmdk-backdrop" data-cmdk-close></div>
+      <div class="lc-cmdk-panel">
+        <input type="search" class="lc-cmdk-input" id="lc-cmdk-input" placeholder="Go to… or refresh prices" autocomplete="off" aria-label="Search actions">
+        <ul class="lc-cmdk-list" id="lc-cmdk-list" role="listbox"></ul>
+        <p class="lc-cmdk-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> run · <kbd>esc</kbd> close</p>
+      </div>`;
+    document.body.appendChild(el);
+    el.querySelector('[data-cmdk-close]').addEventListener('click', closeCmdk);
+    const inp = el.querySelector('#lc-cmdk-input');
+    inp.addEventListener('input', () => _paintCmdk(inp.value));
+    inp.addEventListener('keydown', (e) => {
+      const items = [...el.querySelectorAll('.lc-cmdk-item')];
+      const idx = items.findIndex((n) => n.classList.contains('on'));
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = items[Math.min(items.length - 1, idx + 1)] || items[0];
+        items.forEach((n) => n.classList.remove('on'));
+        if (next) next.classList.add('on');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = items[Math.max(0, idx - 1)] || items[items.length - 1];
+        items.forEach((n) => n.classList.remove('on'));
+        if (prev) prev.classList.add('on');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const on = items.find((n) => n.classList.contains('on')) || items[0];
+        if (on) on.click();
+      }
+    });
+  }
+
+  function _paintCmdk(q) {
+    const list = document.getElementById('lc-cmdk-list');
+    if (!list) return;
+    const qq = (q || '').trim().toLowerCase();
+    const rows = CMD_ACTIONS().filter((a) => !qq || a.label.toLowerCase().includes(qq) || a.q.includes(qq));
+    list.innerHTML = rows.map((a, i) =>
+      `<li><button type="button" class="lc-cmdk-item${i === 0 ? ' on' : ''}" role="option">${a.label}</button></li>`
+    ).join('');
+    list.querySelectorAll('.lc-cmdk-item').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        closeCmdk();
+        hapticConfirm();
+        rows[i].run();
+      });
+    });
+  }
+
+  function openCmdk() {
+    if (window.innerWidth < 900) return;
+    _ensureCmdk();
+    const el = document.getElementById('lc-cmdk');
+    if (!el) return;
+    el.classList.remove('hidden');
+    _cmdkOpen = true;
+    const inp = document.getElementById('lc-cmdk-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+    _paintCmdk('');
+  }
+
+  function closeCmdk() {
+    const el = document.getElementById('lc-cmdk');
+    if (el) el.classList.add('hidden');
+    _cmdkOpen = false;
+  }
+
+  function init() {
+    _ensureCmdk();
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (_cmdkOpen) closeCmdk();
+        else openCmdk();
+      } else if (e.key === 'Escape' && _cmdkOpen) {
+        closeCmdk();
+      }
+    });
+    bindTapFeedback();
+  }
+
+  function afterRender() {
+    bindTapFeedback();
+    animateCounts();
+  }
+
+  function announcePrices(netWorth, daily) {
+    const el = document.getElementById('lc-price-announcer');
+    if (!el || typeof PsxUI === 'undefined') return;
+    const dSign = daily >= 0 ? '+' : '';
+    el.textContent = `Net worth updated: ${PsxUI.fmt(netWorth)}. Today ${dSign}${PsxUI.fmt(Math.abs(daily))}.`;
+  }
+
+  return {
+    init, afterRender, haptic, hapticConfirm, hapticDelete, announcePrices, openCmdk, closeCmdk,
+  };
+})();
+window.LcPolish = LcPolish;
+
 ;/* === js/app.js === */
 'use strict';
 const App = (() => {
@@ -16737,6 +17007,7 @@ const App = (() => {
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
+    if (typeof LcPolish !== 'undefined') LcPolish.init();
     _scheduleAutoRefresh();
     _fetchMarketIndex();
     const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
@@ -16880,9 +17151,12 @@ const App = (() => {
     }
 
     renderCurrent();
+    if (typeof LcPolish !== 'undefined' && typeof PortfolioAnalyticsService !== 'undefined') {
+      const sum = PortfolioAnalyticsService.getSummary(State.get());
+      LcPolish.announcePrices(sum.totalValue, State.calcDailyPnl());
+      LcPolish.afterRender();
+    }
   }
-
-  function _scheduleAutoRefresh() {
     clearTimeout(_refreshTimer);
     _refreshTimer = setTimeout(() => {
       if (!document.hidden && navigator.onLine) refreshPrices();
@@ -17225,6 +17499,7 @@ const App = (() => {
 
   function deleteTransaction(id) {
     if (!confirm('Delete this transaction?')) return;
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticDelete();
     State.deleteTransaction(id);
     closeBottomSheet();
     showToast('Transaction deleted', 'warning');
@@ -17361,6 +17636,7 @@ const App = (() => {
       }
     }
     closeBottomSheet();
+    if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
     showToast(`${holding.symbol} reconciled`, 'success');
     renderCurrent();
   }

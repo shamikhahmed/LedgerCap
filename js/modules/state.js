@@ -49,6 +49,7 @@ const State = (() => {
       telegramCloudSyncEnabled: false,
       telegramSyncKey: '',
       telegramUseDirect: false,
+      hapticsEnabled: false,
       theme: 'dark',
       numberFormat: 'full',
     },
