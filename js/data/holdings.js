@@ -107,6 +107,8 @@ const SIP_PLAN = [
   { fund:'STK',  amount:5000,  color:'#F0B90B', note:'Accumulate. Only deploy with full investment memo.' },
 ];
 
+const FALLBACK_PRICES_UPDATED = '2026-07-01';
+
 const FALLBACK_PRICES = {
   'ATRL': 872.0,
   'CPHL': 78.55,
@@ -326,3 +328,4 @@ window.SIP_PLAN = SIP_PLAN;
 window.WATCHLIST = WATCHLIST;
 window.INITIAL_TRANSACTIONS = INITIAL_TRANSACTIONS;
 window.FALLBACK_PRICES = FALLBACK_PRICES;
+window.FALLBACK_PRICES_UPDATED = FALLBACK_PRICES_UPDATED;

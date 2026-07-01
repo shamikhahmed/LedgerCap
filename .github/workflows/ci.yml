@@ -18,5 +18,7 @@ jobs:
         run: node scripts/verify-ledger.js
       - name: Install Playwright
         run: npm ci && npx playwright install chromium --with-deps
+      - name: Bundle integrity
+        run: npm run bundle && git diff --exit-code js/ledgercap.bundle.js index.html
       - name: E2E tests
         run: npm test

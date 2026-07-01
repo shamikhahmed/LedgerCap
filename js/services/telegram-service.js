@@ -13,6 +13,21 @@ const TelegramService = (() => {
       : {};
   }
 
+  async function _botToken() {
+    if (typeof SecretsVault !== 'undefined') {
+      const enc = await SecretsVault.getTelegramToken();
+      if (enc) return enc;
+    }
+    return String(_settings().telegramBotToken || '').trim();
+  }
+
+  function isConfigured() {
+    const s = _settings();
+    const hasToken = (typeof SecretsVault !== 'undefined' && SecretsVault.hasTelegramToken())
+      || String(s.telegramBotToken || '').trim();
+    return !!(hasToken && String(s.telegramChatId || '').trim());
+  }
+
   function proxyBase(settings) {
     settings = settings || _settings();
     if (settings.telegramUseDirect) return '';
@@ -76,11 +91,6 @@ const TelegramService = (() => {
 
   function truncate(text, max) {
     return TelegramBriefFormat.truncate(text, max);
-  }
-
-  function isConfigured() {
-    const s = _settings();
-    return !!(String(s.telegramBotToken || '').trim() && String(s.telegramChatId || '').trim());
   }
 
   function _fmtPkr(n) {
@@ -221,7 +231,7 @@ const TelegramService = (() => {
   async function sendMessage(text, opts) {
     opts = opts || {};
     const s = _settings();
-    const token = String(s.telegramBotToken || '').trim();
+    const token = await _botToken();
     const chatId = String(s.telegramChatId || '').trim();
     if (!token || !chatId) {
       return { ok: false, error: 'Telegram bot token and chat ID required in Settings.' };
@@ -290,7 +300,7 @@ const TelegramService = (() => {
   }
 
   async function resolveChatIds() {
-    const token = String(_settings().telegramBotToken || '').trim();
+    const token = await _botToken();
     if (!token) return { ok: false, error: 'Bot token required' };
     const result = await _botRequest('getUpdates', token, null);
     if (!result.ok) return { ok: false, error: result.error };

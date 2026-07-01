@@ -313,6 +313,7 @@ const App = (() => {
     if (demo) {
       try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
     }
+    if (typeof SecretsVault !== 'undefined') await SecretsVault.migratePlaintextToken();
     _applyTheme(localStorage.getItem('theme') || window.State?.get('settings')?.theme || 'dark');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
@@ -372,6 +373,7 @@ const App = (() => {
     else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
     _maybeDemoBanner();
     _maybeInstallHint();
+    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -517,6 +519,9 @@ const App = (() => {
       LcPolish.announcePrices(sum.totalValue, State.calcDailyPnl());
       LcPolish.afterRender();
     }
+    if (liveOk > 0 && typeof PriceHealth !== 'undefined') PriceHealth.clearDismiss();
+    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
+    _scheduleAutoRefresh();
   }
 
   function _updateCurrencyToggleBtn() {

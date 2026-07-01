@@ -109,13 +109,18 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">Display &amp; live data</span></div>
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
-      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. Live stream uses worker SSE during PSX hours (9:15–15:45 PKT).</p>
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. SSE pushes during PSX session (intraday when open, last close after hours).</p>
       <div class="os-theme-toggle" style="margin-bottom:14px">
         <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('PKR')">PKR ₨</button>
         <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('USD')">USD $</button>
       </div>
-      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE)</label>
-      <p class="field-hint" style="margin-top:8px">Stream: ${typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected ? '● connected' : '○ poll fallback'}</p>
+      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE push)</label>
+      <p class="field-hint" style="margin-top:8px">Stream: ${(() => {
+        const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
+        const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
+        if (st.connected) return open ? '● connected · intraday push' : '● connected · last close (EOD)';
+        return '○ disconnected · manual refresh / poll';
+      })()}</p>
       <p class="field-hint" style="margin-top:4px"><a href="./widget-glance.html" target="_blank" rel="noopener">Glance widget page</a> — add to home screen for 3-second net worth check. Native iOS widget needs Capacitor build.</p>
     </div>
 
@@ -277,7 +282,7 @@ const Settings = (() => {
       </p>
       <div class="field">
         <label class="field-label">Bot token</label>
-        <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
+        <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${(typeof SecretsVault !== 'undefined' && SecretsVault.hasTelegramToken()) || settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
       </div>
       <div class="field">
         <label class="field-label">Chat ID</label>
@@ -783,7 +788,13 @@ const Settings = (() => {
     render();
   }
 
-  function _saveTelegram() {
+  async function _persistTelegramToken(tokenIn) {
+    if (!tokenIn) return;
+    if (typeof SecretsVault !== 'undefined') await SecretsVault.setTelegramToken(tokenIn);
+    else State.update(s => { s.settings.telegramBotToken = tokenIn; });
+  }
+
+  async function _saveTelegram() {
     const tokenIn = document.getElementById('tg-token')?.value?.trim() || '';
     const chatId = document.getElementById('tg-chat')?.value?.trim() || '';
     const morning = !!document.getElementById('tg-morning')?.checked;
@@ -793,8 +804,8 @@ const Settings = (() => {
     const price = !!document.getElementById('tg-price')?.checked;
     const cloud = !!document.getElementById('tg-cloud')?.checked;
     const syncKey = document.getElementById('tg-sync-key')?.value?.trim() || '';
+    if (tokenIn) await _persistTelegramToken(tokenIn);
     State.update(s => {
-      if (tokenIn) s.settings.telegramBotToken = tokenIn;
       s.settings.telegramChatId = chatId;
       s.settings.telegramMorningEnabled = morning;
       s.settings.telegramIntradayEnabled = intraday;
@@ -814,9 +825,7 @@ const Settings = (() => {
       return;
     }
     const tokenIn = document.getElementById('tg-token')?.value?.trim();
-    if (tokenIn) {
-      State.update(s => { s.settings.telegramBotToken = tokenIn; });
-    }
+    if (tokenIn) await _persistTelegramToken(tokenIn);
     const chatId = document.getElementById('tg-chat')?.value?.trim();
     if (chatId) {
       State.update(s => { s.settings.telegramChatId = chatId; });
@@ -865,7 +874,7 @@ const Settings = (() => {
 
   async function _detectTelegramChat() {
     const tokenIn = document.getElementById('tg-token')?.value?.trim();
-    if (tokenIn) State.update(s => { s.settings.telegramBotToken = tokenIn; });
+    if (tokenIn) await _persistTelegramToken(tokenIn);
     if (!TelegramService?.resolveChatIds) {
       App.showToast('Telegram service not loaded', 'error');
       return;

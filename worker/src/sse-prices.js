@@ -1,4 +1,4 @@
-/** SSE live price stream — server push during PSX session (poll-backed). */
+/** SSE price push during PSX session — intraday when open, EOD after close. */
 
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const PSX_HEADERS = {
@@ -14,11 +14,12 @@ const CORS_SSE = {
   'Access-Control-Allow-Headers': 'Accept, Cache-Control',
 };
 
-async function fetchPsxQuote(symbol) {
+async function fetchPsxSeries(symbol, kind) {
   const sym = String(symbol || '').trim().toUpperCase();
   if (!sym || sym.length > 12) return null;
-  const url = `${PSX_ORIGIN}/timeseries/eod/${encodeURIComponent(sym)}`;
-  const res = await fetch(url, { headers: PSX_HEADERS, cf: { cacheTtl: 15 } });
+  const path = kind === 'int' ? 'timeseries/int' : 'timeseries/eod';
+  const url = `${PSX_ORIGIN}/${path}/${encodeURIComponent(sym)}`;
+  const res = await fetch(url, { headers: PSX_HEADERS, cf: { cacheTtl: kind === 'int' ? 10 : 60 } });
   const text = await res.text();
   if (!text?.trim() || text.trim().startsWith('<')) return null;
   let data;
@@ -30,7 +31,21 @@ async function fetchPsxQuote(symbol) {
   const price = parseFloat(last[1]);
   const prev = parseFloat(last[3] ?? sorted[sorted.length - 2]?.[1] ?? last[1]);
   if (!(price > 0)) return null;
-  return { price, prevClose: prev > 0 ? prev : price, ts: Date.now() };
+  return {
+    price,
+    prevClose: prev > 0 ? prev : price,
+    ts: Date.now(),
+    quoteKind: kind === 'int' ? 'intraday' : 'last_close',
+    source: kind === 'int' ? 'live-sse-int' : 'live-sse',
+  };
+}
+
+async function fetchPsxQuote(symbol, sessionOpen) {
+  if (sessionOpen) {
+    const intraday = await fetchPsxSeries(symbol, 'int');
+    if (intraday) return intraday;
+  }
+  return fetchPsxSeries(symbol, 'eod');
 }
 
 function pktSessionOpen() {
@@ -67,6 +82,7 @@ export async function handleSsePrices(request, url) {
   }
 
   const intervalMs = Math.min(Math.max(parseInt(url.searchParams.get('interval') || '20', 10) || 20, 10), 120) * 1000;
+  const sessionOpen = pktSessionOpen();
 
   const stream = new ReadableStream({
     start(controller) {
@@ -83,18 +99,24 @@ export async function handleSsePrices(request, url) {
 
       const tick = async () => {
         if (closed) return;
-        if (!pktSessionOpen()) {
+        if (!sessionOpen) {
           controller.enqueue(enc.encode(`: psx session closed\n\n`));
           return;
         }
         const quotes = {};
         await Promise.all(symbols.map(async (sym) => {
           try {
-            const q = await fetchPsxQuote(sym);
+            const q = await fetchPsxQuote(sym, true);
             if (q) quotes[sym] = q;
           } catch (_) {}
         }));
-        const payload = JSON.stringify({ quotes, ts: Date.now(), count: Object.keys(quotes).length });
+        const payload = JSON.stringify({
+          quotes,
+          ts: Date.now(),
+          count: Object.keys(quotes).length,
+          sessionOpen: true,
+          quoteKind: 'intraday',
+        });
         controller.enqueue(enc.encode(`data: ${payload}\n\n`));
       };
 

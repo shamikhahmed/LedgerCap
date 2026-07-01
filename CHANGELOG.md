@@ -1,5 +1,15 @@
 # Changelog — LedgerCap
 
+## 3.41.0 (2026-07-01) — Honesty, security, bundle CI
+
+- **Fallback staleness banner** — `PriceHealth` audits seed/fallback %; topbar warning + refresh CTA; `npm run refresh-fallbacks` script for EOD snapshot
+- **SSE honesty** — worker tries intraday when PSX open, EOD after close; `live-sse` / `live-sse-int` trusted; Settings shows intraday vs last-close label
+- **importJSON v10** — `displayCurrency`, `liveStreamEnabled`, `intradayHistory` migration on import
+- **Telegram token security** — AES-GCM `SecretsVault`; stripped from JSON export; plaintext auto-migrated on launch
+- **Dividends** — expanded `dividends.js` (ATRL, TRG, HINO, SLGL, DGKC, ENGROH, FATIMA, MLCF, NML, NRL, PAEL, PTC, SEARL, SSGC, TREET, CPHL)
+- **Bundle CI** — `npm run bundle` in CI; `index.html` cache buster synced to app version from `config.js`
+- Service worker `ledgercap-v108`
+
 ## 3.40.1 (2026-07-01) — Price alert & staleness fixes
 
 - Price alerts: **PSX session only** (9:15–15:45 PKT), **crossover** not persistent below-target

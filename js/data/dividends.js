@@ -200,6 +200,166 @@ const DIVIDEND_DATA = {
       { date: '2025-12-31', yield: 7.0 }, { date: '2024-12-31', yield: 6.8 },
     ],
   },
+  ATRL: {
+    companyName: 'Attock Refinery',
+    sector: 'Refinery',
+    cashDividends: [
+      { id: 'atrl_cd_26i', amountPerShare: 12, exDate: '2026-06-18', recordDate: '2026-06-20', paymentDate: '2026-08-18', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'atrl_cd_25f', amountPerShare: 12, exDate: '2025-06-15', recordDate: '2025-06-17', paymentDate: '2025-08-15', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 5.2 }],
+  },
+  TRG: {
+    companyName: 'TRG Pakistan',
+    sector: 'Technology',
+    cashDividends: [
+      { id: 'trg_cd_26i', amountPerShare: 0.5, exDate: '2026-08-10', recordDate: '2026-08-12', paymentDate: '2026-10-10', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'trg_cd_25f', amountPerShare: 0.5, exDate: '2025-08-08', recordDate: '2025-08-10', paymentDate: '2025-10-08', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.8 }],
+  },
+  HINO: {
+    companyName: 'Hinopak Motors',
+    sector: 'Automobile',
+    cashDividends: [
+      { id: 'hino_cd_26i', amountPerShare: 2, exDate: '2026-07-08', recordDate: '2026-07-10', paymentDate: '2026-09-08', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'hino_cd_25f', amountPerShare: 2, exDate: '2025-07-05', recordDate: '2025-07-07', paymentDate: '2025-09-05', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 3.1 }],
+  },
+  SLGL: {
+    companyName: 'Security Leasing',
+    sector: 'Leasing',
+    cashDividends: [
+      { id: 'slgl_cd_26i', amountPerShare: 0.3, exDate: '2026-09-15', recordDate: '2026-09-17', paymentDate: '2026-11-15', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'slgl_cd_25f', amountPerShare: 0.3, exDate: '2025-09-12', recordDate: '2025-09-14', paymentDate: '2025-11-12', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 8.5 }],
+  },
+  DGKC: {
+    companyName: 'DG Khan Cement',
+    sector: 'Cement',
+    cashDividends: [
+      { id: 'dgkc_cd_26i', amountPerShare: 2, exDate: '2026-07-25', recordDate: '2026-07-27', paymentDate: '2026-09-25', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'dgkc_cd_25f', amountPerShare: 2, exDate: '2025-07-22', recordDate: '2025-07-24', paymentDate: '2025-09-22', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 3.5 }],
+  },
+  ENGROH: {
+    companyName: 'Engro Holdings',
+    sector: 'Conglomerate',
+    cashDividends: [
+      { id: 'engroh_cd_26i', amountPerShare: 1.5, exDate: '2026-08-01', recordDate: '2026-08-03', paymentDate: '2026-10-01', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'engroh_cd_25f', amountPerShare: 1.5, exDate: '2025-07-28', recordDate: '2025-07-30', paymentDate: '2025-09-28', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.1 }],
+  },
+  FATIMA: {
+    companyName: 'Fatima Fertilizer',
+    sector: 'Fertilizer',
+    cashDividends: [
+      { id: 'fatima_cd_26i', amountPerShare: 2.5, exDate: '2026-06-22', recordDate: '2026-06-24', paymentDate: '2026-08-22', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'fatima_cd_25f', amountPerShare: 2.5, exDate: '2025-06-20', recordDate: '2025-06-22', paymentDate: '2025-08-20', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 4.8 }],
+  },
+  MLCF: {
+    companyName: 'Maple Leaf Cement',
+    sector: 'Cement',
+    cashDividends: [
+      { id: 'mlcf_cd_26i', amountPerShare: 0.5, exDate: '2026-08-18', recordDate: '2026-08-20', paymentDate: '2026-10-18', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'mlcf_cd_25f', amountPerShare: 0.5, exDate: '2025-08-15', recordDate: '2025-08-17', paymentDate: '2025-10-15', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.2 }],
+  },
+  NML: {
+    companyName: 'Nishat Mills',
+    sector: 'Textile',
+    cashDividends: [
+      { id: 'nml_cd_26i', amountPerShare: 1, exDate: '2026-09-05', recordDate: '2026-09-07', paymentDate: '2026-11-05', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'nml_cd_25f', amountPerShare: 1, exDate: '2025-09-02', recordDate: '2025-09-04', paymentDate: '2025-11-02', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 3.0 }],
+  },
+  NRL: {
+    companyName: 'National Refinery',
+    sector: 'Refinery',
+    cashDividends: [
+      { id: 'nrl_cd_26i', amountPerShare: 3, exDate: '2026-07-12', recordDate: '2026-07-14', paymentDate: '2026-09-12', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'nrl_cd_25f', amountPerShare: 3, exDate: '2025-07-10', recordDate: '2025-07-12', paymentDate: '2025-09-10', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 4.5 }],
+  },
+  PAEL: {
+    companyName: 'Pak Elektron',
+    sector: 'Consumer',
+    cashDividends: [
+      { id: 'pael_cd_26i', amountPerShare: 0.25, exDate: '2026-10-01', recordDate: '2026-10-03', paymentDate: '2026-12-01', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'pael_cd_25f', amountPerShare: 0.25, exDate: '2025-09-28', recordDate: '2025-09-30', paymentDate: '2025-11-28', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.8 }],
+  },
+  PTC: {
+    companyName: 'Pakistan Telecommunication',
+    sector: 'Telecom',
+    cashDividends: [
+      { id: 'ptc_cd_26i', amountPerShare: 0.5, exDate: '2026-08-22', recordDate: '2026-08-24', paymentDate: '2026-10-22', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'ptc_cd_25f', amountPerShare: 0.5, exDate: '2025-08-20', recordDate: '2025-08-22', paymentDate: '2025-10-20', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.5 }],
+  },
+  SEARL: {
+    companyName: 'The Searle Company',
+    sector: 'Pharma',
+    cashDividends: [
+      { id: 'searl_cd_26i', amountPerShare: 0.4, exDate: '2026-09-20', recordDate: '2026-09-22', paymentDate: '2026-11-20', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'searl_cd_25f', amountPerShare: 0.4, exDate: '2025-09-18', recordDate: '2025-09-20', paymentDate: '2025-11-18', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.2 }],
+  },
+  SSGC: {
+    companyName: 'Sui Southern Gas',
+    sector: 'Gas',
+    cashDividends: [
+      { id: 'ssgc_cd_26i', amountPerShare: 0.5, exDate: '2026-07-28', recordDate: '2026-07-30', paymentDate: '2026-09-28', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'ssgc_cd_25f', amountPerShare: 0.5, exDate: '2025-07-25', recordDate: '2025-07-27', paymentDate: '2025-09-25', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 4.0 }],
+  },
+  TREET: {
+    companyName: 'Treet Corporation',
+    sector: 'Consumer',
+    cashDividends: [
+      { id: 'treet_cd_26i', amountPerShare: 0.15, exDate: '2026-10-10', recordDate: '2026-10-12', paymentDate: '2026-12-10', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'treet_cd_25f', amountPerShare: 0.15, exDate: '2025-10-08', recordDate: '2025-10-10', paymentDate: '2025-12-08', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.5 }],
+  },
+  CPHL: {
+    companyName: 'Citi Pharma',
+    sector: 'Pharma',
+    cashDividends: [
+      { id: 'cphl_cd_26i', amountPerShare: 0.2, exDate: '2026-09-12', recordDate: '2026-09-14', paymentDate: '2026-11-12', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'cphl_cd_25f', amountPerShare: 0.2, exDate: '2025-09-10', recordDate: '2025-09-12', paymentDate: '2025-11-10', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.0 }],
+  },
 };
 
 window.DIVIDEND_DATA = DIVIDEND_DATA;

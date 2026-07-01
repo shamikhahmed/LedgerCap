@@ -222,12 +222,20 @@ const Prices = (() => {
 
   async function fetchPsxLive(symbols) {
     const results = {};
+    const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
     const batchSize = 2;
     for (let i = 0; i < symbols.length; i += batchSize) {
       const chunk = symbols.slice(i, i + batchSize);
       for (const sym of chunk) {
-        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
-        const parsed = _parseTimeseries(data, 'psx_eod');
+        let parsed = null;
+        if (sessionOpen) {
+          const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+          parsed = _parseTimeseries(intData, 'psx_int');
+        }
+        if (!parsed) {
+          const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+          parsed = _parseTimeseries(eodData, 'psx_eod');
+        }
         if (parsed) results[sym] = { ...parsed, symbol: sym };
       }
       if (i + batchSize < symbols.length) await _sleep(120);

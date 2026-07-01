@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 77 modules — run: npm run bundle */
+/* LedgerCap bundle — 79 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -108,6 +108,8 @@ const SIP_PLAN = [
   { fund:'MIIF', amount:10000, color:'#1890FF', note:'Buffer at 16-18% yield. Convert to KMIF on 15%+ KSE drop.' },
   { fund:'STK',  amount:5000,  color:'#F0B90B', note:'Accumulate. Only deploy with full investment memo.' },
 ];
+
+const FALLBACK_PRICES_UPDATED = '2026-07-01';
 
 const FALLBACK_PRICES = {
   'ATRL': 872.0,
@@ -328,6 +330,7 @@ window.SIP_PLAN = SIP_PLAN;
 window.WATCHLIST = WATCHLIST;
 window.INITIAL_TRANSACTIONS = INITIAL_TRANSACTIONS;
 window.FALLBACK_PRICES = FALLBACK_PRICES;
+window.FALLBACK_PRICES_UPDATED = FALLBACK_PRICES_UPDATED;
 
 ;/* === js/data/us-stocks.js === */
 'use strict';
@@ -4711,6 +4714,166 @@ const DIVIDEND_DATA = {
       { date: '2025-12-31', yield: 7.0 }, { date: '2024-12-31', yield: 6.8 },
     ],
   },
+  ATRL: {
+    companyName: 'Attock Refinery',
+    sector: 'Refinery',
+    cashDividends: [
+      { id: 'atrl_cd_26i', amountPerShare: 12, exDate: '2026-06-18', recordDate: '2026-06-20', paymentDate: '2026-08-18', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'atrl_cd_25f', amountPerShare: 12, exDate: '2025-06-15', recordDate: '2025-06-17', paymentDate: '2025-08-15', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 5.2 }],
+  },
+  TRG: {
+    companyName: 'TRG Pakistan',
+    sector: 'Technology',
+    cashDividends: [
+      { id: 'trg_cd_26i', amountPerShare: 0.5, exDate: '2026-08-10', recordDate: '2026-08-12', paymentDate: '2026-10-10', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'trg_cd_25f', amountPerShare: 0.5, exDate: '2025-08-08', recordDate: '2025-08-10', paymentDate: '2025-10-08', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.8 }],
+  },
+  HINO: {
+    companyName: 'Hinopak Motors',
+    sector: 'Automobile',
+    cashDividends: [
+      { id: 'hino_cd_26i', amountPerShare: 2, exDate: '2026-07-08', recordDate: '2026-07-10', paymentDate: '2026-09-08', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'hino_cd_25f', amountPerShare: 2, exDate: '2025-07-05', recordDate: '2025-07-07', paymentDate: '2025-09-05', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 3.1 }],
+  },
+  SLGL: {
+    companyName: 'Security Leasing',
+    sector: 'Leasing',
+    cashDividends: [
+      { id: 'slgl_cd_26i', amountPerShare: 0.3, exDate: '2026-09-15', recordDate: '2026-09-17', paymentDate: '2026-11-15', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'slgl_cd_25f', amountPerShare: 0.3, exDate: '2025-09-12', recordDate: '2025-09-14', paymentDate: '2025-11-12', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 8.5 }],
+  },
+  DGKC: {
+    companyName: 'DG Khan Cement',
+    sector: 'Cement',
+    cashDividends: [
+      { id: 'dgkc_cd_26i', amountPerShare: 2, exDate: '2026-07-25', recordDate: '2026-07-27', paymentDate: '2026-09-25', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'dgkc_cd_25f', amountPerShare: 2, exDate: '2025-07-22', recordDate: '2025-07-24', paymentDate: '2025-09-22', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 3.5 }],
+  },
+  ENGROH: {
+    companyName: 'Engro Holdings',
+    sector: 'Conglomerate',
+    cashDividends: [
+      { id: 'engroh_cd_26i', amountPerShare: 1.5, exDate: '2026-08-01', recordDate: '2026-08-03', paymentDate: '2026-10-01', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'engroh_cd_25f', amountPerShare: 1.5, exDate: '2025-07-28', recordDate: '2025-07-30', paymentDate: '2025-09-28', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.1 }],
+  },
+  FATIMA: {
+    companyName: 'Fatima Fertilizer',
+    sector: 'Fertilizer',
+    cashDividends: [
+      { id: 'fatima_cd_26i', amountPerShare: 2.5, exDate: '2026-06-22', recordDate: '2026-06-24', paymentDate: '2026-08-22', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'fatima_cd_25f', amountPerShare: 2.5, exDate: '2025-06-20', recordDate: '2025-06-22', paymentDate: '2025-08-20', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 4.8 }],
+  },
+  MLCF: {
+    companyName: 'Maple Leaf Cement',
+    sector: 'Cement',
+    cashDividends: [
+      { id: 'mlcf_cd_26i', amountPerShare: 0.5, exDate: '2026-08-18', recordDate: '2026-08-20', paymentDate: '2026-10-18', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'mlcf_cd_25f', amountPerShare: 0.5, exDate: '2025-08-15', recordDate: '2025-08-17', paymentDate: '2025-10-15', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.2 }],
+  },
+  NML: {
+    companyName: 'Nishat Mills',
+    sector: 'Textile',
+    cashDividends: [
+      { id: 'nml_cd_26i', amountPerShare: 1, exDate: '2026-09-05', recordDate: '2026-09-07', paymentDate: '2026-11-05', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'nml_cd_25f', amountPerShare: 1, exDate: '2025-09-02', recordDate: '2025-09-04', paymentDate: '2025-11-02', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 3.0 }],
+  },
+  NRL: {
+    companyName: 'National Refinery',
+    sector: 'Refinery',
+    cashDividends: [
+      { id: 'nrl_cd_26i', amountPerShare: 3, exDate: '2026-07-12', recordDate: '2026-07-14', paymentDate: '2026-09-12', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'nrl_cd_25f', amountPerShare: 3, exDate: '2025-07-10', recordDate: '2025-07-12', paymentDate: '2025-09-10', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 4.5 }],
+  },
+  PAEL: {
+    companyName: 'Pak Elektron',
+    sector: 'Consumer',
+    cashDividends: [
+      { id: 'pael_cd_26i', amountPerShare: 0.25, exDate: '2026-10-01', recordDate: '2026-10-03', paymentDate: '2026-12-01', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'pael_cd_25f', amountPerShare: 0.25, exDate: '2025-09-28', recordDate: '2025-09-30', paymentDate: '2025-11-28', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.8 }],
+  },
+  PTC: {
+    companyName: 'Pakistan Telecommunication',
+    sector: 'Telecom',
+    cashDividends: [
+      { id: 'ptc_cd_26i', amountPerShare: 0.5, exDate: '2026-08-22', recordDate: '2026-08-24', paymentDate: '2026-10-22', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'ptc_cd_25f', amountPerShare: 0.5, exDate: '2025-08-20', recordDate: '2025-08-22', paymentDate: '2025-10-20', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 2.5 }],
+  },
+  SEARL: {
+    companyName: 'The Searle Company',
+    sector: 'Pharma',
+    cashDividends: [
+      { id: 'searl_cd_26i', amountPerShare: 0.4, exDate: '2026-09-20', recordDate: '2026-09-22', paymentDate: '2026-11-20', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'searl_cd_25f', amountPerShare: 0.4, exDate: '2025-09-18', recordDate: '2025-09-20', paymentDate: '2025-11-18', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.2 }],
+  },
+  SSGC: {
+    companyName: 'Sui Southern Gas',
+    sector: 'Gas',
+    cashDividends: [
+      { id: 'ssgc_cd_26i', amountPerShare: 0.5, exDate: '2026-07-28', recordDate: '2026-07-30', paymentDate: '2026-09-28', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'ssgc_cd_25f', amountPerShare: 0.5, exDate: '2025-07-25', recordDate: '2025-07-27', paymentDate: '2025-09-25', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 4.0 }],
+  },
+  TREET: {
+    companyName: 'Treet Corporation',
+    sector: 'Consumer',
+    cashDividends: [
+      { id: 'treet_cd_26i', amountPerShare: 0.15, exDate: '2026-10-10', recordDate: '2026-10-12', paymentDate: '2026-12-10', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'treet_cd_25f', amountPerShare: 0.15, exDate: '2025-10-08', recordDate: '2025-10-10', paymentDate: '2025-12-08', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.5 }],
+  },
+  CPHL: {
+    companyName: 'Citi Pharma',
+    sector: 'Pharma',
+    cashDividends: [
+      { id: 'cphl_cd_26i', amountPerShare: 0.2, exDate: '2026-09-12', recordDate: '2026-09-14', paymentDate: '2026-11-12', fiscalYear: 2025, status: 'upcoming' },
+      { id: 'cphl_cd_25f', amountPerShare: 0.2, exDate: '2025-09-10', recordDate: '2025-09-12', paymentDate: '2025-11-10', fiscalYear: 2024, status: 'paid' },
+    ],
+    bonusShares: [], rightsIssues: [],
+    yieldHistory: [{ date: '2025-12-31', yield: 1.0 }],
+  },
 };
 
 window.DIVIDEND_DATA = DIVIDEND_DATA;
@@ -4719,9 +4882,9 @@ window.DIVIDEND_DATA = DIVIDEND_DATA;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.40.1',
-  sw: 107,
-  cache: 'ledgercap-v107',
+  app: '3.41.0',
+  sw: 108,
+  cache: 'ledgercap-v108',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -5923,12 +6086,20 @@ const Prices = (() => {
 
   async function fetchPsxLive(symbols) {
     const results = {};
+    const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
     const batchSize = 2;
     for (let i = 0; i < symbols.length; i += batchSize) {
       const chunk = symbols.slice(i, i + batchSize);
       for (const sym of chunk) {
-        const data = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
-        const parsed = _parseTimeseries(data, 'psx_eod');
+        let parsed = null;
+        if (sessionOpen) {
+          const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+          parsed = _parseTimeseries(intData, 'psx_int');
+        }
+        if (!parsed) {
+          const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+          parsed = _parseTimeseries(eodData, 'psx_eod');
+        }
         if (parsed) results[sym] = { ...parsed, symbol: sym };
       }
       if (i + batchSize < symbols.length) await _sleep(120);
@@ -8758,6 +8929,96 @@ const TelegramBriefFormat = (() => {
 })();
 window.TelegramBriefFormat = TelegramBriefFormat;
 
+;/* === js/services/secrets-vault.js === */
+'use strict';
+/** Encrypt Telegram bot token at rest (AES-GCM). Stripped from JSON exports. */
+const SecretsVault = (() => {
+  const MK = 'ledgercap_mk_v1';
+  const ENC = 'ledgercap_tg_token_enc';
+
+  async function _masterKey() {
+    let b64 = localStorage.getItem(MK);
+    if (!b64) {
+      const buf = crypto.getRandomValues(new Uint8Array(32));
+      b64 = btoa(String.fromCharCode(...buf));
+      localStorage.setItem(MK, b64);
+    }
+    const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+
+  function hasTelegramToken() {
+    return !!localStorage.getItem(ENC);
+  }
+
+  async function setTelegramToken(token) {
+    token = String(token || '').trim();
+    if (!token) {
+      localStorage.removeItem(ENC);
+      if (typeof State !== 'undefined') {
+        State.update((s) => { delete s.settings.telegramBotToken; });
+      }
+      return;
+    }
+    const key = await _masterKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      new TextEncoder().encode(token),
+    );
+    const payload = {
+      iv: btoa(String.fromCharCode(...iv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(enc))),
+    };
+    localStorage.setItem(ENC, JSON.stringify(payload));
+    if (typeof State !== 'undefined') {
+      State.update((s) => { delete s.settings.telegramBotToken; });
+    }
+  }
+
+  async function getTelegramToken() {
+    const raw = localStorage.getItem(ENC);
+    if (!raw) return '';
+    try {
+      const { iv, data } = JSON.parse(raw);
+      const key = await _masterKey();
+      const dec = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: Uint8Array.from(atob(iv), (c) => c.charCodeAt(0)) },
+        key,
+        Uint8Array.from(atob(data), (c) => c.charCodeAt(0)),
+      );
+      return new TextDecoder().decode(dec);
+    } catch {
+      return '';
+    }
+  }
+
+  async function migratePlaintextToken() {
+    if (typeof State === 'undefined') return;
+    const plain = State.get('settings')?.telegramBotToken;
+    if (!plain || hasTelegramToken()) return;
+    await setTelegramToken(plain);
+  }
+
+  function stripSensitiveSettings(settings) {
+    if (!settings || typeof settings !== 'object') return settings;
+    const out = { ...settings };
+    delete out.telegramBotToken;
+    if (out.telegramSyncKey) out.telegramSyncKey = '[redacted — re-enter after import]';
+    return out;
+  }
+
+  return {
+    setTelegramToken,
+    getTelegramToken,
+    hasTelegramToken,
+    migratePlaintextToken,
+    stripSensitiveSettings,
+  };
+})();
+window.SecretsVault = SecretsVault;
+
 ;/* === js/services/telegram-service.js === */
 'use strict';
 /**
@@ -8772,6 +9033,21 @@ const TelegramService = (() => {
     return (typeof window !== 'undefined' && window.State)
       ? (window.State.get('settings') || {})
       : {};
+  }
+
+  async function _botToken() {
+    if (typeof SecretsVault !== 'undefined') {
+      const enc = await SecretsVault.getTelegramToken();
+      if (enc) return enc;
+    }
+    return String(_settings().telegramBotToken || '').trim();
+  }
+
+  function isConfigured() {
+    const s = _settings();
+    const hasToken = (typeof SecretsVault !== 'undefined' && SecretsVault.hasTelegramToken())
+      || String(s.telegramBotToken || '').trim();
+    return !!(hasToken && String(s.telegramChatId || '').trim());
   }
 
   function proxyBase(settings) {
@@ -8837,11 +9113,6 @@ const TelegramService = (() => {
 
   function truncate(text, max) {
     return TelegramBriefFormat.truncate(text, max);
-  }
-
-  function isConfigured() {
-    const s = _settings();
-    return !!(String(s.telegramBotToken || '').trim() && String(s.telegramChatId || '').trim());
   }
 
   function _fmtPkr(n) {
@@ -8982,7 +9253,7 @@ const TelegramService = (() => {
   async function sendMessage(text, opts) {
     opts = opts || {};
     const s = _settings();
-    const token = String(s.telegramBotToken || '').trim();
+    const token = await _botToken();
     const chatId = String(s.telegramChatId || '').trim();
     if (!token || !chatId) {
       return { ok: false, error: 'Telegram bot token and chat ID required in Settings.' };
@@ -9051,7 +9322,7 @@ const TelegramService = (() => {
   }
 
   async function resolveChatIds() {
-    const token = String(_settings().telegramBotToken || '').trim();
+    const token = await _botToken();
     if (!token) return { ok: false, error: 'Bot token required' };
     const result = await _botRequest('getUpdates', token, null);
     if (!result.ok) return { ok: false, error: result.error };
@@ -9879,7 +10150,7 @@ const LivePriceStream = (() => {
       State.updatePrice(sym, {
         price: q.price,
         prevClose: q.prevClose || q.price,
-        source: 'live-sse',
+        source: q.source || 'live-sse',
         ts: q.ts || Date.now(),
       });
       n++;
@@ -9955,6 +10226,85 @@ const LivePriceStream = (() => {
   return { init, start, stop, status };
 })();
 window.LivePriceStream = LivePriceStream;
+
+;/* === js/services/price-health.js === */
+'use strict';
+/** Fallback / stale price audit + topbar banner */
+const PriceHealth = (() => {
+  const SEED_SOURCES = new Set(['fallback', 'seed', 'meezan_seed', 'none']);
+
+  function _heldSymbols() {
+    if (typeof State === 'undefined' || typeof Ledger === 'undefined') return [];
+    const txs = State.get('transactions') || [];
+    const stocks = Ledger.calcHoldings(txs).map((h) => h.symbol);
+    const funds = Ledger.calcFundHoldings(txs).map((f) => f.symbol);
+    return [...new Set([...stocks, ...funds])];
+  }
+
+  function audit() {
+    const prices = State.get('prices') || {};
+    const symbols = _heldSymbols();
+    if (!symbols.length) return { total: 0, seeded: 0, stale: 0, live: 0, pctSeeded: 0, showBanner: false };
+
+    let seeded = 0;
+    let stale = 0;
+    let live = 0;
+    const now = Date.now();
+
+    symbols.forEach((sym) => {
+      const p = prices[sym];
+      const src = p?.source || 'none';
+      if (SEED_SOURCES.has(src) || !(p?.price > 0)) {
+        seeded++;
+        return;
+      }
+      if (p.ts && now - p.ts > 24 * 3600000) stale++;
+      else live++;
+    });
+
+    const total = symbols.length;
+    const pctSeeded = total ? seeded / total : 0;
+    const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3);
+
+    return { total, seeded, stale, live, pctSeeded, showBanner };
+  }
+
+  function bannerHtml(rep) {
+    if (!rep?.showBanner) return '';
+    const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
+    const pct = Math.round((rep.pctSeeded || 0) * 100);
+    const msg = rep.pctSeeded >= 0.4
+      ? `${pct}% of holdings on seed/fallback prices (snapshot ${updated}). Tap refresh or open during PSX session.`
+      : `${rep.stale} holding(s) have prices older than 24h. Tap refresh for latest close.`;
+    return `<div class="lc-price-health" role="status">
+      <span>${msg}</span>
+      <button type="button" class="lc-price-health-btn" onclick="App.refreshPrices()">Refresh</button>
+      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">✕</button>
+    </div>`;
+  }
+
+  function mount() {
+    if (localStorage.getItem('ledgercap_price_health_dismiss')) return;
+    const host = document.getElementById('lc-price-health-host');
+    if (!host) return;
+    const rep = audit();
+    host.innerHTML = bannerHtml(rep);
+    host.classList.toggle('hidden', !rep.showBanner);
+  }
+
+  function dismiss() {
+    try { localStorage.setItem('ledgercap_price_health_dismiss', String(Date.now())); } catch (_) {}
+    const host = document.getElementById('lc-price-health-host');
+    if (host) { host.innerHTML = ''; host.classList.add('hidden'); }
+  }
+
+  function clearDismiss() {
+    localStorage.removeItem('ledgercap_price_health_dismiss');
+  }
+
+  return { audit, mount, dismiss, clearDismiss, bannerHtml };
+})();
+window.PriceHealth = PriceHealth;
 
 ;/* === js/services/intraday-signals.js === */
 'use strict';
@@ -11898,10 +12248,20 @@ const State = (() => {
     _s = null;
     load();
   }
-  function exportJSON() { if (!_s) load(); return JSON.stringify(_s, null, 2); }
+  function exportJSON() {
+    if (!_s) load();
+    const copy = JSON.parse(JSON.stringify(_s));
+    if (copy.settings && typeof SecretsVault !== 'undefined') {
+      copy.settings = SecretsVault.stripSensitiveSettings(copy.settings);
+    } else if (copy.settings) {
+      delete copy.settings.telegramBotToken;
+    }
+    return JSON.stringify(copy, null, 2);
+  }
   function importJSON(str) {
     try {
       const parsed = JSON.parse(str);
+      if (parsed.settings?.telegramBotToken) delete parsed.settings.telegramBotToken;
       _s = { ...DEFAULT, ...parsed };
       _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
       if (!_s.version || _s.version < 5) _migrateV5();
@@ -11909,7 +12269,9 @@ const State = (() => {
       if (!_s.version || _s.version < 7) _migrateV7();
       if (!_s.version || _s.version < 8) _migrateV8();
       if (!_s.version || _s.version < 9) _migrateV9();
+      if (!_s.version || _s.version < 10) _migrateV10();
       save();
+      if (typeof SecretsVault !== 'undefined') SecretsVault.migratePlaintextToken();
       return true;
     } catch { return false; }
   }
@@ -11941,7 +12303,7 @@ const State = (() => {
     if (!_s) load();
     const price = typeof priceData === 'number' ? priceData : priceData.price;
     const source = typeof priceData === 'object' ? priceData.source : 'manual';
-    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
+    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'live-sse', 'live-sse-int', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
     if (!trusted && fallback && price && price > 0) {
       if (price > fallback * 2.5 || price < fallback * 0.4) {
@@ -14321,13 +14683,18 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">Display &amp; live data</span></div>
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
-      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. Live stream uses worker SSE during PSX hours (9:15–15:45 PKT).</p>
+      <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. SSE pushes during PSX session (intraday when open, last close after hours).</p>
       <div class="os-theme-toggle" style="margin-bottom:14px">
         <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('PKR')">PKR ₨</button>
         <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('USD')">USD $</button>
       </div>
-      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE)</label>
-      <p class="field-hint" style="margin-top:8px">Stream: ${typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected ? '● connected' : '○ poll fallback'}</p>
+      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE push)</label>
+      <p class="field-hint" style="margin-top:8px">Stream: ${(() => {
+        const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
+        const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
+        if (st.connected) return open ? '● connected · intraday push' : '● connected · last close (EOD)';
+        return '○ disconnected · manual refresh / poll';
+      })()}</p>
       <p class="field-hint" style="margin-top:4px"><a href="./widget-glance.html" target="_blank" rel="noopener">Glance widget page</a> — add to home screen for 3-second net worth check. Native iOS widget needs Capacitor build.</p>
     </div>
 
@@ -14489,7 +14856,7 @@ const Settings = (() => {
       </p>
       <div class="field">
         <label class="field-label">Bot token</label>
-        <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
+        <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${(typeof SecretsVault !== 'undefined' && SecretsVault.hasTelegramToken()) || settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
       </div>
       <div class="field">
         <label class="field-label">Chat ID</label>
@@ -14995,7 +15362,13 @@ const Settings = (() => {
     render();
   }
 
-  function _saveTelegram() {
+  async function _persistTelegramToken(tokenIn) {
+    if (!tokenIn) return;
+    if (typeof SecretsVault !== 'undefined') await SecretsVault.setTelegramToken(tokenIn);
+    else State.update(s => { s.settings.telegramBotToken = tokenIn; });
+  }
+
+  async function _saveTelegram() {
     const tokenIn = document.getElementById('tg-token')?.value?.trim() || '';
     const chatId = document.getElementById('tg-chat')?.value?.trim() || '';
     const morning = !!document.getElementById('tg-morning')?.checked;
@@ -15005,8 +15378,8 @@ const Settings = (() => {
     const price = !!document.getElementById('tg-price')?.checked;
     const cloud = !!document.getElementById('tg-cloud')?.checked;
     const syncKey = document.getElementById('tg-sync-key')?.value?.trim() || '';
+    if (tokenIn) await _persistTelegramToken(tokenIn);
     State.update(s => {
-      if (tokenIn) s.settings.telegramBotToken = tokenIn;
       s.settings.telegramChatId = chatId;
       s.settings.telegramMorningEnabled = morning;
       s.settings.telegramIntradayEnabled = intraday;
@@ -15026,9 +15399,7 @@ const Settings = (() => {
       return;
     }
     const tokenIn = document.getElementById('tg-token')?.value?.trim();
-    if (tokenIn) {
-      State.update(s => { s.settings.telegramBotToken = tokenIn; });
-    }
+    if (tokenIn) await _persistTelegramToken(tokenIn);
     const chatId = document.getElementById('tg-chat')?.value?.trim();
     if (chatId) {
       State.update(s => { s.settings.telegramChatId = chatId; });
@@ -15077,7 +15448,7 @@ const Settings = (() => {
 
   async function _detectTelegramChat() {
     const tokenIn = document.getElementById('tg-token')?.value?.trim();
-    if (tokenIn) State.update(s => { s.settings.telegramBotToken = tokenIn; });
+    if (tokenIn) await _persistTelegramToken(tokenIn);
     if (!TelegramService?.resolveChatIds) {
       App.showToast('Telegram service not loaded', 'error');
       return;
@@ -17567,6 +17938,7 @@ const App = (() => {
     if (demo) {
       try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
     }
+    if (typeof SecretsVault !== 'undefined') await SecretsVault.migratePlaintextToken();
     _applyTheme(localStorage.getItem('theme') || window.State?.get('settings')?.theme || 'dark');
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       document.documentElement.classList.add('standalone');
@@ -17626,6 +17998,7 @@ const App = (() => {
     else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
     _maybeDemoBanner();
     _maybeInstallHint();
+    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -17771,6 +18144,9 @@ const App = (() => {
       LcPolish.announcePrices(sum.totalValue, State.calcDailyPnl());
       LcPolish.afterRender();
     }
+    if (liveOk > 0 && typeof PriceHealth !== 'undefined') PriceHealth.clearDismiss();
+    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
+    _scheduleAutoRefresh();
   }
 
   function _updateCurrencyToggleBtn() {

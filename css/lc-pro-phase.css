@@ -1,4 +1,38 @@
-/* LedgerCap Pro — phases 4–10 polish */
+/* LedgerCap — price health banner */
+#lc-price-health-host:empty { display: none; }
+#lc-price-health-host.hidden { display: none; }
+.lc-price-health {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: rgba(240, 185, 11, 0.1);
+  border-bottom: 1px solid rgba(240, 185, 11, 0.22);
+  font-size: 0.75rem;
+  color: var(--psx-text-2);
+  line-height: 1.45;
+}
+.lc-price-health-btn {
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(240, 185, 11, 0.4);
+  background: rgba(240, 185, 11, 0.15);
+  color: var(--psx-text-1);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.lc-price-health-dismiss {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--psx-text-3);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
 
 .lc-screen-head--row {
   display: flex;

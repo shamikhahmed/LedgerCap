@@ -316,10 +316,20 @@ const State = (() => {
     _s = null;
     load();
   }
-  function exportJSON() { if (!_s) load(); return JSON.stringify(_s, null, 2); }
+  function exportJSON() {
+    if (!_s) load();
+    const copy = JSON.parse(JSON.stringify(_s));
+    if (copy.settings && typeof SecretsVault !== 'undefined') {
+      copy.settings = SecretsVault.stripSensitiveSettings(copy.settings);
+    } else if (copy.settings) {
+      delete copy.settings.telegramBotToken;
+    }
+    return JSON.stringify(copy, null, 2);
+  }
   function importJSON(str) {
     try {
       const parsed = JSON.parse(str);
+      if (parsed.settings?.telegramBotToken) delete parsed.settings.telegramBotToken;
       _s = { ...DEFAULT, ...parsed };
       _s.settings = { ...DEFAULT.settings, ...(parsed.settings || {}) };
       if (!_s.version || _s.version < 5) _migrateV5();
@@ -327,7 +337,9 @@ const State = (() => {
       if (!_s.version || _s.version < 7) _migrateV7();
       if (!_s.version || _s.version < 8) _migrateV8();
       if (!_s.version || _s.version < 9) _migrateV9();
+      if (!_s.version || _s.version < 10) _migrateV10();
       save();
+      if (typeof SecretsVault !== 'undefined') SecretsVault.migratePlaintextToken();
       return true;
     } catch { return false; }
   }
@@ -359,7 +371,7 @@ const State = (() => {
     if (!_s) load();
     const price = typeof priceData === 'number' ? priceData : priceData.price;
     const source = typeof priceData === 'object' ? priceData.source : 'manual';
-    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
+    const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'live-sse', 'live-sse-int', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
     if (!trusted && fallback && price && price > 0) {
       if (price > fallback * 2.5 || price < fallback * 0.4) {

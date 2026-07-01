@@ -40,7 +40,7 @@ const LivePriceStream = (() => {
       State.updatePrice(sym, {
         price: q.price,
         prevClose: q.prevClose || q.price,
-        source: 'live-sse',
+        source: q.source || 'live-sse',
         ts: q.ts || Date.now(),
       });
       n++;

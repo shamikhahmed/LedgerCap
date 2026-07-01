@@ -33,6 +33,7 @@ const files = [
   'js/services/psx-session.js',
   'js/services/news-service.js',
   'js/shared/telegram-brief-format.js',
+  'js/services/secrets-vault.js',
   'js/services/telegram-service.js',
   'js/services/pin-vault.js',
   'js/services/notification-scheduler.js',
@@ -40,6 +41,7 @@ const files = [
   'js/services/statement-export.js',
   'js/services/price-alerts-service.js',
   'js/services/live-price-stream.js',
+  'js/services/price-health.js',
   'js/services/intraday-signals.js',
   'js/services/buy-recommendations.js',
   'js/services/risk-audit-service.js',
@@ -99,3 +101,19 @@ for (const rel of files) {
 const out = path.join(root, 'js/ledgercap.bundle.js');
 fs.writeFileSync(out, parts.join(''));
 console.log(`Wrote ${out} (${files.length} files, ${(fs.statSync(out).size / 1024).toFixed(0)} KB)`);
+
+function patchBundleVersion() {
+  const cfgPath = path.join(root, 'js/data/config.js');
+  const cfg = fs.readFileSync(cfgPath, 'utf8');
+  const m = cfg.match(/app:\s*'([^']+)'/);
+  const ver = m ? m[1] : '0';
+  const idxPath = path.join(root, 'index.html');
+  let html = fs.readFileSync(idxPath, 'utf8');
+  const next = `js/ledgercap.bundle.js?v=${ver}`;
+  if (!html.includes(next)) {
+    html = html.replace(/js\/ledgercap\.bundle\.js\?v=[^"']+/g, next);
+    fs.writeFileSync(idxPath, html);
+    console.log(`Patched index.html bundle cache buster → v=${ver}`);
+  }
+}
+patchBundleVersion();
