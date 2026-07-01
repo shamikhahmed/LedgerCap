@@ -3,9 +3,9 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
 
-# Weekdays 04:00 UTC ≈ 09:00 PKT — morning brief when secrets + KV configured
+# Weekdays PKT: 9:00 pre-open · 9:30 open · 10–14 news · 12:30 midday · 15:30 close
 [triggers]
-crons = ["0 4 * * 1-5"]
+crons = ["0 4 * * 1-5", "30 4 * * 1-5", "0 5,6,8,9 * * 1-5", "30 7 * * 1-5", "30 10 * * 1-5"]
 
 # Optional — create with: npx wrangler kv namespace create TELEGRAM_BRIEF
 # [[kv_namespaces]]

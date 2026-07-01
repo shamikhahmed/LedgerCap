@@ -18,7 +18,7 @@ const Funds = (() => {
     return funds.map(f => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
       const nav = State.getPrice(f.symbol) || f.currentNav || 0;
-      const invested = f.investedValue || 0;
+      const invested = (f.units || 0) * (f.avgNav || 0);
       return `<button type="button" class="lc-market-row" onclick="Research.open('${f.symbol}')">
         <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
@@ -38,7 +38,10 @@ const Funds = (() => {
     if (!screen) return;
     const funds = _filteredFunds();
     const meezanInvested = window.MEEZAN_TOTAL_PURCHASES_PKR || 0;
-    const meezanValue = window.MEEZAN_PORTFOLIO_VALUE_PKR || funds.reduce((s, f) => s + (f.currentValue || 0), 0);
+    const meezanValue = window.MEEZAN_PORTFOLIO_VALUE_PKR || funds.reduce((s, f) => {
+      const nav = State.getPrice(f.symbol) || f.currentNav || 0;
+      return s + (f.units || 0) * nav;
+    }, 0);
 
     screen.innerHTML = PsxUI.lcDash(I18n.t('tools.fundNavs.t'), I18n.t('tools.fundNavs.d'), `
       <div class="lc-pulse-row">

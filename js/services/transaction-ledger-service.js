@@ -19,6 +19,7 @@ const TransactionLedger = (() => {
     INTL_SELL:     { icon: '🌎', cls: 'sell',         label: 'US sell',       flow: 'in'   },
     CRYPTO_BUY:    { icon: '₿', cls: 'buy',          label: 'Crypto buy',    flow: 'out'  },
     CRYPTO_SELL:   { icon: '₿', cls: 'sell',         label: 'Crypto sell',   flow: 'in'   },
+    POSITION_ADJUST: { icon: '✎', cls: 'contribution', label: 'Reconcile',   flow: 'neutral' },
   };
 
   const CHARGE_LABELS = {

@@ -80,7 +80,7 @@ const Dashboard = (() => {
 
     const chartEl = document.getElementById('nw-chart');
     if (chartEl && state.priceHistory?.length > 1) {
-      chartEl.innerHTML = Charts.lineChart(state.priceHistory.map(h => h.value), { color: '#2563eb', height: 120, fill: false });
+      chartEl.innerHTML = Charts.lineChart(state.priceHistory.map(h => h.value), { height: 120, fill: false });
     }
     CapMotion.refresh();
   }

@@ -61,7 +61,21 @@ const App = (() => {
     const spark = hist.length >= 2 && typeof Charts !== 'undefined'
       ? `<span class="lc-ticker-spark">${Charts.lineChart(hist, { height: 28, width: 80, fill: false, color: k.cls === 'psx-up' ? '#22c55e' : '#ef4444' })}</span>`
       : '';
-    el.innerHTML = `<span class="lc-ticker-pill">${spark}<span class="lc-ticker-label">KSE-100</span> <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></span>`;
+    const fresh = _priceFreshnessChip();
+    el.innerHTML = `${fresh}<span class="lc-ticker-pill">${spark}<span class="lc-ticker-label">KSE-100</span> <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></span>`;
+  }
+
+  function _priceFreshnessChip() {
+    if (typeof State === 'undefined') return '';
+    const prices = State.get('prices') || {};
+    const ts = Object.values(prices).map((p) => p?.ts).filter(Boolean).sort((a, b) => b - a)[0];
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+    if (!ts && !offline) return '';
+    const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
+    const stale = ts && (Date.now() - ts > 24 * 3600000);
+    const label = offline ? 'Offline' : stale ? `Prices ${age}` : `Updated ${age}`;
+    const cls = offline || stale ? 'lc-freshness--warn' : 'lc-freshness--ok';
+    return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
@@ -892,6 +906,94 @@ const App = (() => {
     renderCurrent();
   }
 
+  function openReconcilePosition(holding) {
+    if (!holding?.symbol) return;
+    window._pendingReconcile = holding;
+    const h = holding;
+    const isGlobal = h.kind === 'intl' || h.kind === 'crypto';
+    const qtyLabel = h.kind === 'fund' ? 'Units' : 'Quantity';
+    const avgCost = h.kind === 'fund'
+      ? (h.quantity > 0 ? h.costBasis / h.quantity : 0)
+      : isGlobal
+        ? FxService.pkrToUsd(h.quantity > 0 ? h.costBasis / h.quantity : 0)
+        : (h.quantity > 0 ? h.costBasis / h.quantity : 0);
+    const lastPx = isGlobal ? FxService.pkrToUsd(h.price) : h.price;
+    const brokers = h.kind === 'fund' ? ['Meezan'] : isGlobal ? (window.GLOBAL_BROKERS || ['IBKR']) : ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
+    const brokerOpts = brokers.map(b => `<option value="${b}"${b === h.broker ? ' selected' : ''}>${b}</option>`).join('');
+
+    const content = `
+    <div style="padding:0 16px 16px;">
+      <p style="font-size:0.78rem;color:var(--psx-text-2);line-height:1.45;margin-bottom:12px;">
+        Reconcile sets <strong>correct qty &amp; avg cost</strong> from your AMC/broker statement. Adds a <em>Reconcile</em> audit row — does not delete old transactions.
+      </p>
+      <div class="detail-stat"><span class="detail-stat-label">Ledger now</span><span class="detail-stat-value">${h.quantity} · avg ${isGlobal ? '$' + Number(avgCost).toFixed(2) : PlatformUI.fmt(avgCost)}</span></div>
+      <div class="field-row">
+        <div class="field"><label class="field-label">${qtyLabel}</label><input class="field-input" id="rec-qty" type="number" step="any" value="${h.quantity}"></div>
+        <div class="field"><label class="field-label">${isGlobal ? 'Avg cost (USD)' : 'Avg cost (₨)'}</label><input class="field-input" id="rec-avg" type="number" step="any" value="${Number(avgCost).toFixed(isGlobal ? 2 : 4)}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="field-label">${isGlobal ? 'Last price (USD)' : 'Last price / NAV (₨)'}</label><input class="field-input" id="rec-price" type="number" step="any" value="${Number(lastPx).toFixed(isGlobal ? 2 : 2)}" placeholder="Optional"></div>
+        <div class="field"><label class="field-label">Broker</label><select class="field-input" id="rec-broker">${brokerOpts}</select></div>
+      </div>
+      <div class="field"><label class="field-label">Notes</label><input class="field-input" id="rec-notes" type="text" placeholder="e.g. AMC statement 29-Jun-2026"></div>
+      <button type="button" class="btn-primary" onclick="App._submitReconcile()">Save reconcile</button>
+    </div>`;
+
+    openBottomSheet('reconcile-sheet', `✎ Reconcile ${h.symbol}`, content);
+  }
+
+  function _submitReconcile() {
+    const holding = window._pendingReconcile;
+    if (!holding) return;
+    const qty = parseFloat(document.getElementById('rec-qty')?.value);
+    const avg = parseFloat(document.getElementById('rec-avg')?.value);
+    const manualPrice = parseFloat(document.getElementById('rec-price')?.value);
+    const broker = document.getElementById('rec-broker')?.value || holding.broker;
+    const notes = (document.getElementById('rec-notes')?.value || '').trim();
+    if (!(qty >= 0) || !(avg >= 0)) {
+      showToast('Enter valid quantity and average cost', 'error');
+      return;
+    }
+    const isGlobal = holding.kind === 'intl' || holding.kind === 'crypto';
+    const tx = {
+      id: Ledger.newId(),
+      type: 'POSITION_ADJUST',
+      date: new Date().toISOString().slice(0, 10),
+      symbol: holding.symbol,
+      broker,
+      holdingKind: holding.kind,
+      assetClass: holding.kind === 'crypto' ? 'crypto' : holding.kind === 'intl' ? 'intl' : undefined,
+      targetQuantity: qty,
+      targetAvgCost: isGlobal ? undefined : avg,
+      targetAvgCostUsd: isGlobal ? avg : undefined,
+      notes: notes || `Reconcile ${holding.symbol}`,
+      amount: 0,
+      internal: true,
+    };
+    State.addTransaction(tx);
+    if (manualPrice > 0) {
+      if (isGlobal) {
+        State.updatePrice(holding.symbol, {
+          priceUsd: manualPrice,
+          price: FxService.usdToPkr(manualPrice),
+          prevCloseUsd: manualPrice * 0.999,
+          source: 'manual',
+          currency: 'USD',
+        });
+      } else {
+        State.updatePrice(holding.symbol, {
+          price: manualPrice,
+          prevClose: manualPrice * 0.999,
+          source: 'manual',
+          currency: 'PKR',
+        });
+      }
+    }
+    closeBottomSheet();
+    showToast(`${holding.symbol} reconciled`, 'success');
+    renderCurrent();
+  }
+
   function _applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
     if (window.Navigation?.applyTheme) Navigation.applyTheme(theme);
@@ -922,7 +1024,8 @@ const App = (() => {
     openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
-    openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio };
+    openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,
+    openReconcilePosition, _submitReconcile };
 })();
 window.App = App;
 

@@ -207,7 +207,9 @@ const PilotEngine = (() => {
 
     const scored = meta.book === 'swing' ? scoreSwing(ctx) : scoreCore(ctx);
     const top = scored.reasons.slice(0, 2).map(r => r.detail).join('; ');
-    const rationale = `${scored.action} — ${top || row.symbol} position, ${row.pnlPct.toFixed(1)}% P&L`;
+    const rationale = top
+      ? `${top}; ${row.pnlPct.toFixed(1)}% P&L`
+      : `${row.symbol} position, ${row.pnlPct.toFixed(1)}% P&L`;
 
     return {
       symbol: row.symbol, book: meta.book || 'core', action: scored.action, score: scored.score,

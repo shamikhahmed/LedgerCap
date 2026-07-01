@@ -5,7 +5,6 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
-const code = fs.readFileSync(path.join(root, 'js/services/telegram-service.js'), 'utf8');
 const ctx = {
   window: { LEDGERCAP_CONFIG: { psxProxyUrl: 'https://ledgercap-psx-proxy.example.workers.dev' } },
   resolvePsxProxyUrl: u => (u || 'https://ledgercap-psx-proxy.example.workers.dev').replace(/\/$/, ''),
@@ -13,6 +12,8 @@ const ctx = {
 };
 ctx.window.State = { get: () => ({ settings: {} }) };
 vm.createContext(ctx);
+vm.runInContext(fs.readFileSync(path.join(root, 'js/shared/telegram-brief-format.js'), 'utf8'), ctx);
+const code = fs.readFileSync(path.join(root, 'js/services/telegram-service.js'), 'utf8');
 vm.runInContext(code, ctx);
 const Ts = ctx.window.TelegramService;
 
@@ -61,6 +62,32 @@ assert(rich.includes('Portfolios'), 'brief portfolios section');
 assert(rich.includes('Upcoming dividends'), 'brief dividends section');
 assert(rich.includes('News'), 'brief news section');
 assert(rich.includes('Today P&L'), 'brief daily pnl');
+
+const usBrief = Ts.formatMorningBrief(brief, {
+  netWorth: 2000000,
+  dailyPct: 1.2,
+  usStocks: [{ symbol: 'TTWO', qty: 9.67, valuePkr: 662326 }],
+  weekdayLabel: 'Tue',
+  pktLabel: '9:00 PKT',
+  dataAsOf: '1 Jul 2026, 9:00 am',
+  dataStale: true,
+});
+assert(usBrief.includes('US / Intl'), 'brief us stocks section');
+assert(usBrief.includes('Data as of'), 'brief staleness line');
+assert(usBrief.includes('TTWO'), 'brief us symbol');
+
+const port = ctx.window.TelegramBriefFormat.formatPortfolioDigest({
+  name: 'Al Meezan Investments',
+  value: 661600,
+  invested: 634775,
+  pnl: 26824,
+  pnlPct: 4.23,
+  dailyPnl: 57715,
+  dailyPct: 8.7,
+  positions: 7,
+}, (n) => '₨' + Math.round(n).toLocaleString('en-PK'));
+assert(port.includes('Al Meezan'), 'portfolio digest name');
+assert(port.includes('Aaj'), 'portfolio digest roman urdu');
 
 const div = Ts.formatDividendReminder([{ symbol: 'HUBC', days: 5, amountPkr: 12.5 }]);
 assert(div.includes('HUBC'), 'dividend symbol');

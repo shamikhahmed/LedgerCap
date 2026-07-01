@@ -71,15 +71,11 @@ const TelegramService = (() => {
   }
 
   function escapeMarkdown(text) {
-    if (text == null) return '';
-    return String(text).replace(/([_*`\[\]])/g, '\\$1');
+    return TelegramBriefFormat.escapeMarkdown(text);
   }
 
   function truncate(text, max) {
-    max = max || MAX_LEN;
-    const s = String(text || '');
-    if (s.length <= max) return s;
-    return s.slice(0, max - 1) + '…';
+    return TelegramBriefFormat.truncate(text, max);
   }
 
   function isConfigured() {
@@ -93,76 +89,7 @@ const TelegramService = (() => {
   }
 
   function formatMorningBrief(brief, extras) {
-    extras = extras || {};
-    const day = extras.weekdayLabel || '';
-    const pkt = extras.pktLabel || '9:00 PKT';
-    const netWorth = extras.netWorth || 0;
-    const dailyPct = extras.dailyPct ?? 0;
-    const sign = dailyPct >= 0 ? '+' : '';
-    const actionEmoji = {
-      SELL: '🔴', TRIM: '🟠', REDUCE: '🟠', ADD: '🟢',
-      STRONG_BUY: '🟢', BUY: '🟢', WATCH: '🟡', HOLD: '⚪',
-    };
-    const lines = [
-      `📊 *LedgerCap — Daily Brief* (${escapeMarkdown(day)} ${escapeMarkdown(pkt)})`,
-      `Net worth: *${escapeMarkdown(_fmtPkr(netWorth))}* (${sign}${Number(dailyPct).toFixed(1)}% today)`,
-    ];
-    if (extras.invested) {
-      lines.push(`Invested: *${escapeMarkdown(_fmtPkr(extras.invested))}*`);
-    }
-    if (extras.dailyPnl != null) {
-      const dSign = extras.dailyPnl >= 0 ? '+' : '';
-      lines.push(`Today P&L: *${dSign}${escapeMarkdown(_fmtPkr(extras.dailyPnl))}*`);
-    }
-    if (extras.totalPnl != null) {
-      const tSign = extras.totalPnl >= 0 ? '+' : '';
-      const tPct = extras.totalPnlPct != null ? ` (${tSign}${Number(extras.totalPnlPct).toFixed(1)}%)` : '';
-      lines.push(`All-time P&L: *${tSign}${escapeMarkdown(_fmtPkr(extras.totalPnl))}*${tPct}`);
-    }
-
-    if (extras.portfolios?.length) {
-      lines.push('', '*Portfolios*');
-      extras.portfolios.slice(0, 6).forEach(p => {
-        const ps = (p.pnlPct || 0) >= 0 ? '+' : '';
-        lines.push(`• *${escapeMarkdown(p.name)}* ${escapeMarkdown(_fmtPkr(p.value))} (${ps}${Number(p.pnlPct || 0).toFixed(1)}%)`);
-      });
-    }
-
-    if (extras.dividends?.length) {
-      lines.push('', '*Upcoming dividends*');
-      extras.dividends.slice(0, 5).forEach(d => {
-        lines.push(`• *${escapeMarkdown(d.symbol)}* ex in ${d.days}d · ${escapeMarkdown(_fmtPkr(d.amountPkr))}/sh`);
-      });
-    }
-
-    if (extras.news?.length) {
-      lines.push('', '*News — your holdings*');
-      extras.news.slice(0, 4).forEach(n => {
-        const tag = escapeMarkdown(n.tag || 'News');
-        lines.push(`• [${tag}] *${escapeMarkdown(n.symbol)}* ${escapeMarkdown(n.title)}`);
-      });
-    }
-
-    const signals = (brief?.urgent_signals || []).slice(0, 4);
-    if (signals.length) {
-      lines.push('', '*Signals*');
-      signals.forEach(s => {
-        const em = actionEmoji[s.action] || '•';
-        const rat = escapeMarkdown((s.rationale || '').slice(0, 100));
-        lines.push(`${em} ${escapeMarkdown(s.action)}: *${escapeMarkdown(s.symbol)}* — ${rat}`);
-      });
-    }
-
-    const counts = brief?.action_counts || {};
-    lines.push(
-      '',
-      `STRONG BUY ${counts['STRONG BUY'] || 0} · ADD ${counts.ADD || 0} · HOLD ${counts.HOLD || 0} · TRIM ${counts.TRIM || 0} · SELL ${counts.SELL || 0}`,
-    );
-    if (extras.pilotScore) {
-      lines.push(`Pilot Score: *${escapeMarkdown(extras.pilotScore.grade)}* (${extras.pilotScore.score}/100)`);
-    }
-    lines.push('', '_Rule-based brief — not financial advice._');
-    return truncate(lines.join('\n'));
+    return TelegramBriefFormat.formatMorningBrief(brief, extras, _fmtPkr);
   }
 
   async function gatherBriefContext(state) {
@@ -177,13 +104,17 @@ const TelegramService = (() => {
 
     let portfolios = [];
     if (typeof PortfolioBuckets !== 'undefined') {
-      portfolios = PortfolioBuckets.list(state)
-        .filter(b => b.builtin)
-        .map(b => {
-          const s = PortfolioBuckets.statsForBucket(state, b.id);
-          return { name: b.name, value: s.value, pnl: s.pnl, pnlPct: s.pnlPct };
-        })
-        .filter(p => p.value > 0);
+      if (PortfolioBuckets.bucketBriefRows) {
+        portfolios = PortfolioBuckets.bucketBriefRows(state);
+      } else {
+        portfolios = PortfolioBuckets.list(state)
+          .filter(b => b.builtin)
+          .map(b => {
+            const s = PortfolioBuckets.statsForBucket(state, b.id);
+            return { name: b.name, value: s.value, pnl: s.pnl, pnlPct: s.pnlPct };
+          })
+          .filter(p => p.value > 0);
+      }
     }
 
     let dividends = [];
@@ -198,19 +129,31 @@ const TelegramService = (() => {
     }
 
     let news = [];
+    let newsSymbols = [];
     if (typeof NewsService !== 'undefined') {
+      newsSymbols = NewsService.portfolioSymbols(state).map((p) => p.symbol);
       try {
         const items = await NewsService.fetchPortfolioNews(state);
-        news = items.slice(0, 4).map(n => ({
+        news = NewsService.toTelegramRows ? NewsService.toTelegramRows(items) : items.slice(0, 6).map(n => ({
           symbol: n.portfolioSymbol || n.symbol || '—',
           title: (n.title || '').slice(0, 72),
           tag: (n.impact?.tags || [])[0] || 'News',
+          source: n.source || n.publisher || 'News',
         }));
       } catch (_) {}
     }
 
     const txSum = typeof TransactionLedger !== 'undefined'
       ? TransactionLedger.summary(state.transactions || []) : null;
+
+    const usStocks = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(state.transactions) : [])
+      .filter((h) => h.assetClass !== 'crypto')
+      .map((h) => ({
+        symbol: h.symbol,
+        qty: h.qty,
+        valuePkr: h.qty * (State.getPrice(h.symbol) || FxService.usdToPkr(h.avgCostUsd || 0)),
+      }))
+      .filter((h) => h.valuePkr > 0);
 
     return {
       brief,
@@ -223,8 +166,17 @@ const TelegramService = (() => {
         totalPnlPct: summary.totalReturn?.pct,
         pilotScore: { grade: score.grade, score: score.score },
         portfolios,
+        portfolioDigests: portfolios,
+        usStocks,
+        kse100: state.kseIndex || {},
+        movers: PortfolioAnalyticsService.getHoldings(state)
+          .filter((h) => h.kind === 'stock')
+          .map((h) => ({ symbol: h.symbol, movePct: h.pnlPct }))
+          .sort((a, b) => Math.abs(b.movePct) - Math.abs(a.movePct))
+          .slice(0, 8),
         dividends,
         news,
+        newsSymbols,
         taxes: txSum?.taxes,
         loggedDividends: txSum?.loggedDividends,
       },
@@ -305,6 +257,33 @@ const TelegramService = (() => {
     return sendMessage(text);
   }
 
+  async function sendPortfolioDigestsNow() {
+    const ctx = await gatherBriefContext();
+    if (!ctx) return { ok: false, error: 'Brief not available' };
+    const rows = ctx.extras.portfolioDigests || ctx.extras.portfolios || [];
+    if (!rows.length) return { ok: false, error: 'No portfolio rows' };
+    const results = [];
+    for (const row of rows) {
+      if (!(row.value > 0)) continue;
+      const text = TelegramBriefFormat.formatPortfolioDigest(row, _fmtPkr);
+      if (!text) continue;
+      results.push(await sendMessage(text));
+      if (!results[results.length - 1].ok) break;
+    }
+    const ok = results.length > 0 && results.every((r) => r.ok);
+    return { ok, sent: results.length, error: ok ? undefined : results.find((r) => !r.ok)?.error };
+  }
+
+  async function sendIntradayNewsNow() {
+    if (typeof NewsService === 'undefined') return { ok: false, error: 'News service not loaded' };
+    const items = await NewsService.fetchPortfolioNews();
+    const rows = NewsService.toTelegramRows(items);
+    if (!rows.length) return { ok: false, error: 'No headlines right now' };
+    const text = TelegramBriefFormat.formatNewsDigest(rows, 'Test — Din ki khabrain / Intraday news');
+    if (!text) return { ok: false, error: 'Could not format news' };
+    return sendMessage(text);
+  }
+
   async function resolveChatIds() {
     const token = String(_settings().telegramBotToken || '').trim();
     if (!token) return { ok: false, error: 'Bot token required' };
@@ -347,6 +326,32 @@ const TelegramService = (() => {
       },
       extras: ctx.extras,
     };
+  }
+
+  async function claimDedupeKey(key, ttlSec) {
+    const s = _settings();
+    const syncKey = String(s.telegramSyncKey || '').trim();
+    if (!syncKey) return { claimed: false, via: 'none' };
+    const proxy = typeof resolvePsxProxyUrl === 'function'
+      ? resolvePsxProxyUrl(s.psxProxyUrl)
+      : (window.LEDGERCAP_CONFIG?.psxProxyUrl || '').replace(/\/$/, '');
+    if (!proxy) return { claimed: false, via: 'none' };
+    try {
+      const res = await fetch(`${proxy}/telegram/claim`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-LedgerCap-Sync-Key': syncKey,
+        },
+        body: JSON.stringify({ key: String(key).slice(0, 120), ttlSec: ttlSec || 86400 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { claimed: false, via: 'kv', error: data.error };
+      return { claimed: !!data.claimed, via: 'kv' };
+    } catch (e) {
+      return { claimed: false, via: 'kv', error: e.message };
+    }
   }
 
   async function syncBriefToCloud() {
@@ -393,9 +398,12 @@ const TelegramService = (() => {
     sendMessage,
     sendTestMessage,
     sendMorningBriefNow,
+    sendPortfolioDigestsNow,
+    sendIntradayNewsNow,
     resolveChatIds,
     checkProxy,
     buildCloudBriefPayload,
+    claimDedupeKey,
     syncBriefToCloud,
   };
 })();

@@ -146,7 +146,7 @@ const Hub = (() => {
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = '<p class="lc-empty-note">No headlines right now — refresh later or add GNews API key in Settings.</p>';
+        _newsHtml = '<p class="lc-empty-note">No headlines — set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key.</p>';
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `

@@ -43,6 +43,7 @@ const State = (() => {
       telegramChatId: '',
       telegramMorningEnabled: false,
       telegramIntradayEnabled: false,
+      telegramIntradayNewsEnabled: false,
       telegramDividendEnabled: false,
       telegramPriceAlertsEnabled: false,
       telegramCloudSyncEnabled: false,
@@ -65,9 +66,43 @@ const State = (() => {
     cashLedger: [],
     manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 },
     portfolios: [],
-    version: 8,
+    version: 9,
     seedDataVersion: 0,
   };
+
+  function _isGlobalSymbol(symbol) {
+    return (window.INTL_STOCKS || []).some(s => s.symbol === symbol)
+      || (window.CRYPTO_ASSETS || []).some(c => c.symbol === symbol);
+  }
+
+  /** US/crypto quotes store USD in priceUsd — prevClose must stay in PKR for ledger math. */
+  function _normalizeGlobalPriceEntry(symbol, entry) {
+    if (!entry || typeof entry !== 'object' || !_isGlobalSymbol(symbol)) return entry;
+    const usd = entry.priceUsd || (entry.currency === 'USD' ? entry.price : null);
+    if (!(usd > 0) || typeof FxService === 'undefined') return entry;
+    const rate = FxService.getUsdRate();
+    entry.priceUsd = usd;
+    entry.price = usd * rate;
+    entry.currency = 'USD';
+    let prevUsd = entry.prevCloseUsd;
+    if (!(prevUsd > 0) && entry.prevClose > 0) {
+      if (entry.prevClose < Math.max(usd * 10, 500)) prevUsd = entry.prevClose;
+      else prevUsd = entry.prevClose / rate;
+    }
+    if (!(prevUsd > 0)) prevUsd = usd * 0.999;
+    entry.prevCloseUsd = prevUsd;
+    entry.prevClose = prevUsd * rate;
+    return entry;
+  }
+
+  function _migrateV9() {
+    if (_s.prices && typeof FxService !== 'undefined') {
+      Object.keys(_s.prices).forEach(sym => {
+        _s.prices[sym] = _normalizeGlobalPriceEntry(sym, _s.prices[sym]);
+      });
+    }
+    _s.version = 9;
+  }
 
   function _migrateV8() {
     if (!_s.portfolios) _s.portfolios = [];
@@ -233,6 +268,10 @@ const State = (() => {
           _migrateV8();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 9) {
+          _migrateV9();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -272,6 +311,7 @@ const State = (() => {
       if (!_s.version || _s.version < 6) _migrateV6();
       if (!_s.version || _s.version < 7) _migrateV7();
       if (!_s.version || _s.version < 8) _migrateV8();
+      if (!_s.version || _s.version < 9) _migrateV9();
       save();
       return true;
     } catch { return false; }
@@ -314,7 +354,7 @@ const State = (() => {
     }
     _s.prices[symbol] = typeof priceData === 'number'
       ? { price, prevClose: _s.prices[symbol]?.price || price, ts: Date.now(), source: 'manual' }
-      : { ...priceData, ts: Date.now() };
+      : _normalizeGlobalPriceEntry(symbol, { ...priceData, ts: Date.now() });
     _logPortfolioValue();
     save();
   }

@@ -252,7 +252,19 @@ const Prices = (() => {
     const price = meta?.regularMarketPrice;
     const prevClose = meta?.previousClose || meta?.chartPreviousClose;
     if (!price || price <= 0) return null;
-    return { symbol, price, priceUsd: price, prevClose, source: source || 'yahoo', currency: 'USD', ts: Date.now() };
+    const divRaw = meta.trailingAnnualDividendYield;
+    return {
+      symbol,
+      price,
+      priceUsd: price,
+      prevClose,
+      prevCloseUsd: prevClose,
+      trailingPE: meta.trailingPE,
+      dividendYield: divRaw != null ? divRaw * 100 : null,
+      source: source || 'yahoo',
+      currency: 'USD',
+      ts: Date.now(),
+    };
   }
 
   async function fetchIntlSymbol(symbol) {
@@ -480,7 +492,14 @@ const Prices = (() => {
 
   function priceBadge(symbol) {
     if (typeof State === 'undefined') return '';
+    const isGlobal = (window.INTL_STOCKS || []).some(s => s.symbol === symbol)
+      || (window.CRYPTO_ASSETS || []).some(c => c.symbol === symbol);
     const src = State.getPriceSource(symbol);
+    const px = State.getPrice(symbol);
+    const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
+    if (isGlobal && !px && !fb) {
+      return '<span class="lc-price-badge lc-price-badge--stale" title="No live price yet">Unpriced</span>';
+    }
     const stale = State.isPriceStale(symbol, 24);
     const age = State.priceAgeLabel(symbol);
     const label = stale ? 'Stale' : sourceLabel(src);

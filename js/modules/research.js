@@ -73,9 +73,21 @@ const Research = (() => {
     }).join('');
   }
 
+  function _fmtMoney(sym, value, isIntl, isCrypto) {
+    if (isIntl || isCrypto) return '$' + Number(value || 0).toFixed(2);
+    return PsxUI.fmt(value);
+  }
+
+  function _fmtPct(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || Math.abs(n) > 50) return '—';
+    return PsxUI.fmt(n, { pct: true, signed: true });
+  }
+
   function _usdDisplay(sym, quote) {
     const st = State.get()?.prices?.[sym];
     if (st?.priceUsd > 0) return st.priceUsd;
+    if (quote?.priceUsd > 0) return quote.priceUsd;
     if (quote?.price > 0 && typeof FxService !== 'undefined') return FxService.pkrToUsd(quote.price);
     return (window.GLOBAL_FALLBACK_USD || {})[sym] || 0;
   }
@@ -93,7 +105,8 @@ const Research = (() => {
         : PsxUI.fmt(q.price);
     }
     if (chgEl) {
-      chgEl.textContent = `${PsxUI.fmt(q.changePct, { pct: true, signed: true })} today`;
+      const chgTxt = _fmtPct(q.changePct);
+      chgEl.textContent = chgTxt === '—' ? 'Change unavailable' : `${chgTxt} today`;
       chgEl.className = `lc-research-chg ${q.changePct >= 0 ? 'up' : 'down'}`;
     }
     if (srcEl) srcEl.textContent = `Source: ${Prices.sourceLabel(q.source || 'seed')}`;
@@ -113,12 +126,8 @@ const Research = (() => {
       if (sym === _symbol) _paintQuote(sym);
       return;
     }
-    if (raw && (raw.priceUsd > 0 || raw.price > 0) && typeof FxService !== 'undefined') {
-      State.updatePrice(sym, {
-        ...raw,
-        price: FxService.usdToPkr(raw.priceUsd || raw.price),
-        priceUsd: raw.priceUsd || raw.price,
-      });
+    if (raw && (raw.priceUsd > 0 || raw.price > 0)) {
+      State.updatePrice(sym, raw);
     }
     if (sym !== _symbol) return;
     _paintQuote(sym);
@@ -222,14 +231,18 @@ const Research = (() => {
       { l: 'P/E', v: f.pe ?? '—' },
       { l: 'Div yield', v: f.divYield ? Number(f.divYield).toFixed(2) + '%' : '—' },
       { l: 'ROE', v: f.roe ? Number(f.roe).toFixed(2) + '%' : '—' },
-      { l: 'EPS', v: f.eps ? '₨' + Number(f.eps).toFixed(2) : '—' },
+      { l: 'EPS', v: f.eps ? ((isIntl || isCrypto) ? '$' : '₨') + Number(f.eps).toFixed(2) : '—' },
     ]) : '';
 
+    const fundNote = (!isFund && (isIntl || isCrypto) && !f.available)
+      ? `<p class="psx-muted lc-card-sub">US/crypto fundamentals appear after live refresh (Yahoo P/E &amp; yield).</p>`
+      : '';
+
     const perfMetrics = _metricGrid([
-      { l: 'Daily', v: PsxUI.fmt(changes.daily, { pct: true, signed: true }), cls: PsxUI.chgCls(changes.daily) },
-      { l: 'Weekly', v: PsxUI.fmt(changes.weekly, { pct: true, signed: true }), cls: PsxUI.chgCls(changes.weekly) },
-      { l: 'Monthly', v: PsxUI.fmt(changes.monthly, { pct: true, signed: true }), cls: PsxUI.chgCls(changes.monthly) },
-      { l: 'Yearly', v: PsxUI.fmt(changes.yearly, { pct: true, signed: true }), cls: PsxUI.chgCls(changes.yearly) },
+      { l: 'Daily', v: _fmtPct(changes.daily), cls: PsxUI.chgCls(changes.daily) },
+      { l: 'Weekly', v: _fmtPct(changes.weekly), cls: PsxUI.chgCls(changes.weekly) },
+      { l: 'Monthly', v: _fmtPct(changes.monthly), cls: PsxUI.chgCls(changes.monthly) },
+      { l: 'Yearly', v: changes.yearly ? _fmtPct(changes.yearly) : '—', cls: PsxUI.chgCls(changes.yearly) },
     ]);
 
     const positionBlock = position ? `
@@ -262,7 +275,7 @@ const Research = (() => {
             </div>
           </div>
           <div class="lc-research-price">${priceLabel}</div>
-          <span class="lc-research-chg ${chgCls}">${PsxUI.fmt(quote.changePct, { pct: true, signed: true })} today</span>
+          <span class="lc-research-chg ${chgCls}">${_fmtPct(quote.changePct) === '—' ? 'Change unavailable' : _fmtPct(quote.changePct) + ' today'}</span>
           <p class="lc-card-sub lc-research-source">Source: ${Prices.sourceLabel(quote.source || 'seed')}</p>
         </div>
         <div class="lc-verdict">
@@ -276,10 +289,10 @@ const Research = (() => {
         ${_metricGrid([
           { l: 'Smart rating (rules)', v: ai.action },
           { l: 'Confidence', v: ai.confidence + '%' },
-          { l: 'Fair value', v: PsxUI.fmt(ai.fairValue) },
+          { l: 'Fair value', v: _fmtMoney(r.symbol, ai.fairValue, isIntl, isCrypto) },
           { l: 'Risk', v: ai.riskScore + '/100' },
         ])}
-        ${!isFund ? `<div class="lc-dash-section"><div class="lc-dash-section-head"><h3>${I18n.t('analyze.fundamentals')}</h3></div></div>${fundMetrics}` : ''}
+        ${!isFund ? `<div class="lc-dash-section"><div class="lc-dash-section-head"><h3>${I18n.t('analyze.fundamentals')}</h3></div></div>${fundNote}${fundMetrics}` : ''}
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Performance</h3><span>% change</span></div></div>
         ${perfMetrics}
         ${_portfolioContext(r.symbol)}
@@ -292,6 +305,7 @@ const Research = (() => {
 
     const assetClass = isCrypto ? 'crypto' : isIntl ? 'intl' : 'psx';
     if (typeof TradingViewUI !== 'undefined') {
+      TradingViewUI.destroy('research-tv-chart');
       TradingViewUI.mount('research-tv-chart', r.symbol, assetClass);
     }
     _refreshQuote(r.symbol);

@@ -135,6 +135,11 @@ const Analytics = (() => {
     funds.forEach(f => {
       map['Meezan'] = (map['Meezan'] || 0) + f.units * (State.getPrice(f.symbol) || f.avgNav);
     });
+    (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).forEach(h => {
+      const b = h.broker || 'Global';
+      const val = h.qty * (State.getPrice(h.symbol) || FxService.usdToPkr(h.avgCostUsd || 0));
+      map[b] = (map[b] || 0) + val;
+    });
     const total = Object.values(map).reduce((a, v) => a + v, 0) || 1;
     return Object.entries(map)
       .map(([broker, value]) => ({ broker, value, pct: (value / total) * 100 }))

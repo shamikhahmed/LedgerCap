@@ -266,8 +266,9 @@ const Settings = (() => {
       </div>
       <div class="field-hint" style="margin-bottom:12px;">Numeric chat_id only — not your phone number. Use @userinfobot if detect fails.</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
-        <label class="lc-check-row"><input type="checkbox" id="tg-morning" ${settings.telegramMorningEnabled ? 'checked' : ''}> Morning brief (weekdays 9:00–9:15 PKT)</label>
-        <label class="lc-check-row"><input type="checkbox" id="tg-intraday" ${settings.telegramIntradayEnabled ? 'checked' : ''}> Intraday digest (PSX session, max 1/hour)</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-morning" ${settings.telegramMorningEnabled ? 'checked' : ''}> Morning brief (client, weekdays 9:00 PKT — off when cloud sync on)</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-intraday" ${settings.telegramIntradayEnabled ? 'checked' : ''}> Intraday moves (PSX session, max 1/hour)</label>
+        <label class="lc-check-row"><input type="checkbox" id="tg-intraday-news" ${settings.telegramIntradayNewsEnabled ? 'checked' : ''}> Intraday news (Yahoo + Google RSS + BBC, max 1/hour)</label>
         <label class="lc-check-row"><input type="checkbox" id="tg-dividend" ${settings.telegramDividendEnabled ? 'checked' : ''}> Dividend reminders (7 days before ex-date)</label>
         <label class="lc-check-row"><input type="checkbox" id="tg-price" ${settings.telegramPriceAlertsEnabled ? 'checked' : ''}> Watchlist price alerts</label>
         <label class="lc-check-row"><input type="checkbox" id="tg-cloud" ${settings.telegramCloudSyncEnabled ? 'checked' : ''}> Cloud brief sync (background 9am PKT via worker)</label>
@@ -287,6 +288,8 @@ const Settings = (() => {
         <button type="button" class="btn-primary" onclick="Settings._saveTelegram()">Save Telegram</button>
         <button type="button" class="btn-secondary" onclick="Settings._sendTelegramTest()">Send test message</button>
         <button type="button" class="btn-ghost" onclick="Settings._sendTelegramBrief()">Send brief now</button>
+        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramPortfolioDigests()">Send portfolio digests</button>
+        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramNews()">Send news digest</button>
       </div>
     </div>
 
@@ -722,6 +725,7 @@ const Settings = (() => {
     const chatId = document.getElementById('tg-chat')?.value?.trim() || '';
     const morning = !!document.getElementById('tg-morning')?.checked;
     const intraday = !!document.getElementById('tg-intraday')?.checked;
+    const intradayNews = !!document.getElementById('tg-intraday-news')?.checked;
     const dividend = !!document.getElementById('tg-dividend')?.checked;
     const price = !!document.getElementById('tg-price')?.checked;
     const cloud = !!document.getElementById('tg-cloud')?.checked;
@@ -731,6 +735,7 @@ const Settings = (() => {
       s.settings.telegramChatId = chatId;
       s.settings.telegramMorningEnabled = morning;
       s.settings.telegramIntradayEnabled = intraday;
+      s.settings.telegramIntradayNewsEnabled = intradayNews;
       s.settings.telegramDividendEnabled = dividend;
       s.settings.telegramPriceAlertsEnabled = price;
       s.settings.telegramCloudSyncEnabled = cloud;
@@ -770,6 +775,29 @@ const Settings = (() => {
     App.showToast('Building brief…', 'info');
     const res = await TelegramService.sendMorningBriefNow();
     App.showToast(res.ok ? 'Morning brief sent' : (res.error || 'Send failed'), res.ok ? 'success' : 'error');
+  }
+
+  async function _sendTelegramPortfolioDigests() {
+    if (!TelegramService?.isConfigured()) {
+      App.showToast('Configure Telegram first', 'warning');
+      return;
+    }
+    App.showToast('Sending portfolio digests…', 'info');
+    const res = await TelegramService.sendPortfolioDigestsNow();
+    App.showToast(
+      res.ok ? `Sent ${res.sent} portfolio message(s)` : (res.error || 'Send failed'),
+      res.ok ? 'success' : 'error',
+    );
+  }
+
+  async function _sendTelegramNews() {
+    if (!TelegramService?.isConfigured()) {
+      App.showToast('Configure Telegram first', 'warning');
+      return;
+    }
+    App.showToast('Fetching news…', 'info');
+    const res = await TelegramService.sendIntradayNewsNow();
+    App.showToast(res.ok ? 'News digest sent' : (res.error || 'Send failed'), res.ok ? 'success' : 'error');
   }
 
   async function _detectTelegramChat() {
@@ -831,6 +859,6 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setNumberFormat, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;

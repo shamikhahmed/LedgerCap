@@ -1,6 +1,7 @@
 'use strict';
 const PortfolioScreen = (() => {
   let _filter = null;
+  let _lastHoldings = [];
 
   function setFilter(id, opts) {
     opts = opts || {};
@@ -44,6 +45,7 @@ const PortfolioScreen = (() => {
     const holdings = _filter
       ? PortfolioBuckets.getHoldingsForBucket(state, _filter)
       : PortfolioAnalyticsService.getHoldings(state);
+    _lastHoldings = holdings;
     const bucketStats = _filter ? PortfolioBuckets.statsForBucket(state, _filter) : null;
     const s = PortfolioAnalyticsService.getSummary(state);
     const daily = State.calcDailyPnl();
@@ -97,7 +99,10 @@ const PortfolioScreen = (() => {
             <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
             <td onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
             <td onclick="Navigation.go('research');Research.open('${h.symbol}')" class="${PsxUI.chgCls(h.pnlPct)}">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
-            <td><button type="button" class="lc-link-btn" onclick="Transactions.openSymbol('${h.symbol}')">Txs</button></td>
+            <td style="white-space:nowrap">
+              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
+              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>
+            </td>
           </tr>`).join('')}
           </tbody></table>
         </div>` : `<div class="lc-empty-state" style="margin-top:0">
@@ -112,6 +117,12 @@ const PortfolioScreen = (() => {
       </div>`;
   }
 
-  return { render, setFilter, clearFilter, currentFilter };
+  function reconcile(symbol, broker, kind) {
+    const h = _lastHoldings.find((x) => x.symbol === symbol && x.broker === broker && x.kind === kind)
+      || _lastHoldings.find((x) => x.symbol === symbol);
+    if (h && typeof App !== 'undefined') App.openReconcilePosition(h);
+  }
+
+  return { render, setFilter, clearFilter, currentFilter, reconcile };
 })();
 window.PortfolioScreen = PortfolioScreen;

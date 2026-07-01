@@ -1,5 +1,6 @@
 'use strict';
 const TradingViewUI = (() => {
+  let _chartReq = 0;
 
   function resolveTvSymbol(symbol, assetClass) {
     const intl = (window.INTL_STOCKS || []).find(x => x.symbol === symbol);
@@ -13,13 +14,14 @@ const TradingViewUI = (() => {
     return null;
   }
 
-  async function _svgChart(el, symbol, height) {
+  async function _svgChart(el, symbol, height, reqId) {
     height = height || 360;
     el.innerHTML = `<div class="lc-chart-loading">Loading chart…</div>`;
     let series = [];
     if (typeof Prices !== 'undefined' && Prices.fetchPriceSeries) {
       try { series = await Prices.fetchPriceSeries(symbol, 40); } catch (_) {}
     }
+    if (reqId != null && reqId !== _chartReq) return;
     if (series.length < 2) {
       el.innerHTML = `<p class="psx-muted">Could not load price history for <strong>${symbol}</strong>. Tap Refresh in Settings or check proxy.</p>`;
       return;
@@ -37,10 +39,12 @@ const TradingViewUI = (() => {
     opts = opts || {};
     const el = document.getElementById(containerId);
     if (!el || !symbol) return;
-    await _svgChart(el, symbol, opts.height || 360);
+    const reqId = ++_chartReq;
+    await _svgChart(el, symbol, opts.height || 360, reqId);
   }
 
   function destroy(containerId) {
+    _chartReq++;
     const el = document.getElementById(containerId);
     if (el) el.innerHTML = '';
   }

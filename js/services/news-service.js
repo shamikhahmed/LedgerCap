@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Portfolio news — Yahoo Finance (no key) + optional GNews API key in Settings.
+ * Portfolio news — Yahoo, Google News RSS, BBC Business (via worker proxy), optional GNews key.
  * Rule-based impact tags for decision support (not AI advice).
  */
 const NewsService = (() => {
@@ -16,6 +16,14 @@ const NewsService = (() => {
     { id: 'regulatory', re: /sec |secp|fine|investigation|lawsuit|regulator/i, label: 'Regulatory', severity: 'high', bias: 'negative' },
     { id: 'merger', re: /merger|acquisition|takeover|buyout|m&a/i, label: 'M&A', severity: 'high', bias: 'neutral' },
   ];
+
+  function _proxyBase() {
+    const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    const raw = typeof resolvePsxProxyUrl === 'function'
+      ? resolvePsxProxyUrl(settings.psxProxyUrl)
+      : (window.LEDGERCAP_CONFIG?.psxProxyUrl || '').trim();
+    return raw.replace(/\/$/, '');
+  }
 
   function _yahooSymbol(sym, kind) {
     if (kind === 'intl' || kind === 'crypto') return sym;
@@ -36,7 +44,36 @@ const NewsService = (() => {
     return { tags: hits.map(h => h.label), severity: top.severity, bias, hint };
   }
 
+  function _normalizeItem(it, symbol) {
+    return {
+      id: it.id || it.url || `${it.source}:${it.title}`,
+      title: it.title,
+      url: it.url,
+      publisher: it.publisher || it.source,
+      publishedAt: it.publishedAt,
+      symbol: it.symbol || symbol,
+      portfolioSymbol: it.portfolioSymbol || symbol,
+      source: it.source || 'News',
+      impact: it.impact || _tagImpact(it.title),
+    };
+  }
+
+  async function _fetchWorkerNews(path) {
+    const base = _proxyBase();
+    if (!base) return [];
+    try {
+      const res = await fetch(`${base}/${path}`, { headers: { Accept: 'application/json' } });
+      if (!res.ok) return [];
+      const j = await res.json();
+      return j.articles || [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   async function _fetchYahooNews(symbol, kind) {
+    const viaWorker = await _fetchWorkerNews(`news/yahoo/${encodeURIComponent(symbol)}?kind=${encodeURIComponent(kind || 'stock')}`);
+    if (viaWorker.length) return viaWorker;
     const ysym = _yahooSymbol(symbol, kind);
     const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ysym)}&newsCount=6`;
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -51,6 +88,18 @@ const NewsService = (() => {
       symbol,
       source: 'Yahoo Finance',
     }));
+  }
+
+  async function _fetchGoogleNewsRss(query, symbol) {
+    const q = encodeURIComponent(query);
+    const sym = encodeURIComponent(symbol || '—');
+    const viaWorker = await _fetchWorkerNews(`news/google?q=${q}&symbol=${sym}`);
+    if (viaWorker.length) return viaWorker;
+    return [];
+  }
+
+  async function _fetchBbcBusiness() {
+    return _fetchWorkerNews('news/bbc');
   }
 
   async function _fetchGNews(query, apiKey) {
@@ -69,6 +118,16 @@ const NewsService = (() => {
     }));
   }
 
+  function _dedupe(items) {
+    const seen = new Set();
+    return items.filter(a => {
+      const key = (a.title || '').toLowerCase().replace(/\W+/g, '').slice(0, 80);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   async function fetchForSymbol(symbol, opts) {
     opts = opts || {};
     const kind = opts.kind || 'stock';
@@ -76,20 +135,22 @@ const NewsService = (() => {
     const hit = _cache.get(key);
     if (hit && Date.now() - hit.ts < CACHE_MS) return hit.items;
 
-    let items = [];
-    try {
-      items = await _fetchYahooNews(symbol, kind);
-    } catch (_) {}
+    const q = kind === 'stock' ? `${symbol} Pakistan PSX stock` : symbol;
+    const batches = await Promise.all([
+      _fetchYahooNews(symbol, kind).catch(() => []),
+      _fetchGoogleNewsRss(q, symbol).catch(() => []),
+    ]);
+    let items = batches.flat();
 
     const gKey = typeof State !== 'undefined' ? State.get('settings')?.gnewsApiKey : '';
-    if (!items.length && gKey) {
+    if (gKey) {
       try {
-        const q = kind === 'stock' ? `${symbol} Pakistan stock PSX` : symbol;
-        items = await _fetchGNews(q, gKey);
+        const gq = kind === 'stock' ? `${symbol} Pakistan stock PSX` : symbol;
+        items = items.concat(await _fetchGNews(gq, gKey));
       } catch (_) {}
     }
 
-    items = items.map(it => ({ ...it, impact: _tagImpact(it.title) }));
+    items = _dedupe(items).map(it => _normalizeItem(it, symbol));
     _cache.set(key, { ts: Date.now(), items });
     return items;
   }
@@ -104,21 +165,68 @@ const NewsService = (() => {
     return syms.sort((a, b) => (b.weight || 0) - (a.weight || 0)).slice(0, 8);
   }
 
+  async function fetchMacroNews() {
+    const key = '__macro__';
+    const hit = _cache.get(key);
+    if (hit && Date.now() - hit.ts < CACHE_MS) return hit.items;
+    const batches = await Promise.all([
+      _fetchBbcBusiness(),
+      _fetchGoogleNewsRss('KSE-100 Pakistan stock market PSX', 'PSX'),
+      _fetchGoogleNewsRss('Pakistan rupee economy SBP', 'Macro'),
+    ]);
+    const items = _dedupe(batches.flat()).map(it => _normalizeItem(it, it.symbol || 'Macro'));
+    _cache.set(key, { ts: Date.now(), items });
+    return items;
+  }
+
   async function fetchPortfolioNews(state) {
+    state = state || (typeof State !== 'undefined' ? State.get() : {});
     const picks = portfolioSymbols(state);
+    const base = _proxyBase();
+
+    if (base) {
+      const syms = picks.slice(0, 6).map(p => p.symbol).join(',');
+      const viaAgg = await _fetchWorkerNews(`news/aggregate?symbols=${encodeURIComponent(syms)}&limit=14`);
+      if (viaAgg.length) {
+        const gKey = State.get('settings')?.gnewsApiKey;
+        let extra = [];
+        if (gKey) {
+          try {
+            extra = await _fetchGNews('Pakistan PSX stock market', gKey);
+          } catch (_) {}
+        }
+        return _dedupe(viaAgg.concat(extra))
+          .map(it => _normalizeItem(it, it.portfolioSymbol || it.symbol))
+          .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))
+          .slice(0, 14);
+      }
+    }
+
     const all = [];
+    const macro = await fetchMacroNews();
+    all.push(...macro.slice(0, 3));
     for (const p of picks.slice(0, 5)) {
       try {
         const rows = await fetchForSymbol(p.symbol, { kind: p.kind });
         rows.forEach(r => all.push({ ...r, portfolioSymbol: p.symbol }));
       } catch (_) {}
     }
-    const seen = new Set();
-    return all.filter(a => {
-      if (seen.has(a.id)) return false;
-      seen.add(a.id);
-      return true;
-    }).sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '')).slice(0, 12);
+    return _dedupe(all)
+      .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))
+      .slice(0, 14);
+  }
+
+  function newsFingerprint(items) {
+    return (items || []).slice(0, 6).map(n => (n.title || '').slice(0, 40)).join('|');
+  }
+
+  function toTelegramRows(items) {
+    return (items || []).slice(0, 6).map(n => ({
+      symbol: n.portfolioSymbol || n.symbol || '—',
+      title: (n.title || '').slice(0, 72),
+      tag: (n.impact?.tags || [])[0] || 'News',
+      source: n.source || n.publisher || 'News',
+    }));
   }
 
   function impactBadge(impact) {
@@ -128,6 +236,16 @@ const NewsService = (() => {
     return `<span class="lc-news-impact ${cls}">${tags}</span>`;
   }
 
-  return { fetchForSymbol, fetchPortfolioNews, portfolioSymbols, impactBadge, _tagImpact, IMPACT_RULES };
+  return {
+    fetchForSymbol,
+    fetchPortfolioNews,
+    fetchMacroNews,
+    portfolioSymbols,
+    newsFingerprint,
+    toTelegramRows,
+    impactBadge,
+    _tagImpact,
+    IMPACT_RULES,
+  };
 })();
 window.NewsService = NewsService;

@@ -3,6 +3,7 @@
  * wrangler deploy (from worker/)
  */
 import { handleTelegramRequest, runTelegramCron } from './telegram.js';
+import { handleNewsRequest } from './news.js';
 
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const CORS = {
@@ -28,11 +29,14 @@ export default {
     const path = url.pathname.replace(/^\//, '');
 
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram'] });
+      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news'] });
     }
 
     const tg = await handleTelegramRequest(request, env, url);
     if (tg) return tg;
+
+    const news = await handleNewsRequest(request, url);
+    if (news) return news;
 
     // FX: USD/PKR
     if (path === 'fx/usdpkr') {
@@ -95,7 +99,11 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runTelegramCron(env).catch(e => console.error('telegram cron', e)));
+    ctx.waitUntil(
+      runTelegramCron(env)
+        .then((r) => { if (r && !r.ok && !r.skipped) console.error('telegram cron', r); })
+        .catch((e) => console.error('telegram cron', e)),
+    );
   },
 };
 

@@ -25,8 +25,13 @@ body.lc-pro {
   --psx-border: rgba(60, 60, 67, 0.12);
   --psx-text: #1c1c1e;
   --psx-text-2: #636366;
-  --psx-text-3: #8e8e93;
+  --psx-text-3: #6e6e73;
   --psx-accent: #007aff;
+  --psx-surface: var(--psx-bg-card);
+  --psx-surface-1: var(--psx-bg-muted);
+  --psx-surface-2: color-mix(in srgb, var(--psx-bg-muted) 80%, var(--psx-border));
+  --psx-surface-3: color-mix(in srgb, var(--psx-text) 6%, var(--psx-bg-card));
+  --text2: var(--psx-text-2);
   --psx-accent-soft: rgba(0, 122, 255, 0.12);
   --psx-up: #34c759;
   --psx-up-bg: rgba(52, 199, 89, 0.14);
@@ -47,6 +52,11 @@ body.lc-pro[data-theme="dark"] {
   --psx-text: #f5f5f7;
   --psx-text-2: #c7c7cc;
   --psx-text-3: #98989d;
+  --psx-surface: var(--psx-bg-card);
+  --psx-surface-1: var(--psx-bg-muted);
+  --psx-surface-2: rgba(255, 255, 255, 0.06);
+  --psx-surface-3: rgba(255, 255, 255, 0.1);
+  --text2: var(--psx-text-2);
   --psx-accent: #0a84ff;
   --psx-accent-soft: rgba(10, 132, 255, 0.18);
   --psx-up: #30d158;
@@ -58,6 +68,24 @@ body.lc-pro[data-theme="dark"] {
 
 body.lc-pro.psx-app {
   letter-spacing: -0.01em;
+}
+
+@media (prefers-color-scheme: dark) {
+  body.lc-pro:not([data-theme="light"]) {
+    --psx-bg: #000000;
+    --psx-bg-card: #1c1c1e;
+    --psx-bg-muted: #2c2c2e;
+    --psx-border: rgba(255, 255, 255, 0.08);
+    --psx-text: #f5f5f7;
+    --psx-text-2: #c7c7cc;
+    --psx-text-3: #98989d;
+    --psx-surface: var(--psx-bg-card);
+    --psx-surface-1: var(--psx-bg-muted);
+    --psx-surface-2: rgba(255, 255, 255, 0.06);
+    --psx-surface-3: rgba(255, 255, 255, 0.1);
+    --text2: var(--psx-text-2);
+    --lc-shadow: var(--lc-shadow-dark);
+  }
 }
 
 body.lc-pro .psx-shell {
@@ -109,6 +137,7 @@ body.lc-pro .psx-bottom-nav {
 }
 
 body.lc-pro .psx-nav-btn {
+  min-height: 48px;
   font-size: 10px;
   font-weight: 500;
   text-transform: none;

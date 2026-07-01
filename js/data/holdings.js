@@ -70,13 +70,13 @@ const AKD_STOCKS = [
 ];
 
 const MEEZAN_FUNDS = [
-  { id:'m_kmif', symbol:'KMIF', name:'KSE Meezan Index Fund', units:1585.2451, avgNav:182.4219, currentNav:182.4219, investedValue:278000, currentValue:289183, type:'Index Fund', isShariah:true, plan:'GROWTH-B' },
-  { id:'m_maaf', symbol:'MAAF', name:'Meezan Asset Allocation Fund', units:95.1548, avgNav:117.4596, currentNav:117.4596, investedValue:10000, currentValue:11177, type:'Balanced', isShariah:true, plan:'GROWTH-B' },
-  { id:'m_mbf', symbol:'MBF', name:'Meezan Balanced Fund', units:2184.6673, avgNav:27.5584, currentNav:27.5584, investedValue:50000, currentValue:60206, type:'Balanced', isShariah:true, plan:'GROWTH-A' },
-  { id:'m_mdaaf_mdyp', symbol:'MDAAF-MDYP', name:'Meezan Dividend Yield Plan', units:129.0669, avgNav:85.6166, currentNav:85.6166, investedValue:10000, currentValue:11050, type:'Equity', isShariah:true, plan:'GROWTH-B' },
-  { id:'m_mif', symbol:'MIF', name:'Meezan Islamic Fund', units:816.3851, avgNav:168.6041, currentNav:168.6041, investedValue:129000, currentValue:137646, type:'Equity Fund', isShariah:true, plan:'GROWTH-B' },
-  { id:'m_miif_b', symbol:'MIIF-B', name:'Meezan Islamic Income Fund', units:2529.8167, avgNav:51.9335, currentNav:51.9335, investedValue:399000, currentValue:131382, type:'Income Fund', isShariah:true, plan:'GROWTH-B' },
-  { id:'m_miif_mmka', symbol:'MIIF-MMKA', name:'Meezan Islamic Income Fund (MMKA)', units:403.5027, avgNav:51.9335, currentNav:51.9335, investedValue:20000, currentValue:20955, type:'Income Fund', isShariah:true, plan:'MMKA' },
+  { id:'m_kmif', symbol:'KMIF', name:'KSE Meezan Index Fund', units:1585.2451, avgNav:182.4219, currentNav:182.4219, type:'Index Fund', isShariah:true, plan:'GROWTH-B' },
+  { id:'m_maaf', symbol:'MAAF', name:'Meezan Asset Allocation Fund', units:95.1548, avgNav:117.4596, currentNav:117.4596, type:'Balanced', isShariah:true, plan:'GROWTH-B' },
+  { id:'m_mbf', symbol:'MBF', name:'Meezan Balanced Fund', units:2184.6673, avgNav:27.5584, currentNav:27.5584, type:'Balanced', isShariah:true, plan:'GROWTH-A' },
+  { id:'m_mdaaf_mdyp', symbol:'MDAAF-MDYP', name:'Meezan Dividend Yield Plan', units:129.0669, avgNav:85.6166, currentNav:85.6166, type:'Equity', isShariah:true, plan:'GROWTH-B' },
+  { id:'m_mif', symbol:'MIF', name:'Meezan Islamic Fund', units:816.3851, avgNav:168.6041, currentNav:168.6041, type:'Equity Fund', isShariah:true, plan:'GROWTH-B' },
+  { id:'m_miif_b', symbol:'MIIF-B', name:'Meezan Islamic Income Fund', units:2529.8167, avgNav:51.9335, currentNav:51.9335, type:'Income Fund', isShariah:true, plan:'GROWTH-B' },
+  { id:'m_miif_mmka', symbol:'MIIF-MMKA', name:'Meezan Islamic Income Fund (MMKA)', units:403.5027, avgNav:51.9335, currentNav:51.9335, type:'Income Fund', isShariah:true, plan:'MMKA' },
 ];
 /** Meezan portfolio 733102-1 — total value per AMC statement 29-Jun-2026. */
 const MEEZAN_PORTFOLIO_VALUE_PKR = 661600;

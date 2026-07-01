@@ -56,7 +56,13 @@ const Navigation = (() => {
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
     const saved = sessionStorage.getItem('ledgercap_tab');
-    if (saved) go(LEGACY[saved] || saved, true);
+    const hashTab = (location.hash || '').replace(/^#/, '');
+    if (hashTab && VALID.has(LEGACY[hashTab] || hashTab)) go(LEGACY[hashTab] || hashTab, true);
+    else if (saved) go(LEGACY[saved] || saved, true);
+    window.addEventListener('popstate', (e) => {
+      const tab = e.state?.tab || (location.hash || '').replace(/^#/, '') || sessionStorage.getItem('ledgercap_tab') || 'home';
+      go(LEGACY[tab] || tab, true);
+    });
   }
 
   function applyTheme(theme) {
@@ -79,7 +85,11 @@ const Navigation = (() => {
       requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
     }
     document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
-    if (!silent) sessionStorage.setItem('ledgercap_tab', tabId);
+    if (!silent) {
+      sessionStorage.setItem('ledgercap_tab', tabId);
+      const hash = '#' + tabId;
+      if (location.hash !== hash) history.pushState({ tab: tabId }, '', hash);
+    }
     const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
     document.title = tabLabel + ' — LedgerCap';
     _render(tabId, opts || {});

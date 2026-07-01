@@ -1,5 +1,97 @@
 # Changelog — LedgerCap
 
+## 3.38.0 (2026-07-01) — Multi-source news + test digests + worker deploy
+
+### News (free sources)
+- **Yahoo Finance** per holding
+- **Google News RSS** (PSX + per symbol) via worker proxy
+- **BBC Business** macro feed via worker
+- Optional **GNews** API key still supported
+- Worker routes: `/news/google`, `/news/bbc`, `/news/yahoo/:sym`, `/news/aggregate`
+
+### Telegram
+- **Intraday news** toggle — max 1/hour PKT session (client + worker 10/11/13/14 PKT)
+- **Send portfolio digests** + **Send news digest** test buttons in Settings
+- Midday cron includes news block
+- Sync payload includes `newsSymbols` for worker fetches
+
+### Service worker
+- `ledgercap-v104`
+
+## 3.37.0 (2026-07-01) — Cleanup + bundle + KV dedupe
+
+### Cleanup
+- Deleted unused CSS: `app.css`, `identity.css`, `platform.css`
+- Deleted legacy `portfolio.js` (active: `portfolio-screen.js`)
+- Removed cosmetic `investedValue` / `currentValue` from Meezan seed; `funds.js` derives from units × NAV
+
+### Performance
+- **72 scripts → 1** `ledgercap.bundle.js` with `defer` (`npm run bundle` before deploy)
+- SW precache slimmed to bundle + core CSS
+
+### Telegram dedupe
+- Worker `POST /telegram/claim` — KV slot lock (sync key required)
+- Client scheduler uses KV claim when sync key set; skips morning brief when cloud cron on
+- Fixes duplicate sends from 2 devices / tabs
+
+### Service worker
+- `ledgercap-v103`
+
+## 3.36.0 (2026-07-01) — Al Meezan + reconcile + portfolio Telegram
+
+### Portfolio
+- **Islamic Funds** renamed **Al Meezan Investments** (Meezan AMC · 733102-1)
+- Holdings **Edit** → reconcile sheet (`POSITION_ADJUST` audit row)
+- Edit qty, avg cost/NAV, manual last price, broker
+
+### Telegram (Roman Urdu + English)
+- **9:00 PKT** — separate msg per portfolio (like P&L card)
+- **9:30** — market open + morning news
+- **12:30** — midday pulse
+- **15:30** — close recap per portfolio
+- Worker crons: `0/30 4/7/10 * * 1-5` UTC
+
+### Service worker
+- `ledgercap-v102`
+
+## 3.35.0 (2026-07-01) — Trust audit fixes
+
+### Telegram
+- Shared `shared/telegram-brief.mjs` — client + worker one formatter
+- Cron: KV dedupe per day, 3× retry on send, failure logged to KV
+- Stale sync disclosure: `Data as of …` line when using cached brief
+- US/Intl holdings block in morning brief
+- Client scheduler logs failed sends
+
+### Holdings / data
+- `brokerAllocation()` includes global (IBKR etc.)
+- Removed fake `$100` fallback for unknown US tickers — shows **Unpriced** badge
+- Price entries tag `currency: 'USD'` on global normalize
+
+### UI / PWA
+- `--psx-surface*` + `--text2` defined for light/dark
+- Light mode `--psx-text-3` contrast fix
+- Topbar freshness chip (offline / stale / updated)
+- `history.pushState` + `popstate` for in-app back nav
+- Chart color uses theme (no hardcoded blue)
+- SW precache: news, transaction-ledger, telegram-brief
+
+### Service worker
+- `ledgercap-v101`
+
+## 3.34.0 (2026-07-01) — Research / Analyze data accuracy
+
+### Fixes
+- **US/crypto daily %** — prevClose was stored in USD while price was PKR, causing absurd moves (e.g. +27735%). Quotes now normalize USD/PKR on save and compute % in USD.
+- **Fair value currency** — US stocks show `$` fair value; PSX stays in ₨.
+- **Fundamentals** — Yahoo P/E and dividend yield for US tickers after live refresh.
+- **Price chart** — stale symbol race fixed when switching tickers quickly.
+- **Pilot signal** — removed duplicate `TRIM — TRIM` in portfolio context text.
+- **State migration v9** — repairs corrupted global price entries on load.
+
+### Service worker
+- `ledgercap-v100`
+
 ## 3.33.0 (2026-07-01) — Hub UI + rich Telegram daily brief
 
 ### Hub UI

@@ -11,6 +11,68 @@ const Ledger = (() => {
     return `${assetClass || 'intl'}_${symbol}_${broker || 'Global'}`;
   }
 
+  function _applyStockAdjusts(holdings, transactions) {
+    const latest = {};
+    _sortTxs(transactions)
+      .filter(t => t.type === 'POSITION_ADJUST' && (t.holdingKind === 'stock' || !t.holdingKind) && t.symbol)
+      .forEach(t => { latest[_holdingKey(t.symbol, t.broker)] = t; });
+    Object.values(latest).forEach(t => {
+      if (t.targetQuantity == null || !(t.targetQuantity >= 0)) return;
+      const key = _holdingKey(t.symbol, t.broker);
+      const avg = t.targetAvgCost != null ? t.targetAvgCost : (holdings[key]?.shares > 0 ? holdings[key].totalCost / holdings[key].shares : 0);
+      if (t.targetQuantity <= 0) { delete holdings[key]; return; }
+      holdings[key] = {
+        symbol: t.symbol,
+        broker: t.broker || CDC_BROKER,
+        shares: t.targetQuantity,
+        totalCost: t.targetQuantity * avg,
+      };
+    });
+  }
+
+  function _applyFundAdjusts(funds, transactions) {
+    const latest = {};
+    _sortTxs(transactions)
+      .filter(t => t.type === 'POSITION_ADJUST' && t.holdingKind === 'fund' && t.symbol)
+      .forEach(t => { latest[t.symbol] = t; });
+    Object.values(latest).forEach(t => {
+      if (t.targetQuantity == null || !(t.targetQuantity >= 0)) return;
+      const avg = t.targetAvgCost != null ? t.targetAvgCost : (funds[t.symbol]?.units > 0 ? funds[t.symbol].totalInvested / funds[t.symbol].units : 0);
+      if (t.targetQuantity <= 0) { delete funds[t.symbol]; return; }
+      funds[t.symbol] = {
+        symbol: t.symbol,
+        broker: t.broker || 'Meezan',
+        units: t.targetQuantity,
+        totalInvested: t.targetQuantity * avg,
+      };
+    });
+  }
+
+  function _applyGlobalAdjusts(map, transactions) {
+    const latest = {};
+    _sortTxs(transactions)
+      .filter(t => t.type === 'POSITION_ADJUST' && (t.holdingKind === 'intl' || t.holdingKind === 'crypto') && t.symbol)
+      .forEach(t => {
+        const ac = t.holdingKind || t.assetClass || 'intl';
+        latest[_globalKey(t.symbol, ac, t.broker)] = t;
+      });
+    Object.values(latest).forEach(t => {
+      if (t.targetQuantity == null || !(t.targetQuantity >= 0)) return;
+      const ac = t.holdingKind || t.assetClass || 'intl';
+      const key = _globalKey(t.symbol, ac, t.broker);
+      const avgUsd = t.targetAvgCostUsd != null ? t.targetAvgCostUsd : (map[key]?.qty > 0 ? map[key].totalCostUsd / map[key].qty : 0);
+      if (t.targetQuantity <= 0) { delete map[key]; return; }
+      map[key] = {
+        symbol: t.symbol,
+        broker: t.broker || 'IBKR',
+        assetClass: ac,
+        qty: t.targetQuantity,
+        totalCostUsd: t.targetQuantity * avgUsd,
+        currency: t.currency || 'USD',
+      };
+    });
+  }
+
   function calcGlobalHoldings(transactions) {
     const map = {};
     _sortTxs(transactions).forEach(t => {
@@ -35,6 +97,7 @@ const Ledger = (() => {
         map[key].totalCostUsd = map[key].qty > 0 ? avg * map[key].qty : 0;
       }
     });
+    _applyGlobalAdjusts(map, transactions);
     return Object.values(map).filter(h => h.qty > 0.00000001).map(h => ({
       ...h,
       avgCostUsd: h.qty > 0 ? h.totalCostUsd / h.qty : 0,
@@ -82,6 +145,7 @@ const Ledger = (() => {
         _addShares(holdings, t.symbol, CDC_BROKER, shares, cost);
       }
     });
+    _applyStockAdjusts(holdings, transactions);
     return Object.values(holdings).filter(h => h.shares > 0).map(h => ({
       ...h,
       avgCost: h.shares > 0 ? h.totalCost / h.shares : 0,
@@ -121,6 +185,7 @@ const Ledger = (() => {
             : 0;
         }
       });
+    _applyFundAdjusts(funds, transactions);
     return Object.values(funds).filter(f => f.units > 0.0001).map(f => ({
       ...f,
       avgNav: f.units > 0 ? f.totalInvested / f.units : 0,

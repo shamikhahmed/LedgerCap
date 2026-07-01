@@ -1,6 +1,11 @@
 'use strict';
 const AIAnalysis = (() => {
 
+  function _isGlobal(symbol) {
+    return (window.INTL_STOCKS || []).some(s => s.symbol === symbol)
+      || (window.CRYPTO_ASSETS || []).some(c => c.symbol === symbol);
+  }
+
   function _ratingToAction(rating) {
     const r = (rating || '').toUpperCase();
     if (r.includes('STRONG BUY') || r === 'BUY') return 'BUY';
@@ -13,7 +18,9 @@ const AIAnalysis = (() => {
     const f = (window.FUNDAMENTALS_DB || {})[symbol];
     const fundA = (window.FUND_ANALYTICS_DB || {})[symbol];
     const quote = MarketDataService.getQuote(symbol);
-    const price = quote.price;
+    const isGlobal = _isGlobal(symbol);
+    const priceUsd = quote.priceUsd || (isGlobal && typeof FxService !== 'undefined' ? FxService.pkrToUsd(quote.price) : null);
+    const price = isGlobal ? (priceUsd || quote.price) : quote.price;
 
     if (fundA) {
       const action = fundA.oneYearReturn > 15 ? 'BUY' : fundA.oneYearReturn > 8 ? 'HOLD' : 'HOLD';
@@ -21,6 +28,7 @@ const AIAnalysis = (() => {
       const fairValue = price * (1 + (fundA.oneYearReturn - 10) / 100);
       return {
         action, confidence, fairValue: Math.round(fairValue * 100) / 100,
+        currency: 'PKR',
         riskScore: Math.round((fundA.beta || 0.5) * 40),
         bull: Math.round(price * 1.15 * 100) / 100,
         base: Math.round(price * 1.06 * 100) / 100,
@@ -60,10 +68,15 @@ const AIAnalysis = (() => {
     parts.push(`${symbol}: ${action} (${confidence}% confidence).`);
     if (f) parts.push(`P/E ${f.pe}, yield ${f.divYield}%, profit growth ${f.profitGrowth}%.`);
     if (advisor?.thesis) parts.push(advisor.thesis.slice(0, 120));
-    else if (f) parts.push(`Fair value est. ₨${fairValue.toLocaleString()} vs current ₨${price.toLocaleString()}.`);
+    else if (isGlobal) {
+      parts.push(`Fair value est. $${fairValue.toFixed(2)} vs current $${Number(price).toFixed(2)}.`);
+    } else if (f) {
+      parts.push(`Fair value est. ₨${fairValue.toLocaleString()} vs current ₨${price.toLocaleString()}.`);
+    }
 
     return {
-      action, confidence, fairValue, riskScore,
+      action, confidence, fairValue, currency: isGlobal ? 'USD' : 'PKR',
+      riskScore,
       upside: price > 0 ? ((fairValue - price) / price) * 100 : 0,
       bull: Math.round(bull * 100) / 100,
       base: Math.round(base * 100) / 100,

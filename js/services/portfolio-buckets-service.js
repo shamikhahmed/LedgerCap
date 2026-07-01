@@ -4,7 +4,7 @@ const PortfolioBuckets = (() => {
     { id: 'rafi', name: 'Rafi Securities', kind: 'psx', brokerFilter: 'Rafi', icon: 'R', builtin: true, desc: 'CDC broker account 6773' },
     { id: 'akd', name: 'AKD Securities', kind: 'psx', brokerFilter: 'AKD', icon: 'A', builtin: true, desc: 'Account COAF55870' },
     { id: 'cdc', name: 'CDC Custody', kind: 'psx', brokerFilter: 'CDC', icon: 'C', builtin: true, desc: 'Central depository · IPO allotments' },
-    { id: 'funds', name: 'Islamic Funds', kind: 'funds', icon: '☪', builtin: true, desc: 'Meezan · AMC units' },
+    { id: 'funds', name: 'Al Meezan Investments', kind: 'funds', icon: '☪', builtin: true, desc: 'Meezan AMC · account 733102-1' },
     { id: 'usa', name: 'US Equities', kind: 'intl', icon: '🇺🇸', builtin: true, desc: 'IBKR · US stocks & crypto' },
   ];
 
@@ -208,9 +208,56 @@ const PortfolioBuckets = (() => {
     return cards + add;
   }
 
+  function calcDailyPnlForTransactions(transactions) {
+    const holdings = Ledger.calcHoldings(transactions);
+    const funds = Ledger.calcFundHoldings(transactions);
+    const stockPnl = holdings.reduce((sum, h) => {
+      const curr = State.getPrice(h.symbol);
+      const prev = State.getPrevClose(h.symbol);
+      if (!curr || !prev) return sum;
+      return sum + h.shares * (curr - prev);
+    }, 0);
+    const fundPnl = funds.reduce((sum, f) => {
+      const curr = State.getPrice(f.symbol);
+      const prev = State.getPrevClose(f.symbol);
+      const nav = curr || prev || f.avgNav;
+      const prevNav = prev || curr || f.avgNav;
+      if (!nav || !prevNav) return sum;
+      return sum + f.units * (nav - prevNav);
+    }, 0);
+    const globalPnl = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(transactions) : []).reduce((sum, h) => {
+      const curr = State.getPrice(h.symbol);
+      const prev = State.getPrevClose(h.symbol);
+      if (!curr || !prev) return sum;
+      return sum + h.qty * (curr - prev);
+    }, 0);
+    return stockPnl + fundPnl + globalPnl;
+  }
+
+  function bucketBriefRows(state) {
+    state = state || (typeof State !== 'undefined' ? State.get() : {});
+    return BUILTIN.map((b) => {
+      const s = statsForBucket(state, b.id);
+      const txs = txsForBucket(state, b.id);
+      const dailyPnl = calcDailyPnlForTransactions(txs);
+      const dailyPct = s.value > 0 ? (dailyPnl / s.value) * 100 : 0;
+      return {
+        id: b.id,
+        name: b.name,
+        value: s.value,
+        invested: s.invested,
+        pnl: s.pnl,
+        pnlPct: s.pnlPct,
+        dailyPnl,
+        dailyPct,
+        positions: s.positions,
+      };
+    }).filter((r) => r.value > 0 || r.positions > 0);
+  }
+
   return {
     BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, grossCashDeployed, investmentSummary,
-    bucketSparkline,
+    bucketSparkline, calcDailyPnlForTransactions, bucketBriefRows,
     getHoldingsForBucket, defaultTxType, defaultBroker, cardsHtml, _brokerMatch,
   };
 })();

@@ -808,6 +808,25 @@ body.lc-rtl .psx-sidebar {
 [data-theme="light"] .lc-portfolio-card { background: #fff; border-color: rgba(0,0,0,.08); }
 [data-theme="light"] .lc-price-badge { background: rgba(0,0,0,.06); }
 [data-theme="light"] .lc-stale-chip { background: rgba(245, 158, 11, 0.15); }
+.lc-freshness-chip {
+  border: 1px solid var(--psx-border);
+  background: var(--psx-bg-muted);
+  color: var(--psx-text-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-right: 8px;
+}
+.lc-freshness-chip.lc-freshness--warn {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+.lc-freshness-chip.lc-freshness--ok { color: var(--psx-text-3); }
+[data-theme="light"] .lc-search-results { background: #fff; border-color: rgba(0,0,0,.08); }
 .lc-sector-head { position: sticky; top: 0; z-index: 2; background: var(--psx-surface, #141414); }
 [data-theme="light"] .lc-sector-head { background: #fff; }
 

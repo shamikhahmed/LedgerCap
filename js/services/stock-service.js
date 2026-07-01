@@ -68,6 +68,22 @@ const StockService = (() => {
         name: fund?.name,
       };
     }
+    const intl = (window.INTL_STOCKS || []).find(s => s.symbol === symbol);
+    const crypto = (window.CRYPTO_ASSETS || []).find(c => c.symbol === symbol);
+    if (intl || crypto) {
+      const st = State.get()?.prices?.[symbol] || {};
+      const pe = st.trailingPE;
+      const divYield = st.dividendYield;
+      const has = pe > 0 || divYield > 0;
+      return {
+        type: crypto ? 'crypto' : 'intl',
+        available: has,
+        pe: pe > 0 ? pe : null,
+        divYield: divYield > 0 ? divYield : null,
+        roe: null,
+        eps: null,
+      };
+    }
     const f = (window.FUNDAMENTALS_DB || {})[symbol];
     if (!f) return { type: 'stock', available: false };
     const quote = MarketDataService.getQuote(symbol);
