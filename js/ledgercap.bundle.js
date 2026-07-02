@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.50.1',
-  sw: 121,
-  cache: 'ledgercap-v121',
+  app: '3.51.0',
+  sw: 122,
+  cache: 'ledgercap-v122',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -14132,7 +14132,7 @@ const Market = (() => {
     return Object.keys(bySector).sort().map(sec => `
       <div class="lc-sector-card">
         <button type="button" class="lc-sector-head lc-sector-head--btn${_sectorFilter === sec ? ' on' : ''}" data-action="Market.setSectorFilter" data-tab="${sec.replace(/"/g, '&quot;')}">
-          <h4>${sec}</h4><span>${bySector[sec].length} stocks</span>
+          <h4>${sec}</h4><span>${bySector[sec].length} stock${bySector[sec].length === 1 ? '' : 's'}</span>
         </button>
         ${bySector[sec].map(r => `
           <button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">

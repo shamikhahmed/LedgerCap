@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v121';
+const CACHE = 'ledgercap-v122';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',

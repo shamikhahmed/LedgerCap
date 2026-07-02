@@ -1007,6 +1007,10 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
   color: var(--psx-text-3);
   margin-top: 2px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
 .lc-market-price {
@@ -1016,13 +1020,20 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
   text-align: end;
 }
 
+/* Change column as a fixed-width tinted pill — scannable like Binance */
 .lc-market-chg {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: end;
-  min-width: 56px;
+  text-align: center;
+  min-width: 76px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--psx-bg-muted);
+  color: var(--psx-text-2);
 }
+.lc-market-chg.psx-up { background: var(--psx-up-bg); color: var(--psx-up); }
+.lc-market-chg.psx-down { background: var(--psx-down-bg); color: var(--psx-down); }
 
 .lc-badge {
   display: inline-block;
