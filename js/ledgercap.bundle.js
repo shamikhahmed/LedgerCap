@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 79 modules — run: npm run bundle */
+/* LedgerCap bundle — 80 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4882,9 +4882,9 @@ window.DIVIDEND_DATA = DIVIDEND_DATA;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.41.0',
-  sw: 108,
-  cache: 'ledgercap-v108',
+  app: '3.42.0',
+  sw: 109,
+  cache: 'ledgercap-v109',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -10279,7 +10279,7 @@ const PriceHealth = (() => {
     return `<div class="lc-price-health" role="status">
       <span>${msg}</span>
       <button type="button" class="lc-price-health-btn" onclick="App.refreshPrices()">Refresh</button>
-      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">✕</button>
+      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
 
@@ -11212,6 +11212,76 @@ const LcDebounce = (() => {
 })();
 window.LcDebounce = LcDebounce;
 
+;/* === js/ui/icons.js === */
+'use strict';
+/** LedgerCap monochrome SVG icon registry (SF Symbol–style) */
+const LcIcons = (() => {
+  const PATHS = {
+    home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z',
+    chart: ['M3 3v18h18', 'M7 16l4-4 4 4 5-6'],
+    wallet: ['M21 12V7H5a2 2 0 0 1 0-4h14v4', 'M3 5v14a2 2 0 0 0 2 2h16v-5', 'M18 12a2 2 0 1 0 0 4h4v-4h-4Z'],
+    briefcase: ['M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16', 'M2 8h20v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8Z'],
+    search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z', 'M21 21l-4.3-4.3'],
+    globe: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z', 'M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z'],
+    moon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z',
+    sun: ['M12 2v2', 'M12 20v2', 'M4.93 4.93l1.41 1.41', 'M2 12h2', 'M20 12h2', 'M19.07 4.93l-1.41 1.41', 'M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z'],
+    lock: ['M7 11V7a5 5 0 0 1 10 0v4', 'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z'],
+    settings: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z'],
+    shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z',
+    calendar: ['M8 2v4', 'M16 2v4', 'M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'],
+    list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+    bell: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.94 1.94 0 0 0 3.4 0'],
+    book: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z'],
+    upload: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M17 8l-5-5-5 5', 'M12 3v12'],
+    scale: ['M12 3v18', 'M5 7h14', 'M7 7l-2 5h4L7 7Z', 'M17 7l-2 5h4l-2-5Z'],
+    trending: ['M22 7 13.5 15.5 8.5 10.5 2 17', 'M16 7h6v6'],
+    journal: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z', 'M8 7h8', 'M8 11h8'],
+    zap: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z',
+    coins: ['M8 6h8', 'M6 10h12', 'M8 14h8', 'M12 18v4', 'M8 2h8a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8Z'],
+    fullscreen: ['M8 3H5a2 2 0 0 0-2 2v3', 'M21 8V5a2 2 0 0 0-2-2h-3', 'M3 16v3a2 2 0 0 0 2 2h3', 'M16 21h3a2 2 0 0 0 2-2v-3'],
+    x: ['M18 6 6 18', 'M6 6l12 12'],
+    ledger: ['M4 4h16v4H4z', 'M4 12h10', 'M4 20h16', 'M18 12h2'],
+  };
+
+  const TOOL_ICONS = {
+    global: 'globe',
+    zakat: 'scale',
+    import: 'upload',
+    screener: 'search',
+    dividends: 'coins',
+    calendar: 'calendar',
+    watchlist: 'bell',
+    signals: 'zap',
+    'risk-audit': 'shield',
+    insights: 'chart',
+    'pilot-tools': 'trending',
+    transactions: 'list',
+    comparison: 'scale',
+    performance: 'trending',
+    journal: 'journal',
+    settings: 'settings',
+    more: 'list',
+  };
+
+  function icon(name, size = 20, extraClass = '') {
+    const paths = PATHS[name];
+    if (!paths) {
+      return `<span class="lc-icon lc-icon--missing ${extraClass}" aria-hidden="true" style="width:${size}px;height:${size}px"></span>`;
+    }
+    const body = (Array.isArray(paths) ? paths : [paths])
+      .map((d) => `<path d="${d}"/>`)
+      .join('');
+    return `<svg class="lc-icon ${extraClass}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  }
+
+  function toolIcon(tabId, size = 18) {
+    return icon(TOOL_ICONS[tabId] || 'list', size, 'lc-icon--tool');
+  }
+
+  return { icon, toolIcon, PATHS, TOOL_ICONS };
+})();
+window.LcIcons = LcIcons;
+
 ;/* === js/ui/platform.js === */
 'use strict';
 const PlatformUI = (() => {
@@ -11774,8 +11844,10 @@ window.MarketUI = MarketUI;
   }
 
   function onFsChange() {
-    const btn = document.getElementById('lc-fullscreen-btn');
-    if (btn) btn.textContent = document.fullscreenElement ? '⛶' : '⛶';
+    const host = document.getElementById('lc-fullscreen-icon');
+    if (host && typeof LcIcons !== 'undefined') {
+      host.innerHTML = LcIcons.icon('fullscreen', 18);
+    }
     if (!document.fullscreenElement) document.body.classList.remove('lc-terminal-force');
   }
 
@@ -11849,7 +11921,7 @@ const Navigation = (() => {
         <div class="psx-brand" style="padding:4px 12px 24px;font-size:18px">Ledger<span>Cap</span></div>
         <nav aria-label="Primary">${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <div style="height:1px;background:var(--psx-border);margin:16px 8px"></div>
-        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}"><span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
+        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 18) : ''}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
@@ -11867,7 +11939,15 @@ const Navigation = (() => {
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (btn && typeof LcIcons !== 'undefined') {
+      const icon = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+      const host = document.getElementById('theme-toggle-icon');
+      if (host) host.innerHTML = icon;
+      else btn.innerHTML = icon;
+      btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    } else if (btn) {
+      btn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
   }
 
   function go(tabId, silent, opts) {
@@ -12574,22 +12654,22 @@ window.Investment = Investment;
 'use strict';
 const Hub = (() => {
   const TOOLS = () => [
-    { id: 'market', key: 'stockWatch', icon: 'M', tone: 'blue' },
-    { id: 'portfolio', key: 'lossTrack', icon: '₨', tone: 'gold' },
-    { id: 'funds', key: 'fundNavs', icon: 'F', tone: 'green' },
-    { id: 'research', key: 'technical', icon: 'R', tone: 'violet' },
-    { id: 'global', key: 'globalMarkets', icon: 'G', tone: 'cyan' },
-    { id: 'dividends', key: 'dividends', icon: 'D', tone: 'green' },
-    { id: 'calendar', key: 'calendar', icon: 'C', tone: 'blue' },
-    { id: 'screener', key: 'screener', icon: 'S', tone: 'slate' },
-    { id: 'zakat', key: 'zakatTool', icon: 'Z', tone: 'gold' },
-    { id: 'watchlist', key: 'watchlist', icon: '★', tone: 'amber' },
-    { id: 'signals', key: 'signals', icon: '⚡', tone: 'orange' },
-    { id: 'risk-audit', key: 'riskAudit', icon: '!', tone: 'rose' },
-    { id: 'insights', key: 'insightsTool', icon: 'I', tone: 'violet' },
-    { id: 'pilot-tools', key: 'pilotTools', icon: 'P', tone: 'blue' },
-    { id: 'transactions', key: 'transactions', icon: '≡', tone: 'slate' },
-    { id: 'import', key: 'import', icon: '↓', tone: 'slate' },
+    { id: 'market', key: 'stockWatch', tone: 'blue' },
+    { id: 'portfolio', key: 'lossTrack', tone: 'gold' },
+    { id: 'funds', key: 'fundNavs', tone: 'green' },
+    { id: 'research', key: 'technical', tone: 'violet' },
+    { id: 'global', key: 'globalMarkets', tone: 'cyan' },
+    { id: 'dividends', key: 'dividends', tone: 'green' },
+    { id: 'calendar', key: 'calendar', tone: 'blue' },
+    { id: 'screener', key: 'screener', tone: 'slate' },
+    { id: 'zakat', key: 'zakatTool', tone: 'gold' },
+    { id: 'watchlist', key: 'watchlist', tone: 'amber' },
+    { id: 'signals', key: 'signals', tone: 'orange' },
+    { id: 'risk-audit', key: 'riskAudit', tone: 'rose' },
+    { id: 'insights', key: 'insightsTool', tone: 'violet' },
+    { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
+    { id: 'transactions', key: 'transactions', tone: 'slate' },
+    { id: 'import', key: 'import', tone: 'slate' },
   ];
 
   function _greeting() {
@@ -12786,7 +12866,7 @@ const Hub = (() => {
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
       <button type="button" class="lc-tool-card" onclick="Navigation.go('${t.id}')">
-        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${t.icon}</div>
+        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 20) : ''}</div>
         <strong>${I18n.t(`tools.${t.key}.t`)}</strong>
         <span>${I18n.t(`tools.${t.key}.d`)}</span>
       </button>`).join('')}</div>`;
@@ -15567,11 +15647,13 @@ const PinLock = (() => {
     const pad = _el('pin-pad');
     if (!pad || pad.dataset.built) return;
     pad.dataset.built = '1';
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
+    const delHtml = typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 18) : 'Del';
     pad.innerHTML = keys.map(k => {
       if (!k) return '<span class="lc-pin-key lc-pin-key--spacer"></span>';
-      const act = k === '⌫' ? 'back' : 'digit';
-      return `<button type="button" class="lc-pin-key" data-act="${act}" data-val="${k === '⌫' ? '' : k}">${k}</button>`;
+      const act = k === 'back' ? 'back' : 'digit';
+      const label = k === 'back' ? delHtml : k;
+      return `<button type="button" class="lc-pin-key${k === 'back' ? ' lc-pin-key--del' : ''}" data-act="${act}" data-val="${k === 'back' ? '' : k}" aria-label="${k === 'back' ? 'Delete' : k}">${label}</button>`;
     }).join('');
     pad.addEventListener('click', e => {
       const btn = e.target.closest('.lc-pin-key');
@@ -16801,13 +16883,13 @@ const Onboarding = (() => {
         <div class="ob-progress">${_dots(1)}</div>
 
         <div class="ob-panel on" id="ob-panel-1">
-          <div class="ob-hero-icon">₨</div>
+          <div class="ob-hero-icon"><img src="assets/icons/icon-mark.svg" alt="" width="56" height="56"></div>
           <h1 class="ob-title">Your wealth command center</h1>
           <p class="ob-desc">Track PSX stocks, Meezan funds, SIP goals, and how much you've invested over time — all on your phone.</p>
           <ul class="ob-features">
-            <li><span>📈</span> Live portfolio & P&amp;L</li>
-            <li><span>💰</span> Investment tracker</li>
-            <li><span>🎯</span> SIP &amp; freedom planning</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('trending', 16) : ''}</span> Live portfolio &amp; P&amp;L</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('wallet', 16) : ''}</span> Investment tracker</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('chart', 16) : ''}</span> SIP &amp; freedom planning</li>
           </ul>
           <button type="button" class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
         </div>
@@ -17933,6 +18015,19 @@ const App = (() => {
     }
   }
 
+  function _wireChromeIcons() {
+    if (typeof LcIcons === 'undefined') return;
+    const theme = document.body.getAttribute('data-theme') || 'dark';
+    const pin = document.getElementById('pin-logo-host');
+    if (pin) pin.innerHTML = '<img src="assets/icons/icon-mark.svg" alt="" width="48" height="48">';
+    const fs = document.getElementById('lc-fullscreen-icon');
+    if (fs) fs.innerHTML = LcIcons.icon('fullscreen', 18);
+    const dismiss = document.getElementById('demo-dismiss-icon');
+    if (dismiss) dismiss.innerHTML = LcIcons.icon('x', 16);
+    const themeHost = document.getElementById('theme-toggle-icon');
+    if (themeHost) themeHost.innerHTML = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+  }
+
   async function launch() {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
     if (demo) {
@@ -17966,6 +18061,7 @@ const App = (() => {
       }
     }
     Navigation.init();
+    _wireChromeIcons();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
       const hasLedger = (State.get().transactions || []).length > 0;
@@ -18710,7 +18806,10 @@ const App = (() => {
     if (meta) meta.content = theme === 'light' ? '#fafafa' : '#09090b';
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (btn) {
+      if (typeof LcIcons !== 'undefined') btn.innerHTML = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+      else btn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
   }
 
   function applyTheme(theme) {

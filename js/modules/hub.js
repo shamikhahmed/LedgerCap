@@ -1,22 +1,22 @@
 'use strict';
 const Hub = (() => {
   const TOOLS = () => [
-    { id: 'market', key: 'stockWatch', icon: 'M', tone: 'blue' },
-    { id: 'portfolio', key: 'lossTrack', icon: '₨', tone: 'gold' },
-    { id: 'funds', key: 'fundNavs', icon: 'F', tone: 'green' },
-    { id: 'research', key: 'technical', icon: 'R', tone: 'violet' },
-    { id: 'global', key: 'globalMarkets', icon: 'G', tone: 'cyan' },
-    { id: 'dividends', key: 'dividends', icon: 'D', tone: 'green' },
-    { id: 'calendar', key: 'calendar', icon: 'C', tone: 'blue' },
-    { id: 'screener', key: 'screener', icon: 'S', tone: 'slate' },
-    { id: 'zakat', key: 'zakatTool', icon: 'Z', tone: 'gold' },
-    { id: 'watchlist', key: 'watchlist', icon: '★', tone: 'amber' },
-    { id: 'signals', key: 'signals', icon: '⚡', tone: 'orange' },
-    { id: 'risk-audit', key: 'riskAudit', icon: '!', tone: 'rose' },
-    { id: 'insights', key: 'insightsTool', icon: 'I', tone: 'violet' },
-    { id: 'pilot-tools', key: 'pilotTools', icon: 'P', tone: 'blue' },
-    { id: 'transactions', key: 'transactions', icon: '≡', tone: 'slate' },
-    { id: 'import', key: 'import', icon: '↓', tone: 'slate' },
+    { id: 'market', key: 'stockWatch', tone: 'blue' },
+    { id: 'portfolio', key: 'lossTrack', tone: 'gold' },
+    { id: 'funds', key: 'fundNavs', tone: 'green' },
+    { id: 'research', key: 'technical', tone: 'violet' },
+    { id: 'global', key: 'globalMarkets', tone: 'cyan' },
+    { id: 'dividends', key: 'dividends', tone: 'green' },
+    { id: 'calendar', key: 'calendar', tone: 'blue' },
+    { id: 'screener', key: 'screener', tone: 'slate' },
+    { id: 'zakat', key: 'zakatTool', tone: 'gold' },
+    { id: 'watchlist', key: 'watchlist', tone: 'amber' },
+    { id: 'signals', key: 'signals', tone: 'orange' },
+    { id: 'risk-audit', key: 'riskAudit', tone: 'rose' },
+    { id: 'insights', key: 'insightsTool', tone: 'violet' },
+    { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
+    { id: 'transactions', key: 'transactions', tone: 'slate' },
+    { id: 'import', key: 'import', tone: 'slate' },
   ];
 
   function _greeting() {
@@ -213,7 +213,7 @@ const Hub = (() => {
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
       <button type="button" class="lc-tool-card" onclick="Navigation.go('${t.id}')">
-        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${t.icon}</div>
+        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 20) : ''}</div>
         <strong>${I18n.t(`tools.${t.key}.t`)}</strong>
         <span>${I18n.t(`tools.${t.key}.d`)}</span>
       </button>`).join('')}</div>`;

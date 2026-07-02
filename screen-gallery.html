@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LedgerCap — Screen Gallery</title>
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #141418;
+      --border: #2a2a32;
+      --text: #f4f4f6;
+      --muted: #9a9aa8;
+      --accent: #22c55e;
+      --accent-dim: rgba(34, 197, 94, 0.15);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 12, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    h1 { margin: 0 0 4px; font-size: 1.35rem; font-weight: 650; }
+    .sub { color: var(--muted); font-size: 0.85rem; margin: 0 0 12px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .toolbar label { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    select, .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn:hover, select:hover { border-color: var(--accent); }
+    .btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .pill:hover { border-color: var(--accent); }
+    .pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+    .section { margin-bottom: 36px; scroll-margin-top: 140px; }
+    .section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .card img {
+      width: 100%;
+      aspect-ratio: 9 / 19.5;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+      background: #000;
+    }
+    body.viewport-desktop .card img,
+    body.viewport-desktop .compare img {
+      aspect-ratio: 16 / 10;
+      object-fit: contain;
+      background: #0a0a0c;
+    }
+    .card.missing { cursor: default; opacity: 0.72; }
+    .card.missing:hover { transform: none; border-color: var(--border); box-shadow: none; }
+    .card .missing-pill {
+      display: flex; align-items: center; justify-content: center;
+      aspect-ratio: 9 / 19.5; background: #111; color: var(--muted);
+      font-size: 0.75rem; text-align: center; padding: 12px;
+    }
+    body.viewport-desktop .card .missing-pill { aspect-ratio: 16 / 10; }
+    .card .label { font-size: 0.82rem; font-weight: 500; }
+    .card .tag { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .compare img { aspect-ratio: 9 / 19.5; width: 100%; object-fit: cover; object-position: top; }
+    .compare-label { font-size: 0.65rem; text-align: center; color: var(--muted); padding: 4px; }
+    .empty { color: var(--muted); padding: 40px; text-align: center; }
+    .err { color: #f87171; padding: 20px; }
+
+  /* Lightbox */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.92);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: min(420px, 90vw);
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    #lb-caption { color: #fff; margin-top: 12px; font-size: 0.9rem; text-align: center; }
+    .lb-btn {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lb-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    #lb-close { top: 16px; right: 16px; font-size: 1.8rem; }
+    #lb-prev { left: 16px; top: 50%; transform: translateY(-50%); }
+    #lb-next { right: 16px; top: 50%; transform: translateY(-50%); }
+    .lb-compare { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .lb-compare figure { margin: 0; text-align: center; }
+    .lb-compare figcaption { color: var(--muted); font-size: 0.75rem; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LedgerCap Screen Gallery</h1>
+    <p class="sub" id="stats">Loading manifest…</p>
+    <div class="toolbar">
+      <button type="button" class="btn active" data-viewport="mobile" id="btnMobile">Mobile</button>
+      <button type="button" class="btn" data-viewport="desktop" id="btnDesktop">Browser</button>
+      <span>Theme:</span>
+      <button type="button" class="btn active" data-theme="dark" id="btnDark">Dark</button>
+      <button type="button" class="btn" data-theme="light" id="btnLight">Light</button>
+      <button type="button" class="btn" data-theme="compare" id="btnCompare">Compare</button>
+      <label><input type="checkbox" id="scrollOnly" /> Scroll shots only</label>
+      <label><input type="checkbox" id="includeScroll" checked /> Include scroll variants</label>
+      <select id="sectionFilter" aria-label="Filter by section">
+        <option value="">All sections</option>
+      </select>
+    </div>
+    <div class="pills" id="categoryPills" role="toolbar" aria-label="Category filters"></div>
+  </header>
+  <main id="gallery"></main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+    <button type="button" class="lb-btn" id="lb-close" aria-label="Close">×</button>
+    <button type="button" class="lb-btn" id="lb-prev" aria-label="Previous">‹</button>
+    <button type="button" class="lb-btn" id="lb-next" aria-label="Next">›</button>
+    <div id="lb-content"></div>
+    <p id="lb-caption"></p>
+  </div>
+
+  <script>
+    const state = {
+      manifest: null,
+      theme: 'dark',
+      viewport: 'mobile',
+      sectionFilter: '',
+      scrollOnly: false,
+      includeScroll: true,
+      flatItems: [],
+      lightboxIndex: -1,
+      cacheBust: '',
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const gallery = $('#gallery');
+    const stats = $('#stats');
+    const sectionFilter = $('#sectionFilter');
+    const categoryPills = $('#categoryPills');
+
+    function imgSrc(rel) {
+      if (!rel) return '';
+      const base = `assets/screenshots/${rel}`;
+      return state.cacheBust ? `${base}?v=${state.cacheBust}` : base;
+    }
+
+    function buildFlatItems() {
+      state.flatItems = [];
+      if (!state.manifest?.sections) return;
+      for (const sec of state.manifest.sections) {
+        for (const item of sec.items || []) {
+          state.flatItems.push({ ...item, sectionId: sec.id, sectionLabel: sec.label || sec.title });
+        }
+      }
+    }
+
+    function pickThemePath(bucket, theme) {
+      if (!bucket) return '';
+      const val = bucket[theme];
+      if (!val) return '';
+      if (typeof val === 'string') return val;
+      return val[state.viewport] || '';
+    }
+
+    function hasViewportShot(bucket, theme) {
+      const val = bucket?.[theme];
+      if (!val) return false;
+      if (typeof val === 'string') return true;
+      return !!val[state.viewport];
+    }
+
+    function hasAnyShot(item) {
+      const check = (bucket) => {
+        if (!bucket) return false;
+        return hasViewportShot(bucket, 'dark') || hasViewportShot(bucket, 'light');
+      };
+      return check(item.files) || (state.includeScroll && check(item.scroll));
+    }
+
+    function visibleItems() {
+      let items = state.flatItems;
+      if (state.sectionFilter) {
+        items = items.filter((i) => i.sectionId === state.sectionFilter);
+      }
+      return items.filter((item) => {
+        if (state.scrollOnly) {
+          const b = item.scroll;
+          return !!(pickThemePath(b, 'dark') || pickThemePath(b, 'light'));
+        }
+        return hasAnyShot(item);
+      });
+    }
+
+    function getItemImage(item, theme, scroll = false) {
+      const bucket = scroll ? item.scroll : item.files;
+      if (!bucket) return '';
+      if (theme === 'compare') return pickThemePath(bucket, 'dark') || pickThemePath(bucket, 'light');
+      return pickThemePath(bucket, theme);
+    }
+
+    function renderCard(item, scroll = false) {
+      const rel = getItemImage(item, state.theme, scroll);
+      const tag = scroll ? 'scroll' : 'viewport';
+      const cardId = `${item.id}${scroll ? '-scroll' : ''}`;
+      const bucket = scroll ? item.scroll : item.files;
+      const missing =
+        state.theme !== 'compare' && !rel &&
+        (hasViewportShot(bucket, 'dark') || hasViewportShot(bucket, 'light'));
+
+      if (state.theme === 'compare' && !scroll) {
+        const dark = pickThemePath(item.files, 'dark');
+        const light = pickThemePath(item.files, 'light');
+        if (!dark && !light) return '';
+        return `
+          <article class="card" tabindex="0" role="button" data-id="${cardId}" data-item-id="${item.id}" data-scroll="${scroll}">
+            <div class="compare">
+              <div><div class="compare-label">Dark</div><img src="${imgSrc(dark)}" alt="${item.label} dark" loading="lazy" /></div>
+              <div><div class="compare-label">Light</div><img src="${imgSrc(light)}" alt="${item.label} light" loading="lazy" /></div>
+            </div>
+            <div class="meta"><div class="label">${item.label}</div><div class="tag">${item.sectionLabel} · compare · ${state.viewport}</div></div>
+          </article>`;
+      }
+
+      if (!rel) {
+        if (!missing) return '';
+        return `
+          <article class="card missing" data-id="${cardId}" data-item-id="${item.id}" data-scroll="${scroll}">
+            <div class="missing-pill">No ${state.viewport} shot</div>
+            <div class="meta">
+              <div class="label">${item.label}</div>
+              <div class="tag">${item.sectionLabel} · missing ${state.viewport} · ${tag}</div>
+            </div>
+          </article>`;
+      }
+
+      return `
+        <article class="card" tabindex="0" role="button" data-id="${cardId}" data-item-id="${item.id}" data-scroll="${scroll}">
+          <img src="${imgSrc(rel)}" alt="${item.label}" loading="lazy" />
+          <div class="meta">
+            <div class="label">${item.label}</div>
+            <div class="tag">${item.sectionLabel} · ${state.theme} · ${state.viewport} · ${tag}</div>
+          </div>
+        </article>`;
+    }
+
+    function render() {
+      const items = visibleItems();
+      if (!items.length) {
+        gallery.innerHTML = '<p class="empty">No screens match current filters.</p>';
+        return;
+      }
+
+      const bySection = new Map();
+      for (const item of items) {
+        if (!bySection.has(item.sectionId)) {
+          bySection.set(item.sectionId, { label: item.sectionLabel, items: [] });
+        }
+        bySection.get(item.sectionId).items.push(item);
+      }
+
+      let html = '';
+      for (const sec of state.manifest.sections) {
+        const group = bySection.get(sec.id);
+        if (!group) continue;
+        html += `<section class="section" id="section-${sec.id}"><h2>${group.label}</h2><div class="grid">`;
+        for (const item of group.items) {
+          if (state.scrollOnly) {
+            html += renderCard(item, true);
+          } else {
+            if (item.files?.dark || item.files?.light) {
+              if (hasViewportShot(item.files, 'dark') || hasViewportShot(item.files, 'light')) html += renderCard(item, false);
+            }
+            if (state.includeScroll && (item.scroll?.dark || item.scroll?.light)) {
+              if (hasViewportShot(item.scroll, 'dark') || hasViewportShot(item.scroll, 'light')) html += renderCard(item, true);
+            }
+          }
+        }
+        html += '</div></section>';
+      }
+      gallery.innerHTML = html;
+
+      gallery.querySelectorAll('.card').forEach((card, idx) => {
+        card.addEventListener('click', () => openLightbox(idx));
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); }
+        });
+      });
+    }
+
+    function getRenderableCards() {
+      const cards = [];
+      const items = visibleItems();
+      for (const item of items) {
+        if (state.scrollOnly) {
+          if (item.scroll?.dark || item.scroll?.light) cards.push({ item, scroll: true });
+        } else {
+          if (item.files?.dark || item.files?.light) cards.push({ item, scroll: false });
+          if (state.includeScroll && (item.scroll?.dark || item.scroll?.light)) {
+            cards.push({ item, scroll: true });
+          }
+        }
+      }
+      return cards;
+    }
+
+    function openLightbox(index) {
+      const cards = getRenderableCards();
+      if (index < 0 || index >= cards.length) return;
+      state.lightboxIndex = index;
+      updateLightbox(cards);
+      $('#lightbox').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function updateLightbox(cards) {
+      const { item, scroll } = cards[state.lightboxIndex];
+      const content = $('#lb-content');
+      const caption = $('#lb-caption');
+      const suffix = scroll ? ' (scroll)' : '';
+
+      if (state.theme === 'compare') {
+        const bucket = scroll ? item.scroll : item.files;
+        const dark = pickThemePath(bucket, 'dark');
+        const light = pickThemePath(bucket, 'light');
+        content.innerHTML = `
+          <div class="lb-compare">
+            <figure><img src="${imgSrc(dark)}" alt="dark" /><figcaption>Dark</figcaption></figure>
+            <figure><img src="${imgSrc(light)}" alt="light" /><figcaption>Light</figcaption></figure>
+          </div>`;
+      } else {
+        const rel = getItemImage(item, state.theme, scroll);
+        content.innerHTML = `<img src="${imgSrc(rel)}" alt="${item.label}" />`;
+      }
+      caption.textContent = `${item.label} — ${item.sectionLabel}${suffix}`;
+    }
+
+    function closeLightbox() {
+      $('#lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+      state.lightboxIndex = -1;
+    }
+
+    function setViewport(vp) {
+      state.viewport = vp;
+      document.body.classList.toggle('viewport-desktop', vp === 'desktop');
+      ['btnMobile', 'btnDesktop'].forEach((id) => $(`#${id}`).classList.remove('active'));
+      $(`#${vp === 'desktop' ? 'btnDesktop' : 'btnMobile'}`).classList.add('active');
+      render();
+    }
+
+    function setTheme(t) {
+      state.theme = t;
+      ['btnDark', 'btnLight', 'btnCompare'].forEach((id) => $(`#${id}`).classList.remove('active'));
+      const map = { dark: 'btnDark', light: 'btnLight', compare: 'btnCompare' };
+      $(`#${map[t]}`).classList.add('active');
+      render();
+    }
+
+    function setSectionFilter(id) {
+      state.sectionFilter = id;
+      sectionFilter.value = id;
+      categoryPills.querySelectorAll('.pill').forEach((p) => {
+        p.classList.toggle('active', p.dataset.section === id);
+      });
+      render();
+      if (id) {
+        document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function initPills() {
+      categoryPills.innerHTML = '';
+      const all = document.createElement('button');
+      all.type = 'button';
+      all.className = 'pill active';
+      all.dataset.section = '';
+      all.textContent = 'All';
+      all.addEventListener('click', () => setSectionFilter(''));
+      categoryPills.appendChild(all);
+
+      for (const sec of state.manifest.sections || []) {
+        const count = (sec.items || []).length;
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'pill';
+        pill.dataset.section = sec.id;
+        pill.textContent = `${sec.label || sec.title}: ${count}`;
+        pill.addEventListener('click', () => setSectionFilter(sec.id));
+        pill.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSectionFilter(sec.id); }
+        });
+        categoryPills.appendChild(pill);
+
+        const opt = document.createElement('option');
+        opt.value = sec.id;
+        opt.textContent = `${sec.label || sec.title} (${count})`;
+        sectionFilter.appendChild(opt);
+      }
+    }
+
+    function readEmbeddedManifest() {
+      const el = document.getElementById('gallery-manifest-embedded');
+      if (!el?.textContent?.trim()) return null;
+      try {
+        return JSON.parse(el.textContent);
+      } catch {
+        return null;
+      }
+    }
+
+    async function loadManifest() {
+      const embedded = readEmbeddedManifest();
+      if (location.protocol === 'file:') {
+        if (!embedded) throw new Error('No embedded manifest — run npm run gallery:embed');
+        return embedded;
+      }
+      if (embedded) return embedded;
+      const res = await fetch('assets/screenshots/manifest.json?v=' + Date.now());
+      if (!res.ok) throw new Error('manifest.json not found — run npm run gallery');
+      return res.json();
+    }
+
+    async function init() {
+      try {
+        state.manifest = await loadManifest();
+        state.cacheBust = (state.manifest.generatedAt || Date.now()).toString().replace(/\W/g, '');
+        const themes = state.manifest.themes?.length ? state.manifest.themes : ['dark', 'light'];
+        const viewports = state.manifest.viewports?.length ? state.manifest.viewports : ['mobile'];
+        const screenCount = (state.manifest.sections || []).reduce((n, s) => n + (s.items?.length || 0), 0);
+        stats.textContent = `${screenCount} screens × ${themes.length} themes × ${viewports.length} viewports · ${state.manifest.generatedAt || 'unknown date'}`;
+        buildFlatItems();
+        initPills();
+        render();
+      } catch (e) {
+        stats.textContent = 'Failed to load gallery';
+        gallery.innerHTML = `<p class="err">${e.message}</p>`;
+      }
+    }
+
+    $('#btnMobile').addEventListener('click', () => setViewport('mobile'));
+    $('#btnDesktop').addEventListener('click', () => setViewport('desktop'));
+    $('#btnDark').addEventListener('click', () => setTheme('dark'));
+    $('#btnLight').addEventListener('click', () => setTheme('light'));
+    $('#btnCompare').addEventListener('click', () => setTheme('compare'));
+    sectionFilter.addEventListener('change', (e) => setSectionFilter(e.target.value));
+    $('#scrollOnly').addEventListener('change', (e) => { state.scrollOnly = e.target.checked; render(); });
+    $('#includeScroll').addEventListener('change', (e) => { state.includeScroll = e.target.checked; render(); });
+
+    $('#lb-close').addEventListener('click', closeLightbox);
+    $('#lightbox').addEventListener('click', (e) => { if (e.target.id === 'lightbox') closeLightbox(); });
+    $('#lb-prev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cards = getRenderableCards();
+      state.lightboxIndex = (state.lightboxIndex - 1 + cards.length) % cards.length;
+      updateLightbox(cards);
+    });
+    $('#lb-next').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cards = getRenderableCards();
+      state.lightboxIndex = (state.lightboxIndex + 1) % cards.length;
+      updateLightbox(cards);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (!$('#lightbox').classList.contains('open')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') $('#lb-prev').click();
+      if (e.key === 'ArrowRight') $('#lb-next').click();
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+  <script type="application/json" id="gallery-manifest-embedded">{
+  "generatedAt": "2026-07-02T09:10:53.495Z",
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "viewports": [
+    "mobile",
+    "desktop"
+  ],
+  "sections": [
+    {
+      "id": "primary",
+      "title": "Primary navigation",
+      "label": "Primary navigation",
+      "items": [
+        {
+          "id": "home",
+          "label": "Wealth hub",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/home.png",
+              "desktop": "dark/desktop/primary/home.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/home.png",
+              "desktop": "light/desktop/primary/home.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/home-scroll.png",
+              "desktop": "dark/desktop/primary/home-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/home-scroll.png",
+              "desktop": "light/desktop/primary/home-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "market",
+          "label": "Stock watch",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/market.png",
+              "desktop": "dark/desktop/primary/market.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/market.png",
+              "desktop": "light/desktop/primary/market.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/market-scroll.png",
+              "desktop": "dark/desktop/primary/market-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/market-scroll.png",
+              "desktop": "light/desktop/primary/market-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "funds",
+          "label": "Funds",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/funds.png",
+              "desktop": "dark/desktop/primary/funds.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/funds.png",
+              "desktop": "light/desktop/primary/funds.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/funds-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/funds-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "portfolio",
+          "label": "Portfolio P&L",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/portfolio.png",
+              "desktop": "dark/desktop/primary/portfolio.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/portfolio.png",
+              "desktop": "light/desktop/primary/portfolio.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/portfolio-scroll.png",
+              "desktop": "dark/desktop/primary/portfolio-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/portfolio-scroll.png",
+              "desktop": "light/desktop/primary/portfolio-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "research",
+          "label": "Research analyzer",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/research.png",
+              "desktop": "dark/desktop/primary/research.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/research.png",
+              "desktop": "light/desktop/primary/research.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/research-scroll.png",
+              "desktop": "dark/desktop/primary/research-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/research-scroll.png",
+              "desktop": "light/desktop/primary/research-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "research-portfolio",
+          "label": "Portfolio analysis",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/research-portfolio.png",
+              "desktop": "dark/desktop/primary/research-portfolio.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/research-portfolio.png",
+              "desktop": "light/desktop/primary/research-portfolio.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/research-portfolio-scroll.png",
+              "desktop": "dark/desktop/primary/research-portfolio-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/research-portfolio-scroll.png",
+              "desktop": "light/desktop/primary/research-portfolio-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "research-stock",
+          "label": "Research — stock mode",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/primary/research-stock.png",
+              "desktop": "dark/desktop/primary/research-stock.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/research-stock.png",
+              "desktop": "light/desktop/primary/research-stock.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/primary/research-stock-scroll.png",
+              "desktop": "dark/desktop/primary/research-stock-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/primary/research-stock-scroll.png",
+              "desktop": "light/desktop/primary/research-stock-scroll.png"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Tools & modules",
+      "label": "Tools & modules",
+      "items": [
+        {
+          "id": "more",
+          "label": "Tools index",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/more.png",
+              "desktop": "dark/desktop/tools/more.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/more.png",
+              "desktop": "light/desktop/tools/more.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/more-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/more-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "global",
+          "label": "Global markets",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/global.png",
+              "desktop": "dark/desktop/tools/global.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/global.png",
+              "desktop": "light/desktop/tools/global.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/global-scroll.png",
+              "desktop": "dark/desktop/tools/global-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/global-scroll.png",
+              "desktop": "light/desktop/tools/global-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "zakat",
+          "label": "Zakat calculator",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/zakat.png",
+              "desktop": "dark/desktop/tools/zakat.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/zakat.png",
+              "desktop": "light/desktop/tools/zakat.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/zakat-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/zakat-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "import",
+          "label": "CSV import",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/import.png",
+              "desktop": "dark/desktop/tools/import.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/import.png",
+              "desktop": "light/desktop/tools/import.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "screener",
+          "label": "Stock screener",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/screener.png",
+              "desktop": "dark/desktop/tools/screener.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/screener.png",
+              "desktop": "light/desktop/tools/screener.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/screener-scroll.png",
+              "desktop": "dark/desktop/tools/screener-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/screener-scroll.png",
+              "desktop": "light/desktop/tools/screener-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "dividends",
+          "label": "Dividend center",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/dividends.png",
+              "desktop": "dark/desktop/tools/dividends.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/dividends.png",
+              "desktop": "light/desktop/tools/dividends.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/dividends-scroll.png",
+              "desktop": "dark/desktop/tools/dividends-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/dividends-scroll.png",
+              "desktop": "light/desktop/tools/dividends-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "calendar",
+          "label": "Wealth calendar",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/calendar.png",
+              "desktop": "dark/desktop/tools/calendar.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/calendar.png",
+              "desktop": "light/desktop/tools/calendar.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/calendar-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/calendar-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "watchlist",
+          "label": "Watchlist",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/watchlist.png",
+              "desktop": "dark/desktop/tools/watchlist.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/watchlist.png",
+              "desktop": "light/desktop/tools/watchlist.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/watchlist-scroll.png",
+              "desktop": "dark/desktop/tools/watchlist-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/watchlist-scroll.png",
+              "desktop": "light/desktop/tools/watchlist-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "signals",
+          "label": "Market signals",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/signals.png",
+              "desktop": "dark/desktop/tools/signals.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/signals.png",
+              "desktop": "light/desktop/tools/signals.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/signals-scroll.png",
+              "desktop": "dark/desktop/tools/signals-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/signals-scroll.png",
+              "desktop": "light/desktop/tools/signals-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "risk-audit",
+          "label": "Risk audit",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/risk-audit.png",
+              "desktop": "dark/desktop/tools/risk-audit.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/risk-audit.png",
+              "desktop": "light/desktop/tools/risk-audit.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/risk-audit-scroll.png",
+              "desktop": "dark/desktop/tools/risk-audit-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/risk-audit-scroll.png",
+              "desktop": "light/desktop/tools/risk-audit-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "insights",
+          "label": "Insights",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/insights.png",
+              "desktop": "dark/desktop/tools/insights.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/insights.png",
+              "desktop": "light/desktop/tools/insights.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/insights-scroll.png",
+              "desktop": "dark/desktop/tools/insights-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/insights-scroll.png",
+              "desktop": "light/desktop/tools/insights-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "pilot-tools",
+          "label": "Tax & rebalance",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/pilot-tools.png",
+              "desktop": "dark/desktop/tools/pilot-tools.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/pilot-tools.png",
+              "desktop": "light/desktop/tools/pilot-tools.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/pilot-tools-scroll.png",
+              "desktop": "dark/desktop/tools/pilot-tools-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/pilot-tools-scroll.png",
+              "desktop": "light/desktop/tools/pilot-tools-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "transactions",
+          "label": "Transactions",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/transactions.png",
+              "desktop": "dark/desktop/tools/transactions.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/transactions.png",
+              "desktop": "light/desktop/tools/transactions.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/transactions-scroll.png",
+              "desktop": "dark/desktop/tools/transactions-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/transactions-scroll.png",
+              "desktop": "light/desktop/tools/transactions-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "comparison",
+          "label": "Comparison",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/comparison.png",
+              "desktop": "dark/desktop/tools/comparison.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/comparison.png",
+              "desktop": "light/desktop/tools/comparison.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "performance",
+          "label": "Performance",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/performance.png",
+              "desktop": "dark/desktop/tools/performance.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/performance.png",
+              "desktop": "light/desktop/tools/performance.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/performance-scroll.png",
+              "desktop": "dark/desktop/tools/performance-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/performance-scroll.png",
+              "desktop": "light/desktop/tools/performance-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "journal",
+          "label": "Journal",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/journal.png",
+              "desktop": "dark/desktop/tools/journal.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/journal.png",
+              "desktop": "light/desktop/tools/journal.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "settings",
+          "label": "Settings (full)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/settings.png",
+              "desktop": "dark/desktop/tools/settings.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/settings.png",
+              "desktop": "light/desktop/tools/settings.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/settings-scroll.png",
+              "desktop": "dark/desktop/tools/settings-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/settings-scroll.png",
+              "desktop": "light/desktop/tools/settings-scroll.png"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "scroll-bottom",
+      "title": "Scroll — page bottom",
+      "label": "Scroll — page bottom",
+      "items": [
+        {
+          "id": "home-bottom",
+          "label": "Wealth hub (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/home-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/home-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/home-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/home-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "market-bottom",
+          "label": "Stock watch (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/market-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/market-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/market-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/market-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "funds-bottom",
+          "label": "Funds (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/funds-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/funds-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/funds-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/funds-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "portfolio-bottom",
+          "label": "Portfolio (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/portfolio-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/portfolio-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/portfolio-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/portfolio-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "research-bottom",
+          "label": "Research (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/research-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/research-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/research-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/research-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "global-bottom",
+          "label": "Global markets (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/global-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/global-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/global-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/global-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "zakat-bottom",
+          "label": "Zakat (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/zakat-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/zakat-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/zakat-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/zakat-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "dividends-bottom",
+          "label": "Dividends (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/dividends-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/dividends-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/dividends-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/dividends-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "transactions-bottom",
+          "label": "Transactions (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/transactions-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/transactions-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/transactions-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/transactions-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "settings-bottom",
+          "label": "Settings (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/settings-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/settings-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/settings-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/settings-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "signals-bottom",
+          "label": "Signals (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/signals-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/signals-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/signals-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/signals-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "calendar-bottom",
+          "label": "Calendar (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/calendar-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/calendar-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/calendar-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/calendar-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "watchlist-bottom",
+          "label": "Watchlist (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/watchlist-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/watchlist-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/watchlist-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/watchlist-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "pilot-bottom",
+          "label": "Pilot tools (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/pilot-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/pilot-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/pilot-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/pilot-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "insights-bottom",
+          "label": "Insights (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/insights-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/insights-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/insights-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/insights-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "journal-bottom",
+          "label": "Journal (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/journal-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/journal-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/journal-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/journal-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "performance-bottom",
+          "label": "Performance (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/performance-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/performance-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/performance-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/performance-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "comparison-bottom",
+          "label": "Comparison (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/comparison-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/comparison-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/comparison-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/comparison-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "risk-bottom",
+          "label": "Risk audit (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/risk-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/risk-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/risk-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/risk-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "import-bottom",
+          "label": "Import (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/import-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/import-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/import-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/import-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "screener-bottom",
+          "label": "Screener (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/screener-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/screener-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/screener-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/screener-bottom.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "more-bottom",
+          "label": "Tools index (bottom)",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/scroll-bottom/more-bottom.png",
+              "desktop": "dark/desktop/scroll-bottom/more-bottom.png"
+            },
+            "light": {
+              "mobile": "light/mobile/scroll-bottom/more-bottom.png",
+              "desktop": "light/desktop/scroll-bottom/more-bottom.png"
+            }
+          },
+          "scroll": {}
+        }
+      ]
+    },
+    {
+      "id": "settings-sections",
+      "title": "Settings sections",
+      "label": "Settings sections",
+      "items": [
+        {
+          "id": "set-lang",
+          "label": "Settings — language",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-lang.png",
+              "desktop": "dark/desktop/settings/set-lang.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-lang.png",
+              "desktop": "light/desktop/settings/set-lang.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-theme",
+          "label": "Settings — theme",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-theme.png",
+              "desktop": "dark/desktop/settings/set-theme.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-theme.png",
+              "desktop": "light/desktop/settings/set-theme.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-number",
+          "label": "Settings — number format",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-number.png",
+              "desktop": "dark/desktop/settings/set-number.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-number.png",
+              "desktop": "light/desktop/settings/set-number.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-display",
+          "label": "Settings — display & live",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-display.png",
+              "desktop": "dark/desktop/settings/set-display.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-display.png",
+              "desktop": "light/desktop/settings/set-display.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-export",
+          "label": "Settings — tax export",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-export.png",
+              "desktop": "dark/desktop/settings/set-export.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-export.png",
+              "desktop": "light/desktop/settings/set-export.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-profile",
+          "label": "Settings — investor profile",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-profile.png",
+              "desktop": "dark/desktop/settings/set-profile.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-profile.png",
+              "desktop": "light/desktop/settings/set-profile.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-cash",
+          "label": "Settings — cash & manual",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-cash.png",
+              "desktop": "dark/desktop/settings/set-cash.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-cash.png",
+              "desktop": "light/desktop/settings/set-cash.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-assumptions",
+          "label": "Settings — assumptions",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-assumptions.png",
+              "desktop": "dark/desktop/settings/set-assumptions.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-assumptions.png",
+              "desktop": "light/desktop/settings/set-assumptions.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-zakat",
+          "label": "Settings — zakat block",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-zakat.png",
+              "desktop": "dark/desktop/settings/set-zakat.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-zakat.png",
+              "desktop": "light/desktop/settings/set-zakat.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-live-prices",
+          "label": "Settings — live prices",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-live-prices.png",
+              "desktop": "dark/desktop/settings/set-live-prices.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-live-prices.png",
+              "desktop": "light/desktop/settings/set-live-prices.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-telegram",
+          "label": "Settings — telegram",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-telegram.png",
+              "desktop": "dark/desktop/settings/set-telegram.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-telegram.png",
+              "desktop": "light/desktop/settings/set-telegram.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-nav",
+          "label": "Settings — fund NAV",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-nav.png",
+              "desktop": "dark/desktop/settings/set-nav.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-nav.png",
+              "desktop": "light/desktop/settings/set-nav.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-demo",
+          "label": "Settings — try demo",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-demo.png",
+              "desktop": "dark/desktop/settings/set-demo.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-demo.png",
+              "desktop": "light/desktop/settings/set-demo.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-pin",
+          "label": "Settings — security PIN",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-pin.png",
+              "desktop": "dark/desktop/settings/set-pin.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-pin.png",
+              "desktop": "light/desktop/settings/set-pin.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-data",
+          "label": "Settings — data management",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-data.png",
+              "desktop": "dark/desktop/settings/set-data.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-data.png",
+              "desktop": "light/desktop/settings/set-data.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-pilot",
+          "label": "Settings — portfolio pilot",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-pilot.png",
+              "desktop": "dark/desktop/settings/set-pilot.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-pilot.png",
+              "desktop": "light/desktop/settings/set-pilot.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "set-about",
+          "label": "Settings — about",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/settings/set-about.png",
+              "desktop": "dark/desktop/settings/set-about.png"
+            },
+            "light": {
+              "mobile": "light/mobile/settings/set-about.png",
+              "desktop": "light/desktop/settings/set-about.png"
+            }
+          },
+          "scroll": {}
+        }
+      ]
+    },
+    {
+      "id": "sheets",
+      "title": "Sheets & forms",
+      "label": "Sheets & forms",
+      "items": [
+        {
+          "id": "add-transaction",
+          "label": "Sheet — add transaction",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/add-transaction.png",
+              "desktop": "dark/desktop/sheets/add-transaction.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/add-transaction.png",
+              "desktop": "light/desktop/sheets/add-transaction.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "add-portfolio",
+          "label": "Sheet — add portfolio",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/add-portfolio.png",
+              "desktop": "dark/desktop/sheets/add-portfolio.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/add-portfolio.png",
+              "desktop": "light/desktop/sheets/add-portfolio.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "price-alert",
+          "label": "Sheet — price alert",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/price-alert.png",
+              "desktop": "dark/desktop/sheets/price-alert.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/price-alert.png",
+              "desktop": "light/desktop/sheets/price-alert.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "watchlist-add",
+          "label": "Sheet — watchlist add",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/watchlist-add.png",
+              "desktop": "dark/desktop/sheets/watchlist-add.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/watchlist-add.png",
+              "desktop": "light/desktop/sheets/watchlist-add.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "journal-new",
+          "label": "Sheet — journal entry",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/journal-new.png",
+              "desktop": "dark/desktop/sheets/journal-new.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/journal-new.png",
+              "desktop": "light/desktop/sheets/journal-new.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "pin-lock",
+          "label": "PIN lock screen",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/pin-lock.png",
+              "desktop": "dark/desktop/sheets/pin-lock.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/pin-lock.png",
+              "desktop": "light/desktop/sheets/pin-lock.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "csv-import-step",
+          "label": "CSV import — upload step",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/csv-import-step.png",
+              "desktop": "dark/desktop/sheets/csv-import-step.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/csv-import-step.png",
+              "desktop": "light/desktop/sheets/csv-import-step.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "pro-upgrade",
+          "label": "Support modal",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/sheets/pro-upgrade.png",
+              "desktop": "dark/desktop/sheets/pro-upgrade.png"
+            },
+            "light": {
+              "mobile": "light/mobile/sheets/pro-upgrade.png",
+              "desktop": "light/desktop/sheets/pro-upgrade.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "command-palette",
+          "label": "Command palette",
+          "files": {
+            "dark": {
+              "desktop": "dark/desktop/sheets/command-palette.png"
+            },
+            "light": {
+              "desktop": "light/desktop/sheets/command-palette.png"
+            }
+          },
+          "scroll": {}
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "title": "System chrome",
+      "label": "System chrome",
+      "items": [
+        {
+          "id": "splash",
+          "label": "Splash screen",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/system/splash.png",
+              "desktop": "dark/desktop/system/splash.png"
+            },
+            "light": {
+              "mobile": "light/mobile/system/splash.png",
+              "desktop": "light/desktop/system/splash.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "demo-banner",
+          "label": "Demo mode banner",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/system/demo-banner.png",
+              "desktop": "dark/desktop/system/demo-banner.png"
+            },
+            "light": {
+              "mobile": "light/mobile/system/demo-banner.png",
+              "desktop": "light/desktop/system/demo-banner.png"
+            }
+          },
+          "scroll": {}
+        }
+      ]
+    },
+    {
+      "id": "marketing",
+      "title": "Marketing surfaces",
+      "label": "Marketing surfaces",
+      "items": [
+        {
+          "id": "landing",
+          "label": "Marketing — landing",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/marketing/landing.png",
+              "desktop": "dark/desktop/marketing/landing.png"
+            },
+            "light": {
+              "mobile": "light/mobile/marketing/landing.png",
+              "desktop": "light/desktop/marketing/landing.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "pitch",
+          "label": "Marketing — pitch",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/marketing/pitch.png",
+              "desktop": "dark/desktop/marketing/pitch.png"
+            },
+            "light": {
+              "mobile": "light/mobile/marketing/pitch.png",
+              "desktop": "light/desktop/marketing/pitch.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "presentation",
+          "label": "Marketing — presentation",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/marketing/presentation.png",
+              "desktop": "dark/desktop/marketing/presentation.png"
+            },
+            "light": {
+              "mobile": "light/mobile/marketing/presentation.png",
+              "desktop": "light/desktop/marketing/presentation.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "changelog",
+          "label": "Marketing — changelog",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/marketing/changelog.png",
+              "desktop": "dark/desktop/marketing/changelog.png"
+            },
+            "light": {
+              "mobile": "light/mobile/marketing/changelog.png",
+              "desktop": "light/desktop/marketing/changelog.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "privacy",
+          "label": "Marketing — privacy",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/marketing/privacy.png",
+              "desktop": "dark/desktop/marketing/privacy.png"
+            },
+            "light": {
+              "mobile": "light/mobile/marketing/privacy.png",
+              "desktop": "light/desktop/marketing/privacy.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "widget-glance",
+          "label": "Widget — glance",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/marketing/widget-glance.png",
+              "desktop": "dark/desktop/marketing/widget-glance.png"
+            },
+            "light": {
+              "mobile": "light/mobile/marketing/widget-glance.png",
+              "desktop": "light/desktop/marketing/widget-glance.png"
+            }
+          },
+          "scroll": {}
+        }
+      ]
+    }
+  ]
+}</script><!-- gallery-manifest-embedded -->
+</body>
+</html>

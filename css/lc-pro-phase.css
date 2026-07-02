@@ -1,4 +1,32 @@
-/* LedgerCap — price health banner */
+.lc-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.psx-side-btn .lc-icon { margin-right: 8px; opacity: 0.85; }
+.psx-icon-btn .lc-icon { display: block; }
+.lc-demo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--psx-accent, #22c55e); flex-shrink: 0; }
+
+/* iOS inset list groups */
+.ios-group {
+  background: var(--lc-bg-card, var(--bg2));
+  border-radius: 12px;
+  border: 1px solid var(--lc-border, var(--bg4));
+  overflow: hidden;
+  margin: 0 16px 16px;
+}
+.ios-group .setting-row,
+.ios-group .field-row {
+  border-bottom: 1px solid var(--lc-border, var(--bg4));
+}
+.ios-group .setting-row:last-child,
+.ios-group .field-row:last-child { border-bottom: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 #lc-price-health-host:empty { display: none; }
 #lc-price-health-host.hidden { display: none; }
 .lc-price-health {

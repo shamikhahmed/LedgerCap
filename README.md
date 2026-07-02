@@ -39,9 +39,21 @@
 
 ```bash
 cd LedgerCap
-python3 -m http.server 8765
-# → http://localhost:8765
+python3 -m http.server 8769
+# → http://127.0.0.1:8769
 ```
+
+### Screen gallery (UI sprint)
+
+```bash
+npm run gallery          # capture + embed manifest
+npm run gallery:open     # offline file:// viewer
+npm run gallery:view     # serve on :8769
+npm run test:a11y        # baseline accessibility
+npm run icons:generate   # PWA PNGs from icon.svg
+```
+
+See [docs/UI_AUDIT_250.md](docs/UI_AUDIT_250.md) and [screen-gallery.html](screen-gallery.html).
 
 ## PSX live prices
 

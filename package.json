@@ -9,7 +9,15 @@
     "cap:init": "npx cap add ios 2>/dev/null || true && npx cap sync ios",
     "cap:sync": "npx cap sync ios",
     "cap:ios": "npx cap open ios",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "capture:screenshots": "CAPTURE_SCREENSHOTS=1 playwright test tests/screenshots.spec.js",
+    "gallery": "CAPTURE_SCREENSHOTS=1 playwright test tests/screenshots.spec.js && node scripts/embed-gallery-manifest.mjs && echo '\nOffline: npm run gallery:open | Server: npm run gallery:view'",
+    "gallery:embed": "node scripts/embed-gallery-manifest.mjs",
+    "gallery:open": "open screen-gallery.html",
+    "gallery:view": "python3 -m http.server 8769",
+    "test:a11y": "playwright test tests/a11y.spec.js",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "icons:ios": "node scripts/generate-ios-icons.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

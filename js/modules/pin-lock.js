@@ -55,11 +55,13 @@ const PinLock = (() => {
     const pad = _el('pin-pad');
     if (!pad || pad.dataset.built) return;
     pad.dataset.built = '1';
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
+    const delHtml = typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 18) : 'Del';
     pad.innerHTML = keys.map(k => {
       if (!k) return '<span class="lc-pin-key lc-pin-key--spacer"></span>';
-      const act = k === '⌫' ? 'back' : 'digit';
-      return `<button type="button" class="lc-pin-key" data-act="${act}" data-val="${k === '⌫' ? '' : k}">${k}</button>`;
+      const act = k === 'back' ? 'back' : 'digit';
+      const label = k === 'back' ? delHtml : k;
+      return `<button type="button" class="lc-pin-key${k === 'back' ? ' lc-pin-key--del' : ''}" data-act="${act}" data-val="${k === 'back' ? '' : k}" aria-label="${k === 'back' ? 'Delete' : k}">${label}</button>`;
     }).join('');
     pad.addEventListener('click', e => {
       const btn = e.target.closest('.lc-pin-key');

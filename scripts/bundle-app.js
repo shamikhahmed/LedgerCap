@@ -48,6 +48,7 @@ const files = [
   'js/engines/pilot-engine.js',
   'js/ui/charts.js',
   'js/ui/debounce.js',
+  'js/ui/icons.js',
   'js/ui/platform.js',
   'js/ui/psx-ui.js',
   'js/ui/tradingview.js',
