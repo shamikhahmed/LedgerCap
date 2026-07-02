@@ -13,14 +13,12 @@ nav{margin-bottom:28px;font-size:14px}
 nav a{margin-right:12px;color:#848E9C}
 h1{font-size:1.75rem;margin:24px 0 12px;letter-spacing:-.02em}
 h2{font-size:1.15rem;margin:20px 0 8px;color:#FF6B35}
-h3{font-size:1rem;margin:16px 0 6px}
 p,li{font-size:15px;color:#848E9C;margin-bottom:10px}
 ul{margin:8px 0 16px 20px}
 code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:.9em}
 footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#848E9C}
 </style>
-
-  <link rel="stylesheet" href="css/capricorn-core.css">
+<link rel="stylesheet" href="css/capricorn-core.css">
 </head>
 <body>
 <div class="cap-scroll-progress" aria-hidden="true"></div>
@@ -30,26 +28,59 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.0
   <a href="presentation.html">Presentation</a>
   <a href="pitch.html">Pitch</a>
 </nav>
-<article><h1>Changelog — LedgerCap</h1>
-<h2>3.5.4 (2026-06-16)</h2>
-<ul><li>Portfolio CTO pass: PWA icons (192/512 maskable), service worker cache bump (<code>ledgercap-v8</code>)</li>
-<li>Truth sprint: docs aligned with shipped features</li>
-<li>Holdings seed UI, Zakat docs, pitch expansion</li>
-<p></ul></p>
-<h3>Phase 2 — Quality (2026-06-10)</h3>
-<ul><li>Playwright smoke tests (2/2 pass)</li>
-<li>Pitch expanded: security, competition, tech moat, roadmap, OS family</li>
-<li>Landing footer with privacy/changelog HTML pages</li>
-<p></ul></p></article>
+<article>
+<h1>Changelog — LedgerCap</h1>
+<p>Current release: <strong>v3.46.0</strong> · service worker <code>ledgercap-v115</code></p>
+
+<h2>3.46.0 (2026-07-02) — Undo, cloud sync, rebalance hub</h2>
+<ul>
+  <li>10-second undo toast after adding a transaction</li>
+  <li>Per-holding ↻ price refresh on portfolio cards and table</li>
+  <li>Encrypted cloud backup push/restore via worker <code>ledger/backup</code> + sync key</li>
+  <li>Hub rebalance summary card (Pilot drift vs target weights)</li>
+  <li>Urdu/RTL bottom nav and sidebar clip fixes</li>
+  <li>Onboarding step labels (1/2/3)</li>
+</ul>
+
+<h2>3.45.0 (2026-07-02) — UX sprint</h2>
+<ul>
+  <li>Portfolio search, sort, cards/table toggle, Sell shortcut, stale row dim</li>
+  <li>CSV import preview before confirm</li>
+  <li>Hub market status, CGT/PDF/paper trade/import shortcuts, recent tools</li>
+  <li>Deep links <code>#portfolio/akd</code></li>
+  <li>PIN-encrypted <code>.ledgercap.enc</code> backup</li>
+  <li>Update banner + What's new modal</li>
+</ul>
+
+<h2>3.44.2 (2026-07-02) — Investify-style portfolio UI</h2>
+<ul>
+  <li>Day + total P&amp;L hero boxes</li>
+  <li>Holding cards: cost, avg buy, shares, today and total P&amp;L</li>
+  <li>Bucket toolbar: Transaction + Ledger shortcuts</li>
+</ul>
+
+<h2>3.44.1 (2026-07-02) — AKD bucket equity fix</h2>
+<ul>
+  <li>AKD/Rafi broker cash included in bucket value and P&amp;L vs deposits</li>
+  <li>Deployed pill + cash line on filtered portfolio view</li>
+</ul>
+
+<h2>3.44.0 (2026-07-02) — Security sprint</h2>
+<ul>
+  <li>CSP hardening; paper trading; history series; CGT PDF export</li>
+  <li>PBKDF2 PIN vault; Urdu locale repair; gallery 83 screens</li>
+</ul>
+
+<p style="margin-top:24px">Full history: <a href="https://github.com/shamikhahmed/LedgerCap/blob/main/CHANGELOG.md">CHANGELOG.md on GitHub</a></p>
+</article>
 <footer>© 2026 Shamikh Ahmed · <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a></footer>
 
-  <canvas id="cap-scene" class="cap-scene-canvas cap-scene-canvas--subtle" aria-hidden="true"></canvas>
-
-  <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/vendor/ScrollTrigger.min.js"></script>
-  <script src="js/capricorn-scene.js"></script>
-  <script src="js/capricorn-motion.js"></script>
-  <script src="js/capricorn-cinematic.js"></script>
-  <script>document.addEventListener('DOMContentLoaded',function(){if(window.CapCinematic)CapCinematic.init({canvas:'#cap-scene'});});</script>
+<canvas id="cap-scene" class="cap-scene-canvas cap-scene-canvas--subtle" aria-hidden="true"></canvas>
+<script src="js/vendor/gsap.min.js"></script>
+<script src="js/vendor/ScrollTrigger.min.js"></script>
+<script src="js/capricorn-scene.js"></script>
+<script src="js/capricorn-motion.js"></script>
+<script src="js/capricorn-cinematic.js"></script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.CapCinematic)CapCinematic.init({canvas:'#cap-scene'});});</script>
 </body>
 </html>

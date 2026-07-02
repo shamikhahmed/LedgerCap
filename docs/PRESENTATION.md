@@ -133,6 +133,6 @@ Feels like a native finance app.
 
 > *Know your net worth. Own your ledger. Reach financial freedom.*
 
-**LedgerCap** — github.com/shamikhahmed/LedgerCap
+**LedgerCap** — github.com/shamikhahmed/LedgerCap · **v3.46.0**
 
 *Shamikh Ahmed · Karachi*

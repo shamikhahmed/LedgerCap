@@ -131,8 +131,28 @@ This is record-keeping only — not a securities offering or brokerage service.
 ## Data & privacy
 
 - All data in `localStorage` on your device
-- No accounts; optional Worker only for public price feeds
+- No accounts; optional Worker only for public price feeds and encrypted cloud backup (opt-in)
 - Works offline with last-known prices
+
+---
+
+## Backup & sync
+
+| Method | Where | Notes |
+|--------|-------|-------|
+| **JSON export** | Settings → Export `.ledgercap` | Plain backup file |
+| **Encrypted export** | Settings → Encrypted backup (PIN) | `.ledgercap.enc` — AES-GCM |
+| **Cloud backup** | Settings → Push / Restore cloud | Uses Telegram sync key; encrypted payload on worker |
+
+After adding a transaction, tap **Undo** on the toast within 10 seconds to revert.
+
+---
+
+## Portfolio tips
+
+- Use **↻** on a holding card to refresh that symbol only (faster than full refresh).
+- Open `#portfolio/akd` (or Rafi/Meezan) to jump straight to a broker bucket.
+- Toggle **Cards / Table** on the portfolio screen for dense vs scan-friendly views.
 
 ---
 

@@ -1,10 +1,60 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.17.0  
-**Last updated:** 30 Jun 2026  
+**Version:** 3.46.0  
+**Service worker:** `ledgercap-v115`  
+**Last updated:** 2 Jul 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
+**Latest `main`:** `2633510` — feat: v3.46.0 — undo tx, cloud backup, portfolio UX sprint  
+
+---
+
+## 0. Current status (Jul 2026 — v3.46.0)
+
+### Shipped in this release train (3.44.0 → 3.46.0)
+
+| Area | What shipped |
+|------|----------------|
+| **AKD / Rafi equity** | Broker cash in bucket totals; P&L vs deposits when `deployedPkr` known (3.44.1) |
+| **Portfolio UI** | Investify-style holding cards (day + total P&L); search/sort; cards/table toggle; per-row ↻ refresh (3.44.2–3.46.0) |
+| **Transactions** | 10s undo toast after add; Sell shortcut from holding cards |
+| **Hub** | Market status strip; quick actions (CGT, PDF, paper trade, import); rebalance drift card; recent tools |
+| **Backup** | PIN-encrypted `.ledgercap.enc`; cloud push/restore via worker `ledger/backup` + sync key |
+| **Security** | CSP hardening; PBKDF2 PIN vault; `LcEvents` delegated actions (3.44.0) |
+| **Paper trade** | Isolated `paperLedger` screen — does not touch real ledger |
+| **Deep links** | `#portfolio/akd` (and other buckets) |
+| **Import** | CSV preview before merge |
+| **i18n** | Urdu locale repair + RTL nav clip fixes |
+| **Updates** | Sticky SW refresh banner; What's new modal on version bump |
+| **Gallery** | 83 screens recaptured (`npm run gallery`) |
+
+### Build & test
+
+```bash
+npm run bundle          # → js/ledgercap.bundle.js (91 modules)
+npm run test:e2e        # Playwright incl. ledger.spec.js (12 tests)
+npm run gallery         # ~6 min screenshot recapture
+```
+
+### Version sync checklist
+
+| File | Must match |
+|------|------------|
+| `VERSION.json` | `version`, `swCache` |
+| `js/data/config.js` | `LEDGERCAP_VERSION.app`, `.sw`, `.cache` |
+| `sw.js` | `CACHE = 'ledgercap-v115'` |
+| `manifest.json` | `"version": "3.46.0"` |
+| `index.html` | `ledgercap.bundle.js?v=3.46.0`, `sw.js?v=115` |
+| `CHANGELOG.md` | Top entry |
+| `changelog.html` | Public changelog page |
+| `docs/HANDOVER.md` | This file |
+
+### Cloud backup (new)
+
+Client: `js/services/cloud-backup-service.js` — `PUT/GET ${proxy}/ledger/backup` with header `X-LedgerCap-Sync-Key`. Payload is AES-GCM encrypted via `BackupCrypto.encryptWithPassphrase` (sync key as passphrase). **Worker must expose `/ledger/backup`** — deploy `worker/` after adding route if push returns 404.
+
+Settings → Data Management → **Push cloud backup** / **Restore from cloud** (reuses Telegram sync key).
 
 ---
 
@@ -30,24 +80,20 @@ Features: hub dashboard, stock watch (market), Meezan funds, portfolio P&L, rese
 
 ```
 index.html
-  └── js/data/config.js          # PSX proxy URLs
+  └── js/data/config.js          # Version + PSX proxy URLs
   └── js/data/holdings.js        # SEED: static arrays + INITIAL_TRANSACTIONS + FALLBACK_PRICES
-  └── js/data/fundamentals.js    # Research fundamentals (includes PASM metadata)
-  └── js/data/dividends.js
-  └── js/engines/ledger.js       # ★ Core: holdings, funds, P&L, timeline
+  └── js/ledgercap.bundle.js     # ★ Bundled app (npm run bundle — 91 modules)
+  └── js/engines/ledger.js       # Core: holdings, funds, P&L, timeline
   └── js/engines/prices.js       # Live PSX fetch + fallbacks
-  └── js/engines/analytics.js    # XIRR, allocation, totalReturn
+  └── js/services/backup-crypto.js      # PIN + passphrase AES backup
+  └── js/services/cloud-backup-service.js # Encrypted cloud sync
+  └── js/modules/hub.js          # Home hub (net worth, rebalance teaser, tools)
+  └── js/modules/portfolio-screen.js # Holdings cards/table, search, refresh
   └── js/modules/state.js        # localStorage, calcTotalValue, seed migration
-  └── js/modules/hub.js             # Home hub (net worth, tools grid)
-  └── js/modules/market.js          # Stock watch by sector
-  └── js/modules/funds.js           # Meezan fund NAV table
-  └── js/modules/portfolio-screen.js # Holdings + cash est.
-  └── js/modules/screener.js        # Fundamental screener
-  └── js/modules/more.js            # Secondary tools menu
-  └── js/modules/*.js               # Research, dividends, settings, etc.
-  └── js/lc-desktop-nav.js          # Desktop sidebar contract (≥900px)
-  └── sw.js                         # Service worker (ledgercap-v82)
-  └── worker/                    # Cloudflare PSX proxy (optional deploy)
+  └── js/ui/navigation.js        # Tab routing + #portfolio/{bucket} deep links
+  └── js/ui/lc-events.js         # Delegated data-action handlers
+  └── sw.js                      # Service worker (ledgercap-v115)
+  └── worker/                    # Cloudflare PSX proxy + Telegram + ledger backup
 ```
 
 **Intended model:** `INITIAL_TRANSACTIONS` is source of truth → `Ledger.calcHoldings()` / `calcFundHoldings()` derive positions → `State.calcTotalValue()` marks to market using `state.prices`.
@@ -113,6 +159,8 @@ Seed combines **two incompatible layers**:
 ---
 
 ## 5. Known Calculation Bugs (Severity Order)
+
+> **Note (Jul 2026):** Many items below were addressed in v3.5.x–v3.44.x (cost basis wiring, sell clamping, AKD cash in buckets, home sparkline). See `CHANGELOG.md` for fixes. This section retains **historical audit context** — verify against current code before treating as open.
 
 ### Critical
 
@@ -201,7 +249,7 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 
 ---
 
-## 9. What Was Attempted (Jun 2026)
+## 9. What Was Attempted (Jun–Jul 2026)
 
 1. Full rebrand to LedgerCap (done).
 2. Replace portfolio from PDFs/screenshots (partial — **data quality issues remain**).
@@ -209,7 +257,7 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 4. Performance daily/monthly P&L (partial — **M2M history still unreliable**).
 5. Live price refresh (fallbacks updated; **live path brittle**).
 
-### Partial fix — v3.5.0 / seed v4 (after calculation audit)
+### v3.5.0 / seed v4 (calculation audit)
 
 - `Ledger.currentCostBasis()` wired to dashboard return % and Performance header
 - Sell quantity clamping; sorted `calcHoldings`
@@ -217,7 +265,19 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 - Seed: opening date 2026-04-02, EFERT/PPL oversells corrected
 - See **`docs/RECONCILIATION.md`** for before/after table and remaining gaps
 
-**Latest commit on main:** `884bdf7` — further fixes may be local only until pushed.
+### v3.44.0 — Security sprint
+
+- CSP without `unsafe-inline`; theme boot externalized
+- Paper trading sandbox; history series; CGT PDF export
+- Urdu locale repair; gallery 83 screens
+
+### v3.44.1–3.46.0 — Portfolio UX sprint
+
+- AKD/Rafi broker cash in bucket equity and P&L vs deposits
+- Investify-style portfolio cards; undo tx; cloud encrypted backup
+- Hub rebalance teaser; CSV import preview; deep links `#portfolio/akd`
+
+**Latest commit on main:** `2633510` (2 Jul 2026).
 
 ---
 
@@ -253,8 +313,12 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 | PSX worker | `worker/README.md` |
 | Codex repair prompt | `docs/CODEX_PROMPT.md` |
 | Changelog | `CHANGELOG.md` |
+| Public changelog | `changelog.html` |
+| Cloud backup client | `js/services/cloud-backup-service.js` |
 
 ---
+
+*Updated 2026-07-02 · v3.46.0 · UI: production-ready · Engine: see CHANGELOG for resolved items; section 5 retains historical audit.*
 
 ---
 

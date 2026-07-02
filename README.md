@@ -2,6 +2,8 @@
 
 **Personal Wealth Operating System — by Capricorn Systems.** PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections.
 
+**Version:** 3.46.0 · **SW:** `ledgercap-v115`
+
 🔗 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 📁 **Repo:** https://github.com/shamikhahmed/LedgerCap
 
@@ -9,14 +11,16 @@
 
 ## Features
 
-- **Hub** — Net worth hero, KSE-100 strip, tools grid (market, funds, portfolio, research, screener, dividends, signals, watchlist, transactions)
+- **Hub** — Net worth hero, KSE-100 strip, rebalance teaser, market status, quick actions, tools grid
 - **Stock Watch** — PSX sector tables with live/cached prices, Islamic filter
 - **Funds** — Meezan Islamic fund NAV table with 1Y/3Y/yield
-- **Portfolio** — Holdings, P&L, allocation, cash estimate
+- **Portfolio** — Investify-style holding cards, search/sort, cards/table toggle, per-symbol refresh, Sell shortcut
+- **Transactions** — Ledger with 10s undo toast after add
 - **Research** — Plain-English stock analyzer + portfolio intel mode
 - **Screener** — P/E, yield, growth filters (Islamic, high div, value)
-- **Income** — Dividend center, salary log, financial freedom tracker
-- **i18n** — English + Urdu (header switcher)
+- **Backup** — JSON export, PIN-encrypted `.ledgercap.enc`, optional cloud sync via worker
+- **Paper trade** — Isolated sandbox (More → Paper trade)
+- **i18n** — English + Urdu (header switcher, RTL nav fixes)
 - **PSX Proxy** — Optional Cloudflare Worker for live Yahoo/PSX quotes
 
 ## Install on iPhone
@@ -64,6 +68,8 @@ Deploy the Cloudflare Worker in `worker/` — see [worker/README.md](worker/READ
 | Resource | Path |
 |----------|------|
 | User guide | [docs/GUIDE.md](docs/GUIDE.md) |
+| Engineering handover | [docs/HANDOVER.md](docs/HANDOVER.md) |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) |
 | Presentation | [docs/PRESENTATION.md](docs/PRESENTATION.md) |
 | Landing page | [landing.html](landing.html) |
 

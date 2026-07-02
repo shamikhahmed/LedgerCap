@@ -118,3 +118,15 @@ cd LedgerCap/worker && npx wrangler deploy
 In app: **Settings → Telegram → Test proxy** should show “Proxy OK”.
 
 Optional: `GET …/telegram/ping` returns `{ "proxy": true }`.
+
+## Encrypted cloud ledger backup
+
+Optional full-ledger backup (encrypted — never plaintext on server):
+
+1. Set **Cloud sync key** in Settings → Telegram (match `TELEGRAM_SYNC_KEY` on worker)
+2. Deploy worker with `PUT/GET /ledger/backup` route (KV or Durable Object storage)
+3. In app: **Settings → Data Management → Push cloud backup** / **Restore from cloud**
+
+Client sends header `X-LedgerCap-Sync-Key` and JSON body `{ payload, updatedAt }` where `payload` is AES-GCM encrypted via `BackupCrypto.encryptWithPassphrase`.
+
+If push returns HTTP 404, redeploy `worker/` after adding the backup route.

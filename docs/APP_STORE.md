@@ -21,7 +21,7 @@
 - Not financial advice. Zakat figures are estimates — consult a scholar.
 
 ## Version
-See `VERSION.json` — current `2.3.0`.
+See `VERSION.json` — current `3.46.0`.
 
 ## Phase 4 scaffold (June 2026)
 
