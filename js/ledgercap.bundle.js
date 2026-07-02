@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.50.0',
-  sw: 120,
-  cache: 'ledgercap-v120',
+  app: '3.50.1',
+  sw: 121,
+  cache: 'ledgercap-v121',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -14524,13 +14524,6 @@ const PortfolioScreen = (() => {
             <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.openBucket" data-tab="${_filter}">Ledger</button>
           </div>` : ''}
         </div>
-        <div class="lc-dash-section">
-          <div class="lc-dash-section-head">
-            <h3>${I18n.t('portfolio.bucketsTitle')}</h3>
-            <span>${_filter ? `<button type="button" class="lc-link-btn" data-action="PortfolioScreen.clearFilter">Show all</button>` : I18n.t('portfolio.bucketsSub')}</span>
-          </div>
-          ${cards}
-        </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${active ? active.name : I18n.t('portfolio.value')}</div>
           <div class="lc-dash-hero-val lc-num" data-lc-count="${heroValue}" data-lc-count-key="pf-hero">${PsxUI.fmt(heroValue)}</div>
@@ -14555,6 +14548,13 @@ const PortfolioScreen = (() => {
           ${bucketStats?.cashPkr ? `<div class="lc-pulse-pill"><label>Cash</label><b>${PsxUI.fmt(bucketStats.cashPkr)}</b></div>` : ''}
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.gainLoss')}</label><b class="${(bucketStats ? bucketStats.pnl : s.totalReturn.abs) >= 0 ? 'psx-up' : 'psx-down'}">${PsxUI.fmt(bucketStats ? bucketStats.pnl : s.totalReturn.abs, { signed: true })}</b></div>
           <div class="lc-pulse-pill"><label>Positions</label><b>${holdings.length}</b></div>
+        </div>
+        <div class="lc-dash-section">
+          <div class="lc-dash-section-head">
+            <h3>${I18n.t('portfolio.bucketsTitle')}</h3>
+            <span>${_filter ? `<button type="button" class="lc-link-btn" data-action="PortfolioScreen.clearFilter">Show all</button>` : I18n.t('portfolio.bucketsSub')}</span>
+          </div>
+          ${cards}
         </div>
         ${!_filter && (s.geoAllocation || []).length ? `<div class="lc-dash-section">
           <div class="lc-dash-section-head"><h3>Geography</h3><span>Allocation</span></div>
