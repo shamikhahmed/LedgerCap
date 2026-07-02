@@ -17,6 +17,7 @@ const Hub = (() => {
     { id: 'risk-audit', key: 'riskAudit', tone: 'rose' },
     { id: 'insights', key: 'insightsTool', tone: 'violet' },
     { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
+    { id: 'paper-trade', key: 'paperTrade', tone: 'cyan' },
     { id: 'transactions', key: 'transactions', tone: 'slate' },
     { id: 'import', key: 'import', tone: 'slate' },
     { id: 'settings', key: 'settingsTool', tone: 'slate' },
@@ -213,6 +214,73 @@ const Hub = (() => {
     </button>`;
   }
 
+  function _marketStatus() {
+    if (typeof PsxSession === 'undefined') return '';
+    const pkt = PsxSession.pktParts();
+    const open = PsxSession.isOpen(pkt);
+    const label = open ? 'OPEN' : (PsxSession.priceLabel(pkt).toUpperCase());
+    const cls = open ? 'psx-up' : 'lc-pulse-neutral';
+    const kse = State.get('kseIndex');
+    const kseTxt = kse?.value ? PsxUI.fmtIndex(kse.value) : '—';
+    return `<div class="lc-market-status" role="status">
+      <span class="lc-market-status-dot ${cls}"></span>
+      <strong>${label}</strong>
+      <span>KSE-100 ${kseTxt}</span>
+      <span>${pkt.dateKey} PKT</span>
+    </div>`;
+  }
+
+  function _quickActions() {
+    return `<div class="lc-hub-quick">
+      <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">CGT &amp; tax</button>
+      <button type="button" class="psx-btn psx-btn-ghost" data-action="StatementExport.exportHtml">Annual PDF</button>
+      <button type="button" class="psx-btn psx-btn-ghost" data-nav="paper-trade">Paper trade</button>
+      <button type="button" class="psx-btn psx-btn-ghost" data-nav="import">Import CSV</button>
+    </div>`;
+  }
+
+  function _rebalanceTeaser(state) {
+    if (typeof PilotEngine === 'undefined' || !PilotEngine.buildRebalancePlan) return '';
+    const plan = PilotEngine.buildRebalancePlan(state);
+    if (!plan?.rows?.length) return '';
+    const drift = plan.drift_count || 0;
+    const actions = plan.rows.filter((r) => r.action === 'TRIM' || r.action === 'ADD' || r.action === 'REVIEW').slice(0, 4);
+    const rowsHtml = actions.length
+      ? actions.map((r) => {
+        const cls = r.action === 'TRIM' ? 'psx-down' : r.action === 'ADD' ? 'psx-up' : '';
+        const delta = r.delta_pct != null ? `${r.delta_pct >= 0 ? '+' : ''}${Number(r.delta_pct).toFixed(1)}%` : '—';
+        return `<div class="lc-rebalance-row">
+          <strong>${r.symbol}</strong>
+          <span class="lc-rebalance-action ${cls}">${r.action}</span>
+          <span class="lc-num">${delta}</span>
+        </div>`;
+      }).join('')
+      : `<p class="lc-empty-note">${plan.summary}</p>`;
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Rebalance</h3><span>${drift ? `${drift} drifted` : 'On target'}</span></div>
+      <div class="lc-sector-card lc-rebalance-card">${rowsHtml}
+        <div class="lc-dash-actions" style="margin-top:12px">
+          <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">Full rebalance plan</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function _recentTools() {
+    let ids = [];
+    try { ids = JSON.parse(sessionStorage.getItem('lc_recent_tools') || '[]'); } catch (_) {}
+    ids = ids.filter((id) => TOOLS().some((t) => t.id === id)).slice(0, 4);
+    if (!ids.length) return '';
+    const map = Object.fromEntries(TOOLS().map((t) => [t.id, t]));
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Recent</h3><span>Quick return</span></div>
+      <div class="lc-hub-quick">${ids.map((id) => {
+        const t = map[id];
+        return t ? `<button type="button" class="psx-btn psx-btn-ghost" data-nav="${id}">${I18n.t(`tools.${t.key}.t`)}</button>` : '';
+      }).join('')}</div>
+    </div>`;
+  }
+
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
       <button type="button" class="lc-tool-card" data-nav="${t.id}">
@@ -305,6 +373,7 @@ const Hub = (() => {
           <h2>${_greeting()}</h2>
           <p>Your wealth at a glance</p>
         </div>
+        ${_marketStatus()}
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>
           <div class="lc-dash-hero-val lc-num" data-lc-count="${s.totalValue}" data-lc-count-key="hub-total">${PsxUI.fmt(s.totalValue)}</div>
@@ -319,6 +388,7 @@ const Hub = (() => {
           <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
+        ${_quickActions()}
         <div class="lc-dash-market">
           ${_kseCard(k, sign)}
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="portfolio" aria-label="Open portfolio">
@@ -329,10 +399,12 @@ const Hub = (() => {
         </div>
         ${_marketPulse(stats)}
         ${_investmentSummary(state)}
+        ${_rebalanceTeaser(state)}
         ${_portfolioSection(state)}
         ${_newsSection()}
         ${_portfolioChart(state)}
         ${_portfolioMovers()}
+        ${_recentTools()}
         <div class="lc-dash-section">
           <div class="lc-dash-section-head"><h3>${I18n.t('hub.toolsTitle')}</h3><span>${I18n.t('hub.toolsSub')}</span></div>
           ${_toolGrid()}

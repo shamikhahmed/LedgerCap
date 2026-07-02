@@ -1,5 +1,35 @@
 # Changelog — LedgerCap
 
+## 3.46.0 (2026-07-02) — Undo, cloud sync, rebalance hub
+
+- **Transactions** — 10-second undo toast after adding a transaction
+- **Portfolio** — per-holding ↻ refresh (single symbol via PSX proxy)
+- **Cloud backup** — encrypted push/restore via worker `ledger/backup` + sync key
+- **Hub** — rebalance summary card (Pilot drift vs target weights)
+- **Urdu/RTL** — bottom nav + sidebar label clip fixes
+- **Onboarding** — step labels (1/2/3) + demo/import shortcuts on final step
+
+## 3.45.0 (2026-07-02) — UX sprint (Investify + ease-of-use)
+
+- **Portfolio** — search/sort holdings; cards/table toggle; Sell prefills tx sheet; stale price dim per row
+- **Import** — CSV preview table before confirm import
+- **Hub** — PSX market status strip; CGT / annual PDF / paper trade / import shortcuts; recent tools
+- **Deep links** — `#portfolio/akd` opens filtered bucket
+- **Backup** — PIN-encrypted `.ledgercap.enc` export + decrypt import
+- **Updates** — sticky refresh banner; What's new modal on version bump
+
+## 3.44.2 (2026-07-02) — Portfolio UI (Investify-inspired)
+
+- **Hero P&L** — side-by-side Day and Total gain/loss boxes with value + % (like Investify).
+- **Holding cards** — each position shows cost, avg buy, shares, market value, today P&L, and total P&L.
+- **Bucket toolbar** — Transaction + Ledger shortcuts when a portfolio is filtered.
+
+## 3.44.1 (2026-07-02) — AKD bucket equity fix
+
+- **AKD / Rafi portfolio value** now includes uninvested broker cash (`USER_AKD_CASH_PKR`, `RAFI_BROKER_CASH_PKR`) in bucket totals and Capital deployed rows.
+- **P&L vs deposits** — when gross deployed capital is known (AKD ₨200k, Rafi, Meezan, IBKR), gain/loss is measured against deposits, not stock cost basis alone.
+- **Portfolio screen** — "Deployed" pill (not mislabeled "Invested") plus optional Cash line when filtering AKD/Rafi.
+
 ## 3.44.0 (2026-07-02) — Security sprint: CSP, paper trade, history series
 
 - **CSP** — removed `script-src 'unsafe-inline'`; theme boot externalized; `LcEvents` delegated `data-action` / `data-nav` handlers across modules

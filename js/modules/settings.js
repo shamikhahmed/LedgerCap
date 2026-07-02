@@ -382,6 +382,10 @@ const Settings = (() => {
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
         <button type="button" class="btn-secondary" data-action="Settings._exportData">↑ Export .ledgercap Backup</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportEncryptedBackup">🔒 Encrypted backup (PIN)</button>
+        <button type="button" class="btn-secondary" data-action="Settings._pushCloudBackup">☁ Push cloud backup</button>
+        <button type="button" class="btn-secondary" data-action="Settings._pullCloudBackup">☁ Restore from cloud</button>
+        <p class="field-hint" style="margin:0">Cloud uses your Telegram sync key — encrypted ledger only, never plaintext.</p>
         <button type="button" class="btn-secondary" data-action="Settings._importData">↓ Import .ledgercap Backup</button>
         <button type="button" class="btn-danger" data-action="Settings._resetVault">⚠ Reset All Data</button>
       </div>
@@ -599,16 +603,55 @@ const Settings = (() => {
     App.showToast('Backup exported', 'success');
   }
 
+  async function _exportEncryptedBackup() {
+    if (PinVault?.isDecoyMode?.()) {
+      App.showToast('Export blocked in decoy view', 'warning');
+      return;
+    }
+    if (typeof BackupCrypto === 'undefined') {
+      App.showToast('Encryption unavailable', 'error');
+      return;
+    }
+    const pin = prompt('Enter PIN to encrypt this backup (4+ digits):');
+    if (!pin || pin.length < 4) {
+      App.showToast('PIN required for encrypted backup', 'warning');
+      return;
+    }
+    try {
+      const payload = await BackupCrypto.encrypt(State.exportJSON(), pin);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ledgercap-encrypted-${new Date().toISOString().slice(0, 10)}.ledgercap.enc`;
+      a.click();
+      URL.revokeObjectURL(url);
+      App.showToast('Encrypted backup exported', 'success');
+    } catch (e) {
+      App.showToast('Encrypt failed — enable PIN vault first', 'error');
+    }
+  }
+
   function _importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.ledgercap,.json,.stunds,application/json';
+    input.accept = '.ledgercap,.ledgercap.enc,.json,.stunds,application/json';
     input.onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = ev => {
-        const ok = State.importJSON(ev.target.result);
+      reader.onload = async (ev) => {
+        let raw = ev.target.result;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.ledgercapEnc) {
+            const pin = prompt('Enter PIN to decrypt backup:');
+            if (!pin) return;
+            raw = await BackupCrypto.decrypt(parsed, pin);
+            if (!raw) { App.showToast('Decrypt failed — wrong PIN?', 'error'); return; }
+          }
+        } catch (_) { /* plain json */ }
+        const ok = State.importJSON(raw);
         if (ok) { App.showToast('Data imported successfully', 'success'); App.renderCurrent(); }
         else App.showToast('Invalid backup file', 'error');
       };
@@ -931,6 +974,36 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  async function _pushCloudBackup() {
+    if (typeof CloudBackupService === 'undefined') {
+      App.showToast('Cloud backup not loaded', 'error');
+      return;
+    }
+    const syncKey = document.getElementById('tg-sync-key')?.value?.trim();
+    if (syncKey) State.update((s) => { s.settings.telegramSyncKey = syncKey; });
+    App.showToast('Uploading encrypted backup…', 'info');
+    const res = await CloudBackupService.pushBackup();
+    App.showToast(res.ok ? 'Cloud backup saved' : (res.error || 'Upload failed'), res.ok ? 'success' : 'error');
+  }
+
+  async function _pullCloudBackup() {
+    if (typeof CloudBackupService === 'undefined') {
+      App.showToast('Cloud backup not loaded', 'error');
+      return;
+    }
+    const syncKey = document.getElementById('tg-sync-key')?.value?.trim();
+    if (syncKey) State.update((s) => { s.settings.telegramSyncKey = syncKey; });
+    App.showToast('Fetching cloud backup…', 'info');
+    const res = await CloudBackupService.pullBackup();
+    if (res.ok) {
+      App.showToast('Restored from cloud', 'success');
+      App.renderCurrent();
+      render();
+    } else if (res.error !== 'Cancelled') {
+      App.showToast(res.error || 'Restore failed', 'error');
+    }
+  }
+
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;

@@ -129,6 +129,27 @@ test.describe('Ledger math (seed)', () => {
     expect(PB.txsForBucket(state, 'akd').length).toBe(1);
   });
 
+  test('AKD bucket equity includes user broker cash and PnL vs deposits', () => {
+    const root = path.join(__dirname, '..');
+    const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280, getUsdRate: () => 280 } } };
+    vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/data/holdings.js'), 'utf8'), ctx);
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/engines/ledger.js'), 'utf8'), ctx);
+    ctx.window.State = {
+      getPrice: (sym) => (ctx.window.FALLBACK_PRICES || {})[sym] || null,
+    };
+    ctx.State = ctx.window.State;
+    vm.runInContext(fs.readFileSync(path.join(root, 'js/services/portfolio-buckets-service.js'), 'utf8'), ctx);
+    const PB = ctx.window.PortfolioBuckets;
+    const state = { transactions: ctx.window.INITIAL_TRANSACTIONS };
+    const akd = PB.statsForBucket(state, 'akd');
+    expect(akd.cashPkr).toBeCloseTo(ctx.window.USER_AKD_CASH_PKR, 2);
+    expect(akd.value).toBeCloseTo(akd.stockValue + akd.cashPkr, 2);
+    expect(akd.value).toBeGreaterThan(akd.stockValue);
+    expect(akd.pnl).toBeCloseTo(akd.value - ctx.window.AKD_TOTAL_INVESTED_PKR, 2);
+    expect(akd.pnl).toBeGreaterThan(0);
+  });
+
   test('logged dividends and Meezan taxes in seed v10', () => {
     const { Ledger, txs } = loadLedger();
     const divs = txs.filter(t => t.type === 'DIVIDEND');

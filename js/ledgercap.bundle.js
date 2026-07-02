@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 88 modules — run: npm run bundle */
+/* LedgerCap bundle — 91 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.44.0',
-  sw: 111,
-  cache: 'ledgercap-v111',
+  app: '3.46.0',
+  sw: 115,
+  cache: 'ledgercap-v115',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -8094,6 +8094,14 @@ const PortfolioAnalyticsService = (() => {
     };
   }
 
+  function _dayPnlForStock(shares, symbol, fallbackPrice) {
+    const curr = State.getPrice(symbol) || fallbackPrice || 0;
+    const prev = State.getPrevClose(symbol) || curr;
+    if (!curr || !prev || !shares) return { dailyPnl: 0, dailyPnlPct: 0 };
+    const dailyPnlPct = prev > 0 ? ((curr - prev) / prev) * 100 : 0;
+    return { dailyPnl: shares * (curr - prev), dailyPnlPct };
+  }
+
   function getHoldings(state) {
     state = state || State.get();
     const txs = state.transactions || [];
@@ -8104,14 +8112,15 @@ const PortfolioAnalyticsService = (() => {
       const cost = h.shares * h.avgCost;
       const pnl = val - cost;
       const pnlPct = h.avgCost > 0 ? ((price - h.avgCost) / h.avgCost) * 100 : 0;
+      const { dailyPnl, dailyPnlPct } = _dayPnlForStock(h.shares, h.symbol, price);
       const alloc = (val / total) * 100;
       const f = (window.FUNDAMENTALS_DB || {})[h.symbol];
       const ai = AIAnalysis.analyze(h.symbol);
       const meta = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
       return {
         symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
-        kind: 'stock', quantity: h.shares, price, value: val, costBasis: cost,
-        pnl, pnlPct, allocPct: alloc,
+        kind: 'stock', quantity: h.shares, avgCost: h.avgCost, price, value: val, costBasis: cost,
+        pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: alloc,
         divYield: f?.divYield || 0,
         yieldOnCost: DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares),
         aiRating: ai.action, aiConfidence: ai.confidence, sector: meta?.sector,
@@ -8123,13 +8132,14 @@ const PortfolioAnalyticsService = (() => {
       const val = f.units * nav;
       const pnl = val - f.totalInvested;
       const pnlPct = f.avgNav > 0 ? ((nav - f.avgNav) / f.avgNav) * 100 : 0;
+      const { dailyPnl, dailyPnlPct } = _dayPnlForStock(f.units, f.symbol, nav);
       const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
       const fa = (window.FUND_ANALYTICS_DB || {})[f.symbol];
       const ai = AIAnalysis.analyze(f.symbol);
       return {
         symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan',
-        kind: 'fund', quantity: f.units, price: nav, value: val, costBasis: f.totalInvested,
-        pnl, pnlPct, allocPct: (val / total) * 100,
+        kind: 'fund', quantity: f.units, avgCost: f.avgNav, price: nav, value: val, costBasis: f.totalInvested,
+        pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: (val / total) * 100,
         divYield: fa?.divYield || 0, yieldOnCost: null,
         aiRating: ai.action, aiConfidence: ai.confidence, sector: mf?.type,
       };
@@ -8141,11 +8151,13 @@ const PortfolioAnalyticsService = (() => {
       const cost = h.qty * FxService.usdToPkr(h.avgCostUsd || 0);
       const pnl = val - cost;
       const pnlPct = h.avgCostUsd > 0 ? ((FxService.pkrToUsd(price) - h.avgCostUsd) / h.avgCostUsd) * 100 : 0;
+      const { dailyPnl, dailyPnlPct } = _dayPnlForStock(h.qty, h.symbol, price);
       const meta = [...(window.INTL_STOCKS || []), ...(window.CRYPTO_ASSETS || [])].find(x => x.symbol === h.symbol);
       return {
         symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
-        kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', quantity: h.qty, price, value: val, costBasis: cost,
-        pnl, pnlPct, allocPct: (val / total) * 100,
+        kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', quantity: h.qty,
+        avgCost: h.avgCostUsd, price, value: val, costBasis: cost,
+        pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: (val / total) * 100,
         divYield: 0, yieldOnCost: null,
         aiRating: '—', aiConfidence: 0, sector: h.assetClass === 'crypto' ? 'Crypto' : 'US',
       };
@@ -8284,6 +8296,12 @@ const PortfolioBuckets = (() => {
     return txs.filter(t => t.portfolioId === bucketId);
   }
 
+  function bucketCashPkr(bucketId) {
+    if (bucketId === 'akd' && window.USER_AKD_CASH_PKR > 0) return window.USER_AKD_CASH_PKR;
+    if (bucketId === 'rafi' && window.RAFI_BROKER_CASH_PKR > 0) return window.RAFI_BROKER_CASH_PKR;
+    return 0;
+  }
+
   function grossCashDeployed(state, bucketId) {
     const txs = txsForBucket(state, bucketId);
     if (bucketId === 'rafi' && window.RAFI_TOTAL_INVESTED_PKR > 0) {
@@ -8333,14 +8351,18 @@ const PortfolioBuckets = (() => {
       });
     }
 
-    const value = rows.reduce((s, r) => s + r.value, 0);
+    const stockValue = rows.reduce((s, r) => s + r.value, 0);
+    const cashPkr = bucketCashPkr(bucketId);
+    const value = stockValue + cashPkr;
     const invested = rows.reduce((s, r) => s + r.cost, 0);
     const deployed = grossCashDeployed(state, bucketId);
-    const pnl = value - invested;
+    const pnl = deployed.pkr > 0 ? value - deployed.pkr : value - invested;
+    const pnlBase = deployed.pkr > 0 ? deployed.pkr : invested;
     return {
-      value, invested, deployedPkr: deployed.pkr, deployedUsd: deployed.usd, deployedNote: deployed.note,
+      value, stockValue, cashPkr, invested,
+      deployedPkr: deployed.pkr, deployedUsd: deployed.usd, deployedNote: deployed.note,
       pnl,
-      pnlPct: invested > 0 ? (pnl / invested) * 100 : 0,
+      pnlPct: pnlBase > 0 ? (pnl / pnlBase) * 100 : 0,
       positions: rows.length,
     };
   }
@@ -8484,7 +8506,7 @@ const PortfolioBuckets = (() => {
   }
 
   return {
-    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, grossCashDeployed, investmentSummary,
+    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, bucketCashPkr, grossCashDeployed, investmentSummary,
     bucketSparkline, calcDailyPnlForTransactions, bucketBriefRows,
     getHoldingsForBucket, defaultTxType, defaultBroker, cardsHtml, _brokerMatch,
   };
@@ -10415,6 +10437,145 @@ const GlanceBridge = (() => {
 })();
 window.GlanceBridge = GlanceBridge;
 
+;/* === js/services/backup-crypto.js === */
+'use strict';
+/** PIN-encrypted .ledgercap backup (AES-GCM, same salt as PinVault). */
+const BackupCrypto = (() => {
+  async function _key(pin) {
+    if (typeof PinVault === 'undefined' || !PinVault.deriveVaultKeyBits) return null;
+    const bits = await PinVault.deriveVaultKeyBits(String(pin || ''));
+    if (!bits) return null;
+    return crypto.subtle.importKey('raw', bits, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+
+  async function encrypt(json, pin) {
+    const key = await _key(pin);
+    if (!key) throw new Error('PIN required');
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      new TextEncoder().encode(json),
+    );
+    return JSON.stringify({
+      ledgercapEnc: 1,
+      iv: btoa(String.fromCharCode(...iv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(enc))),
+    });
+  }
+
+  async function _passKey(passphrase) {
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(passphrase || '')));
+    return crypto.subtle.importKey('raw', hash, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+
+  async function encryptWithPassphrase(json, passphrase) {
+    const key = await _passKey(passphrase);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(json));
+    return JSON.stringify({
+      ledgercapEnc: 2,
+      iv: btoa(String.fromCharCode(...iv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(enc))),
+    });
+  }
+
+  async function decryptWithPassphrase(raw, passphrase) {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!parsed?.ledgercapEnc) return null;
+    const key = parsed.ledgercapEnc === 2 ? await _passKey(passphrase) : await _key(passphrase);
+    if (!key) throw new Error('Key required');
+    const iv = Uint8Array.from(atob(parsed.iv), (c) => c.charCodeAt(0));
+    const data = Uint8Array.from(atob(parsed.data), (c) => c.charCodeAt(0));
+    const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+    return new TextDecoder().decode(dec);
+  }
+
+  async function decrypt(raw, pin) {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!parsed?.ledgercapEnc) return null;
+    if (parsed.ledgercapEnc === 2) return decryptWithPassphrase(parsed, pin);
+    const key = await _key(pin);
+    if (!key) throw new Error('PIN required');
+    const iv = Uint8Array.from(atob(parsed.iv), (c) => c.charCodeAt(0));
+    const data = Uint8Array.from(atob(parsed.data), (c) => c.charCodeAt(0));
+    const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+    return new TextDecoder().decode(dec);
+  }
+
+  return { encrypt, decrypt, encryptWithPassphrase, decryptWithPassphrase };
+})();
+window.BackupCrypto = BackupCrypto;
+
+;/* === js/services/cloud-backup-service.js === */
+'use strict';
+/** Optional encrypted ledger backup via LedgerCap worker (sync key auth). */
+const CloudBackupService = (() => {
+  function _syncKey(state) {
+    state = state || State.get();
+    return String(state.settings?.cloudBackupKey || state.settings?.telegramSyncKey || '').trim();
+  }
+
+  function _proxyBase(state) {
+    state = state || State.get();
+    const raw = state.settings?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl || '';
+    return typeof resolvePsxProxyUrl === 'function' ? resolvePsxProxyUrl(raw) : raw.replace(/\/$/, '');
+  }
+
+  async function pushBackup() {
+    const key = _syncKey();
+    if (!key) return { ok: false, error: 'Set Cloud sync key in Settings (Telegram sync key works)' };
+    const proxy = _proxyBase();
+    if (!proxy) return { ok: false, error: 'PSX proxy URL required' };
+    if (typeof BackupCrypto === 'undefined') return { ok: false, error: 'Backup crypto unavailable' };
+    try {
+      const enc = await BackupCrypto.encryptWithPassphrase(State.exportJSON(), key);
+      const res = await fetch(`${proxy}/ledger/backup`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-LedgerCap-Sync-Key': key,
+        },
+        body: JSON.stringify({ payload: enc, updatedAt: new Date().toISOString() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: data.error || `HTTP ${res.status} — worker may need ledger/backup route` };
+      return { ok: true, updatedAt: data.updatedAt || new Date().toISOString() };
+    } catch (e) {
+      return { ok: false, error: e.message || 'Network error' };
+    }
+  }
+
+  async function pullBackup() {
+    const key = _syncKey();
+    if (!key) return { ok: false, error: 'Set Cloud sync key in Settings' };
+    const proxy = _proxyBase();
+    if (!proxy) return { ok: false, error: 'PSX proxy URL required' };
+    try {
+      const res = await fetch(`${proxy}/ledger/backup`, {
+        headers: { Accept: 'application/json', 'X-LedgerCap-Sync-Key': key },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: data.error || `HTTP ${res.status}` };
+      if (!data.payload) return { ok: false, error: 'No backup on server' };
+      const json = await BackupCrypto.decryptWithPassphrase(data.payload, key);
+      if (!json) return { ok: false, error: 'Decrypt failed — wrong sync key?' };
+      if (!confirm('Replace local ledger with cloud backup? Export first if unsure.')) {
+        return { ok: false, error: 'Cancelled' };
+      }
+      const ok = State.importJSON(json);
+      if (!ok) return { ok: false, error: 'Invalid backup payload' };
+      return { ok: true, updatedAt: data.updatedAt };
+    } catch (e) {
+      return { ok: false, error: e.message || 'Network error' };
+    }
+  }
+
+  return { pushBackup, pullBackup };
+})();
+window.CloudBackupService = CloudBackupService;
+
 ;/* === js/services/statement-export.js === */
 'use strict';
 /** Tax / audit annual statement — CSV + printable HTML */
@@ -11859,6 +12020,15 @@ const LcEvents = (() => {
     else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
     else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
     else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
+    else if (path === 'App.openSellHolding') App?.openSellHolding?.(sym, broker, tab);
+    else if (path === 'App.reloadForUpdate') App?.reloadForUpdate?.();
+    else if (path === 'PortfolioScreen.setSearch') PortfolioScreen?.setSearch?.(el.value);
+    else if (path === 'PortfolioScreen.setSort') PortfolioScreen?.setSort?.(el.value);
+    else if (path === 'PortfolioScreen.setViewMode') PortfolioScreen?.setViewMode?.(tab);
+    else if (path === 'WhatsNew.dismiss') WhatsNew?.dismiss?.();
+    else if (path === 'ImportCsv._preview') ImportCsv?._preview?.();
+    else if (path === 'ImportCsv._confirm') ImportCsv?._confirm?.();
+    else if (path === 'Settings._exportEncryptedBackup') Settings?._exportEncryptedBackup?.();
     else if (path === 'App._submitPriceAlert') App?._submitPriceAlert?.(sym);
     else if (path === 'PortfolioScreen.reconcile') PortfolioScreen?.reconcile?.(sym, broker, mode);
     else if (path === 'Transactions.openSymbol') Transactions?.openSymbol?.(sym);
@@ -11913,6 +12083,10 @@ const LcEvents = (() => {
 
   function _onInput(ev) {
     const el = ev.target;
+    if (el.dataset.actionInput) {
+      _call(el.dataset.actionInput, el, ev);
+      return;
+    }
     if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
@@ -12654,6 +12828,23 @@ const Navigation = (() => {
     </button>`;
   }
 
+  function _parseHash() {
+    const raw = (location.hash || '').replace(/^#/, '');
+    if (!raw) return { tab: '', bucket: null };
+    const slash = raw.indexOf('/');
+    if (slash === -1) return { tab: raw, bucket: null };
+    return { tab: raw.slice(0, slash), bucket: raw.slice(slash + 1) || null };
+  }
+
+  function _trackRecent(tabId) {
+    if (!tabId || tabId === 'home' || tabId === 'more') return;
+    try {
+      let r = JSON.parse(sessionStorage.getItem('lc_recent_tools') || '[]');
+      r = [tabId, ...r.filter((x) => x !== tabId)].slice(0, 6);
+      sessionStorage.setItem('lc_recent_tools', JSON.stringify(r));
+    } catch (_) {}
+  }
+
   function init() {
     const nav = document.getElementById('nav');
     if (nav) {
@@ -12670,13 +12861,24 @@ const Navigation = (() => {
         <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" data-action="window.toggleTheme">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
+    const parsed = _parseHash();
+    const hashTab = parsed.tab;
     const saved = sessionStorage.getItem('ledgercap_tab');
-    const hashTab = (location.hash || '').replace(/^#/, '');
-    if (hashTab && VALID.has(LEGACY[hashTab] || hashTab)) go(LEGACY[hashTab] || hashTab, true);
-    else if (saved) go(LEGACY[saved] || saved, true);
+    if (hashTab && VALID.has(LEGACY[hashTab] || hashTab)) {
+      const tab = LEGACY[hashTab] || hashTab;
+      go(tab, true, parsed.bucket && tab === 'portfolio' ? { portfolioId: parsed.bucket } : {});
+      if (parsed.bucket && tab === 'portfolio' && typeof PortfolioScreen !== 'undefined') {
+        PortfolioScreen.setFilter(parsed.bucket, { replace: true });
+      }
+    } else if (saved) go(LEGACY[saved] || saved, true);
     window.addEventListener('popstate', (e) => {
-      const tab = e.state?.tab || (location.hash || '').replace(/^#/, '') || sessionStorage.getItem('ledgercap_tab') || 'home';
-      go(LEGACY[tab] || tab, true);
+      const p = _parseHash();
+      const tab = e.state?.tab || p.tab || sessionStorage.getItem('ledgercap_tab') || 'home';
+      const resolved = LEGACY[tab] || tab;
+      go(resolved, true, p.bucket && resolved === 'portfolio' ? { portfolioId: p.bucket } : {});
+      if (p.bucket && resolved === 'portfolio' && typeof PortfolioScreen !== 'undefined') {
+        PortfolioScreen.setFilter(p.bucket, { replace: true });
+      }
     });
   }
 
@@ -12696,6 +12898,7 @@ const Navigation = (() => {
   }
 
   function go(tabId, silent, opts) {
+    opts = opts || {};
     tabId = LEGACY[tabId] || tabId;
     if (!VALID.has(tabId)) tabId = 'home';
     _current = tabId;
@@ -12710,8 +12913,10 @@ const Navigation = (() => {
     document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
     if (!silent) {
       sessionStorage.setItem('ledgercap_tab', tabId);
-      const hash = '#' + tabId;
-      if (location.hash !== hash) history.pushState({ tab: tabId }, '', hash);
+      const bucket = opts.portfolioId || (typeof PortfolioScreen !== 'undefined' ? PortfolioScreen.currentFilter?.() : null);
+      const hash = bucket && tabId === 'portfolio' ? `#portfolio/${bucket}` : `#${tabId}`;
+      if (location.hash !== hash) history.pushState({ tab: tabId, portfolioId: bucket || null }, '', hash);
+      _trackRecent(tabId);
     }
     const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
     document.title = tabLabel + ' — LedgerCap';
@@ -13438,6 +13643,7 @@ const Hub = (() => {
     { id: 'risk-audit', key: 'riskAudit', tone: 'rose' },
     { id: 'insights', key: 'insightsTool', tone: 'violet' },
     { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
+    { id: 'paper-trade', key: 'paperTrade', tone: 'cyan' },
     { id: 'transactions', key: 'transactions', tone: 'slate' },
     { id: 'import', key: 'import', tone: 'slate' },
     { id: 'settings', key: 'settingsTool', tone: 'slate' },
@@ -13634,6 +13840,73 @@ const Hub = (() => {
     </button>`;
   }
 
+  function _marketStatus() {
+    if (typeof PsxSession === 'undefined') return '';
+    const pkt = PsxSession.pktParts();
+    const open = PsxSession.isOpen(pkt);
+    const label = open ? 'OPEN' : (PsxSession.priceLabel(pkt).toUpperCase());
+    const cls = open ? 'psx-up' : 'lc-pulse-neutral';
+    const kse = State.get('kseIndex');
+    const kseTxt = kse?.value ? PsxUI.fmtIndex(kse.value) : '—';
+    return `<div class="lc-market-status" role="status">
+      <span class="lc-market-status-dot ${cls}"></span>
+      <strong>${label}</strong>
+      <span>KSE-100 ${kseTxt}</span>
+      <span>${pkt.dateKey} PKT</span>
+    </div>`;
+  }
+
+  function _quickActions() {
+    return `<div class="lc-hub-quick">
+      <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">CGT &amp; tax</button>
+      <button type="button" class="psx-btn psx-btn-ghost" data-action="StatementExport.exportHtml">Annual PDF</button>
+      <button type="button" class="psx-btn psx-btn-ghost" data-nav="paper-trade">Paper trade</button>
+      <button type="button" class="psx-btn psx-btn-ghost" data-nav="import">Import CSV</button>
+    </div>`;
+  }
+
+  function _rebalanceTeaser(state) {
+    if (typeof PilotEngine === 'undefined' || !PilotEngine.buildRebalancePlan) return '';
+    const plan = PilotEngine.buildRebalancePlan(state);
+    if (!plan?.rows?.length) return '';
+    const drift = plan.drift_count || 0;
+    const actions = plan.rows.filter((r) => r.action === 'TRIM' || r.action === 'ADD' || r.action === 'REVIEW').slice(0, 4);
+    const rowsHtml = actions.length
+      ? actions.map((r) => {
+        const cls = r.action === 'TRIM' ? 'psx-down' : r.action === 'ADD' ? 'psx-up' : '';
+        const delta = r.delta_pct != null ? `${r.delta_pct >= 0 ? '+' : ''}${Number(r.delta_pct).toFixed(1)}%` : '—';
+        return `<div class="lc-rebalance-row">
+          <strong>${r.symbol}</strong>
+          <span class="lc-rebalance-action ${cls}">${r.action}</span>
+          <span class="lc-num">${delta}</span>
+        </div>`;
+      }).join('')
+      : `<p class="lc-empty-note">${plan.summary}</p>`;
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Rebalance</h3><span>${drift ? `${drift} drifted` : 'On target'}</span></div>
+      <div class="lc-sector-card lc-rebalance-card">${rowsHtml}
+        <div class="lc-dash-actions" style="margin-top:12px">
+          <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">Full rebalance plan</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function _recentTools() {
+    let ids = [];
+    try { ids = JSON.parse(sessionStorage.getItem('lc_recent_tools') || '[]'); } catch (_) {}
+    ids = ids.filter((id) => TOOLS().some((t) => t.id === id)).slice(0, 4);
+    if (!ids.length) return '';
+    const map = Object.fromEntries(TOOLS().map((t) => [t.id, t]));
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Recent</h3><span>Quick return</span></div>
+      <div class="lc-hub-quick">${ids.map((id) => {
+        const t = map[id];
+        return t ? `<button type="button" class="psx-btn psx-btn-ghost" data-nav="${id}">${I18n.t(`tools.${t.key}.t`)}</button>` : '';
+      }).join('')}</div>
+    </div>`;
+  }
+
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
       <button type="button" class="lc-tool-card" data-nav="${t.id}">
@@ -13726,6 +13999,7 @@ const Hub = (() => {
           <h2>${_greeting()}</h2>
           <p>Your wealth at a glance</p>
         </div>
+        ${_marketStatus()}
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>
           <div class="lc-dash-hero-val lc-num" data-lc-count="${s.totalValue}" data-lc-count-key="hub-total">${PsxUI.fmt(s.totalValue)}</div>
@@ -13740,6 +14014,7 @@ const Hub = (() => {
           <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
+        ${_quickActions()}
         <div class="lc-dash-market">
           ${_kseCard(k, sign)}
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="portfolio" aria-label="Open portfolio">
@@ -13750,10 +14025,12 @@ const Hub = (() => {
         </div>
         ${_marketPulse(stats)}
         ${_investmentSummary(state)}
+        ${_rebalanceTeaser(state)}
         ${_portfolioSection(state)}
         ${_newsSection()}
         ${_portfolioChart(state)}
         ${_portfolioMovers()}
+        ${_recentTools()}
         <div class="lc-dash-section">
           <div class="lc-dash-section-head"><h3>${I18n.t('hub.toolsTitle')}</h3><span>${I18n.t('hub.toolsSub')}</span></div>
           ${_toolGrid()}
@@ -13944,6 +14221,38 @@ const PortfolioScreen = (() => {
   let _filter = null;
   let _lastHoldings = [];
   let _chartRange = '1M';
+  let _search = '';
+  let _sort = 'value';
+  let _viewMode = (typeof localStorage !== 'undefined' && localStorage.getItem('lc_pf_view')) || 'cards';
+
+  function setSearch(v) { _search = String(v || ''); render(); }
+  function setSort(v) { _sort = v || 'value'; render(); }
+  function setViewMode(v) {
+    _viewMode = v === 'table' ? 'table' : 'cards';
+    try { localStorage.setItem('lc_pf_view', _viewMode); } catch (_) {}
+    render();
+  }
+
+  function _filterSort(holdings) {
+    let rows = holdings;
+    const q = _search.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((h) =>
+        h.symbol.toLowerCase().includes(q) ||
+        (h.broker || '').toLowerCase().includes(q) ||
+        (h.name || '').toLowerCase().includes(q));
+    }
+    return [...rows].sort((a, b) => {
+      if (_sort === 'symbol') return a.symbol.localeCompare(b.symbol);
+      if (_sort === 'pnl') return (b.pnl || 0) - (a.pnl || 0);
+      if (_sort === 'daily') return (b.dailyPnl || 0) - (a.dailyPnl || 0);
+      return (b.value || 0) - (a.value || 0);
+    });
+  }
+
+  function _priceStale(sym) {
+    return typeof State !== 'undefined' && State.isPriceStale && State.isPriceStale(sym, 24);
+  }
 
   function setFilter(id, opts) {
     opts = opts || {};
@@ -14009,6 +14318,113 @@ const PortfolioScreen = (() => {
     render();
   }
 
+  function _holdingCard(h) {
+    const qtyLabel = h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 0);
+    const avgLabel = h.kind === 'intl' || h.kind === 'crypto'
+      ? '$' + Number(h.avgCost || 0).toFixed(2)
+      : PsxUI.fmt(h.avgCost || (h.quantity ? h.costBasis / h.quantity : 0));
+    const priceLabel = h.kind === 'intl' || h.kind === 'crypto'
+      ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2)
+      : PsxUI.fmt(h.price);
+    const dayCls = PsxUI.chgCls(h.dailyPnlPct || 0);
+    const totCls = PsxUI.chgCls(h.pnlPct || 0);
+    const spark = typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : '';
+    const broker = (h.broker || '').replace(/"/g, '&quot;');
+    const stale = _priceStale(h.symbol);
+    const canSell = h.kind === 'stock' || h.kind === 'intl' || h.kind === 'crypto';
+    const sellType = h.kind === 'intl' ? 'INTL_SELL' : h.kind === 'crypto' ? 'CRYPTO_SELL' : 'SELL';
+    return `<article class="lc-holding-inv${stale ? ' lc-holding-inv--stale' : ''}" data-nav="research">
+      <div class="lc-holding-inv-head">
+        <div class="lc-holding-inv-sym">
+          <strong>${h.symbol}</strong>
+          <span class="lc-holding-inv-price">${priceLabel}</span>
+          <span class="lc-holding-inv-sub">${h.broker}${stale ? ' · stale price' : ''}</span>
+        </div>
+        <div class="lc-holding-inv-value lc-num">${PsxUI.fmt(h.value)}</div>
+      </div>
+      <div class="lc-holding-inv-meta">
+        <span><label>Cost</label><b class="lc-num">${PsxUI.fmt(h.costBasis)}</b></span>
+        <span><label>Avg buy</label><b class="lc-num">${avgLabel}</b></span>
+        <span><label>Shares</label><b class="lc-num">${qtyLabel}</b></span>
+      </div>
+      <div class="lc-holding-inv-pnl">
+        <div class="lc-pf-pnl-box ${dayCls}">
+          <label>${I18n.t('portfolio.today')}</label>
+          <b class="lc-num">${PsxUI.fmt(h.dailyPnl || 0, { signed: true })}</b>
+          <em>${PsxUI.fmt(h.dailyPnlPct || 0, { pct: true, signed: true })}</em>
+        </div>
+        <div class="lc-pf-pnl-box ${totCls}">
+          <label>${I18n.t('portfolio.gainLoss')}</label>
+          <b class="lc-num">${PsxUI.fmt(h.pnl || 0, { signed: true })}</b>
+          <em>${PsxUI.fmt(h.pnlPct || 0, { pct: true, signed: true })}</em>
+        </div>
+      </div>
+      <div class="lc-holding-inv-foot">
+        <div class="lc-holding-inv-spark" aria-hidden="true">${spark}</div>
+        <div class="lc-holding-inv-actions">
+          <button type="button" class="lc-link-btn" data-action="App.refreshSymbolPrice" data-symbol="${h.symbol}" data-refresh-symbol="${h.symbol}" data-stop="1" aria-label="Refresh ${h.symbol} price">↻</button>
+          ${canSell ? `<button type="button" class="lc-link-btn lc-link-btn--sell" data-action="App.openSellHolding" data-symbol="${h.symbol}" data-broker="${broker}" data-tab="${sellType}" data-stop="1">Sell</button>` : ''}
+          <button type="button" class="lc-link-btn" data-action="App.openPriceAlert" data-symbol="${h.symbol}" data-stop="1">Alert</button>
+          <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${broker}" data-mode="${h.kind}" data-stop="1">Edit</button>
+          <button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-symbol="${h.symbol}" data-stop="1">Txs</button>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function _holdingTableRow(h) {
+    const broker = (h.broker || '').replace(/"/g, '&quot;');
+    const stale = _priceStale(h.symbol);
+    const canSell = h.kind === 'stock' || h.kind === 'intl' || h.kind === 'crypto';
+    const sellType = h.kind === 'intl' ? 'INTL_SELL' : h.kind === 'crypto' ? 'CRYPTO_SELL' : 'SELL';
+    return `<tr class="${stale ? 'lc-row-stale' : ''}">
+      <td data-nav="research"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}${stale ? ' · stale' : ''}</div></td>
+      <td class="lc-num">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 0)}</td>
+      <td class="lc-num">${PsxUI.fmt(h.price)}</td>
+      <td class="lc-num">${PsxUI.fmt(h.costBasis)}</td>
+      <td class="lc-num">${PsxUI.fmt(h.value)}</td>
+      <td class="lc-num ${PsxUI.chgCls(h.dailyPnlPct || 0)}">${PsxUI.fmt(h.dailyPnl || 0, { signed: true })}<br><small>${PsxUI.fmt(h.dailyPnlPct || 0, { pct: true, signed: true })}</small></td>
+      <td class="lc-num ${PsxUI.chgCls(h.pnlPct || 0)}">${PsxUI.fmt(h.pnl || 0, { signed: true })}<br><small>${PsxUI.fmt(h.pnlPct || 0, { pct: true, signed: true })}</small></td>
+      <td style="white-space:nowrap">
+        <button type="button" class="lc-link-btn" data-action="App.refreshSymbolPrice" data-symbol="${h.symbol}" data-refresh-symbol="${h.symbol}" data-stop="1" aria-label="Refresh ${h.symbol}">↻</button>
+        ${canSell ? `<button type="button" class="lc-link-btn" data-action="App.openSellHolding" data-symbol="${h.symbol}" data-broker="${broker}" data-tab="${sellType}" data-stop="1">Sell</button>` : ''}
+        <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${broker}" data-mode="${h.kind}" data-stop="1">Edit</button>
+      </td>
+    </tr>`;
+  }
+
+  function _holdingsToolbar(count) {
+    return `<div class="lc-pf-holdings-bar">
+      <input type="search" class="lc-pf-search" placeholder="Search symbol…" value="${_search.replace(/"/g, '&quot;')}" aria-label="Search holdings" data-action-input="PortfolioScreen.setSearch">
+      <select class="lc-pf-sort" aria-label="Sort holdings" data-action-change="PortfolioScreen.setSort">
+        <option value="value"${_sort === 'value' ? ' selected' : ''}>Value</option>
+        <option value="pnl"${_sort === 'pnl' ? ' selected' : ''}>Total P&amp;L</option>
+        <option value="daily"${_sort === 'daily' ? ' selected' : ''}>Today</option>
+        <option value="symbol"${_sort === 'symbol' ? ' selected' : ''}>Symbol</option>
+      </select>
+      <div class="lc-pf-view-toggle" role="group" aria-label="View mode">
+        <button type="button" class="lc-range-btn${_viewMode === 'cards' ? ' on' : ''}" data-action="PortfolioScreen.setViewMode" data-tab="cards">Cards</button>
+        <button type="button" class="lc-range-btn${_viewMode === 'table' ? ' on' : ''}" data-action="PortfolioScreen.setViewMode" data-tab="table">Table</button>
+      </div>
+      <span class="lc-pf-count">${count} shown</span>
+    </div>`;
+  }
+
+  function _holdingsBlock(holdings) {
+    const rows = _filterSort(holdings);
+    if (!rows.length) {
+      return `<div class="lc-empty-state"><p>No holdings match “${_search.replace(/</g, '')}”.</p></div>`;
+    }
+    if (_viewMode === 'table') {
+      return `${_holdingsToolbar(rows.length)}<div class="psx-table-wrap lc-pf-table-wrap">
+        <table class="psx-table"><thead><tr>
+          <th>Symbol</th><th>Qty</th><th>Last</th><th>Cost</th><th>Value</th><th>Today</th><th>Total</th><th></th>
+        </tr></thead><tbody>${rows.map(_holdingTableRow).join('')}</tbody></table>
+      </div>`;
+    }
+    return `${_holdingsToolbar(rows.length)}<div class="lc-holdings-inv">${rows.map(_holdingCard).join('')}</div>`;
+  }
+
   function render(opts) {
     opts = opts || {};
     if (opts.portfolioId) _filter = opts.portfolioId;
@@ -14046,9 +14462,14 @@ const PortfolioScreen = (() => {
     _lastHoldings = holdings;
     const bucketStats = _filter ? PortfolioBuckets.statsForBucket(state, _filter) : null;
     const s = PortfolioAnalyticsService.getSummary(state);
-    const daily = State.calcDailyPnl();
+    const daily = _filter
+      ? holdings.reduce((sum, h) => sum + (h.dailyPnl || 0), 0)
+      : State.calcDailyPnl();
     const heroValue = bucketStats ? bucketStats.value : s.totalValue;
-    const heroPnlPct = bucketStats ? bucketStats.pnlPct : s.totalReturn.pct;
+    const totalPnl = bucketStats ? bucketStats.pnl : s.totalReturn.abs;
+    const totalPnlPct = bucketStats ? bucketStats.pnlPct : s.totalReturn.pct;
+    const dailyPct = heroValue > 0 ? (daily / heroValue) * 100 : 0;
+    const heroPnlPct = totalPnlPct;
     const chartSeries = _chartData(_chartRange, heroValue);
     const chartUp = chartSeries.length >= 2 && chartSeries[chartSeries.length - 1] >= chartSeries[0];
     const ranges = ['1D', '1W', '1M', '1Y', 'All'];
@@ -14069,6 +14490,10 @@ const PortfolioScreen = (() => {
         <div class="lc-screen-head">
           <h1>${active ? active.name : I18n.t('portfolio.title')}</h1>
           <p>${active ? active.desc : I18n.t('portfolio.sub')}</p>
+          ${_filter ? `<div class="lc-pf-toolbar">
+            <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter}">Transaction</button>
+            <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.openBucket" data-tab="${_filter}">Ledger</button>
+          </div>` : ''}
         </div>
         <div class="lc-dash-section">
           <div class="lc-dash-section-head">
@@ -14080,16 +14505,25 @@ const PortfolioScreen = (() => {
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${active ? active.name : I18n.t('portfolio.value')}</div>
           <div class="lc-dash-hero-val lc-num" data-lc-count="${heroValue}" data-lc-count-key="pf-hero">${PsxUI.fmt(heroValue)}</div>
-          <div class="lc-dash-hero-row">
-            <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
-            <span class="lc-dash-chip ${heroPnlPct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</span>
+          <div class="lc-pf-pnl-grid">
+            <div class="lc-pf-pnl-box ${daily >= 0 ? 'up' : 'down'}">
+              <label>${I18n.t('portfolio.today')}</label>
+              <b class="lc-num">${PsxUI.fmt(daily, { signed: true })}</b>
+              <em>${PsxUI.fmt(dailyPct, { pct: true, signed: true })}</em>
+            </div>
+            <div class="lc-pf-pnl-box ${totalPnl >= 0 ? 'up' : 'down'}">
+              <label>${I18n.t('portfolio.gainLoss')}</label>
+              <b class="lc-num">${PsxUI.fmt(totalPnl, { signed: true })}</b>
+              <em>${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</em>
+            </div>
           </div>
           ${chartBlock}
         </div>
         <div class="lc-pulse-row">
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(2)}%</b></div>
-          <div class="lc-pulse-pill"><label>${I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(bucketStats ? bucketStats.deployedPkr : s.invested)}</b></div>
+          <div class="lc-pulse-pill"><label>${bucketStats?.deployedPkr ? 'Deployed' : I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(bucketStats?.deployedPkr ? bucketStats.deployedPkr : s.invested)}</b></div>
           <div class="lc-pulse-pill"><label>Cost basis</label><b>${PsxUI.fmt(bucketStats ? bucketStats.invested : s.invested)}</b></div>
+          ${bucketStats?.cashPkr ? `<div class="lc-pulse-pill"><label>Cash</label><b>${PsxUI.fmt(bucketStats.cashPkr)}</b></div>` : ''}
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.gainLoss')}</label><b class="${(bucketStats ? bucketStats.pnl : s.totalReturn.abs) >= 0 ? 'psx-up' : 'psx-down'}">${PsxUI.fmt(bucketStats ? bucketStats.pnl : s.totalReturn.abs, { signed: true })}</b></div>
           <div class="lc-pulse-pill"><label>Positions</label><b>${holdings.length}</b></div>
         </div>
@@ -14102,25 +14536,7 @@ const PortfolioScreen = (() => {
         <div class="lc-dash-section">
           <div class="lc-dash-section-head"><h3>Holdings</h3><span>${holdings.length} positions</span></div>
         </div>
-        ${holdings.length ? `<div class="psx-table-wrap" style="margin:0 var(--lc-space-4);border-radius:var(--lc-radius);overflow:hidden;box-shadow:var(--lc-shadow)">
-          <table class="psx-table"><thead><tr>
-            <th>Symbol</th><th class="lc-spark-cell" aria-hidden="true"></th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
-          </tr></thead><tbody>
-          ${holdings.map(h => `<tr>
-            <td data-nav="research"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
-            <td class="lc-spark-cell">${typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : ''}</td>
-            <td class="lc-num" data-nav="research">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td class="lc-num" data-nav="research">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
-            <td class="lc-num" data-nav="research">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
-            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" data-nav="research">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
-            <td style="white-space:nowrap">
-              <button type="button" class="lc-link-btn" data-action="App.openPriceAlert" data-symbol="${h.symbol}" data-stop="1">Alert</button>
-              <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${(h.broker || '').replace(/"/g, '&quot;')}" data-mode="${h.kind}" data-stop="1">Edit</button>
-              <button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-symbol="${h.symbol}" data-stop="1">Txs</button>
-            </td>
-          </tr>`).join('')}
-          </tbody></table>
-        </div>` : `<div class="lc-empty-state" style="margin-top:0">
+        ${holdings.length ? _holdingsBlock(holdings) : `<div class="lc-empty-state" style="margin-top:0">
           <h2>No holdings in this portfolio</h2>
           <p>Add ${active ? active.name.toLowerCase() : 'positions'} to start tracking.</p>
           <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter || 'rafi'}">${I18n.t('addHoldings')}</button>
@@ -14138,7 +14554,7 @@ const PortfolioScreen = (() => {
     if (h && typeof App !== 'undefined') App.openReconcilePosition(h);
   }
 
-  return { render, setFilter, clearFilter, currentFilter, reconcile, setChartRange };
+  return { render, setFilter, clearFilter, currentFilter, reconcile, setChartRange, setSearch, setSort, setViewMode };
 })();
 window.PortfolioScreen = PortfolioScreen;
 
@@ -15927,6 +16343,10 @@ const Settings = (() => {
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
         <button type="button" class="btn-secondary" data-action="Settings._exportData">↑ Export .ledgercap Backup</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportEncryptedBackup">🔒 Encrypted backup (PIN)</button>
+        <button type="button" class="btn-secondary" data-action="Settings._pushCloudBackup">☁ Push cloud backup</button>
+        <button type="button" class="btn-secondary" data-action="Settings._pullCloudBackup">☁ Restore from cloud</button>
+        <p class="field-hint" style="margin:0">Cloud uses your Telegram sync key — encrypted ledger only, never plaintext.</p>
         <button type="button" class="btn-secondary" data-action="Settings._importData">↓ Import .ledgercap Backup</button>
         <button type="button" class="btn-danger" data-action="Settings._resetVault">⚠ Reset All Data</button>
       </div>
@@ -16144,16 +16564,55 @@ const Settings = (() => {
     App.showToast('Backup exported', 'success');
   }
 
+  async function _exportEncryptedBackup() {
+    if (PinVault?.isDecoyMode?.()) {
+      App.showToast('Export blocked in decoy view', 'warning');
+      return;
+    }
+    if (typeof BackupCrypto === 'undefined') {
+      App.showToast('Encryption unavailable', 'error');
+      return;
+    }
+    const pin = prompt('Enter PIN to encrypt this backup (4+ digits):');
+    if (!pin || pin.length < 4) {
+      App.showToast('PIN required for encrypted backup', 'warning');
+      return;
+    }
+    try {
+      const payload = await BackupCrypto.encrypt(State.exportJSON(), pin);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ledgercap-encrypted-${new Date().toISOString().slice(0, 10)}.ledgercap.enc`;
+      a.click();
+      URL.revokeObjectURL(url);
+      App.showToast('Encrypted backup exported', 'success');
+    } catch (e) {
+      App.showToast('Encrypt failed — enable PIN vault first', 'error');
+    }
+  }
+
   function _importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.ledgercap,.json,.stunds,application/json';
+    input.accept = '.ledgercap,.ledgercap.enc,.json,.stunds,application/json';
     input.onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = ev => {
-        const ok = State.importJSON(ev.target.result);
+      reader.onload = async (ev) => {
+        let raw = ev.target.result;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.ledgercapEnc) {
+            const pin = prompt('Enter PIN to decrypt backup:');
+            if (!pin) return;
+            raw = await BackupCrypto.decrypt(parsed, pin);
+            if (!raw) { App.showToast('Decrypt failed — wrong PIN?', 'error'); return; }
+          }
+        } catch (_) { /* plain json */ }
+        const ok = State.importJSON(raw);
         if (ok) { App.showToast('Data imported successfully', 'success'); App.renderCurrent(); }
         else App.showToast('Invalid backup file', 'error');
       };
@@ -16476,7 +16935,37 @@ const Settings = (() => {
     App.showToast(`Proxy OK (${res.proxy || 'worker'})`, 'success');
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  async function _pushCloudBackup() {
+    if (typeof CloudBackupService === 'undefined') {
+      App.showToast('Cloud backup not loaded', 'error');
+      return;
+    }
+    const syncKey = document.getElementById('tg-sync-key')?.value?.trim();
+    if (syncKey) State.update((s) => { s.settings.telegramSyncKey = syncKey; });
+    App.showToast('Uploading encrypted backup…', 'info');
+    const res = await CloudBackupService.pushBackup();
+    App.showToast(res.ok ? 'Cloud backup saved' : (res.error || 'Upload failed'), res.ok ? 'success' : 'error');
+  }
+
+  async function _pullCloudBackup() {
+    if (typeof CloudBackupService === 'undefined') {
+      App.showToast('Cloud backup not loaded', 'error');
+      return;
+    }
+    const syncKey = document.getElementById('tg-sync-key')?.value?.trim();
+    if (syncKey) State.update((s) => { s.settings.telegramSyncKey = syncKey; });
+    App.showToast('Fetching cloud backup…', 'info');
+    const res = await CloudBackupService.pullBackup();
+    if (res.ok) {
+      App.showToast('Restored from cloud', 'success');
+      App.renderCurrent();
+      render();
+    } else if (res.error !== 'Cancelled') {
+      App.showToast(res.error || 'Restore failed', 'error');
+    }
+  }
+
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
 
@@ -18021,6 +18510,7 @@ const Onboarding = (() => {
           <button type="button" class="ob-skip-top" data-action="Onboarding.skip">Skip</button>
         </div>
         <div class="ob-progress">${_dots(1)}</div>
+        <p class="ob-step-label">Step 1 of 3</p>
 
         <div class="ob-panel on" id="ob-panel-1">
           <div class="ob-hero-icon"><img src="assets/icons/icon-mark.svg" alt="" width="56" height="56"></div>
@@ -18035,6 +18525,7 @@ const Onboarding = (() => {
         </div>
 
         <div class="ob-panel" id="ob-panel-2">
+          <p class="ob-step-label">Step 2 of 3</p>
           <h1 class="ob-title">Income &amp; goals</h1>
           <p class="ob-desc">Used for SIP progress and financial freedom math. Your ledger data stays untouched.</p>
           <div class="field">
@@ -18065,6 +18556,7 @@ const Onboarding = (() => {
         </div>
 
         <div class="ob-panel" id="ob-panel-3">
+          <p class="ob-step-label">Step 3 of 3</p>
           <h1 class="ob-title">Almost done</h1>
           <p class="ob-desc">Pick your main broker. We'll pull PSX prices through your secure proxy when markets are open.</p>
           <div class="field">
@@ -18083,6 +18575,10 @@ const Onboarding = (() => {
           <div class="ob-nav">
             <button type="button" class="btn-ghost" data-action="Onboarding.back">Back</button>
             <button type="button" class="btn-primary" data-action="Onboarding.finish">Open dashboard</button>
+          </div>
+          <div class="ob-quick-paths">
+            <button type="button" class="btn-ghost" data-action="App.loadDemo">Try demo portfolio</button>
+            <button type="button" class="btn-ghost" data-nav="import">Import CSV</button>
           </div>
         </div>
       </div>`;
@@ -18133,13 +18629,60 @@ const Onboarding = (() => {
     });
     _close();
     App.showToast('Welcome to LedgerCap', 'success');
-    Navigation.go('dashboard');
+    Navigation.go('home');
     setTimeout(() => App.refreshPrices(), 600);
   }
 
   return { mount, next, back, skip, finish, isDone };
 })();
 window.Onboarding = Onboarding;
+
+;/* === js/modules/whats-new.js === */
+'use strict';
+const WhatsNew = (() => {
+  const NOTES = {
+    '3.46.0': [
+      'Undo last transaction (10s toast)',
+      'Per-holding price refresh (↻ on cards)',
+      'Cloud encrypted backup push/restore',
+      'Hub rebalance summary card',
+      'Urdu nav clip fixes',
+    ],
+    '3.45.0': [
+      'Portfolio: search, sort, cards/table toggle, Sell shortcut',
+      'Import CSV preview before merge',
+      'Hub: market status, CGT & paper trade shortcuts',
+      'PIN-encrypted backup export',
+      'Update banner when new version live',
+    ],
+  };
+
+  function maybeShow() {
+    const v = window.LEDGERCAP_VERSION?.app || '';
+    if (!v || !NOTES[v]) return;
+    const seen = localStorage.getItem('lc_seen_version');
+    if (seen === v) return;
+    localStorage.setItem('lc_seen_version', v);
+    const items = NOTES[v].map((t) => `<li>${t}</li>`).join('');
+    const el = document.createElement('div');
+    el.id = 'lc-whats-new';
+    el.className = 'lc-whats-new';
+    el.innerHTML = `
+      <div class="lc-whats-new-card" role="dialog" aria-modal="true" aria-label="What's new">
+        <h2>What's new · v${v}</h2>
+        <ul>${items}</ul>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="WhatsNew.dismiss">Got it</button>
+      </div>`;
+    document.body.appendChild(el);
+  }
+
+  function dismiss() {
+    document.getElementById('lc-whats-new')?.remove();
+  }
+
+  return { maybeShow, dismiss };
+})();
+window.WhatsNew = WhatsNew;
 
 ;/* === js/modules/global.js === */
 'use strict';
@@ -18511,6 +19054,8 @@ window.Zakat = Zakat;
 ;/* === js/modules/import.js === */
 'use strict';
 const ImportCsv = (() => {
+  let _pending = [];
+
   function _portfolioOptions() {
     if (typeof PortfolioBuckets === 'undefined') return '';
     const custom = PortfolioBuckets.list().filter(p => !p.builtin);
@@ -18525,12 +19070,17 @@ const ImportCsv = (() => {
   function render() {
     const screen = document.getElementById('screen-import');
     if (!screen) return;
+    _pending = [];
     screen.innerHTML = PsxUI.lcDash('Import CSV', 'IBKR · Binance · generic trade log', `
       <div class="lc-verdict"><h3>Format</h3><p>Columns: <code>date,symbol,type,quantity,price,broker</code>. Types: BUY, SELL, INTL_BUY, CRYPTO_BUY.</p></div>
       <div class="lc-form-block">
         ${_portfolioOptions()}
         <textarea id="csv-input" class="lc-field-input lc-field-textarea" rows="10" placeholder="date,symbol,type,quantity,price,broker&#10;2026-01-15,AAPL,INTL_BUY,10,195,IBKR" aria-label="CSV rows"></textarea>
-        <button type="button" class="psx-btn psx-btn-primary" style="width:100%;margin-top:12px" data-action="ImportCsv._run">Import rows</button>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button type="button" class="psx-btn psx-btn-ghost" data-action="ImportCsv._preview">Preview</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="ImportCsv._confirm" id="csv-import-btn" disabled>Import ${_pending.length || ''}</button>
+        </div>
+        <div id="csv-preview" class="lc-csv-preview" aria-live="polite"></div>
         <p id="csv-result" style="margin-top:12px;font-size:13px;color:var(--psx-text-3)"></p>
       </div>
     `);
@@ -18540,8 +19090,6 @@ const ImportCsv = (() => {
     const parts = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
     if (parts.length < 4) return null;
     let [date, symbol, type, qty, price, broker] = parts;
-    // Sanitize identity fields at the import boundary — they are later
-    // interpolated into innerHTML across the app.
     symbol = String(symbol || '').replace(/[^A-Za-z0-9.\-:]/g, '').slice(0, 16);
     broker = String(broker || '').replace(/[<>"'&]/g, '').slice(0, 32);
     if (!date || !symbol || date === 'date') return null;
@@ -18561,24 +19109,53 @@ const ImportCsv = (() => {
     return null;
   }
 
-  function _run() {
+  function _parseAll() {
     const raw = document.getElementById('csv-input')?.value || '';
+    return raw.split(/\r?\n/).filter(Boolean).map(_parseLine).filter(Boolean);
+  }
+
+  function _preview() {
+    _pending = _parseAll();
+    const el = document.getElementById('csv-preview');
+    const btn = document.getElementById('csv-import-btn');
+    if (btn) {
+      btn.disabled = !_pending.length;
+      btn.textContent = _pending.length ? `Import ${_pending.length} rows` : 'Import';
+    }
+    if (!el) return;
+    if (!_pending.length) {
+      el.innerHTML = '<p class="lc-empty-note">No valid rows — check header and columns.</p>';
+      return;
+    }
+    el.innerHTML = `<table class="psx-table"><thead><tr><th>Date</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Price</th><th>Broker</th></tr></thead><tbody>
+      ${_pending.slice(0, 20).map((t) => `<tr><td>${t.date}</td><td>${t.symbol}</td><td>${t.type}</td><td>${t.shares ?? t.qty ?? ''}</td><td>${t.price ?? t.priceUsd ?? ''}</td><td>${t.broker || ''}</td></tr>`).join('')}
+      </tbody></table>${_pending.length > 20 ? `<p class="lc-empty-note">+${_pending.length - 20} more rows</p>` : ''}`;
+  }
+
+  function _confirm() {
+    if (!_pending.length) {
+      _preview();
+      if (!_pending.length) return;
+    }
     const portfolioId = document.getElementById('csv-portfolio-id')?.value || '';
-    let n = 0;
-    raw.split(/\r?\n/).filter(Boolean).forEach(line => {
-      const tx = _parseLine(line);
-      if (tx) {
-        if (portfolioId) tx.portfolioId = portfolioId;
-        State.addTransaction(tx);
-        n++;
-      }
+    _pending.forEach((tx) => {
+      if (portfolioId) tx.portfolioId = portfolioId;
+      State.addTransaction(tx);
     });
+    const n = _pending.length;
+    _pending = [];
     const el = document.getElementById('csv-result');
     if (el) el.textContent = n ? `Imported ${n} transactions${portfolioId ? ' into custom portfolio' : ''}.` : 'No valid rows found.';
     if (n && typeof App !== 'undefined') App.renderCurrent();
+    render();
   }
 
-  return { render, _run };
+  function _run() {
+    _preview();
+    _confirm();
+  }
+
+  return { render, _preview, _confirm, _run };
 })();
 window.ImportCsv = ImportCsv;
 
@@ -19431,6 +20008,7 @@ const App = (() => {
     _checkDeployVersion();
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
+    if (typeof WhatsNew !== 'undefined') WhatsNew.maybeShow();
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     if (typeof LcPolish !== 'undefined') LcPolish.init();
     if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
@@ -19470,28 +20048,114 @@ const App = (() => {
   }
 
   function _checkDeployVersion() {
-    const local = window.APP_VERSION || '';
+    const local = window.LEDGERCAP_VERSION?.app || window.APP_VERSION || '';
     fetch('./VERSION.json?_=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json())
       .then(v => {
         const remote = v.version || v.appVersion || '';
-        if (remote && local && remote !== local) {
-          showToast(`Update available (${remote}). Hard refresh or clear site data.`, 'info', 6000);
-        }
+        if (remote && local && remote !== local) _showUpdateBanner(remote);
       })
       .catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        _showUpdateBanner(window.LEDGERCAP_VERSION?.app || 'new', true);
+      });
+    }
   }
 
-  function showToast(msg, type, ms) {
+  function _showUpdateBanner(version, swReady) {
+    let bar = document.getElementById('lc-update-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'lc-update-bar';
+      bar.className = 'lc-update-bar';
+      bar.setAttribute('role', 'status');
+      document.body.prepend(bar);
+    }
+    bar.innerHTML = `<span>${swReady ? 'App updated' : 'Update available'} (v${version})</span>
+      <button type="button" class="psx-btn psx-btn-primary psx-btn-sm" data-action="App.reloadForUpdate">Refresh</button>`;
+  }
+
+  function reloadForUpdate() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => reg?.waiting?.postMessage({ type: 'SKIP_WAITING' }));
+    }
+    location.reload();
+  }
+
+  let _pendingUndo = null;
+  let _undoTimer = null;
+
+  function showToast(msg, type, msOrOpts) {
     type = type || 'info';
-    ms = ms || 3000;
+    let ms = 3000;
+    let opts = {};
+    if (typeof msOrOpts === 'number') ms = msOrOpts;
+    else if (msOrOpts && typeof msOrOpts === 'object') {
+      opts = msOrOpts;
+      ms = opts.ms || 3000;
+    }
     const wrap = document.getElementById('toast-wrap');
     if (!wrap) return;
     const el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.textContent = msg;
+    el.className = `toast ${type}${opts.undo ? ' toast--undo' : ''}`;
+    if (opts.undo) {
+      el.innerHTML = `<span class="lc-toast-msg">${msg}</span><button type="button" class="lc-toast-undo" data-action="App._runUndo">Undo</button>`;
+      _pendingUndo = opts.undo;
+      clearTimeout(_undoTimer);
+      _undoTimer = setTimeout(() => { _pendingUndo = null; }, ms);
+    } else {
+      el.textContent = msg;
+    }
     wrap.appendChild(el);
     setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, ms);
+  }
+
+  function _runUndo() {
+    const fn = _pendingUndo;
+    _pendingUndo = null;
+    clearTimeout(_undoTimer);
+    if (typeof fn === 'function') {
+      fn();
+      showToast('Transaction undone', 'info', 2500);
+    }
+  }
+
+  async function refreshSymbolPrice(symbol) {
+    if (!symbol) return;
+    const isDemo = new URLSearchParams(location.search).get('demo') === '1'
+      || sessionStorage.getItem('ledgercap_demo_mode') === '1';
+    if (isDemo) {
+      showToast('Demo mode — live refresh disabled', 'info');
+      return;
+    }
+    document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
+      b.disabled = true;
+      b.setAttribute('aria-busy', 'true');
+    });
+    showToast(`Refreshing ${symbol}…`, 'info', 2000);
+    try {
+      const q = await Prices.fetchStock(symbol);
+      if (q?.price) {
+        State.updatePrice(symbol, {
+          price: q.price,
+          prevClose: q.prevClose || q.price,
+          source: q.source,
+          ts: Date.now(),
+        });
+        showToast(`${symbol} · ${Prices.sourceLabel(q.source)}`, 'success');
+        renderCurrent();
+      } else {
+        showToast(`${symbol} — no live quote`, 'warning');
+      }
+    } catch (e) {
+      showToast(e.message || `${symbol} refresh failed`, 'error');
+    } finally {
+      document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
+        b.disabled = false;
+        b.removeAttribute('aria-busy');
+      });
+    }
   }
 
   async function _fetchMarketIndex() {
@@ -19705,6 +20369,10 @@ const App = (() => {
     const sheet = document.getElementById('bottom-sheet');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
+  }
+
+  function openSellHolding(symbol, broker, type) {
+    openAddTransaction(type || 'SELL', symbol, broker);
   }
 
   function openAddTransaction(type, symbol, broker) {
@@ -20019,9 +20687,15 @@ const App = (() => {
     }
 
     State.addTransaction(tx);
+    const addedId = State.get().transactions.slice(-1).id;
     closeBottomSheet();
-    showToast('Transaction added', 'success');
-    renderCurrent();
+    showToast('Transaction added', 'success', {
+      ms: 10000,
+      undo: () => {
+        State.deleteTransaction(addedId);
+        renderCurrent();
+      },
+    });
   }
 
   function deleteTransaction(id) {
@@ -20197,8 +20871,8 @@ const App = (() => {
     Navigation.go(Navigation.current(), true);
   }
 
-  return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
-    openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
+  return { launch, showToast, refreshPrices, refreshSymbolPrice, clearWrongPrices, openBottomSheet, closeBottomSheet,
+    openAddTransaction, openSellHolding, reloadForUpdate, _submitTransaction, _runUndo, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,

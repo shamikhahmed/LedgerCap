@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-02T12:18:38.506Z",
+  "generatedAt": "2026-07-02T18:36:04.653Z",
   "themes": [
     "dark",
     "light"
@@ -307,7 +307,14 @@
               "desktop": "light/desktop/tools/import.png"
             }
           },
-          "scroll": {}
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/import-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/import-scroll.png"
+            }
+          }
         },
         {
           "id": "screener",
@@ -558,7 +565,11 @@
               "desktop": "light/desktop/tools/comparison.png"
             }
           },
-          "scroll": {}
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/comparison-scroll.png"
+            }
+          }
         },
         {
           "id": "performance",

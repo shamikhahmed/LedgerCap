@@ -92,6 +92,14 @@ const PortfolioAnalyticsService = (() => {
     };
   }
 
+  function _dayPnlForStock(shares, symbol, fallbackPrice) {
+    const curr = State.getPrice(symbol) || fallbackPrice || 0;
+    const prev = State.getPrevClose(symbol) || curr;
+    if (!curr || !prev || !shares) return { dailyPnl: 0, dailyPnlPct: 0 };
+    const dailyPnlPct = prev > 0 ? ((curr - prev) / prev) * 100 : 0;
+    return { dailyPnl: shares * (curr - prev), dailyPnlPct };
+  }
+
   function getHoldings(state) {
     state = state || State.get();
     const txs = state.transactions || [];
@@ -102,14 +110,15 @@ const PortfolioAnalyticsService = (() => {
       const cost = h.shares * h.avgCost;
       const pnl = val - cost;
       const pnlPct = h.avgCost > 0 ? ((price - h.avgCost) / h.avgCost) * 100 : 0;
+      const { dailyPnl, dailyPnlPct } = _dayPnlForStock(h.shares, h.symbol, price);
       const alloc = (val / total) * 100;
       const f = (window.FUNDAMENTALS_DB || {})[h.symbol];
       const ai = AIAnalysis.analyze(h.symbol);
       const meta = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
       return {
         symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
-        kind: 'stock', quantity: h.shares, price, value: val, costBasis: cost,
-        pnl, pnlPct, allocPct: alloc,
+        kind: 'stock', quantity: h.shares, avgCost: h.avgCost, price, value: val, costBasis: cost,
+        pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: alloc,
         divYield: f?.divYield || 0,
         yieldOnCost: DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares),
         aiRating: ai.action, aiConfidence: ai.confidence, sector: meta?.sector,
@@ -121,13 +130,14 @@ const PortfolioAnalyticsService = (() => {
       const val = f.units * nav;
       const pnl = val - f.totalInvested;
       const pnlPct = f.avgNav > 0 ? ((nav - f.avgNav) / f.avgNav) * 100 : 0;
+      const { dailyPnl, dailyPnlPct } = _dayPnlForStock(f.units, f.symbol, nav);
       const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
       const fa = (window.FUND_ANALYTICS_DB || {})[f.symbol];
       const ai = AIAnalysis.analyze(f.symbol);
       return {
         symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan',
-        kind: 'fund', quantity: f.units, price: nav, value: val, costBasis: f.totalInvested,
-        pnl, pnlPct, allocPct: (val / total) * 100,
+        kind: 'fund', quantity: f.units, avgCost: f.avgNav, price: nav, value: val, costBasis: f.totalInvested,
+        pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: (val / total) * 100,
         divYield: fa?.divYield || 0, yieldOnCost: null,
         aiRating: ai.action, aiConfidence: ai.confidence, sector: mf?.type,
       };
@@ -139,11 +149,13 @@ const PortfolioAnalyticsService = (() => {
       const cost = h.qty * FxService.usdToPkr(h.avgCostUsd || 0);
       const pnl = val - cost;
       const pnlPct = h.avgCostUsd > 0 ? ((FxService.pkrToUsd(price) - h.avgCostUsd) / h.avgCostUsd) * 100 : 0;
+      const { dailyPnl, dailyPnlPct } = _dayPnlForStock(h.qty, h.symbol, price);
       const meta = [...(window.INTL_STOCKS || []), ...(window.CRYPTO_ASSETS || [])].find(x => x.symbol === h.symbol);
       return {
         symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
-        kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', quantity: h.qty, price, value: val, costBasis: cost,
-        pnl, pnlPct, allocPct: (val / total) * 100,
+        kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', quantity: h.qty,
+        avgCost: h.avgCostUsd, price, value: val, costBasis: cost,
+        pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: (val / total) * 100,
         divYield: 0, yieldOnCost: null,
         aiRating: '—', aiConfidence: 0, sector: h.assetClass === 'crypto' ? 'Crypto' : 'US',
       };

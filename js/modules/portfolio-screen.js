@@ -3,6 +3,38 @@ const PortfolioScreen = (() => {
   let _filter = null;
   let _lastHoldings = [];
   let _chartRange = '1M';
+  let _search = '';
+  let _sort = 'value';
+  let _viewMode = (typeof localStorage !== 'undefined' && localStorage.getItem('lc_pf_view')) || 'cards';
+
+  function setSearch(v) { _search = String(v || ''); render(); }
+  function setSort(v) { _sort = v || 'value'; render(); }
+  function setViewMode(v) {
+    _viewMode = v === 'table' ? 'table' : 'cards';
+    try { localStorage.setItem('lc_pf_view', _viewMode); } catch (_) {}
+    render();
+  }
+
+  function _filterSort(holdings) {
+    let rows = holdings;
+    const q = _search.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((h) =>
+        h.symbol.toLowerCase().includes(q) ||
+        (h.broker || '').toLowerCase().includes(q) ||
+        (h.name || '').toLowerCase().includes(q));
+    }
+    return [...rows].sort((a, b) => {
+      if (_sort === 'symbol') return a.symbol.localeCompare(b.symbol);
+      if (_sort === 'pnl') return (b.pnl || 0) - (a.pnl || 0);
+      if (_sort === 'daily') return (b.dailyPnl || 0) - (a.dailyPnl || 0);
+      return (b.value || 0) - (a.value || 0);
+    });
+  }
+
+  function _priceStale(sym) {
+    return typeof State !== 'undefined' && State.isPriceStale && State.isPriceStale(sym, 24);
+  }
 
   function setFilter(id, opts) {
     opts = opts || {};
@@ -68,6 +100,113 @@ const PortfolioScreen = (() => {
     render();
   }
 
+  function _holdingCard(h) {
+    const qtyLabel = h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 0);
+    const avgLabel = h.kind === 'intl' || h.kind === 'crypto'
+      ? '$' + Number(h.avgCost || 0).toFixed(2)
+      : PsxUI.fmt(h.avgCost || (h.quantity ? h.costBasis / h.quantity : 0));
+    const priceLabel = h.kind === 'intl' || h.kind === 'crypto'
+      ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2)
+      : PsxUI.fmt(h.price);
+    const dayCls = PsxUI.chgCls(h.dailyPnlPct || 0);
+    const totCls = PsxUI.chgCls(h.pnlPct || 0);
+    const spark = typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : '';
+    const broker = (h.broker || '').replace(/"/g, '&quot;');
+    const stale = _priceStale(h.symbol);
+    const canSell = h.kind === 'stock' || h.kind === 'intl' || h.kind === 'crypto';
+    const sellType = h.kind === 'intl' ? 'INTL_SELL' : h.kind === 'crypto' ? 'CRYPTO_SELL' : 'SELL';
+    return `<article class="lc-holding-inv${stale ? ' lc-holding-inv--stale' : ''}" data-nav="research">
+      <div class="lc-holding-inv-head">
+        <div class="lc-holding-inv-sym">
+          <strong>${h.symbol}</strong>
+          <span class="lc-holding-inv-price">${priceLabel}</span>
+          <span class="lc-holding-inv-sub">${h.broker}${stale ? ' · stale price' : ''}</span>
+        </div>
+        <div class="lc-holding-inv-value lc-num">${PsxUI.fmt(h.value)}</div>
+      </div>
+      <div class="lc-holding-inv-meta">
+        <span><label>Cost</label><b class="lc-num">${PsxUI.fmt(h.costBasis)}</b></span>
+        <span><label>Avg buy</label><b class="lc-num">${avgLabel}</b></span>
+        <span><label>Shares</label><b class="lc-num">${qtyLabel}</b></span>
+      </div>
+      <div class="lc-holding-inv-pnl">
+        <div class="lc-pf-pnl-box ${dayCls}">
+          <label>${I18n.t('portfolio.today')}</label>
+          <b class="lc-num">${PsxUI.fmt(h.dailyPnl || 0, { signed: true })}</b>
+          <em>${PsxUI.fmt(h.dailyPnlPct || 0, { pct: true, signed: true })}</em>
+        </div>
+        <div class="lc-pf-pnl-box ${totCls}">
+          <label>${I18n.t('portfolio.gainLoss')}</label>
+          <b class="lc-num">${PsxUI.fmt(h.pnl || 0, { signed: true })}</b>
+          <em>${PsxUI.fmt(h.pnlPct || 0, { pct: true, signed: true })}</em>
+        </div>
+      </div>
+      <div class="lc-holding-inv-foot">
+        <div class="lc-holding-inv-spark" aria-hidden="true">${spark}</div>
+        <div class="lc-holding-inv-actions">
+          <button type="button" class="lc-link-btn" data-action="App.refreshSymbolPrice" data-symbol="${h.symbol}" data-refresh-symbol="${h.symbol}" data-stop="1" aria-label="Refresh ${h.symbol} price">↻</button>
+          ${canSell ? `<button type="button" class="lc-link-btn lc-link-btn--sell" data-action="App.openSellHolding" data-symbol="${h.symbol}" data-broker="${broker}" data-tab="${sellType}" data-stop="1">Sell</button>` : ''}
+          <button type="button" class="lc-link-btn" data-action="App.openPriceAlert" data-symbol="${h.symbol}" data-stop="1">Alert</button>
+          <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${broker}" data-mode="${h.kind}" data-stop="1">Edit</button>
+          <button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-symbol="${h.symbol}" data-stop="1">Txs</button>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function _holdingTableRow(h) {
+    const broker = (h.broker || '').replace(/"/g, '&quot;');
+    const stale = _priceStale(h.symbol);
+    const canSell = h.kind === 'stock' || h.kind === 'intl' || h.kind === 'crypto';
+    const sellType = h.kind === 'intl' ? 'INTL_SELL' : h.kind === 'crypto' ? 'CRYPTO_SELL' : 'SELL';
+    return `<tr class="${stale ? 'lc-row-stale' : ''}">
+      <td data-nav="research"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}${stale ? ' · stale' : ''}</div></td>
+      <td class="lc-num">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 0)}</td>
+      <td class="lc-num">${PsxUI.fmt(h.price)}</td>
+      <td class="lc-num">${PsxUI.fmt(h.costBasis)}</td>
+      <td class="lc-num">${PsxUI.fmt(h.value)}</td>
+      <td class="lc-num ${PsxUI.chgCls(h.dailyPnlPct || 0)}">${PsxUI.fmt(h.dailyPnl || 0, { signed: true })}<br><small>${PsxUI.fmt(h.dailyPnlPct || 0, { pct: true, signed: true })}</small></td>
+      <td class="lc-num ${PsxUI.chgCls(h.pnlPct || 0)}">${PsxUI.fmt(h.pnl || 0, { signed: true })}<br><small>${PsxUI.fmt(h.pnlPct || 0, { pct: true, signed: true })}</small></td>
+      <td style="white-space:nowrap">
+        <button type="button" class="lc-link-btn" data-action="App.refreshSymbolPrice" data-symbol="${h.symbol}" data-refresh-symbol="${h.symbol}" data-stop="1" aria-label="Refresh ${h.symbol}">↻</button>
+        ${canSell ? `<button type="button" class="lc-link-btn" data-action="App.openSellHolding" data-symbol="${h.symbol}" data-broker="${broker}" data-tab="${sellType}" data-stop="1">Sell</button>` : ''}
+        <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${broker}" data-mode="${h.kind}" data-stop="1">Edit</button>
+      </td>
+    </tr>`;
+  }
+
+  function _holdingsToolbar(count) {
+    return `<div class="lc-pf-holdings-bar">
+      <input type="search" class="lc-pf-search" placeholder="Search symbol…" value="${_search.replace(/"/g, '&quot;')}" aria-label="Search holdings" data-action-input="PortfolioScreen.setSearch">
+      <select class="lc-pf-sort" aria-label="Sort holdings" data-action-change="PortfolioScreen.setSort">
+        <option value="value"${_sort === 'value' ? ' selected' : ''}>Value</option>
+        <option value="pnl"${_sort === 'pnl' ? ' selected' : ''}>Total P&amp;L</option>
+        <option value="daily"${_sort === 'daily' ? ' selected' : ''}>Today</option>
+        <option value="symbol"${_sort === 'symbol' ? ' selected' : ''}>Symbol</option>
+      </select>
+      <div class="lc-pf-view-toggle" role="group" aria-label="View mode">
+        <button type="button" class="lc-range-btn${_viewMode === 'cards' ? ' on' : ''}" data-action="PortfolioScreen.setViewMode" data-tab="cards">Cards</button>
+        <button type="button" class="lc-range-btn${_viewMode === 'table' ? ' on' : ''}" data-action="PortfolioScreen.setViewMode" data-tab="table">Table</button>
+      </div>
+      <span class="lc-pf-count">${count} shown</span>
+    </div>`;
+  }
+
+  function _holdingsBlock(holdings) {
+    const rows = _filterSort(holdings);
+    if (!rows.length) {
+      return `<div class="lc-empty-state"><p>No holdings match “${_search.replace(/</g, '')}”.</p></div>`;
+    }
+    if (_viewMode === 'table') {
+      return `${_holdingsToolbar(rows.length)}<div class="psx-table-wrap lc-pf-table-wrap">
+        <table class="psx-table"><thead><tr>
+          <th>Symbol</th><th>Qty</th><th>Last</th><th>Cost</th><th>Value</th><th>Today</th><th>Total</th><th></th>
+        </tr></thead><tbody>${rows.map(_holdingTableRow).join('')}</tbody></table>
+      </div>`;
+    }
+    return `${_holdingsToolbar(rows.length)}<div class="lc-holdings-inv">${rows.map(_holdingCard).join('')}</div>`;
+  }
+
   function render(opts) {
     opts = opts || {};
     if (opts.portfolioId) _filter = opts.portfolioId;
@@ -105,9 +244,14 @@ const PortfolioScreen = (() => {
     _lastHoldings = holdings;
     const bucketStats = _filter ? PortfolioBuckets.statsForBucket(state, _filter) : null;
     const s = PortfolioAnalyticsService.getSummary(state);
-    const daily = State.calcDailyPnl();
+    const daily = _filter
+      ? holdings.reduce((sum, h) => sum + (h.dailyPnl || 0), 0)
+      : State.calcDailyPnl();
     const heroValue = bucketStats ? bucketStats.value : s.totalValue;
-    const heroPnlPct = bucketStats ? bucketStats.pnlPct : s.totalReturn.pct;
+    const totalPnl = bucketStats ? bucketStats.pnl : s.totalReturn.abs;
+    const totalPnlPct = bucketStats ? bucketStats.pnlPct : s.totalReturn.pct;
+    const dailyPct = heroValue > 0 ? (daily / heroValue) * 100 : 0;
+    const heroPnlPct = totalPnlPct;
     const chartSeries = _chartData(_chartRange, heroValue);
     const chartUp = chartSeries.length >= 2 && chartSeries[chartSeries.length - 1] >= chartSeries[0];
     const ranges = ['1D', '1W', '1M', '1Y', 'All'];
@@ -128,6 +272,10 @@ const PortfolioScreen = (() => {
         <div class="lc-screen-head">
           <h1>${active ? active.name : I18n.t('portfolio.title')}</h1>
           <p>${active ? active.desc : I18n.t('portfolio.sub')}</p>
+          ${_filter ? `<div class="lc-pf-toolbar">
+            <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter}">Transaction</button>
+            <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.openBucket" data-tab="${_filter}">Ledger</button>
+          </div>` : ''}
         </div>
         <div class="lc-dash-section">
           <div class="lc-dash-section-head">
@@ -139,16 +287,25 @@ const PortfolioScreen = (() => {
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${active ? active.name : I18n.t('portfolio.value')}</div>
           <div class="lc-dash-hero-val lc-num" data-lc-count="${heroValue}" data-lc-count-key="pf-hero">${PsxUI.fmt(heroValue)}</div>
-          <div class="lc-dash-hero-row">
-            <span class="lc-dash-chip ${daily >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.today')} ${PsxUI.fmt(daily, { signed: daily >= 0 })}</span>
-            <span class="lc-dash-chip ${heroPnlPct >= 0 ? 'up' : 'down'}">${I18n.t('portfolio.allTime')} ${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</span>
+          <div class="lc-pf-pnl-grid">
+            <div class="lc-pf-pnl-box ${daily >= 0 ? 'up' : 'down'}">
+              <label>${I18n.t('portfolio.today')}</label>
+              <b class="lc-num">${PsxUI.fmt(daily, { signed: true })}</b>
+              <em>${PsxUI.fmt(dailyPct, { pct: true, signed: true })}</em>
+            </div>
+            <div class="lc-pf-pnl-box ${totalPnl >= 0 ? 'up' : 'down'}">
+              <label>${I18n.t('portfolio.gainLoss')}</label>
+              <b class="lc-num">${PsxUI.fmt(totalPnl, { signed: true })}</b>
+              <em>${PsxUI.fmt(heroPnlPct, { pct: true, signed: true })}</em>
+            </div>
           </div>
           ${chartBlock}
         </div>
         <div class="lc-pulse-row">
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.yield')}</label><b class="psx-up">${s.portfolioDivYield.toFixed(2)}%</b></div>
-          <div class="lc-pulse-pill"><label>${I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(bucketStats ? bucketStats.deployedPkr : s.invested)}</b></div>
+          <div class="lc-pulse-pill"><label>${bucketStats?.deployedPkr ? 'Deployed' : I18n.t('portfolio.invested')}</label><b>${PsxUI.fmt(bucketStats?.deployedPkr ? bucketStats.deployedPkr : s.invested)}</b></div>
           <div class="lc-pulse-pill"><label>Cost basis</label><b>${PsxUI.fmt(bucketStats ? bucketStats.invested : s.invested)}</b></div>
+          ${bucketStats?.cashPkr ? `<div class="lc-pulse-pill"><label>Cash</label><b>${PsxUI.fmt(bucketStats.cashPkr)}</b></div>` : ''}
           <div class="lc-pulse-pill"><label>${I18n.t('portfolio.gainLoss')}</label><b class="${(bucketStats ? bucketStats.pnl : s.totalReturn.abs) >= 0 ? 'psx-up' : 'psx-down'}">${PsxUI.fmt(bucketStats ? bucketStats.pnl : s.totalReturn.abs, { signed: true })}</b></div>
           <div class="lc-pulse-pill"><label>Positions</label><b>${holdings.length}</b></div>
         </div>
@@ -161,25 +318,7 @@ const PortfolioScreen = (() => {
         <div class="lc-dash-section">
           <div class="lc-dash-section-head"><h3>Holdings</h3><span>${holdings.length} positions</span></div>
         </div>
-        ${holdings.length ? `<div class="psx-table-wrap" style="margin:0 var(--lc-space-4);border-radius:var(--lc-radius);overflow:hidden;box-shadow:var(--lc-shadow)">
-          <table class="psx-table"><thead><tr>
-            <th>Symbol</th><th class="lc-spark-cell" aria-hidden="true"></th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
-          </tr></thead><tbody>
-          ${holdings.map(h => `<tr>
-            <td data-nav="research"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
-            <td class="lc-spark-cell">${typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : ''}</td>
-            <td class="lc-num" data-nav="research">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td class="lc-num" data-nav="research">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
-            <td class="lc-num" data-nav="research">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
-            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" data-nav="research">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
-            <td style="white-space:nowrap">
-              <button type="button" class="lc-link-btn" data-action="App.openPriceAlert" data-symbol="${h.symbol}" data-stop="1">Alert</button>
-              <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${(h.broker || '').replace(/"/g, '&quot;')}" data-mode="${h.kind}" data-stop="1">Edit</button>
-              <button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-symbol="${h.symbol}" data-stop="1">Txs</button>
-            </td>
-          </tr>`).join('')}
-          </tbody></table>
-        </div>` : `<div class="lc-empty-state" style="margin-top:0">
+        ${holdings.length ? _holdingsBlock(holdings) : `<div class="lc-empty-state" style="margin-top:0">
           <h2>No holdings in this portfolio</h2>
           <p>Add ${active ? active.name.toLowerCase() : 'positions'} to start tracking.</p>
           <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter || 'rafi'}">${I18n.t('addHoldings')}</button>
@@ -197,6 +336,6 @@ const PortfolioScreen = (() => {
     if (h && typeof App !== 'undefined') App.openReconcilePosition(h);
   }
 
-  return { render, setFilter, clearFilter, currentFilter, reconcile, setChartRange };
+  return { render, setFilter, clearFilter, currentFilter, reconcile, setChartRange, setSearch, setSort, setViewMode };
 })();
 window.PortfolioScreen = PortfolioScreen;

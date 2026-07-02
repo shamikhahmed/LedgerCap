@@ -375,6 +375,7 @@ const App = (() => {
     _checkDeployVersion();
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
+    if (typeof WhatsNew !== 'undefined') WhatsNew.maybeShow();
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     if (typeof LcPolish !== 'undefined') LcPolish.init();
     if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
@@ -414,28 +415,114 @@ const App = (() => {
   }
 
   function _checkDeployVersion() {
-    const local = window.APP_VERSION || '';
+    const local = window.LEDGERCAP_VERSION?.app || window.APP_VERSION || '';
     fetch('./VERSION.json?_=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json())
       .then(v => {
         const remote = v.version || v.appVersion || '';
-        if (remote && local && remote !== local) {
-          showToast(`Update available (${remote}). Hard refresh or clear site data.`, 'info', 6000);
-        }
+        if (remote && local && remote !== local) _showUpdateBanner(remote);
       })
       .catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        _showUpdateBanner(window.LEDGERCAP_VERSION?.app || 'new', true);
+      });
+    }
   }
 
-  function showToast(msg, type, ms) {
+  function _showUpdateBanner(version, swReady) {
+    let bar = document.getElementById('lc-update-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'lc-update-bar';
+      bar.className = 'lc-update-bar';
+      bar.setAttribute('role', 'status');
+      document.body.prepend(bar);
+    }
+    bar.innerHTML = `<span>${swReady ? 'App updated' : 'Update available'} (v${version})</span>
+      <button type="button" class="psx-btn psx-btn-primary psx-btn-sm" data-action="App.reloadForUpdate">Refresh</button>`;
+  }
+
+  function reloadForUpdate() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => reg?.waiting?.postMessage({ type: 'SKIP_WAITING' }));
+    }
+    location.reload();
+  }
+
+  let _pendingUndo = null;
+  let _undoTimer = null;
+
+  function showToast(msg, type, msOrOpts) {
     type = type || 'info';
-    ms = ms || 3000;
+    let ms = 3000;
+    let opts = {};
+    if (typeof msOrOpts === 'number') ms = msOrOpts;
+    else if (msOrOpts && typeof msOrOpts === 'object') {
+      opts = msOrOpts;
+      ms = opts.ms || 3000;
+    }
     const wrap = document.getElementById('toast-wrap');
     if (!wrap) return;
     const el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.textContent = msg;
+    el.className = `toast ${type}${opts.undo ? ' toast--undo' : ''}`;
+    if (opts.undo) {
+      el.innerHTML = `<span class="lc-toast-msg">${msg}</span><button type="button" class="lc-toast-undo" data-action="App._runUndo">Undo</button>`;
+      _pendingUndo = opts.undo;
+      clearTimeout(_undoTimer);
+      _undoTimer = setTimeout(() => { _pendingUndo = null; }, ms);
+    } else {
+      el.textContent = msg;
+    }
     wrap.appendChild(el);
     setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, ms);
+  }
+
+  function _runUndo() {
+    const fn = _pendingUndo;
+    _pendingUndo = null;
+    clearTimeout(_undoTimer);
+    if (typeof fn === 'function') {
+      fn();
+      showToast('Transaction undone', 'info', 2500);
+    }
+  }
+
+  async function refreshSymbolPrice(symbol) {
+    if (!symbol) return;
+    const isDemo = new URLSearchParams(location.search).get('demo') === '1'
+      || sessionStorage.getItem('ledgercap_demo_mode') === '1';
+    if (isDemo) {
+      showToast('Demo mode — live refresh disabled', 'info');
+      return;
+    }
+    document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
+      b.disabled = true;
+      b.setAttribute('aria-busy', 'true');
+    });
+    showToast(`Refreshing ${symbol}…`, 'info', 2000);
+    try {
+      const q = await Prices.fetchStock(symbol);
+      if (q?.price) {
+        State.updatePrice(symbol, {
+          price: q.price,
+          prevClose: q.prevClose || q.price,
+          source: q.source,
+          ts: Date.now(),
+        });
+        showToast(`${symbol} · ${Prices.sourceLabel(q.source)}`, 'success');
+        renderCurrent();
+      } else {
+        showToast(`${symbol} — no live quote`, 'warning');
+      }
+    } catch (e) {
+      showToast(e.message || `${symbol} refresh failed`, 'error');
+    } finally {
+      document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
+        b.disabled = false;
+        b.removeAttribute('aria-busy');
+      });
+    }
   }
 
   async function _fetchMarketIndex() {
@@ -649,6 +736,10 @@ const App = (() => {
     const sheet = document.getElementById('bottom-sheet');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
+  }
+
+  function openSellHolding(symbol, broker, type) {
+    openAddTransaction(type || 'SELL', symbol, broker);
   }
 
   function openAddTransaction(type, symbol, broker) {
@@ -963,9 +1054,15 @@ const App = (() => {
     }
 
     State.addTransaction(tx);
+    const addedId = State.get().transactions.slice(-1).id;
     closeBottomSheet();
-    showToast('Transaction added', 'success');
-    renderCurrent();
+    showToast('Transaction added', 'success', {
+      ms: 10000,
+      undo: () => {
+        State.deleteTransaction(addedId);
+        renderCurrent();
+      },
+    });
   }
 
   function deleteTransaction(id) {
@@ -1141,8 +1238,8 @@ const App = (() => {
     Navigation.go(Navigation.current(), true);
   }
 
-  return { launch, showToast, refreshPrices, clearWrongPrices, openBottomSheet, closeBottomSheet,
-    openAddTransaction, _submitTransaction, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
+  return { launch, showToast, refreshPrices, refreshSymbolPrice, clearWrongPrices, openBottomSheet, closeBottomSheet,
+    openAddTransaction, openSellHolding, reloadForUpdate, _submitTransaction, _runUndo, _updateBuyTotal, _onSellSymbolChange, _updateSellPnl,
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,

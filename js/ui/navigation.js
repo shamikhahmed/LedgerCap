@@ -42,6 +42,23 @@ const Navigation = (() => {
     </button>`;
   }
 
+  function _parseHash() {
+    const raw = (location.hash || '').replace(/^#/, '');
+    if (!raw) return { tab: '', bucket: null };
+    const slash = raw.indexOf('/');
+    if (slash === -1) return { tab: raw, bucket: null };
+    return { tab: raw.slice(0, slash), bucket: raw.slice(slash + 1) || null };
+  }
+
+  function _trackRecent(tabId) {
+    if (!tabId || tabId === 'home' || tabId === 'more') return;
+    try {
+      let r = JSON.parse(sessionStorage.getItem('lc_recent_tools') || '[]');
+      r = [tabId, ...r.filter((x) => x !== tabId)].slice(0, 6);
+      sessionStorage.setItem('lc_recent_tools', JSON.stringify(r));
+    } catch (_) {}
+  }
+
   function init() {
     const nav = document.getElementById('nav');
     if (nav) {
@@ -58,13 +75,24 @@ const Navigation = (() => {
         <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" data-action="window.toggleTheme">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
+    const parsed = _parseHash();
+    const hashTab = parsed.tab;
     const saved = sessionStorage.getItem('ledgercap_tab');
-    const hashTab = (location.hash || '').replace(/^#/, '');
-    if (hashTab && VALID.has(LEGACY[hashTab] || hashTab)) go(LEGACY[hashTab] || hashTab, true);
-    else if (saved) go(LEGACY[saved] || saved, true);
+    if (hashTab && VALID.has(LEGACY[hashTab] || hashTab)) {
+      const tab = LEGACY[hashTab] || hashTab;
+      go(tab, true, parsed.bucket && tab === 'portfolio' ? { portfolioId: parsed.bucket } : {});
+      if (parsed.bucket && tab === 'portfolio' && typeof PortfolioScreen !== 'undefined') {
+        PortfolioScreen.setFilter(parsed.bucket, { replace: true });
+      }
+    } else if (saved) go(LEGACY[saved] || saved, true);
     window.addEventListener('popstate', (e) => {
-      const tab = e.state?.tab || (location.hash || '').replace(/^#/, '') || sessionStorage.getItem('ledgercap_tab') || 'home';
-      go(LEGACY[tab] || tab, true);
+      const p = _parseHash();
+      const tab = e.state?.tab || p.tab || sessionStorage.getItem('ledgercap_tab') || 'home';
+      const resolved = LEGACY[tab] || tab;
+      go(resolved, true, p.bucket && resolved === 'portfolio' ? { portfolioId: p.bucket } : {});
+      if (p.bucket && resolved === 'portfolio' && typeof PortfolioScreen !== 'undefined') {
+        PortfolioScreen.setFilter(p.bucket, { replace: true });
+      }
     });
   }
 
@@ -84,6 +112,7 @@ const Navigation = (() => {
   }
 
   function go(tabId, silent, opts) {
+    opts = opts || {};
     tabId = LEGACY[tabId] || tabId;
     if (!VALID.has(tabId)) tabId = 'home';
     _current = tabId;
@@ -98,8 +127,10 @@ const Navigation = (() => {
     document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
     if (!silent) {
       sessionStorage.setItem('ledgercap_tab', tabId);
-      const hash = '#' + tabId;
-      if (location.hash !== hash) history.pushState({ tab: tabId }, '', hash);
+      const bucket = opts.portfolioId || (typeof PortfolioScreen !== 'undefined' ? PortfolioScreen.currentFilter?.() : null);
+      const hash = bucket && tabId === 'portfolio' ? `#portfolio/${bucket}` : `#${tabId}`;
+      if (location.hash !== hash) history.pushState({ tab: tabId, portfolioId: bucket || null }, '', hash);
+      _trackRecent(tabId);
     }
     const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
     document.title = tabLabel + ' — LedgerCap';

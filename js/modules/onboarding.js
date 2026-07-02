@@ -33,6 +33,7 @@ const Onboarding = (() => {
           <button type="button" class="ob-skip-top" data-action="Onboarding.skip">Skip</button>
         </div>
         <div class="ob-progress">${_dots(1)}</div>
+        <p class="ob-step-label">Step 1 of 3</p>
 
         <div class="ob-panel on" id="ob-panel-1">
           <div class="ob-hero-icon"><img src="assets/icons/icon-mark.svg" alt="" width="56" height="56"></div>
@@ -47,6 +48,7 @@ const Onboarding = (() => {
         </div>
 
         <div class="ob-panel" id="ob-panel-2">
+          <p class="ob-step-label">Step 2 of 3</p>
           <h1 class="ob-title">Income &amp; goals</h1>
           <p class="ob-desc">Used for SIP progress and financial freedom math. Your ledger data stays untouched.</p>
           <div class="field">
@@ -77,6 +79,7 @@ const Onboarding = (() => {
         </div>
 
         <div class="ob-panel" id="ob-panel-3">
+          <p class="ob-step-label">Step 3 of 3</p>
           <h1 class="ob-title">Almost done</h1>
           <p class="ob-desc">Pick your main broker. We'll pull PSX prices through your secure proxy when markets are open.</p>
           <div class="field">
@@ -95,6 +98,10 @@ const Onboarding = (() => {
           <div class="ob-nav">
             <button type="button" class="btn-ghost" data-action="Onboarding.back">Back</button>
             <button type="button" class="btn-primary" data-action="Onboarding.finish">Open dashboard</button>
+          </div>
+          <div class="ob-quick-paths">
+            <button type="button" class="btn-ghost" data-action="App.loadDemo">Try demo portfolio</button>
+            <button type="button" class="btn-ghost" data-nav="import">Import CSV</button>
           </div>
         </div>
       </div>`;
@@ -145,7 +152,7 @@ const Onboarding = (() => {
     });
     _close();
     App.showToast('Welcome to LedgerCap', 'success');
-    Navigation.go('dashboard');
+    Navigation.go('home');
     setTimeout(() => App.refreshPrices(), 600);
   }
 

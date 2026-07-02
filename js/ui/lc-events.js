@@ -72,6 +72,15 @@ const LcEvents = (() => {
     else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
     else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
     else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
+    else if (path === 'App.openSellHolding') App?.openSellHolding?.(sym, broker, tab);
+    else if (path === 'App.reloadForUpdate') App?.reloadForUpdate?.();
+    else if (path === 'PortfolioScreen.setSearch') PortfolioScreen?.setSearch?.(el.value);
+    else if (path === 'PortfolioScreen.setSort') PortfolioScreen?.setSort?.(el.value);
+    else if (path === 'PortfolioScreen.setViewMode') PortfolioScreen?.setViewMode?.(tab);
+    else if (path === 'WhatsNew.dismiss') WhatsNew?.dismiss?.();
+    else if (path === 'ImportCsv._preview') ImportCsv?._preview?.();
+    else if (path === 'ImportCsv._confirm') ImportCsv?._confirm?.();
+    else if (path === 'Settings._exportEncryptedBackup') Settings?._exportEncryptedBackup?.();
     else if (path === 'App._submitPriceAlert') App?._submitPriceAlert?.(sym);
     else if (path === 'PortfolioScreen.reconcile') PortfolioScreen?.reconcile?.(sym, broker, mode);
     else if (path === 'Transactions.openSymbol') Transactions?.openSymbol?.(sym);
@@ -126,6 +135,10 @@ const LcEvents = (() => {
 
   function _onInput(ev) {
     const el = ev.target;
+    if (el.dataset.actionInput) {
+      _call(el.dataset.actionInput, el, ev);
+      return;
+    }
     if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }

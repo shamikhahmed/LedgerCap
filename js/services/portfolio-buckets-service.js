@@ -58,6 +58,12 @@ const PortfolioBuckets = (() => {
     return txs.filter(t => t.portfolioId === bucketId);
   }
 
+  function bucketCashPkr(bucketId) {
+    if (bucketId === 'akd' && window.USER_AKD_CASH_PKR > 0) return window.USER_AKD_CASH_PKR;
+    if (bucketId === 'rafi' && window.RAFI_BROKER_CASH_PKR > 0) return window.RAFI_BROKER_CASH_PKR;
+    return 0;
+  }
+
   function grossCashDeployed(state, bucketId) {
     const txs = txsForBucket(state, bucketId);
     if (bucketId === 'rafi' && window.RAFI_TOTAL_INVESTED_PKR > 0) {
@@ -107,14 +113,18 @@ const PortfolioBuckets = (() => {
       });
     }
 
-    const value = rows.reduce((s, r) => s + r.value, 0);
+    const stockValue = rows.reduce((s, r) => s + r.value, 0);
+    const cashPkr = bucketCashPkr(bucketId);
+    const value = stockValue + cashPkr;
     const invested = rows.reduce((s, r) => s + r.cost, 0);
     const deployed = grossCashDeployed(state, bucketId);
-    const pnl = value - invested;
+    const pnl = deployed.pkr > 0 ? value - deployed.pkr : value - invested;
+    const pnlBase = deployed.pkr > 0 ? deployed.pkr : invested;
     return {
-      value, invested, deployedPkr: deployed.pkr, deployedUsd: deployed.usd, deployedNote: deployed.note,
+      value, stockValue, cashPkr, invested,
+      deployedPkr: deployed.pkr, deployedUsd: deployed.usd, deployedNote: deployed.note,
       pnl,
-      pnlPct: invested > 0 ? (pnl / invested) * 100 : 0,
+      pnlPct: pnlBase > 0 ? (pnl / pnlBase) * 100 : 0,
       positions: rows.length,
     };
   }
@@ -258,7 +268,7 @@ const PortfolioBuckets = (() => {
   }
 
   return {
-    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, grossCashDeployed, investmentSummary,
+    BUILTIN, list, inferBuiltinId, inferPsxBucketId, txsForBucket, statsForBucket, bucketCashPkr, grossCashDeployed, investmentSummary,
     bucketSparkline, calcDailyPnlForTransactions, bucketBriefRows,
     getHoldingsForBucket, defaultTxType, defaultBroker, cardsHtml, _brokerMatch,
   };
