@@ -1485,6 +1485,15 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
   gap: 8px;
   padding: 0 var(--lc-space-4) var(--lc-space-4);
 }
+/* Shortcuts: one horizontal-scroll line instead of a ragged 2x2 wrap */
+.lc-hub-quick--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.lc-hub-quick--scroll::-webkit-scrollbar { display: none; }
+.lc-hub-quick--scroll .psx-btn { flex-shrink: 0; }
 
 .lc-csv-preview {
   margin-top: 12px;

@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.48.0',
-  sw: 117,
-  cache: 'ledgercap-v117',
+  app: '3.48.1',
+  sw: 118,
+  cache: 'ledgercap-v118',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -13862,7 +13862,7 @@ const Hub = (() => {
   }
 
   function _quickActions() {
-    return `<div class="lc-hub-quick">
+    return `<div class="lc-hub-quick lc-hub-quick--scroll" role="group" aria-label="Shortcuts">
       <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">CGT &amp; tax</button>
       <button type="button" class="psx-btn psx-btn-ghost" data-action="StatementExport.exportHtml">Annual PDF</button>
       <button type="button" class="psx-btn psx-btn-ghost" data-nav="paper-trade">Paper trade</button>

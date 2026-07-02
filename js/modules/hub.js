@@ -231,7 +231,7 @@ const Hub = (() => {
   }
 
   function _quickActions() {
-    return `<div class="lc-hub-quick">
+    return `<div class="lc-hub-quick lc-hub-quick--scroll" role="group" aria-label="Shortcuts">
       <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">CGT &amp; tax</button>
       <button type="button" class="psx-btn psx-btn-ghost" data-action="StatementExport.exportHtml">Annual PDF</button>
       <button type="button" class="psx-btn psx-btn-ghost" data-nav="paper-trade">Paper trade</button>
