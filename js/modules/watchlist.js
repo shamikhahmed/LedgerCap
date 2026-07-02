@@ -10,7 +10,7 @@ const Watchlist = (() => {
     <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
     <div class="field"><label class="field-label">Alert target price (PKR)</label><input class="field-input" id="wl-target" type="number" step="0.01" value="${w.targetPrice || ''}" placeholder="Buy below this price"></div>
     <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Alert on crossover ≤ target (PSX session)</label>
-    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
+    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" data-action="Watchlist.save" data-tab="${w.id || ''}">Save</button>`;
   }
 
   function openAdd() { App.requestAlertPermission?.(); App.openBottomSheet('watchlist-add', 'Add to Watchlist', _form()); }
@@ -46,14 +46,14 @@ const Watchlist = (() => {
     screen.innerHTML = `
     <div class="lc-dash">
     <div class="lc-screen-head"><h1>Watchlist</h1><p>${list.length} symbols · alerts when target hit</p></div>
-    <div class="lc-dash-actions cap-reveal"><button type="button" class="lc-btn-primary" onclick="Watchlist.openAdd()">+ Add symbol</button></div>
+    <div class="lc-dash-actions cap-reveal"><button type="button" class="lc-btn-primary" data-action="Watchlist.openAdd">+ Add symbol</button></div>
     ${list.length ? list.map(w => {
       const quote = MarketDataService.getQuote(w.symbol);
       const ai = AIAnalysis.analyze(w.symbol);
       const upside = quote.price > 0 ? ((ai.fairValue - quote.price) / quote.price * 100) : 0;
       const alertHit = w.targetPrice > 0 && quote.price > 0 && quote.price <= w.targetPrice;
       return `
-      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}" onclick="Research.open('${w.symbol}')">
+      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}" data-action="Research.open" data-symbol="${w.symbol}">
         <div>
           <div style="font-weight:700;font-size:1rem;">${w.symbol} ${U.ratingBadge(ai.action)} ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}</div>
           <div class="lc-card-sub">${w.name}${w.thesis ? ' · ' + w.thesis.slice(0, 50) : ''}</div>
@@ -70,8 +70,8 @@ const Watchlist = (() => {
         </div>
       </div>
       <div style="padding:0 20px 8px;display:flex;gap:8px;">
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.openEdit('${w.id}')">Edit</button>
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.remove('${w.id}')">Remove</button>
+        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.openEdit" data-tab="${w.id}" data-stop="1">Edit</button>
+        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.remove" data-tab="${w.id}" data-stop="1">Remove</button>
       </div>`;
     }).join('') : `<div class="lc-empty-note">Empty watchlist. Track symbols before you buy.</div>`}
     </div>`;

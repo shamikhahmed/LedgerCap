@@ -92,7 +92,7 @@ h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;ma
 <body>
 <div class="cap-scroll-progress" aria-hidden="true"></div>
 <div id="nav-dots"></div>
-<button id="export-btn" onclick="window.print()">⬇ Export PDF</button>
+<button id="export-btn" data-action="window.print">⬇ Export PDF</button>
 
 <section class="slide" id="s1">
   <div id="s1-grad"></div>
@@ -110,9 +110,9 @@ h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;ma
     <h2 class="reveal">Pakistani wealth is <span style="color:var(--accent)">scattered.</span></h2>
     <p class="sub reveal delay-1">US portfolio apps ignore PSX, Meezan funds, and PKR-native Zakat.</p>
     <div class="cards">
-      <div class="card reveal-left delay-1"><h3>📱 US portfolio apps ignore PSX, Meezan fu…</h3><p>US portfolio apps ignore PSX, Meezan funds, and PKR-native Zakat.</p></div>
-      <div class="card reveal-right delay-2"><h3>🌡️ Brokerage portals are read-only</h3><p>Brokerage portals are read-only — you still spreadsheet everything manually.</p></div>
-      <div class="card reveal-left delay-3"><h3>🧪 Wealth dashboards want API keys and clo…</h3><p>Wealth dashboards want API keys and cloud aggregation of your net worth.</p></div>
+      <div class="card reveal-left delay-1"><h3>US portfolio apps ignore PSX</h3><p>US portfolio apps ignore PSX, Meezan funds, and PKR-native Zakat.</p></div>
+      <div class="card reveal-right delay-2"><h3>Brokerage portals are read-only</h3><p>Brokerage portals are read-only — you still spreadsheet everything manually.</p></div>
+      <div class="card reveal-left delay-3"><h3>Wealth dashboards want cloud keys</h3><p>Wealth dashboards want API keys and cloud aggregation of your net worth.</p></div>
     </div>
   </div>
 </section>
@@ -137,7 +137,7 @@ h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;ma
     <h1 class="reveal" style="font-size:clamp(3rem,10vw,5.5rem)">LedgerCap</h1>
     <p class="sub reveal delay-1">Bloomberg-quality clarity, phone-native, no account required.</p>
     <div class="badges reveal delay-2">
-      <span class="badge">📱 PWA</span><span class="badge">🔒 Private</span><span class="badge">📴 Offline</span><span class="badge">🇵🇰 PSX</span>
+      <span class="badge">PWA</span><span class="badge">Private</span><span class="badge">Offline</span><span class="badge">PSX</span>
     </div>
   </div>
 </section>
@@ -146,9 +146,9 @@ h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;ma
   <div style="max-width:900px;width:100%">
     <h2 class="reveal section-title">Ledger-first by design.</h2>
     <div class="steps">
-      <div class="step reveal-left delay-1"><div class="step-n">01</div><div style="font-size:1.6rem">📒</div><h3>Log</h3><p>Buy · Sell · Contribution · Salary</p></div>
-      <div class="step reveal delay-2"><div class="step-n">02</div><div style="font-size:1.6rem">⚙️</div><h3>Recalculate</h3><p>Cost basis · P&L · weights</p></div>
-      <div class="step reveal-right delay-3"><div class="step-n">03</div><div style="font-size:1.6rem">📊</div><h3>View</h3><p>Dashboard · insights · freedom</p></div>
+      <div class="step reveal-left delay-1"><div class="step-n">01</div><div class="step-icon" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="28" height="28"></div><h3>Log</h3><p>Buy · Sell · Contribution · Salary</p></div>
+      <div class="step reveal delay-2"><div class="step-n">02</div><div class="step-icon" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="28" height="28"></div><h3>Recalculate</h3><p>Cost basis · P&L · weights</p></div>
+      <div class="step reveal-right delay-3"><div class="step-n">03</div><div class="step-icon" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="28" height="28"></div><h3>View</h3><p>Dashboard · insights · freedom</p></div>
     </div>
   </div>
 </section>
@@ -400,7 +400,7 @@ h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;ma
 <script>
 const slides=document.querySelectorAll('.slide'),navDots=document.getElementById('nav-dots');
 let currentSlide=0;
-slides.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i===0?' active':'');d.onclick=()=>slides[i].scrollIntoView({behavior:'smooth'});navDots.appendChild(d)});
+slides.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i===0?' active':'');d.addEventListener('click',()=>slides[i].scrollIntoView({behavior:'smooth'}));navDots.appendChild(d)});
 function updateDots(){let idx=0;slides.forEach((s,i)=>{if(Math.abs(s.getBoundingClientRect().top)<innerHeight/2)idx=i});currentSlide=idx;navDots.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===idx))}
 addEventListener('scroll',updateDots,{passive:true});
 document.addEventListener('keydown',e=>{

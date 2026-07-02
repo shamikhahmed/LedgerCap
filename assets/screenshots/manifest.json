@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-02T09:48:34.911Z",
+  "generatedAt": "2026-07-02T12:18:38.506Z",
   "themes": [
     "dark",
     "light"
@@ -496,6 +496,28 @@
             "light": {
               "mobile": "light/mobile/tools/pilot-tools-scroll.png",
               "desktop": "light/desktop/tools/pilot-tools-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "paper-trade",
+          "label": "Paper trade",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/paper-trade.png",
+              "desktop": "dark/desktop/tools/paper-trade.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/paper-trade.png",
+              "desktop": "light/desktop/tools/paper-trade.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/paper-trade-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/paper-trade-scroll.png"
             }
           }
         },

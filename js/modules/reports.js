@@ -77,7 +77,7 @@ const Reports = (() => {
             <span class="${m.chg >= 0 ? 't-gain' : 't-loss'}">${m.chg >= 0 ? '+' : ''}${fmt(m.chg)} (${m.chgPct >= 0 ? '+' : ''}${m.chgPct.toFixed(1)}%)</span>
           </div>`).join('')}
         </div>` : ''}
-      <button type="button" class="btn-secondary" style="width:100%;margin-top:14px;" onclick="Reports.exportText()">Copy report summary</button>
+      <button type="button" class="btn-secondary" style="width:100%;margin-top:14px;" data-action="Reports.exportText">Copy report summary</button>
     </div>`;
   }
 
@@ -123,7 +123,7 @@ const Reports = (() => {
           <span style="font-weight:700;">${sym}</span>
           <span class="t-gain">${fmt(amt)}</span>
         </div>`).join('') : '<div style="font-size:0.78rem;color:var(--text3);">No dividends logged yet — use Income tab or + Log Dividend</div>'}
-      <button type="button" class="btn-secondary" style="width:100%;margin-top:10px;" onclick="Navigation.go('income')">Open Income & Dividends</button>
+      <button type="button" class="btn-secondary" style="width:100%;margin-top:10px;" data-nav="income">Open Income & Dividends</button>
     </div>
     <div style="height:12px;"></div>`;
   }

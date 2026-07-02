@@ -39,11 +39,11 @@ const Zakat = (() => {
       <div class="lc-verdict"><h3>Disclaimer</h3><p>Rules-based estimate only — not a fatwa. Consult a scholar for crypto, inventory, and mixed portfolios. Data stays on device.</p></div>
       <div class="lc-form-block">
         <label class="lc-field-label">Debts to subtract (₨)</label>
-        <input class="lc-field-input" id="zk-debts" type="number" value="${settings.zakatDebts || 0}" onchange="Zakat._saveDebts(this.value)">
+        <input class="lc-field-input" id="zk-debts" type="number" value="${settings.zakatDebts || 0}" data-action-change="Zakat._saveDebts">
         <label class="lc-field-label">Gold grams (manual)</label>
-        <input class="lc-field-input" id="zk-gold" type="number" step="0.01" value="${(state.manualAssets || {}).goldGrams || 0}" onchange="Zakat._saveGold(this.value)">
+        <input class="lc-field-input" id="zk-gold" type="number" step="0.01" value="${(state.manualAssets || {}).goldGrams || 0}" data-action-change="Zakat._saveGold">
         <label class="lc-field-label">USD cash (manual)</label>
-        <input class="lc-field-input" id="zk-usd" type="number" step="0.01" value="${(state.manualAssets || {}).usdCash || 0}" onchange="Zakat._saveUsd(this.value)">
+        <input class="lc-field-input" id="zk-usd" type="number" step="0.01" value="${(state.manualAssets || {}).usdCash || 0}" data-action-change="Zakat._saveUsd">
       </div>
     `);
   }

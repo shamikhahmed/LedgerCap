@@ -49,8 +49,8 @@ const Research = (() => {
 
   function _modeSegment() {
     return `<div class="lc-segment" role="tablist">
-      <button type="button" class="lc-segment-btn${_mode === 'stock' ? ' on' : ''}" onclick="Research.setMode('stock')">Stock</button>
-      <button type="button" class="lc-segment-btn${_mode === 'portfolio' ? ' on' : ''}" onclick="Research.setMode('portfolio')">Portfolio</button>
+      <button type="button" class="lc-segment-btn${_mode === 'stock' ? ' on' : ''}" data-action="Research.setMode" data-tab="stock">Stock</button>
+      <button type="button" class="lc-segment-btn${_mode === 'portfolio' ? ' on' : ''}" data-action="Research.setMode" data-tab="portfolio">Portfolio</button>
     </div>`;
   }
 
@@ -175,7 +175,7 @@ const Research = (() => {
     const rows = peers.map(p => {
       const q = State.getPrice(p.symbol) || (window.FALLBACK_PRICES || {})[p.symbol] || 0;
       const f = (window.FUNDAMENTALS_DB || {})[p.symbol] || {};
-      return `<button type="button" class="lc-peer-row" onclick="Research.pickSymbol('${p.symbol}')">
+      return `<button type="button" class="lc-peer-row" data-action="Research.pickSymbol" data-symbol="${p.symbol}">
         <strong>${p.symbol}</strong><span>${p.name || ''}</span>
         <em>${q ? PsxUI.fmt(q) : '—'}</em><b>${f.pe ? 'P/E ' + Number(f.pe).toFixed(1) : ''}</b>
       </button>`;
@@ -210,7 +210,7 @@ const Research = (() => {
     if (up?.amount) cells.push({ l: 'Amount', v: '₨' + up.amount });
     if (paid) cells.push({ l: 'Last paid', v: (paid.paymentDate || '').slice(0, 10) || '—' });
     return `<div class="lc-dash-section">
-      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" onclick="Navigation.go('announcements')">All →</button></div>
+      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" data-nav="announcements">All →</button></div>
       ${_metricGrid(cells)}
     </div>`;
   }
@@ -271,8 +271,8 @@ const Research = (() => {
           ${_modeSegment()}
           ${bucketsHtml}
           <div class="lc-dash-actions" style="padding:0 var(--lc-space-4) 8px;display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('risk-audit')">Full risk audit →</button>
-            <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('insights')">Portfolio insights →</button>
+            <button type="button" class="psx-btn psx-btn-ghost" data-nav="risk-audit">Full risk audit →</button>
+            <button type="button" class="psx-btn psx-btn-ghost" data-nav="insights">Portfolio insights →</button>
           </div>
           <div id="research-portfolio-host" style="padding:0 var(--lc-space-4)"></div>
         </div>`;
@@ -297,7 +297,7 @@ const Research = (() => {
           <div class="lc-empty-state">
             <h2>No symbols</h2>
             <p>Search above or add holdings / load demo.</p>
-            <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+            <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
       _onSearch(_searchQ);
@@ -373,7 +373,7 @@ const Research = (() => {
           <div class="lc-verdict-meta">${shLabel}</div>
         </div>
         <div class="lc-sym-scroll" id="rt-pills">${quickPicks.map(s =>
-          `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" onclick="Research.pickSymbol('${s}')">${s}</button>`
+          `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" data-action="Research.pickSymbol" data-symbol="${s}">${s}</button>`
         ).join('')}</div>
         ${_metricGrid([
           { l: 'Smart rating (rules)', v: ai.action },

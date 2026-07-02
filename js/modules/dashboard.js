@@ -14,8 +14,8 @@ const Dashboard = (() => {
       ${MarketUI.marketStripFull([])}
       ${MarketUI.sectionHead('Dashboard', 'Start here')}
       ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'Your wealth OS starts here', 'Track PSX stocks, Meezan funds, dividends, and net worth — all on your device.',
-        `<button type="button" class="os-btn os-btn-primary" onclick="Navigation.go('holdings')">Add holdings</button>
-         <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo portfolio</button>`)}`;
+        `<button type="button" class="os-btn os-btn-primary" data-nav="holdings">Add holdings</button>
+         <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" data-action="App.loadDemo">Load demo portfolio</button>`)}`;
       CapMotion.refresh();
       return;
     }
@@ -61,7 +61,7 @@ const Dashboard = (() => {
     <div class="os-section cap-reveal">
       <div class="os-section-title">Requires attention</div>
       ${attention.map(i => `<div class="os-attention-item ${i.severity}">${i.text}</div>`).join('')}
-      <button type="button" class="os-btn os-btn-ghost" style="width:100%;margin-top:var(--space-2);" onclick="Navigation.go('research', false, { portfolioIntel: true })">View all insights</button>
+      <button type="button" class="os-btn os-btn-ghost" style="width:100%;margin-top:var(--space-2);" data-nav="research">View all insights</button>
     </div>` : ''}
 
     ${summary.sectorAllocation?.length ? `

@@ -49,16 +49,16 @@ const Hub = (() => {
   function _marketPulse(stats) {
     const active = typeof Market !== 'undefined' ? Market.moveFilter() : 'all';
     return `<div class="lc-pulse-row" role="group" aria-label="Market pulse">
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'advancing' ? ' on' : ''}" onclick="Hub.openMarketFilter('advancing')" aria-pressed="${active === 'advancing'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'advancing' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="advancing" aria-pressed="${active === 'advancing'}">
         <label>Advancing</label><b class="psx-up">${stats.adv}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'declining' ? ' on' : ''}" onclick="Hub.openMarketFilter('declining')" aria-pressed="${active === 'declining'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'declining' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="declining" aria-pressed="${active === 'declining'}">
         <label>Declining</label><b class="psx-down">${stats.dec}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--flat${active === 'unchanged' ? ' on' : ''}" onclick="Hub.openMarketFilter('unchanged')" aria-pressed="${active === 'unchanged'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--flat${active === 'unchanged' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="unchanged" aria-pressed="${active === 'unchanged'}">
         <label>Flat</label><b class="lc-pulse-neutral">${stats.unch}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--listed${active === 'all' ? ' on' : ''}" onclick="Hub.openMarketFilter('all')" aria-pressed="${active === 'all'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--listed${active === 'all' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="all" aria-pressed="${active === 'all'}">
         <label>Listed</label><b class="lc-pulse-listed">${stats.listed}</b>
       </button>
     </div>`;
@@ -87,7 +87,7 @@ const Hub = (() => {
     let stale = 0;
     syms.forEach(s => { if (State.isPriceStale(s, 24)) stale++; });
     if (!stale) return '';
-    return `<button type="button" class="lc-stale-chip" onclick="App.refreshPrices()">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
+    return `<button type="button" class="lc-stale-chip" data-action="App.refreshPrices">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
   }
 
   function _investmentSummary(state) {
@@ -123,21 +123,21 @@ const Hub = (() => {
             : PsxUI.fmt(r.deployedPkr);
           const pnlCls = r.pnl >= 0 ? 'psx-up' : 'psx-down';
           return `<div class="lc-deploy-grid lc-deploy-row">
-            <button type="button" class="lc-deploy-name-btn" onclick="Hub.openPortfolio('${r.id}')">
+            <button type="button" class="lc-deploy-name-btn" data-action="Hub.openPortfolio" data-tab="${r.id}">
               <div class="lc-market-sym">${r.name}</div>
               <div class="lc-market-name">${r.deployedNote || ''}</div>
             </button>
             <div class="lc-deploy-num lc-deploy-deployed">${dep}</div>
             <div class="lc-deploy-num lc-deploy-num--strong lc-deploy-value">${PsxUI.fmt(r.value)}</div>
             <div class="lc-deploy-pnl ${pnlCls}">${fmtPnl(r)}</div>
-            <button type="button" class="lc-deploy-txs" onclick="Transactions.openBucket('${r.id}')">Txs</button>
+            <button type="button" class="lc-deploy-txs" data-action="Transactions.openBucket" data-tab="${r.id}">Txs</button>
           </div>`;
         }).join('')}
       </div>
       ${txSum ? `<div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('transactions')">All transactions (${txSum.count})</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('tax')">Taxes ${PsxUI.fmt(txSum.taxes)}</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('dividend')">Dividends ${PsxUI.fmt(txSum.loggedDividends)}</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="transactions">All transactions (${txSum.count})</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="tax">Taxes ${PsxUI.fmt(txSum.taxes)}</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="dividend">Dividends ${PsxUI.fmt(txSum.loggedDividends)}</button>
       </div>` : ''}
     </div>`;
   }
@@ -167,7 +167,7 @@ const Hub = (() => {
     return `<div class="lc-dash-section" id="hub-news-section">
       <div class="lc-dash-section-head"><h3>Market news</h3><span>Impact on your holdings</span></div>
       <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
-      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" onclick="Hub.refreshNews()">Refresh news</button></div>
+      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Hub.refreshNews">Refresh news</button></div>
     </div>`;
   }
 
@@ -198,7 +198,7 @@ const Hub = (() => {
     return `<div class="lc-dash-section">
       <div class="lc-dash-section-head"><h3>Your movers</h3><span>Today</span></div>
       <div class="lc-movers-row">${movers.map(m => `
-        <button type="button" class="lc-mover-chip" onclick="Research.open('${m.symbol}')">
+        <button type="button" class="lc-mover-chip" data-action="Research.open" data-symbol="${m.symbol}">
           <strong>${m.symbol}</strong>
           <em class="${PsxUI.chgCls(m.chg)}">${PsxUI.fmt(m.chg, { pct: true, signed: true })}</em>
         </button>`).join('')}</div>
@@ -206,7 +206,7 @@ const Hub = (() => {
   }
 
   function _kseCard(k, sign) {
-    return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('market')" aria-label="Open stock watch">
+    return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="market" aria-label="Open stock watch">
       <span>KSE-100</span>
       <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
       <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</em>
@@ -215,7 +215,7 @@ const Hub = (() => {
 
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
-      <button type="button" class="lc-tool-card" onclick="Navigation.go('${t.id}')">
+      <button type="button" class="lc-tool-card" data-nav="${t.id}">
         <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 20) : ''}</div>
         <strong>${I18n.t(`tools.${t.key}.t`)}</strong>
         <span>${I18n.t(`tools.${t.key}.d`)}</span>
@@ -271,7 +271,7 @@ const Hub = (() => {
           </div>
           <div class="lc-dash-market">
             ${_kseCard(k, sign)}
-            <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="App.openAddTransaction()" aria-label="Add holdings">
+            <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.openAddTransaction" aria-label="Add holdings">
               <span>${I18n.t('portfolio.value')}</span>
               <strong>—</strong>
               <em>${I18n.t('addHoldings')}</em>
@@ -283,8 +283,8 @@ const Hub = (() => {
             <h2>${I18n.t('hub.hero')}</h2>
             <p>${I18n.t('hub.sub')}</p>
             <div class="lc-dash-actions" style="justify-content:center">
-              <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
-              <button type="button" class="psx-btn psx-btn-ghost" onclick="location.search='?demo=1';location.reload()">${I18n.t('loadDemo')}</button>
+              <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
+              <button type="button" class="psx-btn psx-btn-ghost" data-action="App.loadDemo">${I18n.t('loadDemo')}</button>
             </div>
           </div>
           <div class="lc-dash-section">
@@ -315,13 +315,13 @@ const Hub = (() => {
           </div>
         </div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button>
-          <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
+          <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
         <div class="lc-dash-market">
           ${_kseCard(k, sign)}
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('portfolio')" aria-label="Open portfolio">
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="portfolio" aria-label="Open portfolio">
             <span>${I18n.t('portfolio.yield')}</span>
             <strong>${s.portfolioDivYield.toFixed(2)}%</strong>
             <em>${I18n.t('portfolio.invested')} ${PsxUI.fmt(s.invested)}</em>

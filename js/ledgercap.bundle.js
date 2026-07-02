@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 85 modules — run: npm run bundle */
+/* LedgerCap bundle — 88 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4989,6 +4989,7 @@ window.I18N_LOCALES = {
       globalMarkets: { t: 'Global markets', d: 'US equities · crypto · FX' },
       zakatTool: { t: 'Zakat calculator', d: 'Nisab · debts · gold' },
       pilotTools: { t: 'Tax & Rebalance', d: 'CGT · rebalance · IPO · calculators' },
+      paperTrade: { t: 'Paper trade', d: 'Simulated PSX ledger' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
       calendar: { t: 'Wealth calendar', d: 'Dividends · IPO · corporate' },
@@ -5064,6 +5065,7 @@ window.I18N_LOCALES = {
       globalMarkets: { t: 'عالمی مارکیٹس', d: 'امریکی حصص · کرپٹو · FX' },
       zakatTool: { t: 'زکوٰۃ کیلکولیٹر', d: 'نصاب · قرض · سونا' },
       pilotTools: { t: 'ٹیکس اور توازن', d: 'CGT · ری بیلنس · IPO · کیلکولیٹر' },
+      paperTrade: { t: 'پیپر ٹریڈ', d: 'فرضی PSX لیجر' },
       riskAudit: { t: 'رسک آڈٹ', d: 'ارتکاز · CGT · جھکاؤ' },
       insightsTool: { t: 'بصیرت', d: 'اسکور · بینچ مارک · تاریخ' },
       calendar: { t: 'ویلتھ کیلنڈر', d: 'ڈیویڈنڈ · IPO · کارپوریٹ' },
@@ -5129,6 +5131,7 @@ window.I18N_LOCALES = {
       watchlist: { t: 'Watchlist', d: 'Kharidne se pehle track karein' },
       transactions: { t: 'Transactions', d: 'Buy · sell · dividend log' },
       pilotTools: { t: 'Tax & Rebalance', d: 'CGT · rebalance · IPO · calculators' },
+      paperTrade: { t: 'Paper trade', d: 'Simulated PSX ledger' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
       global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
@@ -8408,9 +8411,9 @@ const PortfolioBuckets = (() => {
         ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 28, color: s.pnl >= 0 ? '#22c55e' : '#ef4444' })}</div>`
         : '';
       const del = !b.builtin
-        ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" onclick="event.stopPropagation();App.deletePortfolio('${b.id}')">×</button>`
+        ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" data-action="App.deletePortfolio" data-tab="${b.id}" data-stop="1">×</button>`
         : '';
-      return `<button type="button" class="lc-portfolio-card${on}${empty ? ' lc-portfolio-card--empty' : ''}" onclick="${click}('${b.id}')" aria-label="${b.name}, ${empty ? 'empty' : PsxUI.fmt(s.value) + ', ' + s.positions + ' positions'}">
+      return `<button type="button" class="lc-portfolio-card${on}${empty ? ' lc-portfolio-card--empty' : ''}" data-action="${click}" data-tab="${b.id}" aria-label="${b.name}, ${empty ? 'empty' : PsxUI.fmt(s.value) + ', ' + s.positions + ' positions'}">
         ${del}
         <span class="lc-portfolio-card-icon" aria-hidden="true">${b.icon}</span>
         <div class="lc-portfolio-card-body">
@@ -8426,7 +8429,7 @@ const PortfolioBuckets = (() => {
         </div>
       </button>`;
     }).join('');
-    const add = `<button type="button" class="lc-portfolio-card lc-portfolio-card--add" onclick="App.openAddPortfolio()" aria-label="Add portfolio">
+    const add = `<button type="button" class="lc-portfolio-card lc-portfolio-card--add" data-action="App.openAddPortfolio" aria-label="Add portfolio">
       <span class="lc-portfolio-card-icon" aria-hidden="true">+</span>
       <div class="lc-portfolio-card-body"><strong>Add portfolio</strong><span class="lc-portfolio-card-desc">Custom USA · crypto · PSX ledger</span></div>
     </button>`;
@@ -9236,12 +9239,14 @@ window.TelegramBriefFormat = TelegramBriefFormat;
 
 ;/* === js/services/secrets-vault.js === */
 'use strict';
-/** Encrypt Telegram bot token at rest (AES-GCM). Stripped from JSON exports. */
+/** Encrypt Telegram bot token at rest (AES-GCM). Key derived from PIN when enabled. */
 const SecretsVault = (() => {
   const MK = 'ledgercap_mk_v1';
   const ENC = 'ledgercap_tg_token_enc';
+  const VK = 'ledgercap_vault_key_v1';
+  let _sessionPin = null;
 
-  async function _masterKey() {
+  async function _legacyMasterKey() {
     let b64 = localStorage.getItem(MK);
     if (!b64) {
       const buf = crypto.getRandomValues(new Uint8Array(32));
@@ -9250,6 +9255,73 @@ const SecretsVault = (() => {
     }
     const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+
+  async function _pinDerivedKey(pin) {
+    if (typeof PinVault === 'undefined' || !PinVault.deriveVaultKeyBits) return null;
+    const bits = await PinVault.deriveVaultKeyBits(pin);
+    if (!bits) return null;
+    return crypto.subtle.importKey('raw', bits, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+
+  async function _masterKey() {
+    if (_sessionPin && typeof PinVault !== 'undefined' && PinVault.isEnabled()) {
+      const k = await _pinDerivedKey(_sessionPin);
+      if (k) return k;
+    }
+    const stored = localStorage.getItem(VK);
+    if (stored === 'pin' && _sessionPin) {
+      const k = await _pinDerivedKey(_sessionPin);
+      if (k) return k;
+    }
+    return _legacyMasterKey();
+  }
+
+  function setSessionPin(pin) {
+    _sessionPin = pin ? String(pin) : null;
+  }
+
+  function clearSessionPin() {
+    _sessionPin = null;
+  }
+
+  async function bindToPin(pin) {
+    const plain = await getTelegramToken();
+    localStorage.setItem(VK, 'pin');
+    localStorage.removeItem(MK);
+    setSessionPin(pin);
+    if (plain) await setTelegramToken(plain);
+  }
+
+  async function rekeyAfterPinChange(pin) {
+    const plain = await getTelegramToken();
+    setSessionPin(pin);
+    if (plain) await setTelegramToken(plain);
+  }
+
+  async function migrateLegacyToPin(pin) {
+    if (localStorage.getItem(VK) === 'pin') return;
+    if (!localStorage.getItem(ENC)) {
+      localStorage.setItem(VK, 'pin');
+      localStorage.removeItem(MK);
+      return;
+    }
+    const legacy = await _legacyMasterKey();
+    const raw = localStorage.getItem(ENC);
+    let token = '';
+    try {
+      const { iv, data } = JSON.parse(raw);
+      const dec = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: Uint8Array.from(atob(iv), (c) => c.charCodeAt(0)) },
+        legacy,
+        Uint8Array.from(atob(data), (c) => c.charCodeAt(0)),
+      );
+      token = new TextDecoder().decode(dec);
+    } catch { /* empty */ }
+    localStorage.setItem(VK, 'pin');
+    localStorage.removeItem(MK);
+    setSessionPin(pin);
+    if (token) await setTelegramToken(token);
   }
 
   function hasTelegramToken() {
@@ -9321,9 +9393,101 @@ const SecretsVault = (() => {
     hasTelegramToken,
     migratePlaintextToken,
     stripSensitiveSettings,
+    setSessionPin,
+    clearSessionPin,
+    bindToPin,
+    rekeyAfterPinChange,
+    migrateLegacyToPin,
   };
 })();
 window.SecretsVault = SecretsVault;
+
+;/* === js/services/history-series-service.js === */
+'use strict';
+/** Per-symbol + index price history for 1M/1Y/5Y charts (local storage). */
+const HistorySeriesService = (() => {
+  const MAX_POINTS = 1260;
+
+  function _ensure(state) {
+    if (!state.seriesHistory) state.seriesHistory = {};
+    if (!state.fundNavHistory) state.fundNavHistory = {};
+    return state;
+  }
+
+  function recordSymbol(symbol, price, date) {
+    if (!symbol || !(price > 0)) return;
+    const state = _ensure(State.get());
+    const sym = symbol.toUpperCase();
+    const d = date || new Date().toISOString().slice(0, 10);
+    if (!state.seriesHistory[sym]) state.seriesHistory[sym] = [];
+    const rows = state.seriesHistory[sym];
+    const idx = rows.findIndex((r) => r.date === d);
+    const row = { date: d, price: Number(price) };
+    if (idx >= 0) rows[idx] = row;
+    else rows.push(row);
+    rows.sort((a, b) => a.date.localeCompare(b.date));
+    state.seriesHistory[sym] = rows.slice(-MAX_POINTS);
+    State.set(state);
+  }
+
+  function recordFromPrices(prices) {
+    if (!prices || typeof prices !== 'object') return;
+    Object.entries(prices).forEach(([sym, row]) => {
+      const p = typeof row === 'number' ? row : row?.price;
+      if (p > 0) recordSymbol(sym, p);
+    });
+  }
+
+  function recordFundNav(symbol, nav, date) {
+    if (!symbol || !(nav > 0)) return;
+    const state = _ensure(State.get());
+    const sym = symbol.toUpperCase();
+    const d = date || new Date().toISOString().slice(0, 10);
+    if (!state.fundNavHistory[sym]) state.fundNavHistory[sym] = [];
+    const rows = state.fundNavHistory[sym];
+    const idx = rows.findIndex((r) => r.date === d);
+    const row = { date: d, nav: Number(nav) };
+    if (idx >= 0) rows[idx] = row;
+    else rows.push(row);
+    rows.sort((a, b) => a.date.localeCompare(b.date));
+    state.fundNavHistory[sym] = rows.slice(-MAX_POINTS);
+    State.set(state);
+  }
+
+  function getSeries(symbol, rangeDays) {
+    const sym = (symbol || '').toUpperCase();
+    const state = State.get();
+    const rows = state.seriesHistory?.[sym] || [];
+    if (!rangeDays || rangeDays <= 0) return rows.map((r) => r.price);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - rangeDays);
+    const cut = cutoff.toISOString().slice(0, 10);
+    return rows.filter((r) => r.date >= cut).map((r) => r.price);
+  }
+
+  function getPortfolioSeries(rangeDays) {
+    const hist = State.get().priceHistory || [];
+    if (!rangeDays) return hist.map((h) => h.value).filter((v) => v > 0);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - rangeDays);
+    const cut = cutoff.toISOString().slice(0, 10);
+    return hist.filter((h) => h.date >= cut).map((h) => h.value).filter((v) => v > 0);
+  }
+
+  function ranges() {
+    return [
+      { id: '1w', label: '1W', days: 7 },
+      { id: '1m', label: '1M', days: 30 },
+      { id: '3m', label: '3M', days: 90 },
+      { id: '1y', label: '1Y', days: 365 },
+      { id: '5y', label: '5Y', days: 1260 },
+      { id: 'all', label: 'All', days: 0 },
+    ];
+  }
+
+  return { recordSymbol, recordFromPrices, recordFundNav, getSeries, getPortfolioSeries, ranges };
+})();
+window.HistorySeriesService = HistorySeriesService;
 
 ;/* === js/services/telegram-service.js === */
 'use strict';
@@ -9826,6 +9990,21 @@ const PinVault = (() => {
     return 'v2:' + _hex(bits);
   }
 
+  /** AES-256 key material for SecretsVault — separate salt domain from PIN hash. */
+  async function deriveVaultKeyBits(pin) {
+    const cfg = getConfig();
+    if (!cfg.salt || !validateFormat(pin)) return null;
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+    const vaultSalt = enc.encode(`ledgercap:vault:${cfg.salt}`);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: vaultSalt, iterations: PBKDF2_ITER },
+      keyMaterial,
+      256
+    );
+    return new Uint8Array(bits);
+  }
+
   async function _matchesStored(pin, salt, storedHash) {
     if (!storedHash) return false;
     if (String(storedHash).startsWith('v2:')) {
@@ -9893,6 +10072,10 @@ const PinVault = (() => {
       cfg.lockUntil = 0;
       cfg.lockLevel = 0;
       saveConfig(cfg);
+      if (typeof SecretsVault !== 'undefined') {
+        SecretsVault.setSessionPin(pin);
+        SecretsVault.migrateLegacyToPin(pin).catch(() => {});
+      }
       return { ok: true, decoy: false };
     }
     if (cfg.decoyHash && await _matchesStored(pin, cfg.salt, cfg.decoyHash)) {
@@ -9934,6 +10117,9 @@ const PinVault = (() => {
       autoLockMin: prev.autoLockMin != null ? prev.autoLockMin : 5,
     });
     unlock(false);
+    if (typeof SecretsVault !== 'undefined') {
+      SecretsVault.bindToPin(pin).catch(() => {});
+    }
   }
 
   async function changePin(oldPin, newPin, confirmPin) {
@@ -9948,6 +10134,9 @@ const PinVault = (() => {
     cfg.lockUntil = 0;
     saveConfig(cfg);
     unlock(false);
+    if (typeof SecretsVault !== 'undefined') {
+      SecretsVault.rekeyAfterPinChange(newPin).catch(() => {});
+    }
   }
 
   async function disablePin(pin) {
@@ -9955,6 +10144,7 @@ const PinVault = (() => {
     if (!check.ok || check.decoy) throw new Error('PIN incorrect');
     localStorage.removeItem(KEY);
     _writeSession(null);
+    if (typeof SecretsVault !== 'undefined') SecretsVault.clearSessionPin();
   }
 
   async function setDecoyPin(pin, mainPin) {
@@ -10001,6 +10191,7 @@ const PinVault = (() => {
     LOCKOUT_MS,
     validateFormat,
     digestPin,
+    deriveVaultKeyBits,
     getConfig,
     saveConfig,
     isEnabled,
@@ -10301,7 +10492,44 @@ ${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || 
     return true;
   }
 
-  return { exportCsv, exportHtml };
+  function exportCgtHtml(year) {
+    year = year || _year();
+    if (typeof PilotEngine === 'undefined') return false;
+    const r = PilotEngine.buildCgtReport(State.get());
+    const fmt = (n) => PlatformUI.fmt(n);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap CGT ${year}</title>
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
+@media print{body{padding:12px}}</style></head><body>
+<h1>LedgerCap — Capital Gains Tax Estimate ${year}</h1>
+<p>Generated ${new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' })} PKT · ${r.disclaimer}</p>
+<div class="summary">
+<div><strong>Filer status</strong><br>${r.is_filer ? 'Filer' : 'Non-filer'}</div>
+<div><strong>Unrealized gain</strong><br>${fmt(r.total_unrealized_gain)}</div>
+<div><strong>Est. tax</strong><br>${fmt(r.total_estimated_tax)}</div>
+<div><strong>Short / long lots</strong><br>${r.short_term_count} / ${r.long_term_count} (${r.short_term_rate_pct}% / ${r.long_term_rate_pct}%)</div>
+<div><strong>Missing buy dates</strong><br>${r.lots_missing_date}</div>
+</div>
+<table><thead><tr><th>Symbol</th><th>Qty</th><th>P&amp;L</th><th>Tier</th><th>Days</th><th>Est. tax</th></tr></thead><tbody>
+${r.lots.filter(l => l.pl > 0).map(l => `<tr><td>${l.symbol}</td><td>${l.quantity}</td><td>${fmt(l.pl)}</td><td>${l.tier}</td><td>${l.days_held ?? '—'}</td><td>${l.estimated_tax ? fmt(l.estimated_tax) : '—'}</td></tr>`).join('')}
+</tbody></table>
+<p style="font-size:11px;color:#666;margin-top:24px">Print or Save as PDF from browser. Not tax advice.</p>
+<script>window.onload=function(){window.print()}</script></body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) return false;
+    w.document.write(html);
+    w.document.close();
+    return true;
+  }
+
+  function exportCgtPdf(year) {
+    return exportCgtHtml(year);
+  }
+
+  return { exportCsv, exportHtml, exportCgtHtml, exportCgtPdf };
 })();
 window.StatementExport = StatementExport;
 
@@ -10621,8 +10849,8 @@ const PriceHealth = (() => {
       : `${rep.stale} holding(s) have prices older than 24h. Tap refresh for latest close.`;
     return `<div class="lc-price-health" role="status">
       <span>${msg}</span>
-      <button type="button" class="lc-price-health-btn" onclick="App.refreshPrices()">Refresh</button>
-      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
+      <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
+      <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
 
@@ -11556,6 +11784,152 @@ const LcDebounce = (() => {
 })();
 window.LcDebounce = LcDebounce;
 
+;/* === js/ui/lc-events.js === */
+'use strict';
+/** CSP-safe delegated UI actions — replaces inline onclick handlers. */
+const LcEvents = (() => {
+  const _segmentMap = {};
+
+  function registerSegment(ns, fn) {
+    if (ns && typeof fn === 'function') _segmentMap[ns] = fn;
+  }
+
+  function _parsePayload(el) {
+    const raw = el.dataset.payload;
+    if (!raw) return null;
+    try { return JSON.parse(raw.replace(/&#39;/g, "'")); } catch { return null; }
+  }
+
+  function _call(path, el, ev) {
+    const parts = path.split('.');
+    let ctx = window;
+    for (let i = 0; i < parts.length - 1; i++) ctx = ctx[parts[i]];
+    const fn = ctx?.[parts[parts.length - 1]];
+    if (typeof fn !== 'function') return false;
+    if (el.dataset.stop) ev.stopPropagation();
+    const sym = el.dataset.symbol || el.dataset.sym;
+    const tab = el.dataset.tab || el.dataset.navTab || el.dataset.value;
+    const mode = el.dataset.mode;
+    const broker = el.dataset.broker;
+    const payload = _parsePayload(el);
+
+    if (path === 'Navigation.go') fn.call(ctx, tab || el.dataset.nav, false, {});
+    else if (path === 'Research.open') fn.call(ctx, sym);
+    else if (path === 'Research.pickSymbol') fn.call(ctx, sym);
+    else if (path === 'Research.setMode') fn.call(ctx, mode);
+    else if (path === 'Research._onSearch') fn.call(ctx, el.value);
+    else if (path === 'PilotTools.render') fn.call(ctx, null, tab || el.dataset.value);
+    else if (path === 'PilotTools.runScreen') fn.call(ctx, payload || {});
+    else if (path === 'PilotTools.calc') fn.call(ctx, tab);
+    else if (path === 'PilotTools.setTarget') fn.call(ctx, sym, broker, el.value);
+    else if (path === 'PilotTools.setAcquired') fn.call(ctx, sym, broker, el.value);
+    else if (path === 'Announcements.setTab') fn.call(ctx, tab || el.dataset.value);
+    else if (path === 'Commodities.refresh') fn.call(ctx);
+    else if (path === 'Global.setTab') fn.call(ctx, tab || el.dataset.value);
+    else if (path === 'Dividends.toggleDrip') fn.call(ctx, sym, el.checked);
+    else if (path === 'App.openAddTransaction') fn.call(ctx);
+    else if (path === 'App.openAddPortfolio') fn.call(ctx);
+    else if (path === 'App.closeBottomSheet') fn.call(ctx);
+    else if (path === 'App.refreshPrices') fn.call(ctx);
+    else if (path === 'App.dismissDemo') fn.call(ctx);
+    else if (path === 'App.toggleDisplayCurrency') fn.call(ctx);
+    else if (path === 'App.openPriceAlert') fn.call(ctx, sym);
+    else if (path === 'PaperTrade.setTab') window.PaperTrade?.setTab(tab || el.dataset.value);
+    else if (path === 'PaperTrade.openBuy') window.PaperTrade?.openBuy(sym);
+    else if (path === 'PaperTrade.openSellRow') window.PaperTrade?.openSellRow(el);
+    else if (path === 'PaperTrade._submitBuy') window.PaperTrade?._submitBuy();
+    else if (path === 'PaperTrade._submitSell') window.PaperTrade?._submitSell(el);
+    else if (path === 'PaperTrade.resetLedger') window.PaperTrade?.resetLedger();
+    else if (path === 'LcTerminal.toggle') window.LcTerminal?.toggle();
+    else if (path === 'LcEvents.closeProModal') document.getElementById('proUpgradeModal')?.classList.remove('open');
+    else if (path === 'openProUpgrade') window.openProUpgrade?.();
+    else if (path === 'window.toggleTheme') window.toggleTheme?.();
+    else if (path === 'StatementExport.exportCgtPdf') StatementExport?.exportCgtPdf?.();
+    else if (path === 'StatementExport.exportHtml') StatementExport?.exportHtml?.();
+    else if (path === 'StatementExport.exportCsv') StatementExport?.exportCsv?.();
+    else if (path === 'Watchlist.openAdd') window.Watchlist?.openAdd();
+    else if (path === 'Journal.openNew') window.Journal?.openNew();
+    else if (path === 'LcPolish.openCmdk') window.LcPolish?.openCmdk();
+    else if (path === 'Performance.setTab') window.Performance?.setTab(tab);
+    else if (path === 'Performance.setHistRange') window.Performance?.setHistRange(tab);
+    else if (path === 'Navigation.goResearchIntel') {
+      Research?.setMode?.('portfolio');
+      Navigation.go('research', false, { portfolioIntel: true });
+    }
+    else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
+    else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
+    else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
+    else if (path === 'App._submitPriceAlert') App?._submitPriceAlert?.(sym);
+    else if (path === 'PortfolioScreen.reconcile') PortfolioScreen?.reconcile?.(sym, broker, mode);
+    else if (path === 'Transactions.openSymbol') Transactions?.openSymbol?.(sym);
+    else if (path === 'Signals.setBook') Signals?.setBook?.(sym, broker, tab);
+    else if (path === 'Watchlist.save') Watchlist?.save?.(tab);
+    else if (path === 'Watchlist.openEdit') Watchlist?.openEdit?.(tab);
+    else if (path === 'Watchlist.remove') Watchlist?.remove?.(tab);
+    else if (path === 'Journal.remove') Journal?.remove?.(tab);
+    else if (path === 'PriceHealth.dismiss') PriceHealth?.dismiss?.();
+    else if (path === 'App.loadDemo') App?.loadDemo?.();
+    else fn.call(ctx, el, ev);
+    return true;
+  }
+
+  function _onClick(ev) {
+    const ext = ev.target.closest('[data-external-url]');
+    if (ext?.dataset.externalUrl) {
+      ev.preventDefault();
+      window.open(ext.dataset.externalUrl, '_blank', 'noopener');
+      return;
+    }
+    const nav = ev.target.closest('[data-nav]');
+    if (nav?.dataset.nav && window.Navigation) {
+      ev.preventDefault();
+      Navigation.go(nav.dataset.nav);
+      return;
+    }
+    const act = ev.target.closest('[data-action]');
+    if (!act?.dataset.action) return;
+    const action = act.dataset.action;
+    if (action.includes('.')) {
+      ev.preventDefault();
+      _call(action, act, ev);
+      return;
+    }
+    const seg = act.closest('[data-segment]');
+    if (seg && _segmentMap[seg.dataset.segment]) {
+      ev.preventDefault();
+      _segmentMap[seg.dataset.segment](action);
+    }
+  }
+
+  function _onChange(ev) {
+    const el = ev.target;
+    if (el.dataset.actionChange) {
+      _call(el.dataset.actionChange, el, ev);
+      return;
+    }
+    if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
+    if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
+  }
+
+  function _onInput(ev) {
+    const el = ev.target;
+    if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
+    if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
+  }
+
+  function init() {
+    document.addEventListener('click', _onClick, true);
+    document.addEventListener('change', _onChange, true);
+    document.addEventListener('input', _onInput, true);
+    registerSegment('Announcements', (id) => Announcements?.setTab?.(id));
+    registerSegment('Global', (id) => Global?.setTab?.(id));
+    registerSegment('PaperTrade', (id) => PaperTrade?.setTab?.(id));
+  }
+
+  return { init, registerSegment, _call, closeProModal: () => document.getElementById('proUpgradeModal')?.classList.remove('open') };
+})();
+window.LcEvents = LcEvents;
+
 ;/* === js/ui/icons.js === */
 'use strict';
 /** LedgerCap monochrome SVG icon registry (SF Symbol–style) */
@@ -11759,13 +12133,17 @@ const PsxUI = (() => {
     return { value: k.value, changeP: chg, ts: k.ts, cls: chg == null ? '' : (chg >= 0 ? 'psx-up' : 'psx-down') };
   }
 
+  function _act(expr) {
+    return String(expr || 'App.refreshPrices').replace(/\(\)$/, '').replace(/\(\)/g, '');
+  }
+
   function strip(onRefresh) {
     const k = kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     return `<div class="psx-strip">
       <div><span class="psx-live"><span class="psx-live-dot"></span>${I18n.t('liveMarket')}</span></div>
       <div><strong>KSE-100</strong> ${k.value ? fmtIndex(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
-      <button type="button" class="psx-strip-refresh" onclick="${onRefresh || 'App.refreshPrices()'}">${I18n.t('refresh')}</button>
+      <button type="button" class="psx-strip-refresh" data-action="${_act(onRefresh)}">${I18n.t('refresh')}</button>
     </div>`;
   }
 
@@ -11796,23 +12174,25 @@ const PsxUI = (() => {
   }
 
   function panel(title, desc, openOn, inner) {
+    const openAct = openOn ? _act(openOn) : '';
     return `<div class="psx-panel">
       <div class="psx-panel-head">
         <div><strong>${title}</strong><span>${desc}</span></div>
-        ${openOn ? `<button type="button" class="psx-open" onclick="${openOn}">${I18n.t('open')}</button>` : ''}
+        ${openAct ? `<button type="button" class="psx-open" data-action="${openAct}">${I18n.t('open')}</button>` : ''}
       </div>
       ${inner || ''}
     </div>`;
   }
 
-  function sectorTable(sectors, onRow) {
+  function sectorTable(sectors, rowAction) {
+    rowAction = rowAction || 'Research.open';
     return Object.keys(sectors).sort().map(sec => `
       <div class="psx-sector"><span>${sec}</span><span>${sectors[sec].length} stocks</span></div>
       <div class="psx-table-wrap"><table class="psx-table"><thead><tr>
         <th>${I18n.t('market.symbol')}</th><th>${I18n.t('market.last')}</th><th>${I18n.t('market.chg')}</th>
       </tr></thead><tbody>
       ${sectors[sec].map(r => `
-        <tr onclick="${onRow ? onRow(r.symbol) : ''}">
+        <tr data-action="${rowAction}" data-symbol="${r.symbol}" style="cursor:pointer">
           <td><div class="psx-sym">${r.symbol}</div><div class="psx-sym-sub">${r.name}</div></td>
           <td>${fmt(r.price)}</td>
           <td class="${chgCls(r.chg)}">${fmt(r.chg, { pct: true, signed: true })}</td>
@@ -11822,7 +12202,7 @@ const PsxUI = (() => {
 
   function filters(items, active, ns) {
     return `<div class="psx-filters">${items.map(it => `
-      <button type="button" class="psx-filter${active === it.id ? ' on' : ''}" onclick="${ns}.setFilter('${it.id}')">${it.label}</button>
+      <button type="button" class="psx-filter${active === it.id ? ' on' : ''}" data-action="${ns}.setFilter" data-tab="${it.id}">${it.label}</button>
     `).join('')}</div>`;
   }
 
@@ -11837,7 +12217,7 @@ const PsxUI = (() => {
   function segment(items, active, ns, method) {
     method = method || 'setFilter';
     return `<div class="lc-segment" role="tablist">${items.map(it =>
-      `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" onclick="${ns}.${method}('${it.id}')">${it.label}</button>`
+      `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" data-action="${ns}.${method}" data-tab="${it.id}">${it.label}</button>`
     ).join('')}</div>`;
   }
 
@@ -11871,7 +12251,7 @@ const PsxUI = (() => {
 
   function errorState(title, sub, retryOn) {
     const btn = retryOn
-      ? `<button type="button" class="psx-btn psx-btn-ghost" onclick="${retryOn}">Try again</button>`
+      ? `<button type="button" class="psx-btn psx-btn-ghost" data-action="${_act(retryOn)}">Try again</button>`
       : '';
     return `<div class="lc-error-state" role="alert">
       <div class="lc-error-icon" aria-hidden="true">!</div>
@@ -12007,7 +12387,7 @@ const MarketUI = (() => {
       <span class="lc-compact-chg ${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : '…'}</span>
       <span class="lc-compact-sep" aria-hidden="true">·</span>
       <span class="lc-compact-live"><span class="lc-live-dot lc-live-dot--sm" aria-hidden="true"></span>${ago ? ago : 'Live'}</span>
-      <button type="button" class="lc-compact-refresh" onclick="App.refreshPrices()" title="Refresh prices">↻</button>
+      <button type="button" class="lc-compact-refresh" data-action="App.refreshPrices" title="Refresh prices">↻</button>
     </div>`;
   }
 
@@ -12062,7 +12442,7 @@ const MarketUI = (() => {
     return `
     <div class="lc-home-top cap-reveal">
       ${liveBadge(k.ts)}
-      <button type="button" class="lc-section-action" onclick="App.refreshPrices()">Refresh prices</button>
+      <button type="button" class="lc-section-action" data-action="App.refreshPrices">Refresh prices</button>
     </div>
     <div class="lc-market-strip cap-reveal">
       <div class="lc-index-card lc-index-card--hero">
@@ -12098,20 +12478,23 @@ const MarketUI = (() => {
   }
 
   function toolsGrid(items) {
-    return `<div class="lc-tools-grid cap-reveal">${items.map(t =>
-      `<button type="button" class="lc-tool-card" onclick="${t.on}"><strong>${t.title}</strong><span>${t.sub}</span></button>`
-    ).join('')}</div>`;
+    return `<div class="lc-tools-grid cap-reveal">${items.map(t => {
+      const nav = (t.nav || (t.on || '').match(/Navigation\.go\('([^']+)'\)/)?.[1]);
+      const attr = nav ? `data-nav="${nav}"` : `data-action="${String(t.on || '').replace(/\(\)$/, '')}"`;
+      return `<button type="button" class="lc-tool-card" ${attr}><strong>${t.title}</strong><span>${t.sub}</span></button>`;
+    }).join('')}</div>`;
   }
 
   function defaultTools() {
     return toolsGrid([
-      { title: 'Signals', sub: 'Rule-based brief on holdings', on: "Navigation.go('signals')" },
-      { title: 'Dividends', sub: 'Income calendar & yield', on: "Navigation.go('dividends')" },
-      { title: 'Research', sub: 'Charts, DMA, smart rating', on: "Navigation.go('research')" },
-      { title: 'Tax & Rebalance', sub: 'CGT · rebalance · IPO tools', on: "Navigation.go('pilot-tools')" },
-      { title: 'Performance', sub: 'XIRR & benchmark compare', on: "Navigation.go('performance')" },
-      { title: 'Compare', sub: 'Side-by-side holdings', on: "Navigation.go('comparison')" },
-      { title: 'Transactions', sub: 'Full buy/sell log', on: "Navigation.go('transactions')" },
+      { title: 'Signals', sub: 'Rule-based brief on holdings', nav: 'signals' },
+      { title: 'Dividends', sub: 'Income calendar & yield', nav: 'dividends' },
+      { title: 'Research', sub: 'Charts, DMA, smart rating', nav: 'research' },
+      { title: 'Tax & Rebalance', sub: 'CGT · rebalance · IPO tools', nav: 'pilot-tools' },
+      { title: 'Performance', sub: 'XIRR & benchmark compare', nav: 'performance' },
+      { title: 'Compare', sub: 'Side-by-side holdings', nav: 'comparison' },
+      { title: 'Transactions', sub: 'Full buy/sell log', nav: 'transactions' },
+      { title: 'Paper trade', sub: 'Simulated PSX ledger', nav: 'paper-trade' },
     ]);
   }
 
@@ -12130,7 +12513,7 @@ const MarketUI = (() => {
           <div class="lc-index-label">Today&apos;s pulse</div>
           <div class="lc-brief-title">Rule-based action queue</div>
         </div>
-        <button type="button" class="lc-section-action" onclick="Navigation.go('signals')">Open →</button>
+        <button type="button" class="lc-section-action" data-nav="signals">Open →</button>
       </div>
       <div class="lc-brief-pills">${pills || '<span class="lc-brief-pill lc-brief-pill--muted">HOLD zone</span>'}</div>
       ${top
@@ -12251,12 +12634,13 @@ const Navigation = (() => {
     { id: 'risk-audit', labelKey: 'tools.riskAudit.t' },
     { id: 'insights', labelKey: 'tools.insightsTool.t' },
     { id: 'pilot-tools', labelKey: 'tools.pilotTools.t' },
+    { id: 'paper-trade', labelKey: 'tools.paperTrade.t' },
     { id: 'transactions', labelKey: 'tools.transactions.t' },
     { id: 'settings', labelKey: 'more.title' },
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools', 'paper-trade']);
 
   let _current = 'home';
 
@@ -12283,7 +12667,7 @@ const Navigation = (() => {
         <nav aria-label="Primary">${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <div style="height:1px;background:var(--psx-border);margin:16px 8px"></div>
         <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 18) : ''}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
-        <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
+        <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" data-action="window.toggleTheme">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
     const saved = sessionStorage.getItem('ledgercap_tab');
@@ -12363,6 +12747,7 @@ const Navigation = (() => {
       performance: () => Performance.render(),
       journal: () => Journal.render(),
       'pilot-tools': () => PilotTools.render(),
+      'paper-trade': () => PaperTrade.render(),
     };
     if (map[id]) map[id]();
   }
@@ -12445,7 +12830,11 @@ const State = (() => {
     cashLedger: [],
     manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 },
     portfolios: [],
-    version: 10,
+    seriesHistory: {},
+    fundNavHistory: {},
+    paperLedger: { cashPkr: 500000, transactions: [] },
+    dripSettings: {},
+    version: 11,
     seedDataVersion: 0,
   };
 
@@ -12488,6 +12877,14 @@ const State = (() => {
     if (!_s.settings.displayCurrency) _s.settings.displayCurrency = 'PKR';
     if (_s.settings.liveStreamEnabled == null) _s.settings.liveStreamEnabled = true;
     _s.version = 10;
+  }
+
+  function _migrateV11() {
+    if (!_s.seriesHistory) _s.seriesHistory = {};
+    if (!_s.fundNavHistory) _s.fundNavHistory = {};
+    if (!_s.paperLedger) _s.paperLedger = { cashPkr: 500000, transactions: [] };
+    if (!_s.dripSettings) _s.dripSettings = {};
+    _s.version = 11;
   }
 
   function _migrateV8() {
@@ -12662,6 +13059,10 @@ const State = (() => {
           _migrateV10();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 11) {
+          _migrateV11();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -12713,6 +13114,7 @@ const State = (() => {
       if (!_s.version || _s.version < 8) _migrateV8();
       if (!_s.version || _s.version < 9) _migrateV9();
       if (!_s.version || _s.version < 10) _migrateV10();
+      if (!_s.version || _s.version < 11) _migrateV11();
       save();
       if (typeof SecretsVault !== 'undefined') SecretsVault.migratePlaintextToken();
       return true;
@@ -12757,6 +13159,9 @@ const State = (() => {
     _s.prices[symbol] = typeof priceData === 'number'
       ? { price, prevClose: _s.prices[symbol]?.price || price, ts: Date.now(), source: 'manual' }
       : _normalizeGlobalPriceEntry(symbol, { ...priceData, ts: Date.now() });
+    if (typeof HistorySeriesService !== 'undefined' && price > 0) {
+      HistorySeriesService.recordSymbol(symbol, price);
+    }
     _logPortfolioValue();
     save();
   }
@@ -13065,16 +13470,16 @@ const Hub = (() => {
   function _marketPulse(stats) {
     const active = typeof Market !== 'undefined' ? Market.moveFilter() : 'all';
     return `<div class="lc-pulse-row" role="group" aria-label="Market pulse">
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'advancing' ? ' on' : ''}" onclick="Hub.openMarketFilter('advancing')" aria-pressed="${active === 'advancing'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'advancing' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="advancing" aria-pressed="${active === 'advancing'}">
         <label>Advancing</label><b class="psx-up">${stats.adv}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'declining' ? ' on' : ''}" onclick="Hub.openMarketFilter('declining')" aria-pressed="${active === 'declining'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${active === 'declining' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="declining" aria-pressed="${active === 'declining'}">
         <label>Declining</label><b class="psx-down">${stats.dec}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--flat${active === 'unchanged' ? ' on' : ''}" onclick="Hub.openMarketFilter('unchanged')" aria-pressed="${active === 'unchanged'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--flat${active === 'unchanged' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="unchanged" aria-pressed="${active === 'unchanged'}">
         <label>Flat</label><b class="lc-pulse-neutral">${stats.unch}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--listed${active === 'all' ? ' on' : ''}" onclick="Hub.openMarketFilter('all')" aria-pressed="${active === 'all'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn lc-pulse-pill--listed${active === 'all' ? ' on' : ''}" data-action="Hub.openMarketFilter" data-tab="all" aria-pressed="${active === 'all'}">
         <label>Listed</label><b class="lc-pulse-listed">${stats.listed}</b>
       </button>
     </div>`;
@@ -13103,7 +13508,7 @@ const Hub = (() => {
     let stale = 0;
     syms.forEach(s => { if (State.isPriceStale(s, 24)) stale++; });
     if (!stale) return '';
-    return `<button type="button" class="lc-stale-chip" onclick="App.refreshPrices()">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
+    return `<button type="button" class="lc-stale-chip" data-action="App.refreshPrices">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
   }
 
   function _investmentSummary(state) {
@@ -13139,21 +13544,21 @@ const Hub = (() => {
             : PsxUI.fmt(r.deployedPkr);
           const pnlCls = r.pnl >= 0 ? 'psx-up' : 'psx-down';
           return `<div class="lc-deploy-grid lc-deploy-row">
-            <button type="button" class="lc-deploy-name-btn" onclick="Hub.openPortfolio('${r.id}')">
+            <button type="button" class="lc-deploy-name-btn" data-action="Hub.openPortfolio" data-tab="${r.id}">
               <div class="lc-market-sym">${r.name}</div>
               <div class="lc-market-name">${r.deployedNote || ''}</div>
             </button>
             <div class="lc-deploy-num lc-deploy-deployed">${dep}</div>
             <div class="lc-deploy-num lc-deploy-num--strong lc-deploy-value">${PsxUI.fmt(r.value)}</div>
             <div class="lc-deploy-pnl ${pnlCls}">${fmtPnl(r)}</div>
-            <button type="button" class="lc-deploy-txs" onclick="Transactions.openBucket('${r.id}')">Txs</button>
+            <button type="button" class="lc-deploy-txs" data-action="Transactions.openBucket" data-tab="${r.id}">Txs</button>
           </div>`;
         }).join('')}
       </div>
       ${txSum ? `<div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('transactions')">All transactions (${txSum.count})</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('tax')">Taxes ${PsxUI.fmt(txSum.taxes)}</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('dividend')">Dividends ${PsxUI.fmt(txSum.loggedDividends)}</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="transactions">All transactions (${txSum.count})</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="tax">Taxes ${PsxUI.fmt(txSum.taxes)}</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="dividend">Dividends ${PsxUI.fmt(txSum.loggedDividends)}</button>
       </div>` : ''}
     </div>`;
   }
@@ -13183,7 +13588,7 @@ const Hub = (() => {
     return `<div class="lc-dash-section" id="hub-news-section">
       <div class="lc-dash-section-head"><h3>Market news</h3><span>Impact on your holdings</span></div>
       <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
-      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" onclick="Hub.refreshNews()">Refresh news</button></div>
+      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Hub.refreshNews">Refresh news</button></div>
     </div>`;
   }
 
@@ -13214,7 +13619,7 @@ const Hub = (() => {
     return `<div class="lc-dash-section">
       <div class="lc-dash-section-head"><h3>Your movers</h3><span>Today</span></div>
       <div class="lc-movers-row">${movers.map(m => `
-        <button type="button" class="lc-mover-chip" onclick="Research.open('${m.symbol}')">
+        <button type="button" class="lc-mover-chip" data-action="Research.open" data-symbol="${m.symbol}">
           <strong>${m.symbol}</strong>
           <em class="${PsxUI.chgCls(m.chg)}">${PsxUI.fmt(m.chg, { pct: true, signed: true })}</em>
         </button>`).join('')}</div>
@@ -13222,7 +13627,7 @@ const Hub = (() => {
   }
 
   function _kseCard(k, sign) {
-    return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('market')" aria-label="Open stock watch">
+    return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="market" aria-label="Open stock watch">
       <span>KSE-100</span>
       <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
       <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</em>
@@ -13231,7 +13636,7 @@ const Hub = (() => {
 
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
-      <button type="button" class="lc-tool-card" onclick="Navigation.go('${t.id}')">
+      <button type="button" class="lc-tool-card" data-nav="${t.id}">
         <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 20) : ''}</div>
         <strong>${I18n.t(`tools.${t.key}.t`)}</strong>
         <span>${I18n.t(`tools.${t.key}.d`)}</span>
@@ -13287,7 +13692,7 @@ const Hub = (() => {
           </div>
           <div class="lc-dash-market">
             ${_kseCard(k, sign)}
-            <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="App.openAddTransaction()" aria-label="Add holdings">
+            <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.openAddTransaction" aria-label="Add holdings">
               <span>${I18n.t('portfolio.value')}</span>
               <strong>—</strong>
               <em>${I18n.t('addHoldings')}</em>
@@ -13299,8 +13704,8 @@ const Hub = (() => {
             <h2>${I18n.t('hub.hero')}</h2>
             <p>${I18n.t('hub.sub')}</p>
             <div class="lc-dash-actions" style="justify-content:center">
-              <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
-              <button type="button" class="psx-btn psx-btn-ghost" onclick="location.search='?demo=1';location.reload()">${I18n.t('loadDemo')}</button>
+              <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
+              <button type="button" class="psx-btn psx-btn-ghost" data-action="App.loadDemo">${I18n.t('loadDemo')}</button>
             </div>
           </div>
           <div class="lc-dash-section">
@@ -13331,13 +13736,13 @@ const Hub = (() => {
           </div>
         </div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button>
-          <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
+          <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
         <div class="lc-dash-market">
           ${_kseCard(k, sign)}
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Navigation.go('portfolio')" aria-label="Open portfolio">
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="portfolio" aria-label="Open portfolio">
             <span>${I18n.t('portfolio.yield')}</span>
             <strong>${s.portfolioDivYield.toFixed(2)}%</strong>
             <em>${I18n.t('portfolio.invested')} ${PsxUI.fmt(s.invested)}</em>
@@ -13388,8 +13793,8 @@ const Market = (() => {
 
   function _segment() {
     return `<div class="lc-segment" role="tablist">
-      <button type="button" class="lc-segment-btn${_filter === 'all' ? ' on' : ''}" onclick="Market.setFilter('all')">${I18n.t('screener.all')}</button>
-      <button type="button" class="lc-segment-btn${_filter === 'islamic' ? ' on' : ''}" onclick="Market.setFilter('islamic')">${I18n.t('screener.islamic')}</button>
+      <button type="button" class="lc-segment-btn${_filter === 'all' ? ' on' : ''}" data-action="Market.setFilter" data-tab="all">${I18n.t('screener.all')}</button>
+      <button type="button" class="lc-segment-btn${_filter === 'islamic' ? ' on' : ''}" data-action="Market.setFilter" data-tab="islamic">${I18n.t('screener.islamic')}</button>
     </div>`;
   }
 
@@ -13402,29 +13807,29 @@ const Market = (() => {
     });
     const listed = baseRows.length;
     return `<div class="lc-pulse-row" role="group" aria-label="Market movers">
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'advancing' ? ' on' : ''}" onclick="Market.setMoveFilter('advancing')" aria-pressed="${_moveFilter === 'advancing'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'advancing' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="advancing" aria-pressed="${_moveFilter === 'advancing'}">
         <label>${I18n.t('market.advancing')}</label><b class="psx-up">${adv}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'declining' ? ' on' : ''}" onclick="Market.setMoveFilter('declining')" aria-pressed="${_moveFilter === 'declining'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'declining' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="declining" aria-pressed="${_moveFilter === 'declining'}">
         <label>${I18n.t('market.declining')}</label><b class="psx-down">${dec}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'unchanged' ? ' on' : ''}" onclick="Market.setMoveFilter('unchanged')" aria-pressed="${_moveFilter === 'unchanged'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'unchanged' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="unchanged" aria-pressed="${_moveFilter === 'unchanged'}">
         <label>${I18n.t('market.unchanged')}</label><b>${unch}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'all' ? ' on' : ''}" onclick="Market.setMoveFilter('all')" aria-pressed="${_moveFilter === 'all'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'all' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="all" aria-pressed="${_moveFilter === 'all'}">
         <label>Listed</label><b>${listed}</b>
       </button>
     </div>`;
   }
 
-  function _sectorBlocks(bySector, onRow) {
+  function _sectorBlocks(bySector) {
     return Object.keys(bySector).sort().map(sec => `
       <div class="lc-sector-card">
-        <button type="button" class="lc-sector-head lc-sector-head--btn${_sectorFilter === sec ? ' on' : ''}" onclick="Market.setSectorFilter('${sec.replace(/'/g, "\\'")}')">
+        <button type="button" class="lc-sector-head lc-sector-head--btn${_sectorFilter === sec ? ' on' : ''}" data-action="Market.setSectorFilter" data-tab="${sec.replace(/"/g, '&quot;')}">
           <h4>${sec}</h4><span>${bySector[sec].length} stocks</span>
         </button>
         ${bySector[sec].map(r => `
-          <button type="button" class="lc-market-row" onclick="${onRow(r.symbol)}">
+          <button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
             <div>
               <div class="lc-market-sym">${r.symbol}${r.isShariah ? '<span class="lc-badge">S</span>' : ''}</div>
               <div class="lc-market-name">${r.name}</div>
@@ -13464,7 +13869,7 @@ const Market = (() => {
     const bySector = {};
     rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
     host.innerHTML = rows.length
-      ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`)
+      ? _sectorBlocks(bySector)
       : `<div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol or clear filters.</p></div>`;
   }
 
@@ -13477,7 +13882,7 @@ const Market = (() => {
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     const filterHint = (_moveFilter !== 'all' || _sectorFilter)
-      ? `<p class="lc-filter-hint">${_sectorFilter ? `Sector: ${_sectorFilter} · ` : ''}${_moveFilter !== 'all' ? _moveFilter + ' · ' : ''}<button type="button" class="lc-link-btn" onclick="Market.clearFilters()">Clear filters</button></p>`
+      ? `<p class="lc-filter-hint">${_sectorFilter ? `Sector: ${_sectorFilter} · ` : ''}${_moveFilter !== 'all' ? _moveFilter + ' · ' : ''}<button type="button" class="lc-link-btn" data-action="Market.clearFilters">Clear filters</button></p>`
       : '';
 
     screen.innerHTML = `
@@ -13487,12 +13892,12 @@ const Market = (() => {
           <p>${I18n.t('market.sub')}</p>
         </div>
         <div class="lc-dash-market" style="margin-bottom:var(--lc-space-4)">
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="App.refreshPrices()" aria-label="Refresh KSE-100">
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.refreshPrices" aria-label="Refresh KSE-100">
             <span>KSE-100</span>
             <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
             <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : '—'}</em>
           </button>
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Market.setMoveFilter('all')" aria-label="Show all listed stocks">
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
             <em>${_filter === 'islamic' ? I18n.t('market.shariah') : I18n.t('screener.all')}</em>
@@ -13508,7 +13913,7 @@ const Market = (() => {
         <div id="market-list">${rows.length ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
         </div>
       </div>`;
 
@@ -13628,7 +14033,7 @@ const PortfolioScreen = (() => {
           <div class="lc-empty-state">
             <h2>No positions yet</h2>
             <p>Pick a portfolio above or add your first holding.</p>
-            <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+            <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
       return;
@@ -13650,7 +14055,7 @@ const PortfolioScreen = (() => {
     const chartBlock = typeof Charts !== 'undefined' ? `
           <div class="lc-pnl-chart-wrap">
             <div class="lc-range-picker" role="tablist" aria-label="Chart range">
-              ${ranges.map((r) => `<button type="button" role="tab" class="lc-range-btn${_chartRange === r ? ' on' : ''}" aria-selected="${_chartRange === r}" onclick="PortfolioScreen.setChartRange('${r}')">${r}</button>`).join('')}
+              ${ranges.map((r) => `<button type="button" role="tab" class="lc-range-btn${_chartRange === r ? ' on' : ''}" aria-selected="${_chartRange === r}" data-action="PortfolioScreen.setChartRange" data-tab="${r}">${r}</button>`).join('')}
             </div>
             ${Charts.lineChartBlock(chartSeries, {
               height: 128,
@@ -13668,7 +14073,7 @@ const PortfolioScreen = (() => {
         <div class="lc-dash-section">
           <div class="lc-dash-section-head">
             <h3>${I18n.t('portfolio.bucketsTitle')}</h3>
-            <span>${_filter ? `<button type="button" class="lc-link-btn" onclick="PortfolioScreen.clearFilter()">Show all</button>` : I18n.t('portfolio.bucketsSub')}</span>
+            <span>${_filter ? `<button type="button" class="lc-link-btn" data-action="PortfolioScreen.clearFilter">Show all</button>` : I18n.t('portfolio.bucketsSub')}</span>
           </div>
           ${cards}
         </div>
@@ -13702,27 +14107,27 @@ const PortfolioScreen = (() => {
             <th>Symbol</th><th class="lc-spark-cell" aria-hidden="true"></th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
           </tr></thead><tbody>
           ${holdings.map(h => `<tr>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
+            <td data-nav="research"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
             <td class="lc-spark-cell">${typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : ''}</td>
-            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
-            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
-            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+            <td class="lc-num" data-nav="research">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
+            <td class="lc-num" data-nav="research">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
+            <td class="lc-num" data-nav="research">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
+            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" data-nav="research">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
             <td style="white-space:nowrap">
-              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();App.openPriceAlert('${h.symbol}')">Alert</button>
-              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
-              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>
+              <button type="button" class="lc-link-btn" data-action="App.openPriceAlert" data-symbol="${h.symbol}" data-stop="1">Alert</button>
+              <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${(h.broker || '').replace(/"/g, '&quot;')}" data-mode="${h.kind}" data-stop="1">Edit</button>
+              <button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-symbol="${h.symbol}" data-stop="1">Txs</button>
             </td>
           </tr>`).join('')}
           </tbody></table>
         </div>` : `<div class="lc-empty-state" style="margin-top:0">
           <h2>No holdings in this portfolio</h2>
           <p>Add ${active ? active.name.toLowerCase() : 'positions'} to start tracking.</p>
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || 'rafi'}')">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter || 'rafi'}">${I18n.t('addHoldings')}</button>
         </div>`}
         <div class="lc-dash-actions" style="margin-top:var(--lc-space-6)">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || ''}')">${I18n.t('addHoldings')}</button>
-          <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddPortfolio()">+ ${I18n.t('portfolio.addBucket')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter || ''}">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddPortfolio">+ ${I18n.t('portfolio.addBucket')}</button>
         </div>
       </div>`;
   }
@@ -13759,7 +14164,7 @@ const Funds = (() => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
       const nav = State.getPrice(f.symbol) || f.currentNav || 0;
       const invested = (f.units || 0) * (f.avgNav || 0);
-      return `<button type="button" class="lc-market-row" onclick="Research.open('${f.symbol}')">
+      return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${f.symbol}">
         <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
         <div class="lc-market-chg ${PsxUI.chgCls(a.oneYearReturn)}">${invested ? 'Inv ' + PsxUI.fmt(invested) : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—')}</div>
@@ -13800,7 +14205,7 @@ const Funds = (() => {
         <p class="lc-search-hint">Type to shortlist — list updates in place</p>
       </div>
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
-      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button></div>
+      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button></div>
     `);
 
     const inp = document.getElementById('funds-search');
@@ -13850,7 +14255,7 @@ const Screener = (() => {
   }
 
   function _listHtml(rows) {
-    return rows.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
+    return rows.map(r => `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">P/E ${r.pe ?? '—'} · Yld ${r.divYield ? r.divYield + '%' : '—'}</div></div>
       <div class="lc-market-price">${PsxUI.fmt(r.price)}</div>
       <div class="lc-market-chg ${PsxUI.chgCls(r.profitGrowth)}">${r.profitGrowth != null ? r.profitGrowth + '% gr' : '—'}</div>
@@ -13933,7 +14338,7 @@ const More = (() => {
         </div>
         <div class="lc-tool-grid" style="margin-top:8px">
           ${ITEMS().map(it => `
-            <button type="button" class="lc-tool-card" onclick="Navigation.go('${it.id}')">
+            <button type="button" class="lc-tool-card" data-nav="${it.id}">
               <strong>${it.t}</strong>
               <span>${it.d}</span>
             </button>`).join('')}
@@ -13998,8 +14403,8 @@ const Research = (() => {
 
   function _modeSegment() {
     return `<div class="lc-segment" role="tablist">
-      <button type="button" class="lc-segment-btn${_mode === 'stock' ? ' on' : ''}" onclick="Research.setMode('stock')">Stock</button>
-      <button type="button" class="lc-segment-btn${_mode === 'portfolio' ? ' on' : ''}" onclick="Research.setMode('portfolio')">Portfolio</button>
+      <button type="button" class="lc-segment-btn${_mode === 'stock' ? ' on' : ''}" data-action="Research.setMode" data-tab="stock">Stock</button>
+      <button type="button" class="lc-segment-btn${_mode === 'portfolio' ? ' on' : ''}" data-action="Research.setMode" data-tab="portfolio">Portfolio</button>
     </div>`;
   }
 
@@ -14124,7 +14529,7 @@ const Research = (() => {
     const rows = peers.map(p => {
       const q = State.getPrice(p.symbol) || (window.FALLBACK_PRICES || {})[p.symbol] || 0;
       const f = (window.FUNDAMENTALS_DB || {})[p.symbol] || {};
-      return `<button type="button" class="lc-peer-row" onclick="Research.pickSymbol('${p.symbol}')">
+      return `<button type="button" class="lc-peer-row" data-action="Research.pickSymbol" data-symbol="${p.symbol}">
         <strong>${p.symbol}</strong><span>${p.name || ''}</span>
         <em>${q ? PsxUI.fmt(q) : '—'}</em><b>${f.pe ? 'P/E ' + Number(f.pe).toFixed(1) : ''}</b>
       </button>`;
@@ -14159,7 +14564,7 @@ const Research = (() => {
     if (up?.amount) cells.push({ l: 'Amount', v: '₨' + up.amount });
     if (paid) cells.push({ l: 'Last paid', v: (paid.paymentDate || '').slice(0, 10) || '—' });
     return `<div class="lc-dash-section">
-      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" onclick="Navigation.go('announcements')">All →</button></div>
+      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" data-nav="announcements">All →</button></div>
       ${_metricGrid(cells)}
     </div>`;
   }
@@ -14220,8 +14625,8 @@ const Research = (() => {
           ${_modeSegment()}
           ${bucketsHtml}
           <div class="lc-dash-actions" style="padding:0 var(--lc-space-4) 8px;display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('risk-audit')">Full risk audit →</button>
-            <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('insights')">Portfolio insights →</button>
+            <button type="button" class="psx-btn psx-btn-ghost" data-nav="risk-audit">Full risk audit →</button>
+            <button type="button" class="psx-btn psx-btn-ghost" data-nav="insights">Portfolio insights →</button>
           </div>
           <div id="research-portfolio-host" style="padding:0 var(--lc-space-4)"></div>
         </div>`;
@@ -14246,7 +14651,7 @@ const Research = (() => {
           <div class="lc-empty-state">
             <h2>No symbols</h2>
             <p>Search above or add holdings / load demo.</p>
-            <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+            <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
       _onSearch(_searchQ);
@@ -14322,7 +14727,7 @@ const Research = (() => {
           <div class="lc-verdict-meta">${shLabel}</div>
         </div>
         <div class="lc-sym-scroll" id="rt-pills">${quickPicks.map(s =>
-          `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" onclick="Research.pickSymbol('${s}')">${s}</button>`
+          `<button type="button" class="lc-sym-chip${s === r.symbol ? ' on' : ''}" data-action="Research.pickSymbol" data-symbol="${s}">${s}</button>`
         ).join('')}</div>
         ${_metricGrid([
           { l: 'Smart rating (rules)', v: ai.action },
@@ -14377,7 +14782,7 @@ const Watchlist = (() => {
     <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
     <div class="field"><label class="field-label">Alert target price (PKR)</label><input class="field-input" id="wl-target" type="number" step="0.01" value="${w.targetPrice || ''}" placeholder="Buy below this price"></div>
     <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Alert on crossover ≤ target (PSX session)</label>
-    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Watchlist.save('${w.id || ''}')">Save</button>`;
+    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" data-action="Watchlist.save" data-tab="${w.id || ''}">Save</button>`;
   }
 
   function openAdd() { App.requestAlertPermission?.(); App.openBottomSheet('watchlist-add', 'Add to Watchlist', _form()); }
@@ -14413,14 +14818,14 @@ const Watchlist = (() => {
     screen.innerHTML = `
     <div class="lc-dash">
     <div class="lc-screen-head"><h1>Watchlist</h1><p>${list.length} symbols · alerts when target hit</p></div>
-    <div class="lc-dash-actions cap-reveal"><button type="button" class="lc-btn-primary" onclick="Watchlist.openAdd()">+ Add symbol</button></div>
+    <div class="lc-dash-actions cap-reveal"><button type="button" class="lc-btn-primary" data-action="Watchlist.openAdd">+ Add symbol</button></div>
     ${list.length ? list.map(w => {
       const quote = MarketDataService.getQuote(w.symbol);
       const ai = AIAnalysis.analyze(w.symbol);
       const upside = quote.price > 0 ? ((ai.fairValue - quote.price) / quote.price * 100) : 0;
       const alertHit = w.targetPrice > 0 && quote.price > 0 && quote.price <= w.targetPrice;
       return `
-      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}" onclick="Research.open('${w.symbol}')">
+      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}" data-action="Research.open" data-symbol="${w.symbol}">
         <div>
           <div style="font-weight:700;font-size:1rem;">${w.symbol} ${U.ratingBadge(ai.action)} ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}</div>
           <div class="lc-card-sub">${w.name}${w.thesis ? ' · ' + w.thesis.slice(0, 50) : ''}</div>
@@ -14437,8 +14842,8 @@ const Watchlist = (() => {
         </div>
       </div>
       <div style="padding:0 20px 8px;display:flex;gap:8px;">
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.openEdit('${w.id}')">Edit</button>
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" onclick="event.stopPropagation();Watchlist.remove('${w.id}')">Remove</button>
+        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.openEdit" data-tab="${w.id}" data-stop="1">Edit</button>
+        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.remove" data-tab="${w.id}" data-stop="1">Remove</button>
       </div>`;
     }).join('') : `<div class="lc-empty-note">Empty watchlist. Track symbols before you buy.</div>`}
     </div>`;
@@ -14469,7 +14874,7 @@ const Dividends = (() => {
 
   function _tabBar() {
     return `<div class="div-tabs cap-tab-bar cap-reveal">${_tabs().map(t =>
-      `<button type="button" class="div-tab cap-tab${_tab === t.id ? ' active' : ''}" onclick="Dividends.setTab('${t.id}')">${t.label}</button>`
+      `<button type="button" class="div-tab cap-tab${_tab === t.id ? ' active' : ''}" data-action="Dividends.setTab" data-tab="${t.id}">${t.label}</button>`
     ).join('')}</div>`;
   }
 
@@ -14512,7 +14917,7 @@ const Dividends = (() => {
         <th>Company</th><th>Amount/sh</th><th>Ex-Date</th><th>Record</th><th>Payment</th><th>Your Income</th>
       </tr></thead><tbody>
       ${dash.upcoming.filter(u => u.isHeld).slice(0, 8).map(u => `
-        <tr onclick="Research.open('${u.symbol}')">
+        <tr data-action="Research.open" data-symbol="${u.symbol}">
           <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate || '—'}</td>
@@ -14527,7 +14932,7 @@ const Dividends = (() => {
         <th>Stock</th><th>Annual Income</th><th>Received</th><th>YoC</th><th>Yield</th><th>CAGR</th>
       </tr></thead><tbody>
       ${dash.byStock.map(h => `
-        <tr onclick="Research.open('${h.symbol}')">
+        <tr data-action="Research.open" data-symbol="${h.symbol}">
           <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${U.fmt(h.totalReceived)}</td>
@@ -14549,7 +14954,7 @@ const Dividends = (() => {
         <th>Company</th><th>Amount/sh</th><th>Ex-Dividend</th><th>Record Date</th><th>Payment Date</th><th>Shares</th><th>Expected Income</th>
       </tr></thead><tbody>
       ${all.map(u => `
-        <tr onclick="Research.open('${u.symbol}')">
+        <tr data-action="Research.open" data-symbol="${u.symbol}">
           <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate}</td>
@@ -14566,12 +14971,12 @@ const Dividends = (() => {
       <div class="div-cal-month cap-reveal">
         <div class="div-cal-month-title">${new Date(m.month + '-01').toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}</div>
         ${m.paymentEvents.length ? `<div class="div-cal-section-label">Payment dates</div>` + m.paymentEvents.map(e => `
-          <div class="rt-div-event" onclick="Research.open('${e.symbol}')">
+          <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
             <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size:0.68rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
             <div class="t-gain">${e.isHeld ? U.fmt(e.expectedIncome) : '—'}</div>
           </div>`).join('') : ''}
         ${m.exEvents.length ? `<div class="div-cal-section-label">Ex-dividend dates</div>` + m.exEvents.map(e => `
-          <div class="rt-div-event" onclick="Research.open('${e.symbol}')">
+          <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
             <div><strong>${e.symbol}</strong> · Ex ${e.exDate}</div>
             <div style="font-size:0.72rem;color:var(--os-text-tertiary)">Record ${e.recordDate}</div>
           </div>`).join('') : ''}
@@ -14579,22 +14984,37 @@ const Dividends = (() => {
   }
 
   function _holdings(holdings) {
+    const drip = State.get('dripSettings') || {};
     return holdings.length ? `
       <div class="rt-table-wrap cap-reveal"><table class="rt-table"><thead><tr>
-        <th>Holding</th><th>Shares</th><th>Annual Income</th><th>Monthly</th><th>YoC</th><th>Current Yield</th><th>CAGR</th><th>Received</th>
+        <th>Holding</th><th>Shares</th><th>Annual Income</th><th>YoC</th><th>Yield</th><th>DRIP</th><th>Received</th>
       </tr></thead><tbody>
-      ${holdings.map(h => `
-        <tr onclick="Research.open('${h.symbol}')">
+      ${holdings.map(h => {
+        const yoc = DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares);
+        const on = !!drip[h.symbol]?.reinvest;
+        return `
+        <tr data-action="Research.open" data-symbol="${h.symbol}" style="cursor:pointer">
           <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
           <td>${h.shares}</td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
-          <td>${U.fmt(h.monthlyIncome)}</td>
-          <td>${h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—'}</td>
+          <td>${yoc != null ? yoc.toFixed(1) + '%' : (h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—')}</td>
           <td>${h.currentYield != null ? h.currentYield.toFixed(1) + '%' : '—'}</td>
-          <td>${h.dividendCagr != null ? h.dividendCagr.toFixed(1) + '%' : '—'}</td>
+          <td><label data-action="event.stopPropagation"><input type="checkbox" data-action-change="Dividends.toggleDrip" data-symbol="${h.symbol}"${on ? ' checked' : ''}> Reinvest</label></td>
           <td>${U.fmt(h.totalReceived)}</td>
-        </tr>`).join('')}
-      </tbody></table></div>` : '<div class="os-section" style="color:var(--os-text-secondary);">No holdings with dividend data.</div>';
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>
+      <p style="font-size:0.72rem;color:var(--os-text-tertiary);padding:8px 16px">DRIP flags track reinvestment intent — log buys when you reinvest dividends.</p>` : '<div class="os-section" style="color:var(--os-text-secondary);">No holdings with dividend data.</div>';
+  }
+
+  function toggleDrip(symbol, enabled) {
+    symbol = (symbol || '').toUpperCase();
+    State.update((s) => {
+      if (!s.dripSettings) s.dripSettings = {};
+      s.dripSettings[symbol] = { reinvest: !!enabled };
+    });
+    if (window.App?.showToast) App.showToast(`DRIP ${enabled ? 'on' : 'off'} for ${symbol}`, 'ok');
+    render();
   }
 
   function _history(timeline) {
@@ -14631,11 +15051,11 @@ const Dividends = (() => {
           <td><strong>${t.symbol}</strong></td>
           <td>${t.broker || '—'}</td>
           <td class="t-gain">${U.fmt(t.amount)}</td>
-          <td><button type="button" class="lc-link-btn" onclick="Transactions.openSymbol('${t.symbol}')">Txs</button></td>
+          <td><button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-tab="${t.symbol}">Txs</button></td>
         </tr>`).join('')}
       </tbody></table></div>
       <div class="lc-dash-actions" style="margin-top:8px">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('dividend')">All dividend txs</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="dividend">All dividend txs</button>
       </div>`;
     })());
 
@@ -14644,7 +15064,7 @@ const Dividends = (() => {
         <th>Symbol</th><th>Type</th><th>Amount</th><th>Ex-Date</th><th>Record</th><th>Payment</th><th>Status</th>
       </tr></thead><tbody>
       ${corp.slice(0, 40).map(c => `
-        <tr onclick="Research.open('${c.symbol}')">
+        <tr data-action="Research.open" data-symbol="${c.symbol}">
           <td><strong>${c.symbol}</strong></td>
           <td>${c.actionType}</td>
           <td>${typeof c.amount === 'number' ? '₨' + c.amount : c.amount}</td>
@@ -14678,7 +15098,7 @@ const Dividends = (() => {
         <th>Symbol</th><th>Annual DPS</th><th>Shares</th><th>Annual Income</th><th>Next Event</th><th>Next Income</th>
       </tr></thead><tbody>
       ${forecast.holdings.map(h => `
-        <tr onclick="Research.open('${h.symbol}')">
+        <tr data-action="Research.open" data-symbol="${h.symbol}">
           <td><strong>${h.symbol}</strong></td>
           <td>₨${h.annualDps.toFixed(2)}</td>
           <td>${h.shares}</td>
@@ -14691,7 +15111,7 @@ const Dividends = (() => {
 
   function _growth(growth) {
     return growth.length ? growth.map(g => `
-      <div class="os-card cap-reveal" style="margin:0 20px 12px;cursor:pointer;" onclick="Research.open('${g.symbol}')">
+      <div class="os-card cap-reveal" style="margin:0 20px 12px;cursor:pointer;" data-action="Research.open" data-symbol="${g.symbol}">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div><strong>${g.symbol}</strong> <span class="rt-badge rt-${g.trend === 'growing' ? 'buy' : g.trend === 'declining' ? 'sell' : 'hold'}">${g.trend}</span></div>
           <div style="text-align:right;"><div class="t-gain" style="font-weight:700;">${g.cagr != null ? g.cagr.toFixed(1) + '% CAGR' : '—'}</div>
@@ -14733,7 +15153,7 @@ const Dividends = (() => {
     CapMotion.refresh();
   }
 
-  return { render, setTab };
+  return { render, setTab, toggleDrip };
 })();
 window.Dividends = Dividends;
 
@@ -14824,13 +15244,13 @@ const WealthCalendar = (() => {
         <p>Dividends · IPO · corporate actions in your portfolio</p>
       </div>
       <div class="lc-filter-bar cap-reveal" style="justify-content:space-between;align-items:center">
-        <button type="button" class="btn-ghost btn-sm" onclick="WealthCalendar.setMonth('${prevKey}')">←</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${prevKey}">←</button>
         <strong>${label}</strong>
-        <button type="button" class="btn-ghost btn-sm" onclick="WealthCalendar.setMonth('${nextKey}')">→</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${nextKey}">→</button>
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
-          <button type="button" class="lc-market-row cap-reveal" onclick="Research.open('${e.symbol}')">
+          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${e.symbol}">
             <div>
               <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
               <div class="lc-market-name">${e.kind} · ${e.detail}</div>
@@ -14839,8 +15259,8 @@ const WealthCalendar = (() => {
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('dividends')">Dividends</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">IPO calendar</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="dividends">Dividends</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">IPO calendar</button>
       </div>
     </div>`;
     CapMotion.refresh();
@@ -14921,7 +15341,7 @@ const Transactions = (() => {
           <h1>Transactions</h1>
           <p>${filtered.length} of ${sum.count} entries${filterLabel ? ` · ${filterLabel}` : ''}${_showInternal ? ' · incl. internal' : ''}</p>
         </div>
-        <button type="button" class="lc-section-action" onclick="App.openAddTransaction()">+ Add</button>
+        <button type="button" class="lc-section-action" data-action="App.openAddTransaction">+ Add</button>
       </div>
 
       <div class="lc-pulse-row">
@@ -14940,10 +15360,10 @@ const Transactions = (() => {
           ).join('')}
           <button type="button" class="lc-view-pill${_showInternal ? ' active' : ''}" data-internal="1">Internal</button>
         </div>
-        <button type="button" class="lc-section-action" onclick="Transactions.exportCsv()" style="margin-left:auto">Export CSV</button>
+        <button type="button" class="lc-section-action" data-action="Transactions.exportCsv" style="margin-left:auto">Export CSV</button>
       </div>
 
-      ${filterLabel ? `<div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('all')">Clear filter</button></div>` : ''}
+      ${filterLabel ? `<div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="all">Clear filter</button></div>` : ''}
 
       ${!filtered.length ? `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Try another filter or add a transaction</div></div>` : ''}
 
@@ -15062,15 +15482,15 @@ const Transactions = (() => {
     ].filter(Boolean);
 
     const links = [];
-    if (tx.symbol) links.push(`<button type="button" class="psx-btn psx-btn-ghost" onclick="App.closeBottomSheet();Navigation.go('research');Research.open('${tx.symbol}')">Research ${tx.symbol}</button>`);
-    links.push(`<button type="button" class="psx-btn psx-btn-ghost" onclick="App.closeBottomSheet();Transactions.openSymbol('${tx.symbol || ''}')">All ${tx.symbol || 'bucket'} txs</button>`);
+    if (tx.symbol) links.push(`<button type="button" class="psx-btn psx-btn-ghost" data-action="App.closeBottomSheet">Research ${tx.symbol}</button>`);
+    links.push(`<button type="button" class="psx-btn psx-btn-ghost" data-action="App.closeBottomSheet">All ${tx.symbol || 'bucket'} txs</button>`);
     const bid = TL.bucketId(tx);
-    if (bid) links.push(`<button type="button" class="psx-btn psx-btn-ghost" onclick="App.closeBottomSheet();Transactions.openBucket('${bid}')">Portfolio txs</button>`);
+    if (bid) links.push(`<button type="button" class="psx-btn psx-btn-ghost" data-action="App.closeBottomSheet">Portfolio txs</button>`);
 
     const relatedHtml = related.length ? `
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--lc-border)">
         <p style="font-size:0.72rem;font-weight:700;margin-bottom:8px;color:var(--text2)">Linked transactions</p>
-        ${related.map(r => `<div class="detail-stat" style="cursor:pointer" onclick="App.closeBottomSheet();Transactions._openDetail('${r.id}')">
+        ${related.map(r => `<div class="detail-stat" style="cursor:pointer" data-action="App.closeBottomSheet">
           <span class="detail-stat-label">${r.date} · ${TL.title(r)}</span>
           <span class="detail-stat-value">${TL.formatAmount(r)}</span>
         </div>`).join('')}
@@ -15078,7 +15498,7 @@ const Transactions = (() => {
 
     const isPendingIpo = tx.type === 'IPO_SUBSCRIBE' && (tx.status || 'pending') === 'pending';
     const listBtn = isPendingIpo
-      ? `<button type="button" class="btn-primary" style="margin-bottom:8px;" onclick="App.openMarkIpoListed('${id}')">Mark as Listed → CDC</button>`
+      ? `<button type="button" class="btn-primary" style="margin-bottom:8px;" data-action="App.openMarkIpoListed" data-tab="${id}">Mark as Listed → CDC</button>`
       : '';
 
     const content = `<div style="padding:0 16px 16px;">
@@ -15087,7 +15507,7 @@ const Transactions = (() => {
       <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">${links.join('')}</div>
       <div style="margin-top:16px;">
         ${listBtn}
-        <button type="button" class="btn-danger" onclick="App.deleteTransaction('${id}')">Delete Transaction</button>
+        <button type="button" class="btn-danger" data-action="App.deleteTransaction" data-tab="${id}">Delete Transaction</button>
       </div>
     </div>`;
 
@@ -15216,10 +15636,10 @@ const Settings = (() => {
     <div class="sec-head"><span class="sec-title">${I18n.t('theme.toggle')}</span></div>
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <div class="os-theme-toggle">
-        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">${I18n.t('theme.dark')}</button>
-        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">${I18n.t('theme.light')}</button>
+        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" data-action="Settings._setTheme" data-tab="dark">${I18n.t('theme.dark')}</button>
+        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" data-action="Settings._setTheme" data-tab="light">${I18n.t('theme.light')}</button>
       </div>
-      <label class="lc-check-row" style="margin-top:14px"><input type="checkbox" id="s-haptics" ${settings.hapticsEnabled ? 'checked' : ''} onchange="Settings._setHaptics(this.checked)"> Haptic feedback on taps (off by default)</label>
+      <label class="lc-check-row" style="margin-top:14px"><input type="checkbox" id="s-haptics" ${settings.hapticsEnabled ? 'checked' : ''} data-action-change="Settings._setHaptics"> Haptic feedback on taps (off by default)</label>
       <p class="field-hint" style="margin-top:6px">Desktop: <kbd>⌘K</kbd> or <kbd>Ctrl+K</kbd> quick nav when width ≥900px</p>
     </div>
 
@@ -15227,8 +15647,8 @@ const Settings = (() => {
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Full shows every digit with 2 decimals. Compact uses L/cr for big PKR amounts.</p>
       <div class="os-theme-toggle">
-        <button type="button" class="os-theme-btn${(settings.numberFormat || 'full') === 'full' ? ' active' : ''}" onclick="Settings._setNumberFormat('full')">Full</button>
-        <button type="button" class="os-theme-btn${settings.numberFormat === 'compact' ? ' active' : ''}" onclick="Settings._setNumberFormat('compact')">Compact</button>
+        <button type="button" class="os-theme-btn${(settings.numberFormat || 'full') === 'full' ? ' active' : ''}" data-action="Settings._setNumberFormat" data-tab="full">Full</button>
+        <button type="button" class="os-theme-btn${settings.numberFormat === 'compact' ? ' active' : ''}" data-action="Settings._setNumberFormat" data-tab="compact">Compact</button>
       </div>
     </div>
 
@@ -15236,10 +15656,10 @@ const Settings = (() => {
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. SSE pushes during PSX session (intraday when open, last close after hours).</p>
       <div class="os-theme-toggle" style="margin-bottom:14px">
-        <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('PKR')">PKR ₨</button>
-        <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('USD')">USD $</button>
+        <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" data-action="Settings._setDisplayCurrency" data-tab="PKR">PKR ₨</button>
+        <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" data-action="Settings._setDisplayCurrency" data-tab="USD">USD $</button>
       </div>
-      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE push)</label>
+      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} data-action-change="Settings._setLiveStream"> Live price stream (SSE push)</label>
       <p class="field-hint" style="margin-top:8px">Stream: ${(() => {
         const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
         const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
@@ -15253,8 +15673,8 @@ const Settings = (() => {
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Annual statement CSV or printable PDF. Verify against broker statements — not tax advice.</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button type="button" class="btn-secondary" onclick="Settings._exportStatementCsv()">CSV statement</button>
-        <button type="button" class="btn-secondary" onclick="Settings._exportStatementPdf()">PDF / print</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportStatementCsv">CSV statement</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportStatementPdf">PDF / print</button>
       </div>
     </div>
 
@@ -15283,8 +15703,8 @@ const Settings = (() => {
         <label class="field-label">GNews API key (optional)</label>
         <input class="field-input" id="s-gnews-key" type="password" autocomplete="off" value="${settings.gnewsApiKey || ''}" placeholder="For Pakistan PSX headlines — gnews.io">
       </div>
-      <button type="button" class="btn-ghost" style="margin-bottom:8px" onclick="Settings._refreshFx()">Refresh USD/PKR now</button>
-      <button type="button" class="btn-primary" onclick="Settings._saveProfile()">Save Profile</button>
+      <button type="button" class="btn-ghost" style="margin-bottom:8px" data-action="Settings._refreshFx">Refresh USD/PKR now</button>
+      <button type="button" class="btn-primary" data-action="Settings._saveProfile">Save Profile</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Cash &amp; manual assets</span></div>
@@ -15304,7 +15724,7 @@ const Settings = (() => {
           <input class="field-input" id="s-gold-grams" type="number" min="0" step="0.01" value="${ma.goldGrams || 0}">
         </div>
       </div>
-      <button type="button" class="btn-primary" onclick="Settings._saveManualAssets()">Save manual assets</button>
+      <button type="button" class="btn-primary" data-action="Settings._saveManualAssets">Save manual assets</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Return Assumptions</span></div>
@@ -15331,8 +15751,8 @@ const Settings = (() => {
       </div>
       <div class="field-hint" style="margin-bottom:12px;">4% rule: corpus needed = ₨${Math.round((settings.freedomTarget || 100000) * 12 / 0.04).toLocaleString()}</div>
       <div style="display:flex;gap:8px;">
-        <button type="button" class="btn-primary" style="flex:1;" onclick="Settings._saveAssumptions()">Save Assumptions</button>
-        <button type="button" class="btn-ghost" onclick="Settings._resetAssumptions()">Reset Defaults</button>
+        <button type="button" class="btn-primary" style="flex:1;" data-action="Settings._saveAssumptions">Save Assumptions</button>
+        <button type="button" class="btn-ghost" data-action="Settings._resetAssumptions">Reset Defaults</button>
       </div>
     </div>
 
@@ -15394,8 +15814,8 @@ const Settings = (() => {
           <input class="field-input" id="s-proxy" type="url" placeholder="https://ledgercap-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
           <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
         </div>
-        <button type="button" class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
-        <button type="button" class="btn-secondary" onclick="App.refreshPrices()">⟳ Refresh All Prices</button>
+        <button type="button" class="btn-ghost" data-action="Settings._saveProxy">Save Proxy URL</button>
+        <button type="button" class="btn-secondary" data-action="App.refreshPrices">⟳ Refresh All Prices</button>
       </div>
     </div>
 
@@ -15414,8 +15834,8 @@ const Settings = (() => {
         <input class="field-input" id="tg-chat" type="text" inputmode="numeric" placeholder="e.g. 123456789" value="${settings.telegramChatId || ''}">
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-        <button type="button" class="btn-ghost btn-sm" onclick="Settings._detectTelegramChat()">Detect chat ID</button>
-        <button type="button" class="btn-ghost btn-sm" onclick="Settings._checkTelegramProxy()">Test proxy</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="Settings._detectTelegramChat">Detect chat ID</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="Settings._checkTelegramProxy">Test proxy</button>
       </div>
       <div class="field-hint" style="margin-bottom:12px;">Numeric chat_id only — not your phone number. Use @userinfobot if detect fails.</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
@@ -15430,19 +15850,19 @@ const Settings = (() => {
         <label class="field-label">Cloud sync key</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input class="field-input" id="tg-sync-key" type="text" autocomplete="off" placeholder="Generate or paste wrangler secret" value="${settings.telegramSyncKey || ''}" style="flex:1;min-width:180px">
-          <button type="button" class="btn-ghost btn-sm" onclick="Settings._genTelegramSyncKey()">Generate</button>
+          <button type="button" class="btn-ghost btn-sm" data-action="Settings._genTelegramSyncKey">Generate</button>
         </div>
         <div class="field-hint">Match <code>TELEGRAM_SYNC_KEY</code> on Cloudflare worker. Syncs urgent signals only — never full ledger.</div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-        <button type="button" class="btn-ghost" onclick="Settings._syncTelegramCloud()">Sync brief to cloud</button>
+        <button type="button" class="btn-ghost" data-action="Settings._syncTelegramCloud">Sync brief to cloud</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        <button type="button" class="btn-primary" onclick="Settings._saveTelegram()">Save Telegram</button>
-        <button type="button" class="btn-secondary" onclick="Settings._sendTelegramTest()">Send test message</button>
-        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramBrief()">Send brief now</button>
-        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramPortfolioDigests()">Send portfolio digests</button>
-        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramNews()">Send news digest</button>
+        <button type="button" class="btn-primary" data-action="Settings._saveTelegram">Save Telegram</button>
+        <button type="button" class="btn-secondary" data-action="Settings._sendTelegramTest">Send test message</button>
+        <button type="button" class="btn-ghost" data-action="Settings._sendTelegramBrief">Send brief now</button>
+        <button type="button" class="btn-ghost" data-action="Settings._sendTelegramPortfolioDigests">Send portfolio digests</button>
+        <button type="button" class="btn-ghost" data-action="Settings._sendTelegramNews">Send news digest</button>
       </div>
     </div>
 
@@ -15457,7 +15877,7 @@ const Settings = (() => {
             <label class="field-label">${f.symbol}</label>
             <input class="field-input nav-inp" data-sym="${f.symbol}" type="number" step="0.01" value="${nav}">
           </div>
-          <button type="button" class="btn-ghost" style="padding:10px 14px;" onclick="Settings._saveNav('${f.symbol}')">Save</button>
+          <button type="button" class="btn-ghost" style="padding:10px 14px;" data-action="Settings._saveNav" data-tab="${f.symbol}">Save</button>
         </div>`;
       }).join('')}
     </div>
@@ -15481,18 +15901,18 @@ const Settings = (() => {
       </div>
       <div class="field" style="margin-bottom:12px;">
         <label class="field-label">Auto-lock after</label>
-        <select class="field-input" id="pin-autolock" onchange="Settings._setPinAutoLock(this.value)">
+        <select class="field-input" id="pin-autolock" data-action-change="Settings._setPinAutoLock">
           ${[0, 1, 5, 15, 60].map(m => `<option value="${m}"${(PinVault?.getAutoLock?.() ?? 5) === m ? ' selected' : ''}>${m === 0 ? 'Never (manual only)' : m === 60 ? '1 hour' : m + ' min'}</option>`).join('')}
         </select>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         ${PinVault?.isEnabled?.() ? `
-          <button type="button" class="btn-secondary btn-sm" onclick="Settings._changePin()">Change PIN</button>
-          <button type="button" class="btn-ghost btn-sm" onclick="Settings._setDecoyPin()">Decoy PIN</button>
-          <button type="button" class="btn-ghost btn-sm" onclick="Settings._lockNow()">Lock now</button>
-          <button type="button" class="btn-danger btn-sm" onclick="Settings._disablePin()">Disable PIN</button>
+          <button type="button" class="btn-secondary btn-sm" data-action="Settings._changePin">Change PIN</button>
+          <button type="button" class="btn-ghost btn-sm" data-action="Settings._setDecoyPin">Decoy PIN</button>
+          <button type="button" class="btn-ghost btn-sm" data-action="Settings._lockNow">Lock now</button>
+          <button type="button" class="btn-danger btn-sm" data-action="Settings._disablePin">Disable PIN</button>
         ` : `
-          <button type="button" class="btn-primary btn-sm" onclick="Settings._enablePin()">Set PIN</button>
+          <button type="button" class="btn-primary btn-sm" data-action="Settings._enablePin">Set PIN</button>
         `}
       </div>
     </div>
@@ -15506,9 +15926,9 @@ const Settings = (() => {
         </div>
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
-        <button type="button" class="btn-secondary" onclick="Settings._exportData()">↑ Export .ledgercap Backup</button>
-        <button type="button" class="btn-secondary" onclick="Settings._importData()">↓ Import .ledgercap Backup</button>
-        <button type="button" class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportData">↑ Export .ledgercap Backup</button>
+        <button type="button" class="btn-secondary" data-action="Settings._importData">↓ Import .ledgercap Backup</button>
+        <button type="button" class="btn-danger" data-action="Settings._resetVault">⚠ Reset All Data</button>
       </div>
     </div>
 
@@ -15538,7 +15958,7 @@ const Settings = (() => {
         <input type="checkbox" id="p-filer" ${pilot.isFiler !== false ? 'checked' : ''}>
         Filer (15% CGT on short-term gains)
       </label>
-      <button type="button" class="btn-primary" style="width:100%;margin-top:8px" onclick="Settings._savePilot()">Save Pilot settings</button>
+      <button type="button" class="btn-primary" style="width:100%;margin-top:8px" data-action="Settings._savePilot">Save Pilot settings</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">About</span></div>
@@ -16242,14 +16662,14 @@ const Signals = (() => {
 
   function _segment() {
     return `<div class="lc-segment perf-tabs cap-tab-bar" role="tablist" style="margin-bottom:12px">
-      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'morning' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'morning'}" onclick="Signals.setTab('morning')">Morning</button>
-      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'intraday' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'intraday'}" onclick="Signals.setTab('intraday')">Intraday</button>
-      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'buy' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'buy'}" onclick="Signals.setTab('buy')">Buy more</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'morning' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'morning'}" data-action="Signals.setTab" data-tab="morning">Morning</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'intraday' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'intraday'}" data-action="Signals.setTab" data-tab="intraday">Intraday</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'buy' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'buy'}" data-action="Signals.setTab" data-tab="buy">Buy more</button>
     </div>`;
   }
 
   function _signalRow(s, onSymbol) {
-    const click = onSymbol ? `onclick="Research.open('${s.symbol}')"` : '';
+    const click = onSymbol ? `data-action="Research.open" data-symbol="${s.symbol}"` : '';
     return `<div class="os-row cap-reveal" style="cursor:pointer" ${click}>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -16268,7 +16688,7 @@ const Signals = (() => {
 
   function _intradayRow(s) {
     const cls = s.movePct >= 0 ? 't-gain' : 't-loss';
-    return `<div class="os-row cap-reveal" style="cursor:pointer" onclick="Research.open('${s.symbol}')">
+    return `<div class="os-row cap-reveal" style="cursor:pointer" data-action="Research.open" data-symbol="${s.symbol}">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${s.symbol}</span>
@@ -16283,7 +16703,7 @@ const Signals = (() => {
 
   function _buyRow(r) {
     const src = r.source === 'both' ? 'Rebalance + morning' : r.source === 'morning' ? 'Morning brief' : 'Rebalance';
-    return `<div class="os-row cap-reveal" style="cursor:pointer" onclick="Research.open('${r.symbol}')">
+    return `<div class="os-row cap-reveal" style="cursor:pointer" data-action="Research.open" data-symbol="${r.symbol}">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${r.symbol}</span>
@@ -16371,7 +16791,7 @@ const Signals = (() => {
         ? recs.map(_buyRow).join('')
         : '<div style="color:var(--os-text-secondary);padding:8px 0">No ADD signals — set target weights in Tax &amp; Rebalance or wait for morning brief upgrades.</div>')}
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">Set target weights</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">Set target weights</button>
       </div>
       <div class="lc-disclaimer">Illustrative lot sizes — verify cash and broker limits before trading.</div>
     </div>`;
@@ -16400,8 +16820,8 @@ const Signals = (() => {
       return `<div class="os-row">
         <div class="os-row-sym">${h.symbol}</div>
         <div style="display:flex;gap:6px">
-          <button type="button" class="btn-sm ${book === 'core' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','core')">Core</button>
-          <button type="button" class="btn-sm ${book === 'swing' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','swing')">Swing</button>
+          <button type="button" class="btn-sm ${book === 'core' ? 'btn-primary' : 'btn-ghost'}" data-action="Signals.setBook" data-symbol="${h.symbol}" data-broker="${h.broker}" data-tab="core">Core</button>
+          <button type="button" class="btn-sm ${book === 'swing' ? 'btn-primary' : 'btn-ghost'}" data-action="Signals.setBook" data-symbol="${h.symbol}" data-broker="${h.broker}" data-tab="swing">Swing</button>
         </div>
       </div>`;
     }).join('');
@@ -16450,7 +16870,7 @@ const RiskAudit = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Risk audit</h1><p>Concentration · tax · allocation drift</p></div>
-        ${MarketUI.emptyState(LcIcons.icon('shield', 28), 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('shield', 28), 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;
@@ -16493,9 +16913,9 @@ const RiskAudit = (() => {
       `)}
 
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">Tax &amp; Rebalance</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('signals')">Signals</button>
-        <button type="button" class="psx-btn psx-btn-primary" onclick="Research.setMode('portfolio');Navigation.go('research', false, { portfolioIntel: true })">Portfolio intel</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">Tax &amp; Rebalance</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="signals">Signals</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="Navigation.goResearchIntel">Portfolio intel</button>
       </div>
       <div class="lc-disclaimer">${report.disclaimer}</div>
     </div>`;
@@ -16569,7 +16989,7 @@ const InsightsScreen = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Insights</h1><p>Pilot score · benchmark · history</p></div>
-        ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;
@@ -16619,7 +17039,7 @@ const InsightsScreen = (() => {
       </div>
 
       <div class="lc-dash-section">
-        <div class="lc-dash-section-head"><h3>Zakat snapshot</h3><button type="button" class="lc-section-action" onclick="Navigation.go('zakat')">Calculator →</button></div>
+        <div class="lc-dash-section-head"><h3>Zakat snapshot</h3><button type="button" class="lc-section-action" data-nav="zakat">Calculator →</button></div>
         <div class="lc-metric-grid">
           <div class="lc-metric-cell"><label>Est. due</label><strong>${PsxUI.fmt(zakat.due)}</strong></div>
           <div class="lc-metric-cell"><label>Zakatable</label><strong>${PsxUI.fmt(zakat.zakatable)}</strong></div>
@@ -16637,8 +17057,8 @@ const InsightsScreen = (() => {
       </div>` : ''}
 
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('risk-audit')">Risk audit</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('performance')">Performance</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="risk-audit">Risk audit</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="performance">Performance</button>
       </div>
       <div class="lc-disclaimer">Smart Assistant summary — not financial advice. Benchmark is illustrative only.</div>
     </div>`;
@@ -16663,7 +17083,7 @@ const StockComparison = (() => {
     const symbols = holdings.map(h => h.symbol);
 
     if (symbols.length < 2) {
-      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState(LcIcons.icon('scale', 28), 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState(LcIcons.icon('scale', 28), 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }
@@ -16679,11 +17099,11 @@ const StockComparison = (() => {
     <div class="lc-screen-head"><h1>Compare</h1><p>Side by side · ${sym1} vs ${sym2}</p></div>
     <div class="comp-header cap-reveal" style="padding-top:0">
       <div class="comp-selectors">
-        <select class="comp-select" onchange="StockComparison._selectSymbol(1, this.value)">
+        <select class="comp-select" data-action-change="StockComparison._selectSymbol">
           <option value="">Select Stock 1</option>
           ${symbols.map(s => `<option value="${s}" ${sym1 === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
-        <select class="comp-select" onchange="StockComparison._selectSymbol(2, this.value)">
+        <select class="comp-select" data-action-change="StockComparison._selectSymbol">
           <option value="">Select Stock 2</option>
           ${symbols.map(s => `<option value="${s}" ${sym2 === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
@@ -16805,6 +17225,7 @@ window.Comparison = StockComparison;
 'use strict';
 const Performance = (() => {
   let _tab = 'daily';
+  let _histRange = 365;
 
   function _priceFn(symbol, fallback) {
     const live = typeof State !== 'undefined' ? State.getPrice(symbol) : 0;
@@ -16819,7 +17240,7 @@ const Performance = (() => {
 
     const state = State.get();
     if (!state.transactions?.length) {
-      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Performance</h1><p>P&amp;L tracking</p></div>${MarketUI.emptyState('📈', 'No performance data', 'Add holdings to track daily, monthly, and predictive profit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Performance</h1><p>P&amp;L tracking</p></div>${MarketUI.emptyState('📈', 'No performance data', 'Add holdings to track daily, monthly, and predictive profit.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }
@@ -16845,10 +17266,11 @@ const Performance = (() => {
         <span>Realised <strong class="${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</strong></span>
       </div>
       <div class="perf-tabs cap-tab-bar">
-        <button type="button" class="perf-tab cap-tab${_tab === 'daily' ? ' active' : ''}" onclick="Performance.setTab('daily')">Daily</button>
-        <button type="button" class="perf-tab cap-tab${_tab === 'monthly' ? ' active' : ''}" onclick="Performance.setTab('monthly')">Monthly</button>
-        <button type="button" class="perf-tab cap-tab${_tab === 'realised' ? ' active' : ''}" onclick="Performance.setTab('realised')">Realised</button>
-        <button type="button" class="perf-tab cap-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Forecast</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'daily' ? ' active' : ''}" data-action="Performance.setTab" data-tab="daily">Daily</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'monthly' ? ' active' : ''}" data-action="Performance.setTab" data-tab="monthly">Monthly</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'history' ? ' active' : ''}" data-action="Performance.setTab" data-tab="history">NAV series</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'realised' ? ' active' : ''}" data-action="Performance.setTab" data-tab="realised">Realised</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'predictive' ? ' active' : ''}" data-action="Performance.setTab" data-tab="predictive">Forecast</button>
       </div>
       <p class="perf-disclaimer" style="margin:var(--space-2) 0 0;font-size:0.7rem;color:var(--text3);line-height:1.4;">Daily/monthly M2M uses ${m2mSource} (${histDays} day${histDays === 1 ? '' : 's'} logged). Open app after refresh to build history. Realised = closed PSX + US/crypto sells. Forecast uses Settings assumptions.</p>
     </div>
@@ -16931,6 +17353,16 @@ const Performance = (() => {
             <div class="perf-item-value ${r.pnl >= 0 ? 't-gain' : 't-loss'}">${r.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(r.pnl)}</div>
           </div>`).join('') : '<p class="lc-empty-note">No closed sells logged yet.</p>'}
       </div>
+    </div>` : ''}
+
+    ${_tab === 'history' ? `<div class="perf-section cap-reveal">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        ${(typeof HistorySeriesService !== 'undefined' ? HistorySeriesService.ranges() : [{ id: '1m', label: '1M', days: 30 }, { id: '1y', label: '1Y', days: 365 }]).map((r) =>
+          `<button type="button" class="lc-view-pill${_histRange === r.days ? ' active' : ''}" data-action="Performance.setHistRange" data-tab="${r.days}">${r.label}</button>`
+        ).join('')}
+      </div>
+      <div class="perf-chart" id="history-chart"></div>
+      <p class="perf-disclaimer" style="margin-top:8px;font-size:0.7rem;color:var(--text3)">Portfolio NAV from daily snapshots + per-symbol price series on refresh.</p>
     </div>` : ''}
 
     ${_tab === 'predictive' ? `<div class="perf-section cap-reveal">
@@ -17027,6 +17459,17 @@ const Performance = (() => {
       const projections = [predictive.currentValue, predictive.currentValue * 1.18, predictive.currentValue * Math.pow(1.18, 2), predictive.currentValue * Math.pow(1.18, 5)];
       document.getElementById('predictive-chart').innerHTML = Charts.lineChart ? Charts.lineChart(projections, { height: 160, color: '#10b981' }) : '';
     }
+    if (_tab === 'history' && document.getElementById('history-chart') && typeof HistorySeriesService !== 'undefined') {
+      const series = HistorySeriesService.getPortfolioSeries(_histRange || 0);
+      document.getElementById('history-chart').innerHTML = series.length >= 2 && Charts.lineChart
+        ? Charts.lineChart(series, { height: 180, fill: true, ariaLabel: 'Portfolio NAV history' })
+        : '<p class="lc-empty-note">Open app after price refresh to build series.</p>';
+    }
+  }
+
+  function setHistRange(days) {
+    _histRange = parseInt(days, 10) || 0;
+    render();
   }
 
   function setTab(tab) {
@@ -17034,7 +17477,7 @@ const Performance = (() => {
     render();
   }
 
-  return { render, setTab };
+  return { render, setTab, setHistRange };
 })();
 window.Performance = Performance;
 
@@ -17054,7 +17497,7 @@ const Journal = (() => {
       <textarea class="field-input" id="jr-body" rows="4" placeholder="Why did you make this decision?">${e.body || ''}</textarea></div>
     <div class="field"><label class="field-label">Outcome review</label>
       <textarea class="field-input" id="jr-review" rows="3" placeholder="Was the thesis correct?">${e.review || ''}</textarea></div>
-    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" onclick="Journal.save()">Save entry</button>`;
+    <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" data-action="Journal.save">Save entry</button>`;
   }
 
   function openNew() {
@@ -17103,16 +17546,16 @@ const Journal = (() => {
     <div class="lc-dash">
     <div class="lc-screen-head"><h1>Journal</h1><p>Investment thesis · record decisions</p></div>
     <div class="lc-dash-actions cap-reveal">
-      <button type="button" class="lc-btn-primary" onclick="Journal.openNew()">+ New entry</button>
+      <button type="button" class="lc-btn-primary" data-action="Journal.openNew">+ New entry</button>
     </div>
     ${entries.length ? entries.map(e => `
-      <div class="os-card cap-reveal" role="button" tabindex="0" aria-label="Edit journal entry" style="margin:0 20px 12px;cursor:pointer;" onclick="Journal.openEdit('${e.id}')">
+      <div class="os-card cap-reveal" role="button" tabindex="0" aria-label="Edit journal entry" style="margin:0 20px 12px;cursor:pointer;" data-action="Journal.openEdit" data-tab="${e.id}">
         <div style="display:flex;justify-content:space-between;align-items:start;">
           <div>
             <div style="font-weight:700;font-size:1rem;">${e.title || 'Untitled'}</div>
             <div style="font-size:0.72rem;color:var(--os-text-tertiary);margin-top:4px;">${e.date || ''}${e.symbol ? ' · ' + e.symbol : ''}</div>
           </div>
-          <button type="button" class="os-btn os-btn-ghost" style="padding:4px 8px;font-size:0.7rem;" onclick="event.stopPropagation();Journal.remove('${e.id}')">Delete</button>
+          <button type="button" class="os-btn os-btn-ghost" style="padding:4px 8px;font-size:0.7rem;" data-action="Journal.remove" data-tab="${e.id}" data-stop="1">Delete</button>
         </div>
         ${e.body ? `<p style="font-size:0.85rem;color:var(--os-text-secondary);margin:10px 0 0;line-height:1.5;">${e.body.slice(0, 160)}${e.body.length > 160 ? '…' : ''}</p>` : ''}
         ${e.review ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--os-border);font-size:0.8rem;color:var(--os-gain);">Review: ${e.review.slice(0, 100)}${e.review.length > 100 ? '…' : ''}</div>` : ''}
@@ -17144,7 +17587,7 @@ const PilotTools = (() => {
     screen.innerHTML = `
     ${MarketUI.pageHeader('Pilot tools', 'Rebalance & tax', 'CGT · screener · IPO · cash plan')}
     <div class="lc-filter-bar cap-reveal" style="border-top:none">
-      ${tabs.map(([id, label]) => `<button type="button" class="lc-view-pill ${_tab === id ? 'active' : ''}" onclick="PilotTools.render(null,'${id}')">${label}</button>`).join('')}
+      ${tabs.map(([id, label]) => `<button type="button" class="lc-view-pill ${_tab === id ? 'active' : ''}" data-action="PilotTools.render" data-tab="${id}">${label}</button>`).join('')}
     </div>
     <div id="pilot-tools-body"></div>
     <div style="height:24px"></div>`;
@@ -17190,11 +17633,11 @@ const PilotTools = (() => {
           <div class="os-row-sym" style="min-width:64px">${h.symbol}</div>
           <label style="font-size:11px;color:var(--os-text-tertiary)">Target %
             <input type="number" class="field-input" style="width:72px;margin-left:4px;padding:6px 8px" min="0" max="100" step="0.5" value="${tw}" placeholder="—"
-              onchange="PilotTools.setTarget('${h.symbol}','${broker}',this.value)">
+              data-action-change="PilotTools.setTarget" data-symbol="${h.symbol}" data-broker="${broker}">
           </label>
           <label style="font-size:11px;color:var(--os-text-tertiary)">Bought
             <input type="date" class="field-input" style="width:130px;margin-left:4px;padding:6px 8px" value="${acq}"
-              onchange="PilotTools.setAcquired('${h.symbol}','${broker}',this.value)">
+              data-action-change="PilotTools.setAcquired" data-symbol="${h.symbol}" data-broker="${broker}">
           </label>
         </div>`;
       }).join('')}
@@ -17217,6 +17660,9 @@ const PilotTools = (() => {
   function _cgt() {
     const r = PilotEngine.buildCgtReport();
     return U.section('Capital gains (estimate)', r.disclaimer) +
+      `<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn-sm btn-secondary" data-action="StatementExport.exportCgtPdf">Export CGT PDF</button>
+      </div>` +
       U.metricGrid([
         U.metricCell('Unrealized gain', U.fmt(r.total_unrealized_gain)),
         U.metricCell('Est. tax', U.fmt(r.total_estimated_tax)),
@@ -17236,10 +17682,10 @@ const PilotTools = (() => {
   function _screener() {
     return U.section('PSX screener', 'Filter seed fundamentals database') + `
       <div style="padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:8px">
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({min_yield:6})">High yield 6%+</button>
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({max_pe:10})">Value P/E &lt;10</button>
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({max_rsi:35})">RSI oversold</button>
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({portfolio_only:true})">My holdings</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{min_yield:6}'>High yield 6%+</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{max_pe:10}'>Value P/E &lt;10</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{max_rsi:35}'>RSI oversold</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{portfolio_only:true}'>My holdings</button>
       </div>
       <div id="screener-results"></div>`;
   }
@@ -17249,7 +17695,7 @@ const PilotTools = (() => {
     const el = document.getElementById('screener-results');
     if (!el) return;
     el.innerHTML = U.section(`Results (${res.rows.length} / ${res.scanned})`, res.rows.slice(0, 15).map(r => `
-      <div class="os-row cap-reveal" onclick="Research.open('${r.symbol}')" style="cursor:pointer">
+      <div class="os-row cap-reveal" data-action="Research.open" data-symbol="${r.symbol}" style="cursor:pointer">
         <div class="os-row-sym">${r.symbol}${r.in_portfolio ? ' ★' : ''}</div>
         <div style="font-size:12px;text-align:right;color:var(--os-text-secondary)">
           P/E ${r.pe_ratio ?? '—'} · Yld ${r.dividend_yield_pct ?? '—'}% · RSI ${r.rsi_14?.toFixed(0) ?? '—'}
@@ -17261,9 +17707,9 @@ const PilotTools = (() => {
   function _calculators() {
     return U.section('Calculators', '') + `
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
-        <button type="button" class="btn-secondary" onclick="PilotTools.calc('cagr')">CAGR — principal → final value</button>
-        <button type="button" class="btn-secondary" onclick="PilotTools.calc('position_size')">Position size — risk & stop %</button>
-        <button type="button" class="btn-secondary" onclick="PilotTools.calc('sip_future')">SIP future value</button>
+        <button type="button" class="btn-secondary" data-action="PilotTools.calc" data-tab="cagr">CAGR — principal → final value</button>
+        <button type="button" class="btn-secondary" data-action="PilotTools.calc" data-tab="position_size">Position size — risk & stop %</button>
+        <button type="button" class="btn-secondary" data-action="PilotTools.calc" data-tab="sip_future">SIP future value</button>
         <div id="calc-result" style="font-size:13px;color:var(--os-text-secondary)"></div>
       </div>`;
   }
@@ -17290,13 +17736,13 @@ const PilotTools = (() => {
     const events = State.get('ipoEvents') || [];
     return U.section('IPO calendar', 'Manual entries — subscription & listing reminders') + `
       <div style="padding:0 16px 12px">
-        <button type="button" class="btn-primary btn-sm" onclick="PilotTools.addIpo()">+ Add IPO</button>
+        <button type="button" class="btn-primary btn-sm" data-action="PilotTools.addIpo">+ Add IPO</button>
       </div>` +
       (events.length ? events.map(e => `
         <div class="os-row cap-reveal">
           <div><div class="os-row-sym">${e.company}</div>
           <div style="font-size:11px;color:var(--os-text-tertiary)">${e.symbol || '—'} · ${e.subscription_end || e.listing_date || 'TBD'}</div></div>
-          <button type="button" class="btn-ghost btn-sm" aria-label="Delete IPO entry" onclick="PilotTools.delIpo('${e.id}')">✕</button>
+          <button type="button" class="btn-ghost btn-sm" aria-label="Delete IPO entry" data-action="PilotTools.delIpo" data-tab="${e.id}">✕</button>
         </div>`).join('') : '<div style="padding:12px 16px;color:var(--os-text-secondary)">No IPO events — add PSX primary offerings you are tracking.</div>');
   }
 
@@ -17323,8 +17769,8 @@ const PilotTools = (() => {
     const entries = State.get('cashLedger') || [];
   const net = entries.reduce((a, e) => a + (e.entry_type === 'withdraw' ? -e.amount : e.amount), 0);
     return U.section('Cash ledger', `Settings cash: ${U.fmt(cfg.cashBalancePkr)} · Ledger net: ${U.fmt(net)}`) +
-      `<div style="padding:0 16px 12px"><button type="button" class="btn-sm btn-secondary" onclick="PilotTools.addCash('deposit')">+ Deposit</button>
-      <button type="button" class="btn-sm btn-ghost" onclick="PilotTools.addCash('withdraw')">− Withdraw</button></div>` +
+      `<div style="padding:0 16px 12px"><button type="button" class="btn-sm btn-secondary" data-action="PilotTools.addCash" data-tab="deposit">+ Deposit</button>
+      <button type="button" class="btn-sm btn-ghost" data-action="PilotTools.addCash" data-tab="withdraw">− Withdraw</button></div>` +
       (entries.slice(-10).reverse().map(e => `
         <div class="os-row"><div>${e.entry_type}</div><div>${U.fmt(e.amount)}</div></div>`).join('') || '<div style="padding:12px 16px;color:var(--os-text-secondary)">No cash movements logged.</div>');
   }
@@ -17342,6 +17788,202 @@ const PilotTools = (() => {
   return { render, runScreen, calc, addIpo, delIpo, addCash, setTarget, setAcquired };
 })();
 window.PilotTools = PilotTools;
+
+;/* === js/modules/paper-trade.js === */
+'use strict';
+/** Simulated PSX ledger — isolated from real transactions. */
+const PaperTrade = (() => {
+  const U = PlatformUI;
+  let _tab = 'portfolio';
+
+  function _ledger() {
+    const s = State.get();
+    if (!s.paperLedger) s.paperLedger = { cashPkr: 500000, transactions: [] };
+    return s.paperLedger;
+  }
+
+  function _holdings() {
+    const ledger = _ledger();
+    const txs = ledger.transactions || [];
+    const bySym = {};
+    txs.forEach((t) => {
+      const sym = (t.symbol || '').toUpperCase();
+      if (!sym) return;
+      if (!bySym[sym]) bySym[sym] = { symbol: sym, shares: 0, cost: 0 };
+      const q = t.shares || 0;
+      if (t.type === 'BUY') {
+        bySym[sym].cost += t.amount || q * (t.price || 0);
+        bySym[sym].shares += q;
+      } else if (t.type === 'SELL') {
+        const avg = bySym[sym].shares > 0 ? bySym[sym].cost / bySym[sym].shares : 0;
+        bySym[sym].shares -= q;
+        bySym[sym].cost -= avg * q;
+        if (bySym[sym].shares <= 0) delete bySym[sym];
+      }
+    });
+    return Object.values(bySym).map((h) => {
+      const price = State.getPrice(h.symbol) || (window.FALLBACK_PRICES || {})[h.symbol] || 0;
+      const value = h.shares * price;
+      const avg = h.shares > 0 ? h.cost / h.shares : 0;
+      const pnl = value - h.cost;
+      return { ...h, price, value, avgCost: avg, pnl, pnlPct: h.cost > 0 ? (pnl / h.cost) * 100 : 0 };
+    }).sort((a, b) => b.value - a.value);
+  }
+
+  function setTab(id) { _tab = id; render(); }
+
+  function _save(fn) {
+    State.update((s) => {
+      if (!s.paperLedger) s.paperLedger = { cashPkr: 500000, transactions: [] };
+      fn(s.paperLedger);
+    });
+    render();
+  }
+
+  function openBuy(symbol) {
+    symbol = (symbol || '').toUpperCase();
+    const price = State.getPrice(symbol) || (window.FALLBACK_PRICES || {})[symbol] || 0;
+    const content = `
+      <div class="field"><label class="field-label">Symbol</label>
+        <input class="field-input" id="pt-symbol" value="${symbol}" placeholder="ENGROH"></div>
+      <div class="field"><label class="field-label">Shares</label>
+        <input class="field-input" id="pt-shares" type="number" min="1" step="1" value="100"></div>
+      <div class="field"><label class="field-label">Price ₨</label>
+        <input class="field-input" id="pt-price" type="number" min="0" step="0.01" value="${price || ''}"></div>
+      <button type="button" class="btn-primary" data-action="PaperTrade._submitBuy">Paper buy</button>`;
+    App.openBottomSheet('paper-buy', `Paper buy ${symbol || ''}`, content);
+  }
+
+  function _submitBuy() {
+    const sym = document.getElementById('pt-symbol')?.value?.trim().toUpperCase();
+    const shares = parseFloat(document.getElementById('pt-shares')?.value);
+    const price = parseFloat(document.getElementById('pt-price')?.value);
+    if (!sym || !(shares > 0) || !(price > 0)) {
+      App.showToast('Enter symbol, shares, price', 'error');
+      return;
+    }
+    const amount = shares * price;
+    const ledger = _ledger();
+    if (amount > (ledger.cashPkr || 0)) {
+      App.showToast('Insufficient paper cash', 'error');
+      return;
+    }
+    _save((pl) => {
+      pl.cashPkr = (pl.cashPkr || 0) - amount;
+      pl.transactions.push({
+        id: Ledger.newId(),
+        type: 'BUY',
+        symbol: sym,
+        shares,
+        price,
+        amount,
+        date: new Date().toISOString().slice(0, 10),
+      });
+    });
+    App.closeBottomSheet();
+    App.showToast(`Paper bought ${shares} ${sym}`, 'success');
+  }
+
+  function openSell(h) {
+    const content = `
+      <div class="field"><label class="field-label">Shares (max ${h.shares})</label>
+        <input class="field-input" id="pt-sell-shares" type="number" min="1" max="${h.shares}" value="${h.shares}"></div>
+      <div class="field"><label class="field-label">Price ₨</label>
+        <input class="field-input" id="pt-sell-price" type="number" value="${h.price || ''}"></div>
+      <button type="button" class="btn-primary" data-action="PaperTrade._submitSell" data-symbol="${h.symbol}">Paper sell</button>`;
+    window._paperSell = h;
+    App.openBottomSheet('paper-sell', `Paper sell ${h.symbol}`, content);
+  }
+
+  function _submitSell(el) {
+    const h = window._paperSell;
+    if (!h) return;
+    const shares = parseFloat(document.getElementById('pt-sell-shares')?.value);
+    const price = parseFloat(document.getElementById('pt-sell-price')?.value);
+    if (!(shares > 0) || shares > h.shares || !(price > 0)) {
+      App.showToast('Invalid sell', 'error');
+      return;
+    }
+    const amount = shares * price;
+    _save((pl) => {
+      pl.cashPkr = (pl.cashPkr || 0) + amount;
+      pl.transactions.push({
+        id: Ledger.newId(),
+        type: 'SELL',
+        symbol: h.symbol,
+        shares,
+        price,
+        amount,
+        date: new Date().toISOString().slice(0, 10),
+      });
+    });
+    App.closeBottomSheet();
+    App.showToast(`Paper sold ${shares} ${h.symbol}`, 'success');
+  }
+
+  function resetLedger() {
+    if (!confirm('Reset paper ledger? Clears all simulated trades.')) return;
+    _save((pl) => {
+      pl.cashPkr = 500000;
+      pl.transactions = [];
+    });
+    App.showToast('Paper ledger reset', 'info');
+  }
+
+  function render() {
+    const screen = document.getElementById('screen-paper-trade');
+    if (!screen) return;
+    const ledger = _ledger();
+    const holdings = _holdings();
+    const invested = holdings.reduce((a, h) => a + h.cost, 0);
+    const mkt = holdings.reduce((a, h) => a + h.value, 0);
+    const pnl = mkt - invested;
+
+    screen.innerHTML = `
+    ${MarketUI.pageHeader('Paper trading', 'Simulated PSX', 'Isolated from your real ledger')}
+    <div class="lc-filter-bar cap-reveal">
+      <button type="button" class="lc-view-pill${_tab === 'portfolio' ? ' active' : ''}" data-action="PaperTrade.setTab" data-tab="portfolio">Portfolio</button>
+      <button type="button" class="lc-view-pill${_tab === 'history' ? ' active' : ''}" data-action="PaperTrade.setTab" data-tab="history">History</button>
+    </div>
+    ${U.metricGrid([
+      U.metricCell('Paper cash', U.fmt(ledger.cashPkr || 0)),
+      U.metricCell('Market value', U.fmt(mkt)),
+      U.metricCell('P&L', U.fmt(pnl), null, pnl >= 0 ? 't-gain' : 't-loss'),
+      U.metricCell('Positions', String(holdings.length)),
+    ], 4)}
+    ${_tab === 'portfolio' ? `
+      <div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn-primary" data-action="PaperTrade.openBuy">New paper buy</button>
+        <button type="button" class="btn-secondary" data-action="PaperTrade.resetLedger">Reset</button>
+      </div>
+      ${holdings.length ? holdings.map((h) => `
+        <div class="os-row cap-reveal">
+          <div><div class="os-row-sym">${h.symbol}</div>
+            <div style="font-size:11px;color:var(--os-text-tertiary)">${h.shares} sh · avg ${U.fmt(h.avgCost)}</div></div>
+          <div style="text-align:right">
+            <div class="${h.pnl >= 0 ? 't-gain' : 't-loss'}">${U.fmt(h.pnl)} (${h.pnlPct.toFixed(1)}%)</div>
+            <button type="button" class="btn-sm btn-secondary" data-action="PaperTrade.openSellRow" data-symbol="${h.symbol}">Sell</button>
+          </div>
+        </div>`).join('') : MarketUI.emptyState('', 'No paper positions', 'Practice entries without touching your real ledger.', '<button type="button" class="os-btn os-btn-primary" data-action="PaperTrade.openBuy">Paper buy</button>')}
+    ` : `
+      <div class="perf-list" style="padding:0 16px">
+        ${(ledger.transactions || []).slice().reverse().slice(0, 40).map((t) => `
+          <div class="perf-item"><div>${t.date} · ${t.type} ${t.symbol}</div>
+          <div>${t.shares} @ ${U.fmt(t.price)}</div></div>`).join('') || '<p class="psx-muted" style="padding:16px">No paper trades yet.</p>'}
+      </div>`}
+    <div style="height:24px"></div>`;
+    CapMotion.refresh();
+  }
+
+  function openSellRow(el) {
+    const sym = el?.dataset?.symbol;
+    const h = _holdings().find((x) => x.symbol === sym);
+    if (h) openSell(h);
+  }
+
+  return { render, setTab, openBuy, _submitBuy, openSell, openSellRow, _submitSell, resetLedger };
+})();
+window.PaperTrade = PaperTrade;
 
 ;/* === js/modules/onboarding.js === */
 'use strict';
@@ -17376,7 +18018,7 @@ const Onboarding = (() => {
       <div class="ob-shell">
         <div class="ob-top">
           <div class="ob-brand">Ledger<em>Cap</em></div>
-          <button type="button" class="ob-skip-top" onclick="Onboarding.skip()">Skip</button>
+          <button type="button" class="ob-skip-top" data-action="Onboarding.skip">Skip</button>
         </div>
         <div class="ob-progress">${_dots(1)}</div>
 
@@ -17389,7 +18031,7 @@ const Onboarding = (() => {
             <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('wallet', 16) : ''}</span> Investment tracker</li>
             <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('chart', 16) : ''}</span> SIP &amp; freedom planning</li>
           </ul>
-          <button type="button" class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
+          <button type="button" class="btn-primary ob-cta" data-action="Onboarding.next">Set up in 30 sec</button>
         </div>
 
         <div class="ob-panel" id="ob-panel-2">
@@ -17417,8 +18059,8 @@ const Onboarding = (() => {
             </div>
           </div>
           <div class="ob-nav">
-            <button type="button" class="btn-ghost" onclick="Onboarding.back()">Back</button>
-            <button type="button" class="btn-primary" onclick="Onboarding.next()">Continue</button>
+            <button type="button" class="btn-ghost" data-action="Onboarding.back">Back</button>
+            <button type="button" class="btn-primary" data-action="Onboarding.next">Continue</button>
           </div>
         </div>
 
@@ -17439,8 +18081,8 @@ const Onboarding = (() => {
             PSX proxy ready — prices refresh on open
           </div>
           <div class="ob-nav">
-            <button type="button" class="btn-ghost" onclick="Onboarding.back()">Back</button>
-            <button type="button" class="btn-primary" onclick="Onboarding.finish()">Open dashboard</button>
+            <button type="button" class="btn-ghost" data-action="Onboarding.back">Back</button>
+            <button type="button" class="btn-primary" data-action="Onboarding.finish">Open dashboard</button>
           </div>
         </div>
       </div>`;
@@ -17533,7 +18175,7 @@ const Global = (() => {
   function _listHtml(list) {
     const shown = list.slice(0, 80);
     return `
-      ${shown.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
+      ${shown.map(r => `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
         <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
         <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${typeof Prices !== 'undefined' && Prices.priceBadge ? Prices.priceBadge(r.symbol) : ''}</div>
         <div class="lc-market-chg">${r.held ? r.qty + ' held · ' + PsxUI.fmt(r.pkr) : PsxUI.fmt(r.pkr)}</div>
@@ -17581,9 +18223,9 @@ const Global = (() => {
       </div>
       <div class="lc-sector-card" id="global-list">${_listHtml(list)}</div>
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-primary" onclick="Global._refreshQuotes()">Refresh FX &amp; quotes</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction('INTL_BUY')">Add US stock</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction('CRYPTO_BUY')">Add crypto</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="Global._refreshQuotes">Refresh FX &amp; quotes</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction" data-tab="INTL_BUY">Add US stock</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction" data-tab="CRYPTO_BUY">Add crypto</button>
       </div>
     `);
 
@@ -17616,7 +18258,7 @@ const Commodities = (() => {
       ? PsxUI.fmt(r.price) + '/g'
       : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const pkrLine = r.manual ? '' : `<em>≈ ${PsxUI.fmt(r.pkr)}</em>`;
-    return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'onclick="Navigation.go(\'settings\')"' : ''}>
+    return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'data-nav="settings"' : ''}>
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
       <div class="lc-market-price">${priceLabel}</div>
       <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'} ${pkrLine}</div>
@@ -17649,8 +18291,8 @@ const Commodities = (() => {
       <p class="lc-card-sub">Spot proxies via Yahoo (GC=F, SI=F, CL=F). PKR gold uses Settings — links to Zakat calculator.</p>
       <div class="lc-sector-card" id="commodities-list">${listInner}</div>
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-primary" onclick="Commodities.refresh()">Refresh</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('zakat')">Zakat calculator →</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="zakat">Zakat calculator →</button>
       </div>
       <div class="lc-disclaimer">Illustrative spot prices — not a trading feed. Verify before zakat or hedging decisions.</div>
     `);
@@ -17732,7 +18374,7 @@ const Announcements = (() => {
     const date = it.date ? String(it.date).slice(0, 10) : (it.publishedAt ? String(it.publishedAt).slice(0, 10) : '');
     const safeUrl = it.url && /^https?:\/\//i.test(String(it.url)) ? String(it.url) : '';
     const safeSym = String(it.symbol || '').replace(/[^A-Za-z0-9.\-:]/g, '');
-    const link = safeUrl ? `onclick="window.open('${esc(safeUrl.replace(/'/g, '%27'))}', '_blank')"` : (safeSym ? `onclick="Research.open('${safeSym}')"` : '');
+    const link = safeUrl ? `data-external-url="${esc(safeUrl)}"` : (safeSym ? `data-action="Research.open" data-symbol="${safeSym}"` : '');
     return `<button type="button" class="lc-announce-row" ${link}>
       <div class="lc-announce-top"><strong>${esc(it.symbol || 'PSX')}</strong><span class="lc-announce-badge">${badge}</span></div>
       <p>${esc(it.title)}</p>
@@ -17765,7 +18407,7 @@ const Announcements = (() => {
     _tab = tab;
     _paintList();
     document.querySelectorAll('#screen-announcements .lc-segment-btn').forEach(b => {
-      b.classList.toggle('on', b.textContent.trim().toLowerCase() === tab || b.getAttribute('onclick')?.includes(`'${tab}'`));
+      b.classList.toggle('on', b.dataset.tab === tab || b.textContent.trim().toLowerCase() === tab);
     });
   }
 
@@ -17793,8 +18435,8 @@ const Announcements = (() => {
         <p class="lc-card-sub">${syms.length ? syms.length + ' holding(s) tracked' : 'No holdings — showing market-wide upcoming dividends'}</p>
         <div class="lc-sector-card" id="announcements-list"><p class="psx-muted">Loading…</p></div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="Announcements.refresh()">Refresh</button>
-          <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('calendar')">Wealth calendar →</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="Announcements.refresh">Refresh</button>
+          <button type="button" class="psx-btn psx-btn-ghost" data-nav="calendar">Wealth calendar →</button>
         </div>
         <div class="lc-disclaimer">Headlines and dividend dates from public sources — confirm on PSX / company filings.</div>
       </div>`;
@@ -17850,11 +18492,11 @@ const Zakat = (() => {
       <div class="lc-verdict"><h3>Disclaimer</h3><p>Rules-based estimate only — not a fatwa. Consult a scholar for crypto, inventory, and mixed portfolios. Data stays on device.</p></div>
       <div class="lc-form-block">
         <label class="lc-field-label">Debts to subtract (₨)</label>
-        <input class="lc-field-input" id="zk-debts" type="number" value="${settings.zakatDebts || 0}" onchange="Zakat._saveDebts(this.value)">
+        <input class="lc-field-input" id="zk-debts" type="number" value="${settings.zakatDebts || 0}" data-action-change="Zakat._saveDebts">
         <label class="lc-field-label">Gold grams (manual)</label>
-        <input class="lc-field-input" id="zk-gold" type="number" step="0.01" value="${(state.manualAssets || {}).goldGrams || 0}" onchange="Zakat._saveGold(this.value)">
+        <input class="lc-field-input" id="zk-gold" type="number" step="0.01" value="${(state.manualAssets || {}).goldGrams || 0}" data-action-change="Zakat._saveGold">
         <label class="lc-field-label">USD cash (manual)</label>
-        <input class="lc-field-input" id="zk-usd" type="number" step="0.01" value="${(state.manualAssets || {}).usdCash || 0}" onchange="Zakat._saveUsd(this.value)">
+        <input class="lc-field-input" id="zk-usd" type="number" step="0.01" value="${(state.manualAssets || {}).usdCash || 0}" data-action-change="Zakat._saveUsd">
       </div>
     `);
   }
@@ -17888,7 +18530,7 @@ const ImportCsv = (() => {
       <div class="lc-form-block">
         ${_portfolioOptions()}
         <textarea id="csv-input" class="lc-field-input lc-field-textarea" rows="10" placeholder="date,symbol,type,quantity,price,broker&#10;2026-01-15,AAPL,INTL_BUY,10,195,IBKR" aria-label="CSV rows"></textarea>
-        <button type="button" class="psx-btn psx-btn-primary" style="width:100%;margin-top:12px" onclick="ImportCsv._run()">Import rows</button>
+        <button type="button" class="psx-btn psx-btn-primary" style="width:100%;margin-top:12px" data-action="ImportCsv._run">Import rows</button>
         <p id="csv-result" style="margin-top:12px;font-size:13px;color:var(--psx-text-3)"></p>
       </div>
     `);
@@ -18496,7 +19138,7 @@ const App = (() => {
     else if (pktLabel === 'Last close' || pktLabel === 'Pre-market') label = `${pktLabel} · ${age}`;
     else label = stale ? `Prices ${age}` : `Updated ${age}`;
     const cls = live ? 'lc-freshness--live' : offline || stale || pktLabel === 'Last close' ? 'lc-freshness--warn' : 'lc-freshness--ok';
-    return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
+    return `<button type="button" class="lc-freshness-chip ${cls}" data-action="App.refreshPrices" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
@@ -18524,7 +19166,7 @@ const App = (() => {
           <option value="psx">Pakistan PSX stocks</option>
           <option value="funds">Islamic / mutual funds</option>
         </select></div>
-      <button type="button" class="btn-primary" onclick="App._submitPortfolio()">Create portfolio</button>`);
+      <button type="button" class="btn-primary" data-action="App._submitPortfolio">Create portfolio</button>`);
   }
 
   function _submitPortfolio() {
@@ -18672,6 +19314,11 @@ const App = (() => {
     if (h) h.classList.add('hidden');
   }
 
+  function loadDemo() {
+    location.search = '?demo=1';
+    location.reload();
+  }
+
   function dismissDemo() {
     sessionStorage.setItem('ledgercap_demo_dismiss', '1');
     const b = document.getElementById('demo-banner');
@@ -18768,6 +19415,7 @@ const App = (() => {
       }
     }
     Navigation.init();
+    if (typeof LcEvents !== 'undefined') LcEvents.init();
     _wireChromeIcons();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
@@ -18876,12 +19524,12 @@ const App = (() => {
     }
     if (_refreshBusy) return;
     _refreshBusy = true;
-    document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+    document.querySelectorAll('[data-action="App.refreshPrices"]').forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
     try {
       await _refreshPricesInner();
     } finally {
       _refreshBusy = false;
-      document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+      document.querySelectorAll('[data-action="App.refreshPrices"]').forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
     }
   }
 
@@ -19005,8 +19653,8 @@ const App = (() => {
         <label class="field-label">Target price (PKR)</label>
         <input class="field-input" id="pa-price" type="number" step="0.01" value="${price}">
       </div>
-      <button type="button" class="btn-primary" style="width:100%;margin-top:12px" onclick="App._submitPriceAlert('${symbol.replace(/'/g, "\\'")}')">Save alert</button>
-      ${existing ? `<button type="button" class="btn-ghost" style="width:100%;margin-top:8px" onclick="App._removePriceAlert('${existing.id}')">Remove alert</button>` : ''}
+      <button type="button" class="btn-primary" style="width:100%;margin-top:12px" data-action="App._submitPriceAlert" data-symbol="${symbol.replace(/"/g, '&quot;')}">Save alert</button>
+      ${existing ? `<button type="button" class="btn-ghost" style="width:100%;margin-top:8px" data-action="App._removePriceAlert" data-tab="${existing.id}">Remove alert</button>` : ''}
     `);
     requestAlertPermission();
   }
@@ -19050,7 +19698,7 @@ const App = (() => {
     document.getElementById('bs-body').innerHTML = content || '';
     sheet.classList.add('open');
     _activeSheet = id;
-    sheet.querySelector('.bs-backdrop').onclick = closeBottomSheet;
+    sheet.querySelector('.bs-backdrop')?.addEventListener('click', closeBottomSheet);
   }
 
   function closeBottomSheet() {
@@ -19088,7 +19736,7 @@ const App = (() => {
         ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
-      <button class="btn-primary" onclick="App._submitTransaction()">Add Transaction</button>
+      <button class="btn-primary" data-action="App._submitTransaction">Add Transaction</button>
     </div>`;
 
     openBottomSheet('add-tx', 'Add Transaction', content);
@@ -19403,7 +20051,7 @@ const App = (() => {
         <div class="field"><label class="field-label">Allotted Shares</label><input class="field-input" id="ipo-allotted" type="number" value="${tx.shares || ''}" placeholder="0"></div>
         <div class="field"><label class="field-label">Listing Price (₨)</label><input class="field-input" id="ipo-list-price" type="number" step="0.01" value="${defaultPrice}" placeholder="0.00"></div>
       </div>
-      <button class="btn-primary" onclick="App._submitIpoListed('${id}')">Mark as Listed → CDC</button>
+      <button class="btn-primary" data-action="App._submitIpoListed" data-tab="${id}">Mark as Listed → CDC</button>
     </div>`;
 
     openBottomSheet('ipo-list-sheet', `🚀 List ${tx.symbol}`, content);
@@ -19461,7 +20109,7 @@ const App = (() => {
         <div class="field"><label class="field-label">Broker</label><select class="field-input" id="rec-broker">${brokerOpts}</select></div>
       </div>
       <div class="field"><label class="field-label">Notes</label><input class="field-input" id="rec-notes" type="text" placeholder="e.g. AMC statement 29-Jun-2026"></div>
-      <button type="button" class="btn-primary" onclick="App._submitReconcile()">Save reconcile</button>
+      <button type="button" class="btn-primary" data-action="App._submitReconcile">Save reconcile</button>
     </div>`;
 
     openBottomSheet('reconcile-sheet', `✎ Reconcile ${h.symbol}`, content);
@@ -19554,7 +20202,7 @@ const App = (() => {
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,
-    openReconcilePosition, _submitReconcile,
+    openReconcilePosition, _submitReconcile, loadDemo,
     toggleDisplayCurrency, _updateCurrencyToggleBtn, openPriceAlert, _submitPriceAlert, _removePriceAlert };
 })();
 window.App = App;

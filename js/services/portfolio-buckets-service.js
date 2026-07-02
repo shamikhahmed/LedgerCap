@@ -185,9 +185,9 @@ const PortfolioBuckets = (() => {
         ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 28, color: s.pnl >= 0 ? '#22c55e' : '#ef4444' })}</div>`
         : '';
       const del = !b.builtin
-        ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" onclick="event.stopPropagation();App.deletePortfolio('${b.id}')">×</button>`
+        ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" data-action="App.deletePortfolio" data-tab="${b.id}" data-stop="1">×</button>`
         : '';
-      return `<button type="button" class="lc-portfolio-card${on}${empty ? ' lc-portfolio-card--empty' : ''}" onclick="${click}('${b.id}')" aria-label="${b.name}, ${empty ? 'empty' : PsxUI.fmt(s.value) + ', ' + s.positions + ' positions'}">
+      return `<button type="button" class="lc-portfolio-card${on}${empty ? ' lc-portfolio-card--empty' : ''}" data-action="${click}" data-tab="${b.id}" aria-label="${b.name}, ${empty ? 'empty' : PsxUI.fmt(s.value) + ', ' + s.positions + ' positions'}">
         ${del}
         <span class="lc-portfolio-card-icon" aria-hidden="true">${b.icon}</span>
         <div class="lc-portfolio-card-body">
@@ -203,7 +203,7 @@ const PortfolioBuckets = (() => {
         </div>
       </button>`;
     }).join('');
-    const add = `<button type="button" class="lc-portfolio-card lc-portfolio-card--add" onclick="App.openAddPortfolio()" aria-label="Add portfolio">
+    const add = `<button type="button" class="lc-portfolio-card lc-portfolio-card--add" data-action="App.openAddPortfolio" aria-label="Add portfolio">
       <span class="lc-portfolio-card-icon" aria-hidden="true">+</span>
       <div class="lc-portfolio-card-body"><strong>Add portfolio</strong><span class="lc-portfolio-card-desc">Custom USA · crypto · PSX ledger</span></div>
     </button>`;

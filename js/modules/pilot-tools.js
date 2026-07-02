@@ -16,7 +16,7 @@ const PilotTools = (() => {
     screen.innerHTML = `
     ${MarketUI.pageHeader('Pilot tools', 'Rebalance & tax', 'CGT · screener · IPO · cash plan')}
     <div class="lc-filter-bar cap-reveal" style="border-top:none">
-      ${tabs.map(([id, label]) => `<button type="button" class="lc-view-pill ${_tab === id ? 'active' : ''}" onclick="PilotTools.render(null,'${id}')">${label}</button>`).join('')}
+      ${tabs.map(([id, label]) => `<button type="button" class="lc-view-pill ${_tab === id ? 'active' : ''}" data-action="PilotTools.render" data-tab="${id}">${label}</button>`).join('')}
     </div>
     <div id="pilot-tools-body"></div>
     <div style="height:24px"></div>`;
@@ -62,11 +62,11 @@ const PilotTools = (() => {
           <div class="os-row-sym" style="min-width:64px">${h.symbol}</div>
           <label style="font-size:11px;color:var(--os-text-tertiary)">Target %
             <input type="number" class="field-input" style="width:72px;margin-left:4px;padding:6px 8px" min="0" max="100" step="0.5" value="${tw}" placeholder="—"
-              onchange="PilotTools.setTarget('${h.symbol}','${broker}',this.value)">
+              data-action-change="PilotTools.setTarget" data-symbol="${h.symbol}" data-broker="${broker}">
           </label>
           <label style="font-size:11px;color:var(--os-text-tertiary)">Bought
             <input type="date" class="field-input" style="width:130px;margin-left:4px;padding:6px 8px" value="${acq}"
-              onchange="PilotTools.setAcquired('${h.symbol}','${broker}',this.value)">
+              data-action-change="PilotTools.setAcquired" data-symbol="${h.symbol}" data-broker="${broker}">
           </label>
         </div>`;
       }).join('')}
@@ -89,6 +89,9 @@ const PilotTools = (() => {
   function _cgt() {
     const r = PilotEngine.buildCgtReport();
     return U.section('Capital gains (estimate)', r.disclaimer) +
+      `<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn-sm btn-secondary" data-action="StatementExport.exportCgtPdf">Export CGT PDF</button>
+      </div>` +
       U.metricGrid([
         U.metricCell('Unrealized gain', U.fmt(r.total_unrealized_gain)),
         U.metricCell('Est. tax', U.fmt(r.total_estimated_tax)),
@@ -108,10 +111,10 @@ const PilotTools = (() => {
   function _screener() {
     return U.section('PSX screener', 'Filter seed fundamentals database') + `
       <div style="padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:8px">
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({min_yield:6})">High yield 6%+</button>
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({max_pe:10})">Value P/E &lt;10</button>
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({max_rsi:35})">RSI oversold</button>
-        <button type="button" class="btn-sm btn-secondary" onclick="PilotTools.runScreen({portfolio_only:true})">My holdings</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{min_yield:6}'>High yield 6%+</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{max_pe:10}'>Value P/E &lt;10</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{max_rsi:35}'>RSI oversold</button>
+        <button type="button" class="btn-sm btn-secondary" data-action="PilotTools.runScreen" data-payload='{portfolio_only:true}'>My holdings</button>
       </div>
       <div id="screener-results"></div>`;
   }
@@ -121,7 +124,7 @@ const PilotTools = (() => {
     const el = document.getElementById('screener-results');
     if (!el) return;
     el.innerHTML = U.section(`Results (${res.rows.length} / ${res.scanned})`, res.rows.slice(0, 15).map(r => `
-      <div class="os-row cap-reveal" onclick="Research.open('${r.symbol}')" style="cursor:pointer">
+      <div class="os-row cap-reveal" data-action="Research.open" data-symbol="${r.symbol}" style="cursor:pointer">
         <div class="os-row-sym">${r.symbol}${r.in_portfolio ? ' ★' : ''}</div>
         <div style="font-size:12px;text-align:right;color:var(--os-text-secondary)">
           P/E ${r.pe_ratio ?? '—'} · Yld ${r.dividend_yield_pct ?? '—'}% · RSI ${r.rsi_14?.toFixed(0) ?? '—'}
@@ -133,9 +136,9 @@ const PilotTools = (() => {
   function _calculators() {
     return U.section('Calculators', '') + `
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
-        <button type="button" class="btn-secondary" onclick="PilotTools.calc('cagr')">CAGR — principal → final value</button>
-        <button type="button" class="btn-secondary" onclick="PilotTools.calc('position_size')">Position size — risk & stop %</button>
-        <button type="button" class="btn-secondary" onclick="PilotTools.calc('sip_future')">SIP future value</button>
+        <button type="button" class="btn-secondary" data-action="PilotTools.calc" data-tab="cagr">CAGR — principal → final value</button>
+        <button type="button" class="btn-secondary" data-action="PilotTools.calc" data-tab="position_size">Position size — risk & stop %</button>
+        <button type="button" class="btn-secondary" data-action="PilotTools.calc" data-tab="sip_future">SIP future value</button>
         <div id="calc-result" style="font-size:13px;color:var(--os-text-secondary)"></div>
       </div>`;
   }
@@ -162,13 +165,13 @@ const PilotTools = (() => {
     const events = State.get('ipoEvents') || [];
     return U.section('IPO calendar', 'Manual entries — subscription & listing reminders') + `
       <div style="padding:0 16px 12px">
-        <button type="button" class="btn-primary btn-sm" onclick="PilotTools.addIpo()">+ Add IPO</button>
+        <button type="button" class="btn-primary btn-sm" data-action="PilotTools.addIpo">+ Add IPO</button>
       </div>` +
       (events.length ? events.map(e => `
         <div class="os-row cap-reveal">
           <div><div class="os-row-sym">${e.company}</div>
           <div style="font-size:11px;color:var(--os-text-tertiary)">${e.symbol || '—'} · ${e.subscription_end || e.listing_date || 'TBD'}</div></div>
-          <button type="button" class="btn-ghost btn-sm" aria-label="Delete IPO entry" onclick="PilotTools.delIpo('${e.id}')">✕</button>
+          <button type="button" class="btn-ghost btn-sm" aria-label="Delete IPO entry" data-action="PilotTools.delIpo" data-tab="${e.id}">✕</button>
         </div>`).join('') : '<div style="padding:12px 16px;color:var(--os-text-secondary)">No IPO events — add PSX primary offerings you are tracking.</div>');
   }
 
@@ -195,8 +198,8 @@ const PilotTools = (() => {
     const entries = State.get('cashLedger') || [];
   const net = entries.reduce((a, e) => a + (e.entry_type === 'withdraw' ? -e.amount : e.amount), 0);
     return U.section('Cash ledger', `Settings cash: ${U.fmt(cfg.cashBalancePkr)} · Ledger net: ${U.fmt(net)}`) +
-      `<div style="padding:0 16px 12px"><button type="button" class="btn-sm btn-secondary" onclick="PilotTools.addCash('deposit')">+ Deposit</button>
-      <button type="button" class="btn-sm btn-ghost" onclick="PilotTools.addCash('withdraw')">− Withdraw</button></div>` +
+      `<div style="padding:0 16px 12px"><button type="button" class="btn-sm btn-secondary" data-action="PilotTools.addCash" data-tab="deposit">+ Deposit</button>
+      <button type="button" class="btn-sm btn-ghost" data-action="PilotTools.addCash" data-tab="withdraw">− Withdraw</button></div>` +
       (entries.slice(-10).reverse().map(e => `
         <div class="os-row"><div>${e.entry_type}</div><div>${U.fmt(e.amount)}</div></div>`).join('') || '<div style="padding:12px 16px;color:var(--os-text-secondary)">No cash movements logged.</div>');
   }

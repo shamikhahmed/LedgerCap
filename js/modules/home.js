@@ -19,8 +19,8 @@ const Home = (() => {
       ${marketBlock}
       ${M().sectionHead('Portfolio', 'Start here')}
       ${M().emptyState(LcIcons.icon('chart', 28), 'Track PSX like a pro', 'Stocks, Meezan funds, dividends, and net worth — dense tables and live index data, built for Pakistani investors.',
-        `<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>
-         <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo portfolio</button>`)}
+        `<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>
+         <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" data-action="App.loadDemo">Load demo portfolio</button>`)}
       ${M().sectionHead('Platform', 'Tools')}
       ${M().defaultTools()}`;
       CapMotion.refresh();
@@ -55,29 +55,29 @@ const Home = (() => {
 
     ${window.Signals ? M().morningBriefCard() : ''}
 
-    ${M().sectionHead('Holdings', `${holdings.length} positions`, '<button type="button" class="lc-section-action" onclick="Navigation.go(\'holdings\')">Full table →</button>')}
+    ${M().sectionHead('Holdings', `${holdings.length} positions`, '<button type="button" class="lc-section-action" data-nav="portfolio">Full table →</button>')}
 
     <div class="lc-filter-bar cap-reveal">
-      <select class="home-filter" aria-label="Sort holdings" onchange="Home.setSortBy(this.value)">
+      <select class="home-filter" aria-label="Sort holdings" data-action-change="Home.setSortBy">
         <option value="value" ${_sortBy === 'value' ? 'selected' : ''}>Sort: Value</option>
         <option value="gain" ${_sortBy === 'gain' ? 'selected' : ''}>Sort: Gain %</option>
         <option value="yield" ${_sortBy === 'yield' ? 'selected' : ''}>Sort: Dividend %</option>
         <option value="alphabet" ${_sortBy === 'alphabet' ? 'selected' : ''}>Sort: A–Z</option>
       </select>
-      <select class="home-filter" aria-label="Filter by sector" onchange="Home.setFilter(this.value)">
+      <select class="home-filter" aria-label="Filter by sector" data-action-change="Home.setFilter">
         <option value="">All sectors</option>
         ${[...new Set(holdings.map(h => h.sector).filter(Boolean))].map(s => `<option value="${s}" ${_filterSector === s ? 'selected' : ''}>${s}</option>`).join('')}
       </select>
       <div class="lc-pill-group" role="group" aria-label="View mode">
-        <button type="button" class="lc-view-pill ${_viewMode === 'table' ? 'active' : ''}" onclick="Home.setViewMode('table')">Table</button>
-        <button type="button" class="lc-view-pill ${_viewMode === 'list' ? 'active' : ''}" onclick="Home.setViewMode('list')">List</button>
-        <button type="button" class="lc-view-pill ${_viewMode === 'grid' ? 'active' : ''}" onclick="Home.setViewMode('grid')">Grid</button>
+        <button type="button" class="lc-view-pill ${_viewMode === 'table' ? 'active' : ''}" data-action="Home.setViewMode" data-tab="table">Table</button>
+        <button type="button" class="lc-view-pill ${_viewMode === 'list' ? 'active' : ''}" data-action="Home.setViewMode" data-tab="list">List</button>
+        <button type="button" class="lc-view-pill ${_viewMode === 'grid' ? 'active' : ''}" data-action="Home.setViewMode" data-tab="grid">Grid</button>
       </div>
     </div>
 
     <div class="lc-holdings-wrap cap-reveal">${_renderHoldings(holdings)}</div>
 
-    ${M().sectionHead('Insights', 'Brief', '<button type="button" class="lc-section-action" onclick="Navigation.go(\'research\', false, { portfolioIntel: true })">Full analysis →</button>')}
+    ${M().sectionHead('Insights', 'Brief', '<button type="button" class="lc-section-action" data-action="Navigation.goResearchIntel">Full analysis →</button>')}
     <div class="home-insights cap-reveal" style="padding:0 20px 8px">
       ${intel.insights.slice(0, 3).map(i => `<div class="insight-item ${i.severity}">${i.text}</div>`).join('')}
     </div>
@@ -112,7 +112,7 @@ const Home = (() => {
         <thead><tr><th>Symbol</th><th>Last</th><th>Qty</th><th>Value</th><th>Today</th><th>G/L</th><th>Alloc</th></tr></thead>
         <tbody>${sorted.map(h => {
           const day = MarketUI.dailyChgPct(h.symbol, h.price);
-          return `<tr onclick="Navigation.go('research');Research.open('${h.symbol}')">
+          return `<tr data-nav="research">
             <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.name || h.sector || h.broker}</div></td>
             <td>${U.fmt(h.price)}</td>
             <td>${h.kind === 'fund' ? h.quantity.toFixed(2) : h.quantity}</td>
@@ -126,7 +126,7 @@ const Home = (() => {
 
     if (_viewMode === 'grid') {
       return `<div class="holdings-grid">${sorted.map(h => `
-        <div class="holding-card" role="button" tabindex="0" aria-label="View ${h.symbol}" onclick="Navigation.go('research');Research.open('${h.symbol}')">
+        <div class="holding-card" role="button" tabindex="0" aria-label="View ${h.symbol}" data-nav="research">
           <div class="holding-symbol">${h.symbol}</div>
           <div class="holding-price">${U.fmt(h.price)}</div>
           <div class="holding-qty">${h.quantity} units</div>
@@ -136,7 +136,7 @@ const Home = (() => {
     }
 
     return `<div class="holdings-list">${sorted.map(h => `
-      <div class="holding-row" role="button" tabindex="0" aria-label="View ${h.symbol}" onclick="Navigation.go('research');Research.open('${h.symbol}')">
+      <div class="holding-row" role="button" tabindex="0" aria-label="View ${h.symbol}" data-nav="research">
         <div class="holding-left"><div class="holding-symbol">${h.symbol}</div><div class="holding-detail">${h.quantity} @ ${U.fmt(h.price)}</div></div>
         <div class="holding-right"><div class="holding-value">${U.fmt(h.value)}</div><div class="holding-gain ${h.pnlPct >= 0 ? 't-gain' : 't-loss'}">${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(1)}%</div></div>
       </div>`).join('')}</div>`;

@@ -19,7 +19,7 @@ const ImportCsv = (() => {
       <div class="lc-form-block">
         ${_portfolioOptions()}
         <textarea id="csv-input" class="lc-field-input lc-field-textarea" rows="10" placeholder="date,symbol,type,quantity,price,broker&#10;2026-01-15,AAPL,INTL_BUY,10,195,IBKR" aria-label="CSV rows"></textarea>
-        <button type="button" class="psx-btn psx-btn-primary" style="width:100%;margin-top:12px" onclick="ImportCsv._run()">Import rows</button>
+        <button type="button" class="psx-btn psx-btn-primary" style="width:100%;margin-top:12px" data-action="ImportCsv._run">Import rows</button>
         <p id="csv-result" style="margin-top:12px;font-size:13px;color:var(--psx-text-3)"></p>
       </div>
     `);

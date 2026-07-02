@@ -13,14 +13,14 @@ const Signals = (() => {
 
   function _segment() {
     return `<div class="lc-segment perf-tabs cap-tab-bar" role="tablist" style="margin-bottom:12px">
-      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'morning' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'morning'}" onclick="Signals.setTab('morning')">Morning</button>
-      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'intraday' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'intraday'}" onclick="Signals.setTab('intraday')">Intraday</button>
-      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'buy' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'buy'}" onclick="Signals.setTab('buy')">Buy more</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'morning' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'morning'}" data-action="Signals.setTab" data-tab="morning">Morning</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'intraday' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'intraday'}" data-action="Signals.setTab" data-tab="intraday">Intraday</button>
+      <button type="button" class="lc-segment-btn perf-tab cap-tab${_tab === 'buy' ? ' on active' : ''}" role="tab" aria-selected="${_tab === 'buy'}" data-action="Signals.setTab" data-tab="buy">Buy more</button>
     </div>`;
   }
 
   function _signalRow(s, onSymbol) {
-    const click = onSymbol ? `onclick="Research.open('${s.symbol}')"` : '';
+    const click = onSymbol ? `data-action="Research.open" data-symbol="${s.symbol}"` : '';
     return `<div class="os-row cap-reveal" style="cursor:pointer" ${click}>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -39,7 +39,7 @@ const Signals = (() => {
 
   function _intradayRow(s) {
     const cls = s.movePct >= 0 ? 't-gain' : 't-loss';
-    return `<div class="os-row cap-reveal" style="cursor:pointer" onclick="Research.open('${s.symbol}')">
+    return `<div class="os-row cap-reveal" style="cursor:pointer" data-action="Research.open" data-symbol="${s.symbol}">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${s.symbol}</span>
@@ -54,7 +54,7 @@ const Signals = (() => {
 
   function _buyRow(r) {
     const src = r.source === 'both' ? 'Rebalance + morning' : r.source === 'morning' ? 'Morning brief' : 'Rebalance';
-    return `<div class="os-row cap-reveal" style="cursor:pointer" onclick="Research.open('${r.symbol}')">
+    return `<div class="os-row cap-reveal" style="cursor:pointer" data-action="Research.open" data-symbol="${r.symbol}">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${r.symbol}</span>
@@ -142,7 +142,7 @@ const Signals = (() => {
         ? recs.map(_buyRow).join('')
         : '<div style="color:var(--os-text-secondary);padding:8px 0">No ADD signals — set target weights in Tax &amp; Rebalance or wait for morning brief upgrades.</div>')}
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">Set target weights</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">Set target weights</button>
       </div>
       <div class="lc-disclaimer">Illustrative lot sizes — verify cash and broker limits before trading.</div>
     </div>`;
@@ -171,8 +171,8 @@ const Signals = (() => {
       return `<div class="os-row">
         <div class="os-row-sym">${h.symbol}</div>
         <div style="display:flex;gap:6px">
-          <button type="button" class="btn-sm ${book === 'core' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','core')">Core</button>
-          <button type="button" class="btn-sm ${book === 'swing' ? 'btn-primary' : 'btn-ghost'}" onclick="Signals.setBook('${h.symbol}','${h.broker}','swing')">Swing</button>
+          <button type="button" class="btn-sm ${book === 'core' ? 'btn-primary' : 'btn-ghost'}" data-action="Signals.setBook" data-symbol="${h.symbol}" data-broker="${h.broker}" data-tab="core">Core</button>
+          <button type="button" class="btn-sm ${book === 'swing' ? 'btn-primary' : 'btn-ghost'}" data-action="Signals.setBook" data-symbol="${h.symbol}" data-broker="${h.broker}" data-tab="swing">Swing</button>
         </div>
       </div>`;
     }).join('');

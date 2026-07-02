@@ -74,6 +74,43 @@ ${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || 
     return true;
   }
 
-  return { exportCsv, exportHtml };
+  function exportCgtHtml(year) {
+    year = year || _year();
+    if (typeof PilotEngine === 'undefined') return false;
+    const r = PilotEngine.buildCgtReport(State.get());
+    const fmt = (n) => PlatformUI.fmt(n);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap CGT ${year}</title>
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
+@media print{body{padding:12px}}</style></head><body>
+<h1>LedgerCap — Capital Gains Tax Estimate ${year}</h1>
+<p>Generated ${new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' })} PKT · ${r.disclaimer}</p>
+<div class="summary">
+<div><strong>Filer status</strong><br>${r.is_filer ? 'Filer' : 'Non-filer'}</div>
+<div><strong>Unrealized gain</strong><br>${fmt(r.total_unrealized_gain)}</div>
+<div><strong>Est. tax</strong><br>${fmt(r.total_estimated_tax)}</div>
+<div><strong>Short / long lots</strong><br>${r.short_term_count} / ${r.long_term_count} (${r.short_term_rate_pct}% / ${r.long_term_rate_pct}%)</div>
+<div><strong>Missing buy dates</strong><br>${r.lots_missing_date}</div>
+</div>
+<table><thead><tr><th>Symbol</th><th>Qty</th><th>P&amp;L</th><th>Tier</th><th>Days</th><th>Est. tax</th></tr></thead><tbody>
+${r.lots.filter(l => l.pl > 0).map(l => `<tr><td>${l.symbol}</td><td>${l.quantity}</td><td>${fmt(l.pl)}</td><td>${l.tier}</td><td>${l.days_held ?? '—'}</td><td>${l.estimated_tax ? fmt(l.estimated_tax) : '—'}</td></tr>`).join('')}
+</tbody></table>
+<p style="font-size:11px;color:#666;margin-top:24px">Print or Save as PDF from browser. Not tax advice.</p>
+<script>window.onload=function(){window.print()}</script></body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) return false;
+    w.document.write(html);
+    w.document.close();
+    return true;
+  }
+
+  function exportCgtPdf(year) {
+    return exportCgtHtml(year);
+  }
+
+  return { exportCsv, exportHtml, exportCgtHtml, exportCgtPdf };
 })();
 window.StatementExport = StatementExport;

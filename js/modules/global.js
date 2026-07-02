@@ -31,7 +31,7 @@ const Global = (() => {
   function _listHtml(list) {
     const shown = list.slice(0, 80);
     return `
-      ${shown.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
+      ${shown.map(r => `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
         <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
         <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${typeof Prices !== 'undefined' && Prices.priceBadge ? Prices.priceBadge(r.symbol) : ''}</div>
         <div class="lc-market-chg">${r.held ? r.qty + ' held · ' + PsxUI.fmt(r.pkr) : PsxUI.fmt(r.pkr)}</div>
@@ -79,9 +79,9 @@ const Global = (() => {
       </div>
       <div class="lc-sector-card" id="global-list">${_listHtml(list)}</div>
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-primary" onclick="Global._refreshQuotes()">Refresh FX &amp; quotes</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction('INTL_BUY')">Add US stock</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddTransaction('CRYPTO_BUY')">Add crypto</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="Global._refreshQuotes">Refresh FX &amp; quotes</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction" data-tab="INTL_BUY">Add US stock</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction" data-tab="CRYPTO_BUY">Add crypto</button>
       </div>
     `);
 

@@ -10,7 +10,7 @@ const Commodities = (() => {
       ? PsxUI.fmt(r.price) + '/g'
       : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const pkrLine = r.manual ? '' : `<em>≈ ${PsxUI.fmt(r.pkr)}</em>`;
-    return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'onclick="Navigation.go(\'settings\')"' : ''}>
+    return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'data-nav="settings"' : ''}>
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
       <div class="lc-market-price">${priceLabel}</div>
       <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'} ${pkrLine}</div>
@@ -43,8 +43,8 @@ const Commodities = (() => {
       <p class="lc-card-sub">Spot proxies via Yahoo (GC=F, SI=F, CL=F). PKR gold uses Settings — links to Zakat calculator.</p>
       <div class="lc-sector-card" id="commodities-list">${listInner}</div>
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-primary" onclick="Commodities.refresh()">Refresh</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('zakat')">Zakat calculator →</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="zakat">Zakat calculator →</button>
       </div>
       <div class="lc-disclaimer">Illustrative spot prices — not a trading feed. Verify before zakat or hedging decisions.</div>
     `);

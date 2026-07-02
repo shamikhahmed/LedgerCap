@@ -60,7 +60,7 @@ const InsightsScreen = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Insights</h1><p>Pilot score · benchmark · history</p></div>
-        ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;
@@ -110,7 +110,7 @@ const InsightsScreen = (() => {
       </div>
 
       <div class="lc-dash-section">
-        <div class="lc-dash-section-head"><h3>Zakat snapshot</h3><button type="button" class="lc-section-action" onclick="Navigation.go('zakat')">Calculator →</button></div>
+        <div class="lc-dash-section-head"><h3>Zakat snapshot</h3><button type="button" class="lc-section-action" data-nav="zakat">Calculator →</button></div>
         <div class="lc-metric-grid">
           <div class="lc-metric-cell"><label>Est. due</label><strong>${PsxUI.fmt(zakat.due)}</strong></div>
           <div class="lc-metric-cell"><label>Zakatable</label><strong>${PsxUI.fmt(zakat.zakatable)}</strong></div>
@@ -128,8 +128,8 @@ const InsightsScreen = (() => {
       </div>` : ''}
 
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('risk-audit')">Risk audit</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('performance')">Performance</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="risk-audit">Risk audit</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="performance">Performance</button>
       </div>
       <div class="lc-disclaimer">Smart Assistant summary — not financial advice. Benchmark is illustrative only.</div>
     </div>`;

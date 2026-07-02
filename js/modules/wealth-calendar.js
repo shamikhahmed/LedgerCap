@@ -84,13 +84,13 @@ const WealthCalendar = (() => {
         <p>Dividends · IPO · corporate actions in your portfolio</p>
       </div>
       <div class="lc-filter-bar cap-reveal" style="justify-content:space-between;align-items:center">
-        <button type="button" class="btn-ghost btn-sm" onclick="WealthCalendar.setMonth('${prevKey}')">←</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${prevKey}">←</button>
         <strong>${label}</strong>
-        <button type="button" class="btn-ghost btn-sm" onclick="WealthCalendar.setMonth('${nextKey}')">→</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${nextKey}">→</button>
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
-          <button type="button" class="lc-market-row cap-reveal" onclick="Research.open('${e.symbol}')">
+          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${e.symbol}">
             <div>
               <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
               <div class="lc-market-name">${e.kind} · ${e.detail}</div>
@@ -99,8 +99,8 @@ const WealthCalendar = (() => {
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('dividends')">Dividends</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">IPO calendar</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="dividends">Dividends</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">IPO calendar</button>
       </div>
     </div>`;
     CapMotion.refresh();

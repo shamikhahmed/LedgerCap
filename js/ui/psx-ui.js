@@ -29,13 +29,17 @@ const PsxUI = (() => {
     return { value: k.value, changeP: chg, ts: k.ts, cls: chg == null ? '' : (chg >= 0 ? 'psx-up' : 'psx-down') };
   }
 
+  function _act(expr) {
+    return String(expr || 'App.refreshPrices').replace(/\(\)$/, '').replace(/\(\)/g, '');
+  }
+
   function strip(onRefresh) {
     const k = kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     return `<div class="psx-strip">
       <div><span class="psx-live"><span class="psx-live-dot"></span>${I18n.t('liveMarket')}</span></div>
       <div><strong>KSE-100</strong> ${k.value ? fmtIndex(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
-      <button type="button" class="psx-strip-refresh" onclick="${onRefresh || 'App.refreshPrices()'}">${I18n.t('refresh')}</button>
+      <button type="button" class="psx-strip-refresh" data-action="${_act(onRefresh)}">${I18n.t('refresh')}</button>
     </div>`;
   }
 
@@ -66,23 +70,25 @@ const PsxUI = (() => {
   }
 
   function panel(title, desc, openOn, inner) {
+    const openAct = openOn ? _act(openOn) : '';
     return `<div class="psx-panel">
       <div class="psx-panel-head">
         <div><strong>${title}</strong><span>${desc}</span></div>
-        ${openOn ? `<button type="button" class="psx-open" onclick="${openOn}">${I18n.t('open')}</button>` : ''}
+        ${openAct ? `<button type="button" class="psx-open" data-action="${openAct}">${I18n.t('open')}</button>` : ''}
       </div>
       ${inner || ''}
     </div>`;
   }
 
-  function sectorTable(sectors, onRow) {
+  function sectorTable(sectors, rowAction) {
+    rowAction = rowAction || 'Research.open';
     return Object.keys(sectors).sort().map(sec => `
       <div class="psx-sector"><span>${sec}</span><span>${sectors[sec].length} stocks</span></div>
       <div class="psx-table-wrap"><table class="psx-table"><thead><tr>
         <th>${I18n.t('market.symbol')}</th><th>${I18n.t('market.last')}</th><th>${I18n.t('market.chg')}</th>
       </tr></thead><tbody>
       ${sectors[sec].map(r => `
-        <tr onclick="${onRow ? onRow(r.symbol) : ''}">
+        <tr data-action="${rowAction}" data-symbol="${r.symbol}" style="cursor:pointer">
           <td><div class="psx-sym">${r.symbol}</div><div class="psx-sym-sub">${r.name}</div></td>
           <td>${fmt(r.price)}</td>
           <td class="${chgCls(r.chg)}">${fmt(r.chg, { pct: true, signed: true })}</td>
@@ -92,7 +98,7 @@ const PsxUI = (() => {
 
   function filters(items, active, ns) {
     return `<div class="psx-filters">${items.map(it => `
-      <button type="button" class="psx-filter${active === it.id ? ' on' : ''}" onclick="${ns}.setFilter('${it.id}')">${it.label}</button>
+      <button type="button" class="psx-filter${active === it.id ? ' on' : ''}" data-action="${ns}.setFilter" data-tab="${it.id}">${it.label}</button>
     `).join('')}</div>`;
   }
 
@@ -107,7 +113,7 @@ const PsxUI = (() => {
   function segment(items, active, ns, method) {
     method = method || 'setFilter';
     return `<div class="lc-segment" role="tablist">${items.map(it =>
-      `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" onclick="${ns}.${method}('${it.id}')">${it.label}</button>`
+      `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" data-action="${ns}.${method}" data-tab="${it.id}">${it.label}</button>`
     ).join('')}</div>`;
   }
 
@@ -141,7 +147,7 @@ const PsxUI = (() => {
 
   function errorState(title, sub, retryOn) {
     const btn = retryOn
-      ? `<button type="button" class="psx-btn psx-btn-ghost" onclick="${retryOn}">Try again</button>`
+      ? `<button type="button" class="psx-btn psx-btn-ghost" data-action="${_act(retryOn)}">Try again</button>`
       : '';
     return `<div class="lc-error-state" role="alert">
       <div class="lc-error-icon" aria-hidden="true">!</div>

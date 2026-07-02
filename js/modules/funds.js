@@ -19,7 +19,7 @@ const Funds = (() => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
       const nav = State.getPrice(f.symbol) || f.currentNav || 0;
       const invested = (f.units || 0) * (f.avgNav || 0);
-      return `<button type="button" class="lc-market-row" onclick="Research.open('${f.symbol}')">
+      return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${f.symbol}">
         <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
         <div class="lc-market-chg ${PsxUI.chgCls(a.oneYearReturn)}">${invested ? 'Inv ' + PsxUI.fmt(invested) : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—')}</div>
@@ -60,7 +60,7 @@ const Funds = (() => {
         <p class="lc-search-hint">Type to shortlist — list updates in place</p>
       </div>
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
-      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button></div>
+      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button></div>
     `);
 
     const inp = document.getElementById('funds-search');

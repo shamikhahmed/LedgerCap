@@ -31,7 +31,7 @@ const More = (() => {
         </div>
         <div class="lc-tool-grid" style="margin-top:8px">
           ${ITEMS().map(it => `
-            <button type="button" class="lc-tool-card" onclick="Navigation.go('${it.id}')">
+            <button type="button" class="lc-tool-card" data-nav="${it.id}">
               <strong>${it.t}</strong>
               <span>${it.d}</span>
             </button>`).join('')}

@@ -11,7 +11,7 @@ const StockComparison = (() => {
     const symbols = holdings.map(h => h.symbol);
 
     if (symbols.length < 2) {
-      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState(LcIcons.icon('scale', 28), 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState(LcIcons.icon('scale', 28), 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }
@@ -27,11 +27,11 @@ const StockComparison = (() => {
     <div class="lc-screen-head"><h1>Compare</h1><p>Side by side · ${sym1} vs ${sym2}</p></div>
     <div class="comp-header cap-reveal" style="padding-top:0">
       <div class="comp-selectors">
-        <select class="comp-select" onchange="StockComparison._selectSymbol(1, this.value)">
+        <select class="comp-select" data-action-change="StockComparison._selectSymbol">
           <option value="">Select Stock 1</option>
           ${symbols.map(s => `<option value="${s}" ${sym1 === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
-        <select class="comp-select" onchange="StockComparison._selectSymbol(2, this.value)">
+        <select class="comp-select" data-action-change="StockComparison._selectSymbol">
           <option value="">Select Stock 2</option>
           ${symbols.map(s => `<option value="${s}" ${sym2 === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>

@@ -142,7 +142,7 @@ const Income = (() => {
         <div style="font-size:0.88rem;font-weight:600;">Log this month's salary</div>
         <div style="font-size:0.72rem;color:var(--text3);margin-top:2px;">Track your savings rate accurately</div>
       </div>
-      <button type="button" class="btn-ghost" onclick="App.openAddTransaction('SALARY')">+ Log</button>
+      <button type="button" class="btn-ghost" data-action="App.openAddTransaction" data-tab="SALARY">+ Log</button>
     </div>` : ''}
 
     <div class="sec-head"><span class="sec-title">SIP Target</span></div>
@@ -255,8 +255,8 @@ const Income = (() => {
     </div>` : ''}
 
     <div style="padding:16px;display:flex;gap:8px;">
-      <button type="button" class="btn-secondary" style="flex:1;" onclick="App.openAddTransaction('SALARY')">+ Log Salary</button>
-      <button type="button" class="btn-secondary" style="flex:1;" onclick="App.openAddTransaction('DIVIDEND')">+ Log Dividend</button>
+      <button type="button" class="btn-secondary" style="flex:1;" data-action="App.openAddTransaction" data-tab="SALARY">+ Log Salary</button>
+      <button type="button" class="btn-secondary" style="flex:1;" data-action="App.openAddTransaction" data-tab="DIVIDEND">+ Log Dividend</button>
     </div>
     <div style="height:8px;"></div>`;
   }

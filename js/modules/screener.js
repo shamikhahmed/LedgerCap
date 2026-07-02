@@ -31,7 +31,7 @@ const Screener = (() => {
   }
 
   function _listHtml(rows) {
-    return rows.map(r => `<button type="button" class="lc-market-row" onclick="Research.open('${r.symbol}')">
+    return rows.map(r => `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">P/E ${r.pe ?? '—'} · Yld ${r.divYield ? r.divYield + '%' : '—'}</div></div>
       <div class="lc-market-price">${PsxUI.fmt(r.price)}</div>
       <div class="lc-market-chg ${PsxUI.chgCls(r.profitGrowth)}">${r.profitGrowth != null ? r.profitGrowth + '% gr' : '—'}</div>

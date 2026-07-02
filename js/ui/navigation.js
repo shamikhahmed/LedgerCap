@@ -22,12 +22,13 @@ const Navigation = (() => {
     { id: 'risk-audit', labelKey: 'tools.riskAudit.t' },
     { id: 'insights', labelKey: 'tools.insightsTool.t' },
     { id: 'pilot-tools', labelKey: 'tools.pilotTools.t' },
+    { id: 'paper-trade', labelKey: 'tools.paperTrade.t' },
     { id: 'transactions', labelKey: 'tools.transactions.t' },
     { id: 'settings', labelKey: 'more.title' },
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools', 'paper-trade']);
 
   let _current = 'home';
 
@@ -54,7 +55,7 @@ const Navigation = (() => {
         <nav aria-label="Primary">${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <div style="height:1px;background:var(--psx-border);margin:16px 8px"></div>
         <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 18) : ''}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
-        <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
+        <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" data-action="window.toggleTheme">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
     const saved = sessionStorage.getItem('ledgercap_tab');
@@ -134,6 +135,7 @@ const Navigation = (() => {
       performance: () => Performance.render(),
       journal: () => Journal.render(),
       'pilot-tools': () => PilotTools.render(),
+      'paper-trade': () => PaperTrade.render(),
     };
     if (map[id]) map[id]();
   }

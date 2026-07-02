@@ -92,7 +92,7 @@ const PortfolioScreen = (() => {
           <div class="lc-empty-state">
             <h2>No positions yet</h2>
             <p>Pick a portfolio above or add your first holding.</p>
-            <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddTransaction()">${I18n.t('addHoldings')}</button>
+            <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           </div>
         </div>`;
       return;
@@ -114,7 +114,7 @@ const PortfolioScreen = (() => {
     const chartBlock = typeof Charts !== 'undefined' ? `
           <div class="lc-pnl-chart-wrap">
             <div class="lc-range-picker" role="tablist" aria-label="Chart range">
-              ${ranges.map((r) => `<button type="button" role="tab" class="lc-range-btn${_chartRange === r ? ' on' : ''}" aria-selected="${_chartRange === r}" onclick="PortfolioScreen.setChartRange('${r}')">${r}</button>`).join('')}
+              ${ranges.map((r) => `<button type="button" role="tab" class="lc-range-btn${_chartRange === r ? ' on' : ''}" aria-selected="${_chartRange === r}" data-action="PortfolioScreen.setChartRange" data-tab="${r}">${r}</button>`).join('')}
             </div>
             ${Charts.lineChartBlock(chartSeries, {
               height: 128,
@@ -132,7 +132,7 @@ const PortfolioScreen = (() => {
         <div class="lc-dash-section">
           <div class="lc-dash-section-head">
             <h3>${I18n.t('portfolio.bucketsTitle')}</h3>
-            <span>${_filter ? `<button type="button" class="lc-link-btn" onclick="PortfolioScreen.clearFilter()">Show all</button>` : I18n.t('portfolio.bucketsSub')}</span>
+            <span>${_filter ? `<button type="button" class="lc-link-btn" data-action="PortfolioScreen.clearFilter">Show all</button>` : I18n.t('portfolio.bucketsSub')}</span>
           </div>
           ${cards}
         </div>
@@ -166,27 +166,27 @@ const PortfolioScreen = (() => {
             <th>Symbol</th><th class="lc-spark-cell" aria-hidden="true"></th><th>Qty</th><th>Last</th><th>Value</th><th>G/L</th><th></th>
           </tr></thead><tbody>
           ${holdings.map(h => `<tr>
-            <td onclick="Navigation.go('research');Research.open('${h.symbol}')"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
+            <td data-nav="research"><div class="psx-sym">${h.symbol}</div><div class="psx-sym-sub">${h.broker}</div></td>
             <td class="lc-spark-cell">${typeof Charts !== 'undefined' ? Charts.holdingSpark(h) : ''}</td>
-            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
-            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
-            <td class="lc-num" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
-            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" onclick="Navigation.go('research');Research.open('${h.symbol}')">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
+            <td class="lc-num" data-nav="research">${h.kind === 'fund' ? h.quantity.toFixed(2) : PsxUI.fmtNum(h.quantity, 2)}</td>
+            <td class="lc-num" data-nav="research">${h.kind === 'intl' || h.kind === 'crypto' ? '$' + Number(FxService.pkrToUsd(h.price)).toFixed(2) + '<br><small>' + PsxUI.fmt(h.price) + '</small>' : PsxUI.fmt(h.price)}</td>
+            <td class="lc-num" data-nav="research">${PsxUI.fmt(h.value)}${h.kind === 'intl' || h.kind === 'crypto' ? '<br><small>Cost ' + PsxUI.fmt(h.costBasis) + '</small>' : ''}</td>
+            <td class="lc-num ${PsxUI.chgCls(h.pnlPct)}" data-nav="research">${PsxUI.fmt(h.pnlPct, { pct: true, signed: true })}</td>
             <td style="white-space:nowrap">
-              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();App.openPriceAlert('${h.symbol}')">Alert</button>
-              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();PortfolioScreen.reconcile('${h.symbol}','${(h.broker || '').replace(/'/g, "\\'")}','${h.kind}')">Edit</button>
-              <button type="button" class="lc-link-btn" onclick="event.stopPropagation();Transactions.openSymbol('${h.symbol}')">Txs</button>
+              <button type="button" class="lc-link-btn" data-action="App.openPriceAlert" data-symbol="${h.symbol}" data-stop="1">Alert</button>
+              <button type="button" class="lc-link-btn" data-action="PortfolioScreen.reconcile" data-symbol="${h.symbol}" data-broker="${(h.broker || '').replace(/"/g, '&quot;')}" data-mode="${h.kind}" data-stop="1">Edit</button>
+              <button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-symbol="${h.symbol}" data-stop="1">Txs</button>
             </td>
           </tr>`).join('')}
           </tbody></table>
         </div>` : `<div class="lc-empty-state" style="margin-top:0">
           <h2>No holdings in this portfolio</h2>
           <p>Add ${active ? active.name.toLowerCase() : 'positions'} to start tracking.</p>
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || 'rafi'}')">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter || 'rafi'}">${I18n.t('addHoldings')}</button>
         </div>`}
         <div class="lc-dash-actions" style="margin-top:var(--lc-space-6)">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.openAddForPortfolio('${_filter || ''}')">${I18n.t('addHoldings')}</button>
-          <button type="button" class="psx-btn psx-btn-ghost" onclick="App.openAddPortfolio()">+ ${I18n.t('portfolio.addBucket')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.openAddForPortfolio" data-tab="${_filter || ''}">${I18n.t('addHoldings')}</button>
+          <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddPortfolio">+ ${I18n.t('portfolio.addBucket')}</button>
         </div>
       </div>`;
   }

@@ -29,7 +29,7 @@ const RiskAudit = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Risk audit</h1><p>Concentration · tax · allocation drift</p></div>
-        ${MarketUI.emptyState(LcIcons.icon('shield', 28), 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('shield', 28), 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;
@@ -72,9 +72,9 @@ const RiskAudit = (() => {
       `)}
 
       <div class="lc-dash-actions">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('pilot-tools')">Tax &amp; Rebalance</button>
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('signals')">Signals</button>
-        <button type="button" class="psx-btn psx-btn-primary" onclick="Research.setMode('portfolio');Navigation.go('research', false, { portfolioIntel: true })">Portfolio intel</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="pilot-tools">Tax &amp; Rebalance</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-nav="signals">Signals</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="Navigation.goResearchIntel">Portfolio intel</button>
       </div>
       <div class="lc-disclaimer">${report.disclaimer}</div>
     </div>`;

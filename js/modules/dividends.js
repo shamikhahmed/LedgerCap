@@ -17,7 +17,7 @@ const Dividends = (() => {
 
   function _tabBar() {
     return `<div class="div-tabs cap-tab-bar cap-reveal">${_tabs().map(t =>
-      `<button type="button" class="div-tab cap-tab${_tab === t.id ? ' active' : ''}" onclick="Dividends.setTab('${t.id}')">${t.label}</button>`
+      `<button type="button" class="div-tab cap-tab${_tab === t.id ? ' active' : ''}" data-action="Dividends.setTab" data-tab="${t.id}">${t.label}</button>`
     ).join('')}</div>`;
   }
 
@@ -60,7 +60,7 @@ const Dividends = (() => {
         <th>Company</th><th>Amount/sh</th><th>Ex-Date</th><th>Record</th><th>Payment</th><th>Your Income</th>
       </tr></thead><tbody>
       ${dash.upcoming.filter(u => u.isHeld).slice(0, 8).map(u => `
-        <tr onclick="Research.open('${u.symbol}')">
+        <tr data-action="Research.open" data-symbol="${u.symbol}">
           <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate || '—'}</td>
@@ -75,7 +75,7 @@ const Dividends = (() => {
         <th>Stock</th><th>Annual Income</th><th>Received</th><th>YoC</th><th>Yield</th><th>CAGR</th>
       </tr></thead><tbody>
       ${dash.byStock.map(h => `
-        <tr onclick="Research.open('${h.symbol}')">
+        <tr data-action="Research.open" data-symbol="${h.symbol}">
           <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${U.fmt(h.totalReceived)}</td>
@@ -97,7 +97,7 @@ const Dividends = (() => {
         <th>Company</th><th>Amount/sh</th><th>Ex-Dividend</th><th>Record Date</th><th>Payment Date</th><th>Shares</th><th>Expected Income</th>
       </tr></thead><tbody>
       ${all.map(u => `
-        <tr onclick="Research.open('${u.symbol}')">
+        <tr data-action="Research.open" data-symbol="${u.symbol}">
           <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate}</td>
@@ -114,12 +114,12 @@ const Dividends = (() => {
       <div class="div-cal-month cap-reveal">
         <div class="div-cal-month-title">${new Date(m.month + '-01').toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}</div>
         ${m.paymentEvents.length ? `<div class="div-cal-section-label">Payment dates</div>` + m.paymentEvents.map(e => `
-          <div class="rt-div-event" onclick="Research.open('${e.symbol}')">
+          <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
             <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size:0.68rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
             <div class="t-gain">${e.isHeld ? U.fmt(e.expectedIncome) : '—'}</div>
           </div>`).join('') : ''}
         ${m.exEvents.length ? `<div class="div-cal-section-label">Ex-dividend dates</div>` + m.exEvents.map(e => `
-          <div class="rt-div-event" onclick="Research.open('${e.symbol}')">
+          <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
             <div><strong>${e.symbol}</strong> · Ex ${e.exDate}</div>
             <div style="font-size:0.72rem;color:var(--os-text-tertiary)">Record ${e.recordDate}</div>
           </div>`).join('') : ''}
@@ -127,22 +127,37 @@ const Dividends = (() => {
   }
 
   function _holdings(holdings) {
+    const drip = State.get('dripSettings') || {};
     return holdings.length ? `
       <div class="rt-table-wrap cap-reveal"><table class="rt-table"><thead><tr>
-        <th>Holding</th><th>Shares</th><th>Annual Income</th><th>Monthly</th><th>YoC</th><th>Current Yield</th><th>CAGR</th><th>Received</th>
+        <th>Holding</th><th>Shares</th><th>Annual Income</th><th>YoC</th><th>Yield</th><th>DRIP</th><th>Received</th>
       </tr></thead><tbody>
-      ${holdings.map(h => `
-        <tr onclick="Research.open('${h.symbol}')">
+      ${holdings.map(h => {
+        const yoc = DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares);
+        const on = !!drip[h.symbol]?.reinvest;
+        return `
+        <tr data-action="Research.open" data-symbol="${h.symbol}" style="cursor:pointer">
           <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
           <td>${h.shares}</td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
-          <td>${U.fmt(h.monthlyIncome)}</td>
-          <td>${h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—'}</td>
+          <td>${yoc != null ? yoc.toFixed(1) + '%' : (h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—')}</td>
           <td>${h.currentYield != null ? h.currentYield.toFixed(1) + '%' : '—'}</td>
-          <td>${h.dividendCagr != null ? h.dividendCagr.toFixed(1) + '%' : '—'}</td>
+          <td><label data-action="event.stopPropagation"><input type="checkbox" data-action-change="Dividends.toggleDrip" data-symbol="${h.symbol}"${on ? ' checked' : ''}> Reinvest</label></td>
           <td>${U.fmt(h.totalReceived)}</td>
-        </tr>`).join('')}
-      </tbody></table></div>` : '<div class="os-section" style="color:var(--os-text-secondary);">No holdings with dividend data.</div>';
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>
+      <p style="font-size:0.72rem;color:var(--os-text-tertiary);padding:8px 16px">DRIP flags track reinvestment intent — log buys when you reinvest dividends.</p>` : '<div class="os-section" style="color:var(--os-text-secondary);">No holdings with dividend data.</div>';
+  }
+
+  function toggleDrip(symbol, enabled) {
+    symbol = (symbol || '').toUpperCase();
+    State.update((s) => {
+      if (!s.dripSettings) s.dripSettings = {};
+      s.dripSettings[symbol] = { reinvest: !!enabled };
+    });
+    if (window.App?.showToast) App.showToast(`DRIP ${enabled ? 'on' : 'off'} for ${symbol}`, 'ok');
+    render();
   }
 
   function _history(timeline) {
@@ -179,11 +194,11 @@ const Dividends = (() => {
           <td><strong>${t.symbol}</strong></td>
           <td>${t.broker || '—'}</td>
           <td class="t-gain">${U.fmt(t.amount)}</td>
-          <td><button type="button" class="lc-link-btn" onclick="Transactions.openSymbol('${t.symbol}')">Txs</button></td>
+          <td><button type="button" class="lc-link-btn" data-action="Transactions.openSymbol" data-tab="${t.symbol}">Txs</button></td>
         </tr>`).join('')}
       </tbody></table></div>
       <div class="lc-dash-actions" style="margin-top:8px">
-        <button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('dividend')">All dividend txs</button>
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="dividend">All dividend txs</button>
       </div>`;
     })());
 
@@ -192,7 +207,7 @@ const Dividends = (() => {
         <th>Symbol</th><th>Type</th><th>Amount</th><th>Ex-Date</th><th>Record</th><th>Payment</th><th>Status</th>
       </tr></thead><tbody>
       ${corp.slice(0, 40).map(c => `
-        <tr onclick="Research.open('${c.symbol}')">
+        <tr data-action="Research.open" data-symbol="${c.symbol}">
           <td><strong>${c.symbol}</strong></td>
           <td>${c.actionType}</td>
           <td>${typeof c.amount === 'number' ? '₨' + c.amount : c.amount}</td>
@@ -226,7 +241,7 @@ const Dividends = (() => {
         <th>Symbol</th><th>Annual DPS</th><th>Shares</th><th>Annual Income</th><th>Next Event</th><th>Next Income</th>
       </tr></thead><tbody>
       ${forecast.holdings.map(h => `
-        <tr onclick="Research.open('${h.symbol}')">
+        <tr data-action="Research.open" data-symbol="${h.symbol}">
           <td><strong>${h.symbol}</strong></td>
           <td>₨${h.annualDps.toFixed(2)}</td>
           <td>${h.shares}</td>
@@ -239,7 +254,7 @@ const Dividends = (() => {
 
   function _growth(growth) {
     return growth.length ? growth.map(g => `
-      <div class="os-card cap-reveal" style="margin:0 20px 12px;cursor:pointer;" onclick="Research.open('${g.symbol}')">
+      <div class="os-card cap-reveal" style="margin:0 20px 12px;cursor:pointer;" data-action="Research.open" data-symbol="${g.symbol}">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div><strong>${g.symbol}</strong> <span class="rt-badge rt-${g.trend === 'growing' ? 'buy' : g.trend === 'declining' ? 'sell' : 'hold'}">${g.trend}</span></div>
           <div style="text-align:right;"><div class="t-gain" style="font-weight:700;">${g.cagr != null ? g.cagr.toFixed(1) + '% CAGR' : '—'}</div>
@@ -281,6 +296,6 @@ const Dividends = (() => {
     CapMotion.refresh();
   }
 
-  return { render, setTab };
+  return { render, setTab, toggleDrip };
 })();
 window.Dividends = Dividends;

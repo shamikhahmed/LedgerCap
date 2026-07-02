@@ -63,7 +63,7 @@ const Transactions = (() => {
           <h1>Transactions</h1>
           <p>${filtered.length} of ${sum.count} entries${filterLabel ? ` · ${filterLabel}` : ''}${_showInternal ? ' · incl. internal' : ''}</p>
         </div>
-        <button type="button" class="lc-section-action" onclick="App.openAddTransaction()">+ Add</button>
+        <button type="button" class="lc-section-action" data-action="App.openAddTransaction">+ Add</button>
       </div>
 
       <div class="lc-pulse-row">
@@ -82,10 +82,10 @@ const Transactions = (() => {
           ).join('')}
           <button type="button" class="lc-view-pill${_showInternal ? ' active' : ''}" data-internal="1">Internal</button>
         </div>
-        <button type="button" class="lc-section-action" onclick="Transactions.exportCsv()" style="margin-left:auto">Export CSV</button>
+        <button type="button" class="lc-section-action" data-action="Transactions.exportCsv" style="margin-left:auto">Export CSV</button>
       </div>
 
-      ${filterLabel ? `<div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" onclick="Transactions.setFilter('all')">Clear filter</button></div>` : ''}
+      ${filterLabel ? `<div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="all">Clear filter</button></div>` : ''}
 
       ${!filtered.length ? `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Try another filter or add a transaction</div></div>` : ''}
 
@@ -204,15 +204,15 @@ const Transactions = (() => {
     ].filter(Boolean);
 
     const links = [];
-    if (tx.symbol) links.push(`<button type="button" class="psx-btn psx-btn-ghost" onclick="App.closeBottomSheet();Navigation.go('research');Research.open('${tx.symbol}')">Research ${tx.symbol}</button>`);
-    links.push(`<button type="button" class="psx-btn psx-btn-ghost" onclick="App.closeBottomSheet();Transactions.openSymbol('${tx.symbol || ''}')">All ${tx.symbol || 'bucket'} txs</button>`);
+    if (tx.symbol) links.push(`<button type="button" class="psx-btn psx-btn-ghost" data-action="App.closeBottomSheet">Research ${tx.symbol}</button>`);
+    links.push(`<button type="button" class="psx-btn psx-btn-ghost" data-action="App.closeBottomSheet">All ${tx.symbol || 'bucket'} txs</button>`);
     const bid = TL.bucketId(tx);
-    if (bid) links.push(`<button type="button" class="psx-btn psx-btn-ghost" onclick="App.closeBottomSheet();Transactions.openBucket('${bid}')">Portfolio txs</button>`);
+    if (bid) links.push(`<button type="button" class="psx-btn psx-btn-ghost" data-action="App.closeBottomSheet">Portfolio txs</button>`);
 
     const relatedHtml = related.length ? `
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--lc-border)">
         <p style="font-size:0.72rem;font-weight:700;margin-bottom:8px;color:var(--text2)">Linked transactions</p>
-        ${related.map(r => `<div class="detail-stat" style="cursor:pointer" onclick="App.closeBottomSheet();Transactions._openDetail('${r.id}')">
+        ${related.map(r => `<div class="detail-stat" style="cursor:pointer" data-action="App.closeBottomSheet">
           <span class="detail-stat-label">${r.date} · ${TL.title(r)}</span>
           <span class="detail-stat-value">${TL.formatAmount(r)}</span>
         </div>`).join('')}
@@ -220,7 +220,7 @@ const Transactions = (() => {
 
     const isPendingIpo = tx.type === 'IPO_SUBSCRIBE' && (tx.status || 'pending') === 'pending';
     const listBtn = isPendingIpo
-      ? `<button type="button" class="btn-primary" style="margin-bottom:8px;" onclick="App.openMarkIpoListed('${id}')">Mark as Listed → CDC</button>`
+      ? `<button type="button" class="btn-primary" style="margin-bottom:8px;" data-action="App.openMarkIpoListed" data-tab="${id}">Mark as Listed → CDC</button>`
       : '';
 
     const content = `<div style="padding:0 16px 16px;">
@@ -229,7 +229,7 @@ const Transactions = (() => {
       <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">${links.join('')}</div>
       <div style="margin-top:16px;">
         ${listBtn}
-        <button type="button" class="btn-danger" onclick="App.deleteTransaction('${id}')">Delete Transaction</button>
+        <button type="button" class="btn-danger" data-action="App.deleteTransaction" data-tab="${id}">Delete Transaction</button>
       </div>
     </div>`;
 

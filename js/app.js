@@ -82,7 +82,7 @@ const App = (() => {
     else if (pktLabel === 'Last close' || pktLabel === 'Pre-market') label = `${pktLabel} · ${age}`;
     else label = stale ? `Prices ${age}` : `Updated ${age}`;
     const cls = live ? 'lc-freshness--live' : offline || stale || pktLabel === 'Last close' ? 'lc-freshness--warn' : 'lc-freshness--ok';
-    return `<button type="button" class="lc-freshness-chip ${cls}" onclick="App.refreshPrices()" title="Tap to refresh prices">${label}</button>`;
+    return `<button type="button" class="lc-freshness-chip ${cls}" data-action="App.refreshPrices" title="Tap to refresh prices">${label}</button>`;
   }
 
   function checkPriceAlerts() {
@@ -110,7 +110,7 @@ const App = (() => {
           <option value="psx">Pakistan PSX stocks</option>
           <option value="funds">Islamic / mutual funds</option>
         </select></div>
-      <button type="button" class="btn-primary" onclick="App._submitPortfolio()">Create portfolio</button>`);
+      <button type="button" class="btn-primary" data-action="App._submitPortfolio">Create portfolio</button>`);
   }
 
   function _submitPortfolio() {
@@ -258,6 +258,11 @@ const App = (() => {
     if (h) h.classList.add('hidden');
   }
 
+  function loadDemo() {
+    location.search = '?demo=1';
+    location.reload();
+  }
+
   function dismissDemo() {
     sessionStorage.setItem('ledgercap_demo_dismiss', '1');
     const b = document.getElementById('demo-banner');
@@ -354,6 +359,7 @@ const App = (() => {
       }
     }
     Navigation.init();
+    if (typeof LcEvents !== 'undefined') LcEvents.init();
     _wireChromeIcons();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
@@ -462,12 +468,12 @@ const App = (() => {
     }
     if (_refreshBusy) return;
     _refreshBusy = true;
-    document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+    document.querySelectorAll('[data-action="App.refreshPrices"]').forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
     try {
       await _refreshPricesInner();
     } finally {
       _refreshBusy = false;
-      document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+      document.querySelectorAll('[data-action="App.refreshPrices"]').forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
     }
   }
 
@@ -591,8 +597,8 @@ const App = (() => {
         <label class="field-label">Target price (PKR)</label>
         <input class="field-input" id="pa-price" type="number" step="0.01" value="${price}">
       </div>
-      <button type="button" class="btn-primary" style="width:100%;margin-top:12px" onclick="App._submitPriceAlert('${symbol.replace(/'/g, "\\'")}')">Save alert</button>
-      ${existing ? `<button type="button" class="btn-ghost" style="width:100%;margin-top:8px" onclick="App._removePriceAlert('${existing.id}')">Remove alert</button>` : ''}
+      <button type="button" class="btn-primary" style="width:100%;margin-top:12px" data-action="App._submitPriceAlert" data-symbol="${symbol.replace(/"/g, '&quot;')}">Save alert</button>
+      ${existing ? `<button type="button" class="btn-ghost" style="width:100%;margin-top:8px" data-action="App._removePriceAlert" data-tab="${existing.id}">Remove alert</button>` : ''}
     `);
     requestAlertPermission();
   }
@@ -636,7 +642,7 @@ const App = (() => {
     document.getElementById('bs-body').innerHTML = content || '';
     sheet.classList.add('open');
     _activeSheet = id;
-    sheet.querySelector('.bs-backdrop').onclick = closeBottomSheet;
+    sheet.querySelector('.bs-backdrop')?.addEventListener('click', closeBottomSheet);
   }
 
   function closeBottomSheet() {
@@ -674,7 +680,7 @@ const App = (() => {
         ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
-      <button class="btn-primary" onclick="App._submitTransaction()">Add Transaction</button>
+      <button class="btn-primary" data-action="App._submitTransaction">Add Transaction</button>
     </div>`;
 
     openBottomSheet('add-tx', 'Add Transaction', content);
@@ -989,7 +995,7 @@ const App = (() => {
         <div class="field"><label class="field-label">Allotted Shares</label><input class="field-input" id="ipo-allotted" type="number" value="${tx.shares || ''}" placeholder="0"></div>
         <div class="field"><label class="field-label">Listing Price (₨)</label><input class="field-input" id="ipo-list-price" type="number" step="0.01" value="${defaultPrice}" placeholder="0.00"></div>
       </div>
-      <button class="btn-primary" onclick="App._submitIpoListed('${id}')">Mark as Listed → CDC</button>
+      <button class="btn-primary" data-action="App._submitIpoListed" data-tab="${id}">Mark as Listed → CDC</button>
     </div>`;
 
     openBottomSheet('ipo-list-sheet', `🚀 List ${tx.symbol}`, content);
@@ -1047,7 +1053,7 @@ const App = (() => {
         <div class="field"><label class="field-label">Broker</label><select class="field-input" id="rec-broker">${brokerOpts}</select></div>
       </div>
       <div class="field"><label class="field-label">Notes</label><input class="field-input" id="rec-notes" type="text" placeholder="e.g. AMC statement 29-Jun-2026"></div>
-      <button type="button" class="btn-primary" onclick="App._submitReconcile()">Save reconcile</button>
+      <button type="button" class="btn-primary" data-action="App._submitReconcile">Save reconcile</button>
     </div>`;
 
     openBottomSheet('reconcile-sheet', `✎ Reconcile ${h.symbol}`, content);
@@ -1140,7 +1146,7 @@ const App = (() => {
     deleteTransaction, openMarkIpoListed, _submitIpoListed, renderCurrent, dismissInstall, dismissDemo, applyTheme,
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,
-    openReconcilePosition, _submitReconcile,
+    openReconcilePosition, _submitReconcile, loadDemo,
     toggleDisplayCurrency, _updateCurrencyToggleBtn, openPriceAlert, _submitPriceAlert, _removePriceAlert };
 })();
 window.App = App;

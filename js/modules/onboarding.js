@@ -30,7 +30,7 @@ const Onboarding = (() => {
       <div class="ob-shell">
         <div class="ob-top">
           <div class="ob-brand">Ledger<em>Cap</em></div>
-          <button type="button" class="ob-skip-top" onclick="Onboarding.skip()">Skip</button>
+          <button type="button" class="ob-skip-top" data-action="Onboarding.skip">Skip</button>
         </div>
         <div class="ob-progress">${_dots(1)}</div>
 
@@ -43,7 +43,7 @@ const Onboarding = (() => {
             <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('wallet', 16) : ''}</span> Investment tracker</li>
             <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('chart', 16) : ''}</span> SIP &amp; freedom planning</li>
           </ul>
-          <button type="button" class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
+          <button type="button" class="btn-primary ob-cta" data-action="Onboarding.next">Set up in 30 sec</button>
         </div>
 
         <div class="ob-panel" id="ob-panel-2">
@@ -71,8 +71,8 @@ const Onboarding = (() => {
             </div>
           </div>
           <div class="ob-nav">
-            <button type="button" class="btn-ghost" onclick="Onboarding.back()">Back</button>
-            <button type="button" class="btn-primary" onclick="Onboarding.next()">Continue</button>
+            <button type="button" class="btn-ghost" data-action="Onboarding.back">Back</button>
+            <button type="button" class="btn-primary" data-action="Onboarding.next">Continue</button>
           </div>
         </div>
 
@@ -93,8 +93,8 @@ const Onboarding = (() => {
             PSX proxy ready — prices refresh on open
           </div>
           <div class="ob-nav">
-            <button type="button" class="btn-ghost" onclick="Onboarding.back()">Back</button>
-            <button type="button" class="btn-primary" onclick="Onboarding.finish()">Open dashboard</button>
+            <button type="button" class="btn-ghost" data-action="Onboarding.back">Back</button>
+            <button type="button" class="btn-primary" data-action="Onboarding.finish">Open dashboard</button>
           </div>
         </div>
       </div>`;

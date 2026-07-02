@@ -50,7 +50,7 @@ const MarketUI = (() => {
       <span class="lc-compact-chg ${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : '…'}</span>
       <span class="lc-compact-sep" aria-hidden="true">·</span>
       <span class="lc-compact-live"><span class="lc-live-dot lc-live-dot--sm" aria-hidden="true"></span>${ago ? ago : 'Live'}</span>
-      <button type="button" class="lc-compact-refresh" onclick="App.refreshPrices()" title="Refresh prices">↻</button>
+      <button type="button" class="lc-compact-refresh" data-action="App.refreshPrices" title="Refresh prices">↻</button>
     </div>`;
   }
 
@@ -105,7 +105,7 @@ const MarketUI = (() => {
     return `
     <div class="lc-home-top cap-reveal">
       ${liveBadge(k.ts)}
-      <button type="button" class="lc-section-action" onclick="App.refreshPrices()">Refresh prices</button>
+      <button type="button" class="lc-section-action" data-action="App.refreshPrices">Refresh prices</button>
     </div>
     <div class="lc-market-strip cap-reveal">
       <div class="lc-index-card lc-index-card--hero">
@@ -141,20 +141,23 @@ const MarketUI = (() => {
   }
 
   function toolsGrid(items) {
-    return `<div class="lc-tools-grid cap-reveal">${items.map(t =>
-      `<button type="button" class="lc-tool-card" onclick="${t.on}"><strong>${t.title}</strong><span>${t.sub}</span></button>`
-    ).join('')}</div>`;
+    return `<div class="lc-tools-grid cap-reveal">${items.map(t => {
+      const nav = (t.nav || (t.on || '').match(/Navigation\.go\('([^']+)'\)/)?.[1]);
+      const attr = nav ? `data-nav="${nav}"` : `data-action="${String(t.on || '').replace(/\(\)$/, '')}"`;
+      return `<button type="button" class="lc-tool-card" ${attr}><strong>${t.title}</strong><span>${t.sub}</span></button>`;
+    }).join('')}</div>`;
   }
 
   function defaultTools() {
     return toolsGrid([
-      { title: 'Signals', sub: 'Rule-based brief on holdings', on: "Navigation.go('signals')" },
-      { title: 'Dividends', sub: 'Income calendar & yield', on: "Navigation.go('dividends')" },
-      { title: 'Research', sub: 'Charts, DMA, smart rating', on: "Navigation.go('research')" },
-      { title: 'Tax & Rebalance', sub: 'CGT · rebalance · IPO tools', on: "Navigation.go('pilot-tools')" },
-      { title: 'Performance', sub: 'XIRR & benchmark compare', on: "Navigation.go('performance')" },
-      { title: 'Compare', sub: 'Side-by-side holdings', on: "Navigation.go('comparison')" },
-      { title: 'Transactions', sub: 'Full buy/sell log', on: "Navigation.go('transactions')" },
+      { title: 'Signals', sub: 'Rule-based brief on holdings', nav: 'signals' },
+      { title: 'Dividends', sub: 'Income calendar & yield', nav: 'dividends' },
+      { title: 'Research', sub: 'Charts, DMA, smart rating', nav: 'research' },
+      { title: 'Tax & Rebalance', sub: 'CGT · rebalance · IPO tools', nav: 'pilot-tools' },
+      { title: 'Performance', sub: 'XIRR & benchmark compare', nav: 'performance' },
+      { title: 'Compare', sub: 'Side-by-side holdings', nav: 'comparison' },
+      { title: 'Transactions', sub: 'Full buy/sell log', nav: 'transactions' },
+      { title: 'Paper trade', sub: 'Simulated PSX ledger', nav: 'paper-trade' },
     ]);
   }
 
@@ -173,7 +176,7 @@ const MarketUI = (() => {
           <div class="lc-index-label">Today&apos;s pulse</div>
           <div class="lc-brief-title">Rule-based action queue</div>
         </div>
-        <button type="button" class="lc-section-action" onclick="Navigation.go('signals')">Open →</button>
+        <button type="button" class="lc-section-action" data-nav="signals">Open →</button>
       </div>
       <div class="lc-brief-pills">${pills || '<span class="lc-brief-pill lc-brief-pill--muted">HOLD zone</span>'}</div>
       ${top

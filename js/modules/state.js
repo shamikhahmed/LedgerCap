@@ -70,7 +70,11 @@ const State = (() => {
     cashLedger: [],
     manualAssets: { usdCash: 0, goldGrams: 0, realEstate: 0, brokerCashPkr: 0 },
     portfolios: [],
-    version: 10,
+    seriesHistory: {},
+    fundNavHistory: {},
+    paperLedger: { cashPkr: 500000, transactions: [] },
+    dripSettings: {},
+    version: 11,
     seedDataVersion: 0,
   };
 
@@ -113,6 +117,14 @@ const State = (() => {
     if (!_s.settings.displayCurrency) _s.settings.displayCurrency = 'PKR';
     if (_s.settings.liveStreamEnabled == null) _s.settings.liveStreamEnabled = true;
     _s.version = 10;
+  }
+
+  function _migrateV11() {
+    if (!_s.seriesHistory) _s.seriesHistory = {};
+    if (!_s.fundNavHistory) _s.fundNavHistory = {};
+    if (!_s.paperLedger) _s.paperLedger = { cashPkr: 500000, transactions: [] };
+    if (!_s.dripSettings) _s.dripSettings = {};
+    _s.version = 11;
   }
 
   function _migrateV8() {
@@ -287,6 +299,10 @@ const State = (() => {
           _migrateV10();
           shouldPersist = true;
         }
+        if (!_s.version || _s.version < 11) {
+          _migrateV11();
+          shouldPersist = true;
+        }
       } else {
         _s = JSON.parse(JSON.stringify(DEFAULT));
       }
@@ -338,6 +354,7 @@ const State = (() => {
       if (!_s.version || _s.version < 8) _migrateV8();
       if (!_s.version || _s.version < 9) _migrateV9();
       if (!_s.version || _s.version < 10) _migrateV10();
+      if (!_s.version || _s.version < 11) _migrateV11();
       save();
       if (typeof SecretsVault !== 'undefined') SecretsVault.migratePlaintextToken();
       return true;
@@ -382,6 +399,9 @@ const State = (() => {
     _s.prices[symbol] = typeof priceData === 'number'
       ? { price, prevClose: _s.prices[symbol]?.price || price, ts: Date.now(), source: 'manual' }
       : _normalizeGlobalPriceEntry(symbol, { ...priceData, ts: Date.now() });
+    if (typeof HistorySeriesService !== 'undefined' && price > 0) {
+      HistorySeriesService.recordSymbol(symbol, price);
+    }
     _logPortfolioValue();
     save();
   }

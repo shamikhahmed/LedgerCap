@@ -1,6 +1,7 @@
 'use strict';
 const Performance = (() => {
   let _tab = 'daily';
+  let _histRange = 365;
 
   function _priceFn(symbol, fallback) {
     const live = typeof State !== 'undefined' ? State.getPrice(symbol) : 0;
@@ -15,7 +16,7 @@ const Performance = (() => {
 
     const state = State.get();
     if (!state.transactions?.length) {
-      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Performance</h1><p>P&amp;L tracking</p></div>${MarketUI.emptyState('📈', 'No performance data', 'Add holdings to track daily, monthly, and predictive profit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Performance</h1><p>P&amp;L tracking</p></div>${MarketUI.emptyState('📈', 'No performance data', 'Add holdings to track daily, monthly, and predictive profit.', '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }
@@ -41,10 +42,11 @@ const Performance = (() => {
         <span>Realised <strong class="${totalRealised >= 0 ? 't-gain' : 't-loss'}">${PlatformUI.fmt(totalRealised)}</strong></span>
       </div>
       <div class="perf-tabs cap-tab-bar">
-        <button type="button" class="perf-tab cap-tab${_tab === 'daily' ? ' active' : ''}" onclick="Performance.setTab('daily')">Daily</button>
-        <button type="button" class="perf-tab cap-tab${_tab === 'monthly' ? ' active' : ''}" onclick="Performance.setTab('monthly')">Monthly</button>
-        <button type="button" class="perf-tab cap-tab${_tab === 'realised' ? ' active' : ''}" onclick="Performance.setTab('realised')">Realised</button>
-        <button type="button" class="perf-tab cap-tab${_tab === 'predictive' ? ' active' : ''}" onclick="Performance.setTab('predictive')">Forecast</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'daily' ? ' active' : ''}" data-action="Performance.setTab" data-tab="daily">Daily</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'monthly' ? ' active' : ''}" data-action="Performance.setTab" data-tab="monthly">Monthly</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'history' ? ' active' : ''}" data-action="Performance.setTab" data-tab="history">NAV series</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'realised' ? ' active' : ''}" data-action="Performance.setTab" data-tab="realised">Realised</button>
+        <button type="button" class="perf-tab cap-tab${_tab === 'predictive' ? ' active' : ''}" data-action="Performance.setTab" data-tab="predictive">Forecast</button>
       </div>
       <p class="perf-disclaimer" style="margin:var(--space-2) 0 0;font-size:0.7rem;color:var(--text3);line-height:1.4;">Daily/monthly M2M uses ${m2mSource} (${histDays} day${histDays === 1 ? '' : 's'} logged). Open app after refresh to build history. Realised = closed PSX + US/crypto sells. Forecast uses Settings assumptions.</p>
     </div>
@@ -127,6 +129,16 @@ const Performance = (() => {
             <div class="perf-item-value ${r.pnl >= 0 ? 't-gain' : 't-loss'}">${r.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(r.pnl)}</div>
           </div>`).join('') : '<p class="lc-empty-note">No closed sells logged yet.</p>'}
       </div>
+    </div>` : ''}
+
+    ${_tab === 'history' ? `<div class="perf-section cap-reveal">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        ${(typeof HistorySeriesService !== 'undefined' ? HistorySeriesService.ranges() : [{ id: '1m', label: '1M', days: 30 }, { id: '1y', label: '1Y', days: 365 }]).map((r) =>
+          `<button type="button" class="lc-view-pill${_histRange === r.days ? ' active' : ''}" data-action="Performance.setHistRange" data-tab="${r.days}">${r.label}</button>`
+        ).join('')}
+      </div>
+      <div class="perf-chart" id="history-chart"></div>
+      <p class="perf-disclaimer" style="margin-top:8px;font-size:0.7rem;color:var(--text3)">Portfolio NAV from daily snapshots + per-symbol price series on refresh.</p>
     </div>` : ''}
 
     ${_tab === 'predictive' ? `<div class="perf-section cap-reveal">
@@ -223,6 +235,17 @@ const Performance = (() => {
       const projections = [predictive.currentValue, predictive.currentValue * 1.18, predictive.currentValue * Math.pow(1.18, 2), predictive.currentValue * Math.pow(1.18, 5)];
       document.getElementById('predictive-chart').innerHTML = Charts.lineChart ? Charts.lineChart(projections, { height: 160, color: '#10b981' }) : '';
     }
+    if (_tab === 'history' && document.getElementById('history-chart') && typeof HistorySeriesService !== 'undefined') {
+      const series = HistorySeriesService.getPortfolioSeries(_histRange || 0);
+      document.getElementById('history-chart').innerHTML = series.length >= 2 && Charts.lineChart
+        ? Charts.lineChart(series, { height: 180, fill: true, ariaLabel: 'Portfolio NAV history' })
+        : '<p class="lc-empty-note">Open app after price refresh to build series.</p>';
+    }
+  }
+
+  function setHistRange(days) {
+    _histRange = parseInt(days, 10) || 0;
+    render();
   }
 
   function setTab(tab) {
@@ -230,6 +253,6 @@ const Performance = (() => {
     render();
   }
 
-  return { render, setTab };
+  return { render, setTab, setHistRange };
 })();
 window.Performance = Performance;

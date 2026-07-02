@@ -48,8 +48,8 @@ const PriceHealth = (() => {
       : `${rep.stale} holding(s) have prices older than 24h. Tap refresh for latest close.`;
     return `<div class="lc-price-health" role="status">
       <span>${msg}</span>
-      <button type="button" class="lc-price-health-btn" onclick="App.refreshPrices()">Refresh</button>
-      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
+      <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
+      <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
 

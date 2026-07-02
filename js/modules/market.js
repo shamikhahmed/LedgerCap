@@ -21,8 +21,8 @@ const Market = (() => {
 
   function _segment() {
     return `<div class="lc-segment" role="tablist">
-      <button type="button" class="lc-segment-btn${_filter === 'all' ? ' on' : ''}" onclick="Market.setFilter('all')">${I18n.t('screener.all')}</button>
-      <button type="button" class="lc-segment-btn${_filter === 'islamic' ? ' on' : ''}" onclick="Market.setFilter('islamic')">${I18n.t('screener.islamic')}</button>
+      <button type="button" class="lc-segment-btn${_filter === 'all' ? ' on' : ''}" data-action="Market.setFilter" data-tab="all">${I18n.t('screener.all')}</button>
+      <button type="button" class="lc-segment-btn${_filter === 'islamic' ? ' on' : ''}" data-action="Market.setFilter" data-tab="islamic">${I18n.t('screener.islamic')}</button>
     </div>`;
   }
 
@@ -35,29 +35,29 @@ const Market = (() => {
     });
     const listed = baseRows.length;
     return `<div class="lc-pulse-row" role="group" aria-label="Market movers">
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'advancing' ? ' on' : ''}" onclick="Market.setMoveFilter('advancing')" aria-pressed="${_moveFilter === 'advancing'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'advancing' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="advancing" aria-pressed="${_moveFilter === 'advancing'}">
         <label>${I18n.t('market.advancing')}</label><b class="psx-up">${adv}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'declining' ? ' on' : ''}" onclick="Market.setMoveFilter('declining')" aria-pressed="${_moveFilter === 'declining'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'declining' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="declining" aria-pressed="${_moveFilter === 'declining'}">
         <label>${I18n.t('market.declining')}</label><b class="psx-down">${dec}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'unchanged' ? ' on' : ''}" onclick="Market.setMoveFilter('unchanged')" aria-pressed="${_moveFilter === 'unchanged'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'unchanged' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="unchanged" aria-pressed="${_moveFilter === 'unchanged'}">
         <label>${I18n.t('market.unchanged')}</label><b>${unch}</b>
       </button>
-      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'all' ? ' on' : ''}" onclick="Market.setMoveFilter('all')" aria-pressed="${_moveFilter === 'all'}">
+      <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'all' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="all" aria-pressed="${_moveFilter === 'all'}">
         <label>Listed</label><b>${listed}</b>
       </button>
     </div>`;
   }
 
-  function _sectorBlocks(bySector, onRow) {
+  function _sectorBlocks(bySector) {
     return Object.keys(bySector).sort().map(sec => `
       <div class="lc-sector-card">
-        <button type="button" class="lc-sector-head lc-sector-head--btn${_sectorFilter === sec ? ' on' : ''}" onclick="Market.setSectorFilter('${sec.replace(/'/g, "\\'")}')">
+        <button type="button" class="lc-sector-head lc-sector-head--btn${_sectorFilter === sec ? ' on' : ''}" data-action="Market.setSectorFilter" data-tab="${sec.replace(/"/g, '&quot;')}">
           <h4>${sec}</h4><span>${bySector[sec].length} stocks</span>
         </button>
         ${bySector[sec].map(r => `
-          <button type="button" class="lc-market-row" onclick="${onRow(r.symbol)}">
+          <button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
             <div>
               <div class="lc-market-sym">${r.symbol}${r.isShariah ? '<span class="lc-badge">S</span>' : ''}</div>
               <div class="lc-market-name">${r.name}</div>
@@ -97,7 +97,7 @@ const Market = (() => {
     const bySector = {};
     rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
     host.innerHTML = rows.length
-      ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`)
+      ? _sectorBlocks(bySector)
       : `<div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol or clear filters.</p></div>`;
   }
 
@@ -110,7 +110,7 @@ const Market = (() => {
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     const filterHint = (_moveFilter !== 'all' || _sectorFilter)
-      ? `<p class="lc-filter-hint">${_sectorFilter ? `Sector: ${_sectorFilter} · ` : ''}${_moveFilter !== 'all' ? _moveFilter + ' · ' : ''}<button type="button" class="lc-link-btn" onclick="Market.clearFilters()">Clear filters</button></p>`
+      ? `<p class="lc-filter-hint">${_sectorFilter ? `Sector: ${_sectorFilter} · ` : ''}${_moveFilter !== 'all' ? _moveFilter + ' · ' : ''}<button type="button" class="lc-link-btn" data-action="Market.clearFilters">Clear filters</button></p>`
       : '';
 
     screen.innerHTML = `
@@ -120,12 +120,12 @@ const Market = (() => {
           <p>${I18n.t('market.sub')}</p>
         </div>
         <div class="lc-dash-market" style="margin-bottom:var(--lc-space-4)">
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="App.refreshPrices()" aria-label="Refresh KSE-100">
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.refreshPrices" aria-label="Refresh KSE-100">
             <span>KSE-100</span>
             <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
             <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : '—'}</em>
           </button>
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" onclick="Market.setMoveFilter('all')" aria-label="Show all listed stocks">
+          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
             <em>${_filter === 'islamic' ? I18n.t('market.shariah') : I18n.t('screener.all')}</em>
@@ -141,7 +141,7 @@ const Market = (() => {
         <div id="market-list">${rows.length ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" onclick="App.refreshPrices()">${I18n.t('refresh')}</button>
+          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
         </div>
       </div>`;
 

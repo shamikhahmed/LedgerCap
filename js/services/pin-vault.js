@@ -71,6 +71,21 @@ const PinVault = (() => {
     return 'v2:' + _hex(bits);
   }
 
+  /** AES-256 key material for SecretsVault — separate salt domain from PIN hash. */
+  async function deriveVaultKeyBits(pin) {
+    const cfg = getConfig();
+    if (!cfg.salt || !validateFormat(pin)) return null;
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+    const vaultSalt = enc.encode(`ledgercap:vault:${cfg.salt}`);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: vaultSalt, iterations: PBKDF2_ITER },
+      keyMaterial,
+      256
+    );
+    return new Uint8Array(bits);
+  }
+
   async function _matchesStored(pin, salt, storedHash) {
     if (!storedHash) return false;
     if (String(storedHash).startsWith('v2:')) {
@@ -138,6 +153,10 @@ const PinVault = (() => {
       cfg.lockUntil = 0;
       cfg.lockLevel = 0;
       saveConfig(cfg);
+      if (typeof SecretsVault !== 'undefined') {
+        SecretsVault.setSessionPin(pin);
+        SecretsVault.migrateLegacyToPin(pin).catch(() => {});
+      }
       return { ok: true, decoy: false };
     }
     if (cfg.decoyHash && await _matchesStored(pin, cfg.salt, cfg.decoyHash)) {
@@ -179,6 +198,9 @@ const PinVault = (() => {
       autoLockMin: prev.autoLockMin != null ? prev.autoLockMin : 5,
     });
     unlock(false);
+    if (typeof SecretsVault !== 'undefined') {
+      SecretsVault.bindToPin(pin).catch(() => {});
+    }
   }
 
   async function changePin(oldPin, newPin, confirmPin) {
@@ -193,6 +215,9 @@ const PinVault = (() => {
     cfg.lockUntil = 0;
     saveConfig(cfg);
     unlock(false);
+    if (typeof SecretsVault !== 'undefined') {
+      SecretsVault.rekeyAfterPinChange(newPin).catch(() => {});
+    }
   }
 
   async function disablePin(pin) {
@@ -200,6 +225,7 @@ const PinVault = (() => {
     if (!check.ok || check.decoy) throw new Error('PIN incorrect');
     localStorage.removeItem(KEY);
     _writeSession(null);
+    if (typeof SecretsVault !== 'undefined') SecretsVault.clearSessionPin();
   }
 
   async function setDecoyPin(pin, mainPin) {
@@ -246,6 +272,7 @@ const PinVault = (() => {
     LOCKOUT_MS,
     validateFormat,
     digestPin,
+    deriveVaultKeyBits,
     getConfig,
     saveConfig,
     isEnabled,

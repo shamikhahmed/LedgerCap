@@ -1,6 +1,17 @@
 # Changelog — LedgerCap
 
-## 3.44.0 (2026-07-02) — Fable audit: security hardening, offline fix, Urdu repair
+## 3.44.0 (2026-07-02) — Security sprint: CSP, paper trade, history series
+
+- **CSP** — removed `script-src 'unsafe-inline'`; theme boot externalized; `LcEvents` delegated `data-action` / `data-nav` handlers across modules
+- **SecretsVault** — AES key derived from PIN via PBKDF2 vault salt; legacy random key migrates on unlock
+- **Paper trading** — isolated `paperLedger` state + screen (More → Paper trade); buy/sell/reset without touching real ledger
+- **History series** — `seriesHistory` per symbol + NAV tab in Performance (1W–5Y ranges via `HistorySeriesService`)
+- **CGT export** — `StatementExport.exportCgtPdf()` printable year-end estimate from `PilotEngine.buildCgtReport`
+- **DRIP + YoC** — per-holding reinvest toggle + yield-on-cost in Dividends holdings tab
+- **Pitch/presentation** — marketing emoji purged; icon-mark SVG badges
+- Service worker `ledgercap-v111`; gallery recapture +83 screens
+
+### Prior 3.44.0 items (same release train)
 
 - **Security** — `esc()`/`escUrl()` helpers; all news/announcement/CSV-derived strings escaped before `innerHTML`; `javascript:` URLs blocked in news links; CSV import sanitizes symbol/broker at the boundary
 - **PIN vault** — PBKDF2-SHA256 (310k iterations) replaces single SHA-256; legacy hashes verify once and auto-upgrade; escalating lockout (30s → 30min); `gnewsApiKey` stripped from backups

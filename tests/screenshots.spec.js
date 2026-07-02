@@ -43,6 +43,7 @@ const TOOL_SCREENS = [
   { id: 'risk-audit', label: 'Risk audit' },
   { id: 'insights', label: 'Insights' },
   { id: 'pilot-tools', label: 'Tax & rebalance' },
+  { id: 'paper-trade', label: 'Paper trade' },
   { id: 'transactions', label: 'Transactions' },
   { id: 'comparison', label: 'Comparison' },
   { id: 'performance', label: 'Performance' },

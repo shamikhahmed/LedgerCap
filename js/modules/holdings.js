@@ -9,9 +9,9 @@ const Holdings = (() => {
     const total = rows.reduce((s, r) => s + r.value, 0);
 
     screen.innerHTML = `
-    ${MarketUI.pageHeader('Holdings', 'Full table', `${rows.length} positions · ${U.fmt(total)} total`, { action: '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">+ Add</button>' })}
+    ${MarketUI.pageHeader('Holdings', 'Full table', `${rows.length} positions · ${U.fmt(total)} total`, { action: '<button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">+ Add</button>' })}
     <div style="padding:0 20px 12px;display:flex;gap:8px;" class="cap-reveal">
-      <button type="button" class="os-btn os-btn-ghost" onclick="Transactions.openLog()">Transaction log</button>
+      <button type="button" class="os-btn os-btn-ghost" data-action="Transactions.openLog">Transaction log</button>
     </div>
     ${rows.length ? `
     <div class="rt-table-wrap cap-reveal">
@@ -21,7 +21,7 @@ const Holdings = (() => {
         </tr></thead>
         <tbody>
         ${rows.map(r => `
-          <tr onclick="Navigation.go('research');Research.open('${r.symbol}')">
+          <tr data-nav="research">
             <td><strong>${r.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${r.name}<br>${r.broker}</div></td>
             <td>${r.kind === 'fund' ? r.quantity.toFixed(2) : r.quantity}</td>
             <td>${U.fmt(r.price)}</td>
@@ -37,7 +37,7 @@ const Holdings = (() => {
       <div class="cap-empty__icon">📋</div>
       <div class="cap-empty__title">No holdings yet</div>
       <div class="cap-empty__body">Log a buy transaction to track your PSX portfolio, dividends, and net worth.</div>
-      <div class="cap-empty__cta"><button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add first transaction</button></div>
+      <div class="cap-empty__cta"><button type="button" class="os-btn os-btn-primary" data-action="App.openAddTransaction">Add first transaction</button></div>
     </div>`}
     <div style="height:20px;"></div>`;
     CapMotion.refresh();

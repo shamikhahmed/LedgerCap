@@ -91,10 +91,10 @@ const Settings = (() => {
     <div class="sec-head"><span class="sec-title">${I18n.t('theme.toggle')}</span></div>
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <div class="os-theme-toggle">
-        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" onclick="Settings._setTheme('dark')">${I18n.t('theme.dark')}</button>
-        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" onclick="Settings._setTheme('light')">${I18n.t('theme.light')}</button>
+        <button type="button" class="os-theme-btn${theme === 'dark' ? ' active' : ''}" data-action="Settings._setTheme" data-tab="dark">${I18n.t('theme.dark')}</button>
+        <button type="button" class="os-theme-btn${theme === 'light' ? ' active' : ''}" data-action="Settings._setTheme" data-tab="light">${I18n.t('theme.light')}</button>
       </div>
-      <label class="lc-check-row" style="margin-top:14px"><input type="checkbox" id="s-haptics" ${settings.hapticsEnabled ? 'checked' : ''} onchange="Settings._setHaptics(this.checked)"> Haptic feedback on taps (off by default)</label>
+      <label class="lc-check-row" style="margin-top:14px"><input type="checkbox" id="s-haptics" ${settings.hapticsEnabled ? 'checked' : ''} data-action-change="Settings._setHaptics"> Haptic feedback on taps (off by default)</label>
       <p class="field-hint" style="margin-top:6px">Desktop: <kbd>⌘K</kbd> or <kbd>Ctrl+K</kbd> quick nav when width ≥900px</p>
     </div>
 
@@ -102,8 +102,8 @@ const Settings = (() => {
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Full shows every digit with 2 decimals. Compact uses L/cr for big PKR amounts.</p>
       <div class="os-theme-toggle">
-        <button type="button" class="os-theme-btn${(settings.numberFormat || 'full') === 'full' ? ' active' : ''}" onclick="Settings._setNumberFormat('full')">Full</button>
-        <button type="button" class="os-theme-btn${settings.numberFormat === 'compact' ? ' active' : ''}" onclick="Settings._setNumberFormat('compact')">Compact</button>
+        <button type="button" class="os-theme-btn${(settings.numberFormat || 'full') === 'full' ? ' active' : ''}" data-action="Settings._setNumberFormat" data-tab="full">Full</button>
+        <button type="button" class="os-theme-btn${settings.numberFormat === 'compact' ? ' active' : ''}" data-action="Settings._setNumberFormat" data-tab="compact">Compact</button>
       </div>
     </div>
 
@@ -111,10 +111,10 @@ const Settings = (() => {
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">One tap flips all amounts PKR↔USD. SSE pushes during PSX session (intraday when open, last close after hours).</p>
       <div class="os-theme-toggle" style="margin-bottom:14px">
-        <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('PKR')">PKR ₨</button>
-        <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" onclick="Settings._setDisplayCurrency('USD')">USD $</button>
+        <button type="button" class="os-theme-btn${(settings.displayCurrency || 'PKR') === 'PKR' ? ' active' : ''}" data-action="Settings._setDisplayCurrency" data-tab="PKR">PKR ₨</button>
+        <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" data-action="Settings._setDisplayCurrency" data-tab="USD">USD $</button>
       </div>
-      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} onchange="Settings._setLiveStream(this.checked)"> Live price stream (SSE push)</label>
+      <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} data-action-change="Settings._setLiveStream"> Live price stream (SSE push)</label>
       <p class="field-hint" style="margin-top:8px">Stream: ${(() => {
         const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
         const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
@@ -128,8 +128,8 @@ const Settings = (() => {
     <div style="background:var(--lc-bg-card);border-bottom:1px solid var(--lc-border);padding:16px 20px;">
       <p style="font-size:0.75rem;color:var(--psx-text-2);margin-bottom:12px;line-height:1.5;">Annual statement CSV or printable PDF. Verify against broker statements — not tax advice.</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button type="button" class="btn-secondary" onclick="Settings._exportStatementCsv()">CSV statement</button>
-        <button type="button" class="btn-secondary" onclick="Settings._exportStatementPdf()">PDF / print</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportStatementCsv">CSV statement</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportStatementPdf">PDF / print</button>
       </div>
     </div>
 
@@ -158,8 +158,8 @@ const Settings = (() => {
         <label class="field-label">GNews API key (optional)</label>
         <input class="field-input" id="s-gnews-key" type="password" autocomplete="off" value="${settings.gnewsApiKey || ''}" placeholder="For Pakistan PSX headlines — gnews.io">
       </div>
-      <button type="button" class="btn-ghost" style="margin-bottom:8px" onclick="Settings._refreshFx()">Refresh USD/PKR now</button>
-      <button type="button" class="btn-primary" onclick="Settings._saveProfile()">Save Profile</button>
+      <button type="button" class="btn-ghost" style="margin-bottom:8px" data-action="Settings._refreshFx">Refresh USD/PKR now</button>
+      <button type="button" class="btn-primary" data-action="Settings._saveProfile">Save Profile</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Cash &amp; manual assets</span></div>
@@ -179,7 +179,7 @@ const Settings = (() => {
           <input class="field-input" id="s-gold-grams" type="number" min="0" step="0.01" value="${ma.goldGrams || 0}">
         </div>
       </div>
-      <button type="button" class="btn-primary" onclick="Settings._saveManualAssets()">Save manual assets</button>
+      <button type="button" class="btn-primary" data-action="Settings._saveManualAssets">Save manual assets</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">Return Assumptions</span></div>
@@ -206,8 +206,8 @@ const Settings = (() => {
       </div>
       <div class="field-hint" style="margin-bottom:12px;">4% rule: corpus needed = ₨${Math.round((settings.freedomTarget || 100000) * 12 / 0.04).toLocaleString()}</div>
       <div style="display:flex;gap:8px;">
-        <button type="button" class="btn-primary" style="flex:1;" onclick="Settings._saveAssumptions()">Save Assumptions</button>
-        <button type="button" class="btn-ghost" onclick="Settings._resetAssumptions()">Reset Defaults</button>
+        <button type="button" class="btn-primary" style="flex:1;" data-action="Settings._saveAssumptions">Save Assumptions</button>
+        <button type="button" class="btn-ghost" data-action="Settings._resetAssumptions">Reset Defaults</button>
       </div>
     </div>
 
@@ -269,8 +269,8 @@ const Settings = (() => {
           <input class="field-input" id="s-proxy" type="url" placeholder="https://ledgercap-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
           <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
         </div>
-        <button type="button" class="btn-ghost" onclick="Settings._saveProxy()">Save Proxy URL</button>
-        <button type="button" class="btn-secondary" onclick="App.refreshPrices()">⟳ Refresh All Prices</button>
+        <button type="button" class="btn-ghost" data-action="Settings._saveProxy">Save Proxy URL</button>
+        <button type="button" class="btn-secondary" data-action="App.refreshPrices">⟳ Refresh All Prices</button>
       </div>
     </div>
 
@@ -289,8 +289,8 @@ const Settings = (() => {
         <input class="field-input" id="tg-chat" type="text" inputmode="numeric" placeholder="e.g. 123456789" value="${settings.telegramChatId || ''}">
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-        <button type="button" class="btn-ghost btn-sm" onclick="Settings._detectTelegramChat()">Detect chat ID</button>
-        <button type="button" class="btn-ghost btn-sm" onclick="Settings._checkTelegramProxy()">Test proxy</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="Settings._detectTelegramChat">Detect chat ID</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="Settings._checkTelegramProxy">Test proxy</button>
       </div>
       <div class="field-hint" style="margin-bottom:12px;">Numeric chat_id only — not your phone number. Use @userinfobot if detect fails.</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
@@ -305,19 +305,19 @@ const Settings = (() => {
         <label class="field-label">Cloud sync key</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input class="field-input" id="tg-sync-key" type="text" autocomplete="off" placeholder="Generate or paste wrangler secret" value="${settings.telegramSyncKey || ''}" style="flex:1;min-width:180px">
-          <button type="button" class="btn-ghost btn-sm" onclick="Settings._genTelegramSyncKey()">Generate</button>
+          <button type="button" class="btn-ghost btn-sm" data-action="Settings._genTelegramSyncKey">Generate</button>
         </div>
         <div class="field-hint">Match <code>TELEGRAM_SYNC_KEY</code> on Cloudflare worker. Syncs urgent signals only — never full ledger.</div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-        <button type="button" class="btn-ghost" onclick="Settings._syncTelegramCloud()">Sync brief to cloud</button>
+        <button type="button" class="btn-ghost" data-action="Settings._syncTelegramCloud">Sync brief to cloud</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        <button type="button" class="btn-primary" onclick="Settings._saveTelegram()">Save Telegram</button>
-        <button type="button" class="btn-secondary" onclick="Settings._sendTelegramTest()">Send test message</button>
-        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramBrief()">Send brief now</button>
-        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramPortfolioDigests()">Send portfolio digests</button>
-        <button type="button" class="btn-ghost" onclick="Settings._sendTelegramNews()">Send news digest</button>
+        <button type="button" class="btn-primary" data-action="Settings._saveTelegram">Save Telegram</button>
+        <button type="button" class="btn-secondary" data-action="Settings._sendTelegramTest">Send test message</button>
+        <button type="button" class="btn-ghost" data-action="Settings._sendTelegramBrief">Send brief now</button>
+        <button type="button" class="btn-ghost" data-action="Settings._sendTelegramPortfolioDigests">Send portfolio digests</button>
+        <button type="button" class="btn-ghost" data-action="Settings._sendTelegramNews">Send news digest</button>
       </div>
     </div>
 
@@ -332,7 +332,7 @@ const Settings = (() => {
             <label class="field-label">${f.symbol}</label>
             <input class="field-input nav-inp" data-sym="${f.symbol}" type="number" step="0.01" value="${nav}">
           </div>
-          <button type="button" class="btn-ghost" style="padding:10px 14px;" onclick="Settings._saveNav('${f.symbol}')">Save</button>
+          <button type="button" class="btn-ghost" style="padding:10px 14px;" data-action="Settings._saveNav" data-tab="${f.symbol}">Save</button>
         </div>`;
       }).join('')}
     </div>
@@ -356,18 +356,18 @@ const Settings = (() => {
       </div>
       <div class="field" style="margin-bottom:12px;">
         <label class="field-label">Auto-lock after</label>
-        <select class="field-input" id="pin-autolock" onchange="Settings._setPinAutoLock(this.value)">
+        <select class="field-input" id="pin-autolock" data-action-change="Settings._setPinAutoLock">
           ${[0, 1, 5, 15, 60].map(m => `<option value="${m}"${(PinVault?.getAutoLock?.() ?? 5) === m ? ' selected' : ''}>${m === 0 ? 'Never (manual only)' : m === 60 ? '1 hour' : m + ' min'}</option>`).join('')}
         </select>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         ${PinVault?.isEnabled?.() ? `
-          <button type="button" class="btn-secondary btn-sm" onclick="Settings._changePin()">Change PIN</button>
-          <button type="button" class="btn-ghost btn-sm" onclick="Settings._setDecoyPin()">Decoy PIN</button>
-          <button type="button" class="btn-ghost btn-sm" onclick="Settings._lockNow()">Lock now</button>
-          <button type="button" class="btn-danger btn-sm" onclick="Settings._disablePin()">Disable PIN</button>
+          <button type="button" class="btn-secondary btn-sm" data-action="Settings._changePin">Change PIN</button>
+          <button type="button" class="btn-ghost btn-sm" data-action="Settings._setDecoyPin">Decoy PIN</button>
+          <button type="button" class="btn-ghost btn-sm" data-action="Settings._lockNow">Lock now</button>
+          <button type="button" class="btn-danger btn-sm" data-action="Settings._disablePin">Disable PIN</button>
         ` : `
-          <button type="button" class="btn-primary btn-sm" onclick="Settings._enablePin()">Set PIN</button>
+          <button type="button" class="btn-primary btn-sm" data-action="Settings._enablePin">Set PIN</button>
         `}
       </div>
     </div>
@@ -381,9 +381,9 @@ const Settings = (() => {
         </div>
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
-        <button type="button" class="btn-secondary" onclick="Settings._exportData()">↑ Export .ledgercap Backup</button>
-        <button type="button" class="btn-secondary" onclick="Settings._importData()">↓ Import .ledgercap Backup</button>
-        <button type="button" class="btn-danger" onclick="Settings._resetVault()">⚠ Reset All Data</button>
+        <button type="button" class="btn-secondary" data-action="Settings._exportData">↑ Export .ledgercap Backup</button>
+        <button type="button" class="btn-secondary" data-action="Settings._importData">↓ Import .ledgercap Backup</button>
+        <button type="button" class="btn-danger" data-action="Settings._resetVault">⚠ Reset All Data</button>
       </div>
     </div>
 
@@ -413,7 +413,7 @@ const Settings = (() => {
         <input type="checkbox" id="p-filer" ${pilot.isFiler !== false ? 'checked' : ''}>
         Filer (15% CGT on short-term gains)
       </label>
-      <button type="button" class="btn-primary" style="width:100%;margin-top:8px" onclick="Settings._savePilot()">Save Pilot settings</button>
+      <button type="button" class="btn-primary" style="width:100%;margin-top:8px" data-action="Settings._savePilot">Save Pilot settings</button>
     </div>
 
     <div class="sec-head"><span class="sec-title">About</span></div>
