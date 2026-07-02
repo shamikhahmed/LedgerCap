@@ -433,6 +433,29 @@ body.lc-rtl .psx-sidebar {
 }
 .lc-range-bar-mid { color: var(--psx-text); }
 
+/* Glossary accordion */
+.lc-glossary-item { border-bottom: 1px solid var(--psx-border); }
+.lc-glossary-item:last-child { border-bottom: none; }
+.lc-glossary-item summary {
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lc-glossary-item summary::-webkit-details-marker { display: none; }
+.lc-glossary-item summary::after { content: '+'; color: var(--psx-text-3); font-weight: 700; }
+.lc-glossary-item[open] summary::after { content: '−'; }
+.lc-glossary-item p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--psx-text-2);
+}
+
 /* Verdict banner tint */
 .lc-verdict--healthy { border-left: 3px solid var(--psx-up); }
 .lc-verdict--caution { border-left: 3px solid #f0b90b; }

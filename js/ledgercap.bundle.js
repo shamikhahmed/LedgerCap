@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.49.0',
-  sw: 119,
-  cache: 'ledgercap-v119',
+  app: '3.50.0',
+  sw: 120,
+  cache: 'ledgercap-v120',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -14978,8 +14978,13 @@ const Research = (() => {
 
   function _peersBlock(symbol, sector) {
     if (!sector) return '';
+    const seen = new Set();
     const peers = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])]
-      .filter(s => s.sector === sector && s.symbol !== symbol)
+      .filter(s => {
+        if (s.sector !== sector || s.symbol === symbol || seen.has(s.symbol)) return false;
+        seen.add(s.symbol);
+        return true;
+      })
       .slice(0, 6);
     if (!peers.length) return '';
     const rows = peers.map(p => {
@@ -15019,9 +15024,63 @@ const Research = (() => {
     if (up) cells.push({ l: 'Next dividend', v: up.paymentDate ? up.paymentDate.slice(0, 10) : 'TBD' });
     if (up?.amount) cells.push({ l: 'Amount', v: '₨' + up.amount });
     if (paid) cells.push({ l: 'Last paid', v: (paid.paymentDate || '').slice(0, 10) || '—' });
+    // Payout track record: yearly per-share history as mini bars + consistency verdict.
+    const f = (window.FUNDAMENTALS_DB || {})[symbol];
+    const hist = (f?.divHistory || []).slice().sort((a, b) => a.y - b.y);
+    let histHtml = '';
+    if (hist.length >= 2) {
+      const rising = hist.every((h, i) => i === 0 || h.a >= hist[i - 1].a);
+      histHtml = `<div class="lc-sector-card" style="margin-top:8px">
+        <p class="lc-card-sub">Per-share payout by year — <strong class="${rising ? 'psx-up' : ''}">${rising ? 'consistent & growing' : 'variable'}</strong></p>
+        ${Charts.barChart(hist.map(h => h.a), { height: 56, ariaLabel: `${symbol} dividend history` })}
+        <div class="lc-range-bar-labels">${hist.map(h => `<span>${h.y} · ₨${h.a}</span>`).join('')}</div>
+      </div>`;
+    }
     return `<div class="lc-dash-section">
-      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" data-nav="announcements">All →</button></div>
+      <div class="lc-dash-section-head"><h3>Dividend check</h3><button type="button" class="lc-section-action" data-nav="announcements">All →</button></div>
       ${_metricGrid(cells)}
+      ${histHtml}
+    </div>`;
+  }
+
+  /** Rule-based good/bad tinting for investor parameters. */
+  function _investorParams(symbol) {
+    const f = (window.FUNDAMENTALS_DB || {})[symbol];
+    if (!f) return '';
+    const tint = (good, bad) => good ? 'psx-up' : bad ? 'psx-down' : '';
+    const cells = [
+      { l: 'P/E', v: f.pe != null ? f.pe.toFixed(1) : '—', cls: tint(f.pe > 0 && f.pe < 10, f.pe > 20) },
+      { l: 'P/B', v: f.pb != null ? f.pb.toFixed(1) : '—', cls: tint(f.pb > 0 && f.pb < 1.5, f.pb > 4) },
+      { l: 'ROE', v: f.roe != null ? f.roe.toFixed(1) + '%' : '—', cls: tint(f.roe >= 15, f.roe < 8) },
+      { l: 'Dividend yield', v: f.divYield != null ? f.divYield.toFixed(1) + '%' : '—', cls: tint(f.divYield >= 6, false) },
+      { l: 'Payout ratio', v: f.payout != null ? f.payout + '%' : '—', cls: tint(f.payout >= 30 && f.payout <= 70, f.payout > 90) },
+      { l: 'Debt / equity', v: f.debtToEquity != null ? f.debtToEquity.toFixed(2) : '—', cls: tint(f.debtToEquity <= 0.3, f.debtToEquity > 0.8) },
+      { l: 'Revenue growth', v: f.revGrowth != null ? _fmtPct(f.revGrowth) : '—', cls: PsxUI.chgCls(f.revGrowth) },
+      { l: 'Profit growth', v: f.profitGrowth != null ? _fmtPct(f.profitGrowth) : '—', cls: PsxUI.chgCls(f.profitGrowth) },
+    ];
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Investor parameters</h3><span>Green/red = rule thresholds, not advice</span></div>
+      ${_metricGrid(cells)}
+    </div>`;
+  }
+
+  const _GLOSSARY = [
+    ['P/E ratio', 'Price ÷ yearly earnings per share. How many years of current profit you pay for the stock. Lower can mean cheaper — or a business in trouble.'],
+    ['P/B ratio', 'Price ÷ book value per share. Under 1 means the market prices the company below its net assets.'],
+    ['ROE', 'Return on equity — profit as % of shareholders’ money. Higher = the business earns more on the capital it keeps.'],
+    ['Dividend yield', 'Yearly cash dividend ÷ price. What the stock pays you to hold it, before tax.'],
+    ['Payout ratio', 'Share of profit paid out as dividends. 30–70% is usually sustainable; above ~90% is hard to keep up.'],
+    ['Debt / equity', 'Borrowed money vs shareholders’ money. High leverage amplifies both gains and trouble.'],
+    ['52-week range', 'Cheapest and most expensive the stock traded in the last year. Position near the low is not automatically a bargain.'],
+    ['Fair value (rule-based)', 'A simple estimate this app computes from earnings, growth and sector norms. It is a sanity check, not a target price.'],
+  ];
+
+  function _glossaryBlock() {
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Learn the basics</h3><span>Plain-language glossary</span></div>
+      <div class="lc-sector-card">
+        ${_GLOSSARY.map(([t, d]) => `<details class="lc-glossary-item"><summary>${t}</summary><p>${d}</p></details>`).join('')}
+      </div>
     </div>`;
   }
 
@@ -15268,6 +15327,7 @@ const Research = (() => {
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>52-week range</h3><span>EOD history</span></div><div class="lc-sector-card" id="research-52w"><p class="psx-muted lc-card-sub">Loading…</p></div></div>
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Price trend</h3><span>EOD closes</span></div><div class="lc-sector-card" id="research-history"><p class="psx-muted lc-card-sub">Loading…</p></div></div>
         ${_valueCheck(quote.price, ai.fairValue)}
+        ${!isIntl && !isCrypto && !isFund ? _investorParams(r.symbol) : ''}
         ${_peersBlock(r.symbol, profile.sector)}
         ${_dividendBlock(r.symbol)}
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Performance</h3><span>% change</span></div></div>
@@ -15278,6 +15338,7 @@ const Research = (() => {
           <div class="lc-dash-section-head"><h3>Price history</h3><span>Last ~30 sessions</span></div>
           <div id="research-tv-chart" style="min-height:320px"></div>
         </div>
+        ${_glossaryBlock()}
       </div>`;
 
     const assetClass = isCrypto ? 'crypto' : isIntl ? 'intl' : 'psx';
