@@ -231,23 +231,79 @@ const Research = (() => {
       : '<p class="psx-muted">Order book unavailable.</p>';
   }
 
+  let _histRange = '6M';
+  let _histSeries = null; // cache per symbol
+  let _histSymbol = null;
+
   async function _load52w(sym, price) {
     const host = document.getElementById('research-52w');
     if (!host || typeof Prices === 'undefined') return;
-    const series = await Prices.fetchPriceSeries(sym, 252);
+    let series = [];
+    try {
+      // Proxy fallback chains can hang for minutes — cap the wait so the
+      // section degrades honestly instead of spinning forever.
+      series = await Promise.race([
+        Prices.fetchPriceSeries(sym, 252),
+        new Promise(resolve => setTimeout(() => resolve([]), 12000)),
+      ]);
+    } catch (_) {}
+    if (_symbol !== sym) return; // user moved on while we were fetching
     if (series.length < 5) {
-      host.innerHTML = '<p class="psx-muted lc-card-sub">52-week range builds as EOD history loads.</p>';
+      const msg = '<p class="psx-muted lc-card-sub">PSX end-of-day feed unreachable right now — history returns when the feed recovers.</p>';
+      host.innerHTML = msg;
+      const hist = document.getElementById('research-history');
+      if (hist) hist.innerHTML = msg;
       return;
     }
+    _histSeries = series;
+    _histSymbol = sym;
     const low = Math.min(...series);
     const high = Math.max(...series);
-    const pos = high > low ? ((price - low) / (high - low)) * 100 : 50;
-    host.innerHTML = _metricGrid([
-      { l: '52w low', v: PsxUI.fmt(low) },
-      { l: '52w high', v: PsxUI.fmt(high) },
-      { l: 'Range position', v: pos.toFixed(0) + '%' },
-      { l: 'Sessions', v: String(series.length) },
-    ]);
+    host.innerHTML = `
+      ${Charts.rangeBar(low, high, price, {
+        lowLabel: 'Low ' + PsxUI.fmt(low),
+        highLabel: 'High ' + PsxUI.fmt(high),
+        markerLabel: PsxUI.fmt(price),
+        ariaLabel: `52 week range ${PsxUI.fmt(low)} to ${PsxUI.fmt(high)}, current ${PsxUI.fmt(price)}`,
+      })}`;
+    _paintHistory();
+  }
+
+  function setHistRange(r) {
+    _histRange = r;
+    _paintHistory();
+  }
+
+  function _paintHistory() {
+    const host = document.getElementById('research-history');
+    if (!host || !_histSeries) return;
+    const n = _histRange === '1M' ? 22 : _histRange === '6M' ? 126 : 252;
+    const slice = _histSeries.slice(-n);
+    if (slice.length < 2) { host.innerHTML = ''; return; }
+    const up = slice[slice.length - 1] >= slice[0];
+    const chg = slice[0] ? ((slice[slice.length - 1] - slice[0]) / slice[0]) * 100 : 0;
+    host.innerHTML = `
+      <div class="lc-range-picker" role="tablist" aria-label="History range">
+        ${['1M', '6M', '1Y'].map(r => `<button type="button" role="tab" class="lc-range-btn${_histRange === r ? ' on' : ''}" aria-selected="${_histRange === r}" data-action="Research.setHistRange" data-tab="${r}">${r}</button>`).join('')}
+        <span class="lc-card-sub ${up ? 'psx-up' : 'psx-down'}" style="margin-left:auto">${(chg >= 0 ? '+' : '') + chg.toFixed(1)}% ${_histRange}</span>
+      </div>
+      ${Charts.lineChart(slice, { height: 120, color: up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)', ariaLabel: `${_histSymbol} price history ${_histRange}` })}`;
+  }
+
+  function _valueCheck(price, fairValue) {
+    if (!(fairValue > 0) || !(price > 0)) return '';
+    const gap = ((price - fairValue) / fairValue) * 100;
+    const verdict = gap > 15 ? 'Overvalued' : gap < -15 ? 'Undervalued' : 'Fairly valued';
+    const cls = gap > 15 ? 'psx-down' : gap < -15 ? 'psx-up' : '';
+    const lo = Math.min(price, fairValue) * 0.85;
+    const hi = Math.max(price, fairValue) * 1.15;
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Value check</h3><span>Rule-based estimate — not advice</span></div>
+      <div class="lc-sector-card">
+        <p class="lc-card-sub"><strong class="${cls}">${verdict}</strong> — price ${PsxUI.fmt(price)} vs estimated fair value ${PsxUI.fmt(fairValue)} (${(gap >= 0 ? '+' : '') + gap.toFixed(1)}%)</p>
+        ${Charts.rangeBar(lo, hi, price, { lowLabel: PsxUI.fmt(lo), highLabel: PsxUI.fmt(hi), markerLabel: 'Fair ' + PsxUI.fmt(fairValue) })}
+      </div>
+    </div>`;
   }
 
   function render() {
@@ -379,7 +435,7 @@ const Research = (() => {
           <span class="lc-research-chg ${chgCls}">${_fmtPct(quote.changePct) === '—' ? 'Change unavailable' : _fmtPct(quote.changePct) + ' today'}</span>
           <p class="lc-card-sub lc-research-source">Source: ${Prices.sourceLabel(quote.source || 'seed')}</p>
         </div>
-        <div class="lc-verdict">
+        <div class="lc-verdict ${ai.action === 'BUY' || ai.action === 'HOLD+' ? 'lc-verdict--healthy' : ai.action === 'SELL' || ai.riskScore > 70 ? 'lc-verdict--risky' : 'lc-verdict--caution'}">
           <h3>${I18n.t('analyze.plainEnglish')}</h3>
           <p>${esc(ai.summary)}</p>
           <div class="lc-verdict-meta">${shLabel}</div>
@@ -399,7 +455,9 @@ const Research = (() => {
           <div id="research-orderbook"><p class="psx-muted">Loading…</p></div>
         </div>` : ''}
         ${_technicalBlock(r.symbol, quote.price, quote.prevClose)}
-        <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>52-week range</h3><span>EOD history</span></div><div id="research-52w"><p class="psx-muted">Loading…</p></div></div>
+        <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>52-week range</h3><span>EOD history</span></div><div class="lc-sector-card" id="research-52w"><p class="psx-muted lc-card-sub">Loading…</p></div></div>
+        <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Price trend</h3><span>EOD closes</span></div><div class="lc-sector-card" id="research-history"><p class="psx-muted lc-card-sub">Loading…</p></div></div>
+        ${_valueCheck(quote.price, ai.fairValue)}
         ${_peersBlock(r.symbol, profile.sector)}
         ${_dividendBlock(r.symbol)}
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Performance</h3><span>% change</span></div></div>
@@ -423,6 +481,6 @@ const Research = (() => {
     _load52w(r.symbol, quote.price);
   }
 
-  return { render, open, pickSymbol, setMode, _onSearch };
+  return { render, open, pickSymbol, setMode, setHistRange, _onSearch };
 })();
 window.Research = Research;

@@ -402,6 +402,42 @@ body.lc-rtl .psx-sidebar {
   direction: rtl;
 }
 
+/* Range bar (52-week range, fair-value gauge) */
+.lc-range-bar { padding: 6px 0 2px; }
+.lc-range-bar-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--psx-down) 0%, #f0b90b 50%, var(--psx-up) 100%);
+  opacity: .9;
+}
+.lc-range-bar-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--psx-text);
+  border: 3px solid var(--psx-bg-card);
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
+}
+.lc-range-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--psx-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.lc-range-bar-mid { color: var(--psx-text); }
+
+/* Verdict banner tint */
+.lc-verdict--healthy { border-left: 3px solid var(--psx-up); }
+.lc-verdict--caution { border-left: 3px solid #f0b90b; }
+.lc-verdict--risky { border-left: 3px solid var(--psx-down); }
+
 /* Nastaliq-style scripts need taller lines to avoid diacritic clipping */
 body.lc-rtl {
   line-height: 1.75;

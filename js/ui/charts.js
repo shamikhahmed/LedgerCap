@@ -141,6 +141,27 @@ const Charts = (() => {
     return sparkline(data, { positive: (h.pnlPct || 0) >= 0 });
   }
 
-  return { lineChart, lineChartBlock, barChart, ringProgress, sparkline, holdingSpark, _chartColor };
+  /**
+   * Horizontal range bar with current-value marker (52-week range,
+   * fair-value gauge). Gradient low→high, dot at current position.
+   */
+  function rangeBar(low, high, current, opts) {
+    opts = opts || {};
+    if (!(high > low) || current == null) return '';
+    const pct = Math.max(0, Math.min(100, ((current - low) / (high - low)) * 100));
+    const lowLabel = opts.lowLabel || '';
+    const highLabel = opts.highLabel || '';
+    const markerLabel = opts.markerLabel || '';
+    return `<div class="lc-range-bar" role="img" aria-label="${opts.ariaLabel || `Range ${low} to ${high}, current ${current}`}">
+      <div class="lc-range-bar-track"><span class="lc-range-bar-marker" style="left:${pct.toFixed(1)}%"></span></div>
+      <div class="lc-range-bar-labels">
+        <span>${lowLabel}</span>
+        ${markerLabel ? `<span class="lc-range-bar-mid">${markerLabel}</span>` : ''}
+        <span>${highLabel}</span>
+      </div>
+    </div>`;
+  }
+
+  return { lineChart, lineChartBlock, barChart, ringProgress, sparkline, holdingSpark, rangeBar, _chartColor };
 })();
 window.Charts = Charts;
