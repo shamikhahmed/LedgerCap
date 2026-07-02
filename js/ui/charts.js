@@ -42,7 +42,7 @@ const Charts = (() => {
     const linePath = pts.map((p, i) => (i === 0 ? `M${p[0].toFixed(1)},${p[1].toFixed(1)}` : `L${p[0].toFixed(1)},${p[1].toFixed(1)}`)).join(' ');
     const fillPath = fill ? `${linePath} L${width},${height} L0,${height} Z` : '';
 
-    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:100%;height:${height}px;display:block;" role="img" aria-label="${label}">
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:${opts.width ? opts.width + 'px' : '100%'};height:${height}px;display:block;" role="img" aria-label="${label}">
       <defs>
         <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
@@ -92,7 +92,7 @@ const Charts = (() => {
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${fill}"/>`;
     }).join('');
 
-    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:100%;height:${height}px;display:block;" role="img" aria-label="${label}">${bars}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:${opts.width ? opts.width + 'px' : '100%'};height:${height}px;display:block;" role="img" aria-label="${label}">${bars}</svg>`;
   }
 
   function ringProgress(pct, color, size, strokeWidth) {

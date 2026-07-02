@@ -218,15 +218,15 @@ const Hub = (() => {
     if (typeof PsxSession === 'undefined') return '';
     const pkt = PsxSession.pktParts();
     const open = PsxSession.isOpen(pkt);
-    const label = open ? 'OPEN' : (PsxSession.priceLabel(pkt).toUpperCase());
     const cls = open ? 'psx-up' : 'lc-pulse-neutral';
-    const kse = State.get('kseIndex');
-    const kseTxt = kse?.value ? PsxUI.fmtIndex(kse.value) : '—';
+    // Honest "as of" stamp from the newest real quote, not the wall clock.
+    const prices = State.get('prices') || {};
+    const newest = Object.values(prices).map(p => p?.ts).filter(Boolean).sort((a, b) => b - a)[0];
+    const asOf = newest && typeof Prices !== 'undefined' ? Prices.formatTs(newest) : null;
+    const label = open ? 'Market open' : PsxSession.priceLabel(pkt);
     return `<div class="lc-market-status" role="status">
       <span class="lc-market-status-dot ${cls}"></span>
-      <strong>${label}</strong>
-      <span>KSE-100 ${kseTxt}</span>
-      <span>${pkt.dateKey} PKT</span>
+      <span>${label}${asOf ? ` · prices ${asOf}` : ''}</span>
     </div>`;
   }
 

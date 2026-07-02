@@ -192,24 +192,24 @@ const PortfolioBuckets = (() => {
       const on = activeId === b.id ? ' on' : '';
       const spark = bucketSparkline(state, b.id);
       const sparkHtml = spark.length >= 2 && typeof Charts !== 'undefined'
-        ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 28, color: s.pnl >= 0 ? '#22c55e' : '#ef4444' })}</div>`
+        ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 24, width: 64, fill: false, color: s.pnl >= 0 ? '#22c55e' : '#ef4444' })}</div>`
         : '';
       const del = !b.builtin
         ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" data-action="App.deletePortfolio" data-tab="${b.id}" data-stop="1">×</button>`
         : '';
+      // Two-line row (iOS Stocks style): name + positions/spark left,
+      // value + one-line P&L right. Deployed detail lives in the drill-down.
       return `<button type="button" class="lc-portfolio-card${on}${empty ? ' lc-portfolio-card--empty' : ''}" data-action="${click}" data-tab="${b.id}" aria-label="${b.name}, ${empty ? 'empty' : PsxUI.fmt(s.value) + ', ' + s.positions + ' positions'}">
         ${del}
         <span class="lc-portfolio-card-icon" aria-hidden="true">${b.icon}</span>
         <div class="lc-portfolio-card-body">
           <strong>${b.name}</strong>
-          <span class="lc-portfolio-card-desc">${b.desc}</span>
-          ${sparkHtml}
+          <span class="lc-portfolio-card-desc">${empty ? b.desc : `${s.positions} position${s.positions === 1 ? '' : 's'}`}</span>
         </div>
+        ${sparkHtml}
         <div class="lc-portfolio-card-meta">
-          <em class="lc-portfolio-card-value">${empty ? '—' : PsxUI.fmt(s.value)}</em>
-          ${!empty ? `<span class="lc-portfolio-invested" title="${s.deployedPkr > 0 ? 'Gross cash deployed — P&L is measured against this' : (typeof I18n !== 'undefined' ? I18n.t('portfolio.investedFootnote') : 'Invested = cost basis')}">${s.deployedPkr > 0 ? 'Deployed' : (I18n?.t?.('portfolio.invested') || 'Invested')} ${PsxUI.fmt(s.deployedPkr > 0 ? s.deployedPkr : s.invested)}</span>
-          <span class="lc-portfolio-pnl ${PsxUI.chgCls(s.pnl)}">${I18n?.t?.('portfolio.gainLoss') || 'P&L'} ${PsxUI.fmt(s.pnl, { signed: true })} · ${PsxUI.fmt(s.pnlPct, { pct: true, signed: true })}</span>` : ''}
-          <label>${s.positions} pos</label>
+          <em class="lc-portfolio-card-value lc-num">${empty ? '—' : PsxUI.fmt(s.value)}</em>
+          ${!empty ? `<span class="lc-portfolio-pnl ${PsxUI.chgCls(s.pnl)}" title="${s.deployedPkr > 0 ? 'vs deployed ' + PsxUI.fmt(s.deployedPkr) : 'vs invested ' + PsxUI.fmt(s.invested)}">${PsxUI.fmt(s.pnl, { signed: true })} · ${PsxUI.fmt(s.pnlPct, { pct: true, signed: true })}</span>` : ''}
         </div>
       </button>`;
     }).join('');
