@@ -15,14 +15,25 @@ const Funds = (() => {
   }
 
   function _listHtml(funds) {
+    // Cost basis comes from replaying the transaction ledger; the seed
+    // MEEZAN_FUNDS avgNav is a value snapshot (== currentNav), not cost.
+    const ledgerFunds = typeof Ledger !== 'undefined' && State.get()
+      ? Ledger.calcFundHoldings(State.get().transactions || [])
+      : [];
     return funds.map(f => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
       const nav = State.getPrice(f.symbol) || f.currentNav || 0;
-      const invested = (f.units || 0) * (f.avgNav || 0);
+      const lf = ledgerFunds.find(x => x.symbol === f.symbol);
+      const invested = lf?.totalInvested || 0;
+      const value = lf ? lf.units * nav : 0;
+      const pnl = invested > 0 ? value - invested : 0;
+      const right = invested
+        ? `<span class="${PsxUI.chgCls(pnl)}">${PsxUI.fmt(pnl, { signed: true })}</span> · Inv ${PsxUI.fmt(invested)}`
+        : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—');
       return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${f.symbol}">
         <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
-        <div class="lc-market-chg ${PsxUI.chgCls(a.oneYearReturn)}">${invested ? 'Inv ' + PsxUI.fmt(invested) : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—')}</div>
+        <div class="lc-market-chg">${right}</div>
       </button>`;
     }).join('');
   }

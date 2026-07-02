@@ -37,7 +37,9 @@ const PlatformUI = (() => {
         if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
       }
     }
-    const d = opts.decimals ?? 2;
+    // Whole units once amounts reach 4 digits — paisa noise on large
+    // figures reads cheap and slows the 3-second glance.
+    const d = opts.decimals ?? (abs >= 1000 ? 0 : 2);
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
     if (opts.signed && val > 0) return '+' + sym + formatted;
     if (val < 0) return '-' + sym + formatted;

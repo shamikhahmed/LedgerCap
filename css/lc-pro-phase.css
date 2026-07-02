@@ -33,13 +33,22 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-  padding: 8px 16px;
-  background: rgba(240, 185, 11, 0.1);
-  border-bottom: 1px solid rgba(240, 185, 11, 0.22);
-  font-size: 0.75rem;
+  /* Slim single-line strip — status, not a wall */
+  flex-wrap: nowrap;
+  padding: 6px 16px;
+  background: rgba(240, 185, 11, 0.08);
+  border-bottom: 1px solid rgba(240, 185, 11, 0.18);
+  font-size: 0.72rem;
   color: var(--psx-text-2);
-  line-height: 1.45;
+  line-height: 1.3;
+  min-height: 32px;
+}
+.lc-price-health-msg {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
 }
 .lc-price-health-btn {
   padding: 4px 10px;

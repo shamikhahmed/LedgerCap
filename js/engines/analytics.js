@@ -91,7 +91,10 @@ const Analytics = (() => {
 
   function totalReturn(state) {
     const cost = State.calcTotalCost();
-    const value = State.calcTotalValue();
+    // Return measures securities only — manual assets (broker cash, gold,
+    // real estate) have no ledger cost basis and were inflating the pct.
+    const manual = State.calcManualAssetsValue ? State.calcManualAssetsValue() : 0;
+    const value = State.calcTotalValue() - manual;
     if (cost <= 0) return { abs: 0, pct: 0 };
     return { abs: value - cost, pct: ((value - cost) / cost) * 100 };
   }

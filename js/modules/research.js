@@ -281,7 +281,19 @@ const Research = (() => {
     }
 
     const symbols = StockService.listSymbols();
-    if (!_symbol && symbols.length) _symbol = symbols[0];
+    if (!_symbol && symbols.length) {
+      // Default to the user's largest holding — never a random catalog
+      // entry with a $0 seed price.
+      try {
+        const txs = State.get().transactions || [];
+        const held = Ledger.calcHoldings(txs)
+          .map(h => ({ symbol: h.symbol, value: h.shares * (State.getPrice(h.symbol) || h.avgCost) }))
+          .sort((a, b) => b.value - a.value);
+        _symbol = held[0]?.symbol || symbols[0];
+      } catch (_) {
+        _symbol = symbols[0];
+      }
+    }
     if (!_symbol) {
       screen.innerHTML = `
         <div class="lc-dash">

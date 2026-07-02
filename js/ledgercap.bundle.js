@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.46.0',
-  sw: 115,
-  cache: 'ledgercap-v115',
+  app: '3.47.0',
+  sw: 116,
+  cache: 'ledgercap-v116',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -5406,7 +5406,7 @@ const Ledger = (() => {
       if (!t.symbol) return;
       if (t.type === 'BUY') {
         _addShares(holdings, t.symbol, t.broker, t.shares || 0, (t.shares || 0) * (t.price || 0));
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         _removeShares(holdings, t.symbol, t.broker, t.shares || 0);
       } else if (t.type === 'IPO_SUBSCRIBE' && t.status === 'listed') {
         const shares = t.allottedShares || t.shares || 0;
@@ -5546,7 +5546,7 @@ const Ledger = (() => {
         const shares = t.allottedShares || t.shares || 0;
         holdings[key].shares += shares;
         holdings[key].totalCost += t.amount || shares * (t.listingPrice || 0);
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         const requested = t.shares || 0;
         const sold = holdings[key].shares > 0 ? Math.min(requested, holdings[key].shares) : 0;
         const avgCost = holdings[key].shares > 0 ? holdings[key].totalCost / holdings[key].shares : 0;
@@ -5646,15 +5646,15 @@ const Ledger = (() => {
       if (!t.date) return;
       if (['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type) && !t.internal) {
         flow(t.date, -(t.amount || 0));
-      } else if (['INTL_BUY', 'CRYPTO_BUY'].includes(t.type)) {
+      } else if (['INTL_BUY', 'CRYPTO_BUY'].includes(t.type) && !t.internal) {
         const usd = t.costUsd != null ? t.costUsd : (t.priceUsd || 0) * (t.shares || t.qty || 0);
         const pkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
         flow(t.date, -pkr);
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         flow(t.date, (t.shares || 0) * (t.price || 0));
-      } else if (['REDEMPTION', 'FUND_OUT'].includes(t.type)) {
+      } else if (['REDEMPTION', 'FUND_OUT'].includes(t.type) && !t.internal) {
         flow(t.date, Math.abs(t.amount || 0));
-      } else if (['INTL_SELL', 'CRYPTO_SELL'].includes(t.type)) {
+      } else if (['INTL_SELL', 'CRYPTO_SELL'].includes(t.type) && !t.internal) {
         const usd = (t.priceUsd || 0) * (t.shares || t.qty || 0);
         const pkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
         flow(t.date, pkr);
@@ -5728,7 +5728,7 @@ const Ledger = (() => {
     sorted.forEach(t => {
       if (t.type === 'BUY') {
         _addShares(stockLedger, t.symbol, t.broker, t.shares || 0, (t.shares || 0) * (t.price || 0));
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         _removeShares(stockLedger, t.symbol, t.broker, t.shares || 0);
       } else if (t.type === 'CONTRIBUTION') {
         if (!fundLedger[t.symbol]) fundLedger[t.symbol] = { symbol: t.symbol, units: 0, totalInvested: 0, avgNav: 0 };
@@ -5795,7 +5795,7 @@ const Ledger = (() => {
       const prev = hist[i - 1];
       const cur = hist[i];
       if (!cur.date || cur.value == null || prev.value == null) continue;
-      valueByDate[cur.date] = (cur.value - prev.value) - (cashFlow[cur.date] || 0);
+      valueByDate[cur.date] = (cur.value - prev.value) + (cashFlow[cur.date] || 0);
     }
 
     if (hist.length < 2 && typeof priceFn === 'function') {
@@ -5803,7 +5803,7 @@ const Ledger = (() => {
       timeline.forEach((pt, i) => {
         if (i === 0) return;
         const prev = timeline[i - 1];
-        valueByDate[pt.date] = (pt.cost - prev.cost) - (cashFlow[pt.date] || 0);
+        valueByDate[pt.date] = (pt.cost - prev.cost) + (cashFlow[pt.date] || 0);
       });
     }
 
@@ -6695,7 +6695,10 @@ const Analytics = (() => {
 
   function totalReturn(state) {
     const cost = State.calcTotalCost();
-    const value = State.calcTotalValue();
+    // Return measures securities only — manual assets (broker cash, gold,
+    // real estate) have no ledger cost basis and were inflating the pct.
+    const manual = State.calcManualAssetsValue ? State.calcManualAssetsValue() : 0;
+    const value = State.calcTotalValue() - manual;
     if (cost <= 0) return { abs: 0, pct: 0 };
     return { abs: value - cost, pct: ((value - cost) / cost) * 100 };
   }
@@ -8445,7 +8448,7 @@ const PortfolioBuckets = (() => {
         </div>
         <div class="lc-portfolio-card-meta">
           <em class="lc-portfolio-card-value">${empty ? '—' : PsxUI.fmt(s.value)}</em>
-          ${!empty ? `<span class="lc-portfolio-invested" title="${typeof I18n !== 'undefined' ? I18n.t('portfolio.investedFootnote') : 'Invested = cost basis'}">${I18n?.t?.('portfolio.invested') || 'Invested'} ${PsxUI.fmt(s.invested)}</span>
+          ${!empty ? `<span class="lc-portfolio-invested" title="${s.deployedPkr > 0 ? 'Gross cash deployed — P&L is measured against this' : (typeof I18n !== 'undefined' ? I18n.t('portfolio.investedFootnote') : 'Invested = cost basis')}">${s.deployedPkr > 0 ? 'Deployed' : (I18n?.t?.('portfolio.invested') || 'Invested')} ${PsxUI.fmt(s.deployedPkr > 0 ? s.deployedPkr : s.invested)}</span>
           <span class="lc-portfolio-pnl ${PsxUI.chgCls(s.pnl)}">${I18n?.t?.('portfolio.gainLoss') || 'P&L'} ${PsxUI.fmt(s.pnl, { signed: true })} · ${PsxUI.fmt(s.pnlPct, { pct: true, signed: true })}</span>` : ''}
           <label>${s.positions} pos</label>
         </div>
@@ -11006,10 +11009,10 @@ const PriceHealth = (() => {
     const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
-      ? `${pct}% of holdings on seed/fallback prices (snapshot ${updated}). Tap refresh or open during PSX session.`
-      : `${rep.stale} holding(s) have prices older than 24h. Tap refresh for latest close.`;
+      ? `Prices as of ${updated} snapshot (${pct}% not live)`
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h`;
     return `<div class="lc-price-health" role="status">
-      <span>${msg}</span>
+      <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
@@ -12229,7 +12232,9 @@ const PlatformUI = (() => {
         if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
       }
     }
-    const d = opts.decimals ?? 2;
+    // Whole units once amounts reach 4 digits — paisa noise on large
+    // figures reads cheap and slows the 3-second glance.
+    const d = opts.decimals ?? (abs >= 1000 ? 0 : 2);
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
     if (opts.signed && val > 0) return '+' + sym + formatted;
     if (val < 0) return '-' + sym + formatted;
@@ -13062,7 +13067,7 @@ const State = (() => {
       if (entry.prevClose < Math.max(usd * 10, 500)) prevUsd = entry.prevClose;
       else prevUsd = entry.prevClose / rate;
     }
-    if (!(prevUsd > 0)) prevUsd = usd * 0.999;
+    if (!(prevUsd > 0)) prevUsd = usd;
     entry.prevCloseUsd = prevUsd;
     entry.prevClose = prevUsd * rate;
     return entry;
@@ -13146,12 +13151,12 @@ const State = (() => {
     const fp = window.FALLBACK_PRICES || {};
     Object.entries(fp).forEach(([symbol, price]) => {
       if (!_s.prices[symbol]) {
-        _s.prices[symbol] = { price, prevClose: price * 0.998, ts: Date.now() - 86400000, source: 'fallback' };
+        _s.prices[symbol] = { price, prevClose: price, ts: Date.now() - 86400000, source: 'fallback' };
       }
     });
     (window.MEEZAN_FUNDS || []).forEach(f => {
       if (!_s.prices[f.symbol] && f.currentNav) {
-        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, ts: Date.now() - 86400000, source: 'fallback' };
+        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav, ts: Date.now() - 86400000, source: 'fallback' };
       }
     });
   }
@@ -13183,11 +13188,11 @@ const State = (() => {
       _s.manualAssets.brokerCashPkr = window.RAFI_BROKER_CASH_PKR;
     }
     Object.entries(window.FALLBACK_PRICES || {}).forEach(([sym, price]) => {
-      _s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };
+      _s.prices[sym] = { price, prevClose: price, source: 'seed', ts: Date.now() };
     });
     (window.MEEZAN_FUNDS || []).forEach(f => {
       if (f.currentNav) {
-        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, source: 'meezan_seed', ts: Date.now() };
+        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav, source: 'meezan_seed', ts: Date.now() };
       }
     });
     _seedWatchlist();
@@ -13458,15 +13463,18 @@ const State = (() => {
       return sum + h.qty * (px || FxService.usdToPkr(h.avgCostUsd || 0));
     }, 0);
 
+    return stockVal + fundVal + globalVal + calcManualAssetsValue();
+  }
+
+  /** Cash/gold/real-estate — held value with no ledger cost basis. */
+  function calcManualAssetsValue() {
+    if (!_s) load();
     const ma = _s.manualAssets || {};
     const settings = _s.settings || {};
-    const manualVal =
-      (ma.usdCash || 0) * FxService.getUsdRate() +
+    return (ma.usdCash || 0) * FxService.getUsdRate() +
       (ma.goldGrams || 0) * (settings.goldPricePerGram || 18000) +
       (ma.realEstate || 0) +
       (ma.brokerCashPkr || 0);
-
-    return stockVal + fundVal + globalVal + manualVal;
   }
 
   function calcTotalCost() {
@@ -13476,30 +13484,27 @@ const State = (() => {
       : Ledger.totalInvested(_s.transactions);
   }
 
+  // Seed/fallback quotes have no real previous close — report zero day
+  // change instead of trusting a fabricated prevClose (incl. entries
+  // persisted by older versions with price*0.998 seeds).
+  const SYNTHETIC_SOURCES = new Set(['seed', 'fallback', 'meezan_seed']);
+  function _dayChange(symbol, qty) {
+    const entry = _s.prices[symbol];
+    if (!entry || SYNTHETIC_SOURCES.has(entry.source)) return 0;
+    const curr = getPrice(symbol);
+    const prev = getPrevClose(symbol);
+    if (!curr || !prev) return 0;
+    return qty * (curr - prev);
+  }
+
   function calcDailyPnl() {
     if (!_s) load();
     const holdings = Ledger.calcHoldings(_s.transactions);
     const funds = Ledger.calcFundHoldings(_s.transactions);
-    const stockPnl = holdings.reduce((sum, h) => {
-      const curr = getPrice(h.symbol);
-      const prev = getPrevClose(h.symbol);
-      if (!curr || !prev) return sum;
-      return sum + h.shares * (curr - prev);
-    }, 0);
-    const fundPnl = funds.reduce((sum, f) => {
-      const curr = getPrice(f.symbol);
-      const prev = getPrevClose(f.symbol);
-      const nav = curr || prev || f.avgNav;
-      const prevNav = prev || curr || f.avgNav;
-      if (!nav || !prevNav) return sum;
-      return sum + f.units * (nav - prevNav);
-    }, 0);
-    const globalPnl = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(_s.transactions) : []).reduce((sum, h) => {
-      const curr = getPrice(h.symbol);
-      const prev = getPrevClose(h.symbol);
-      if (!curr || !prev) return sum;
-      return sum + h.qty * (curr - prev);
-    }, 0);
+    const stockPnl = holdings.reduce((sum, h) => sum + _dayChange(h.symbol, h.shares), 0);
+    const fundPnl = funds.reduce((sum, f) => sum + _dayChange(f.symbol, f.units), 0);
+    const globalPnl = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(_s.transactions) : []).reduce(
+      (sum, h) => sum + _dayChange(h.symbol, h.qty), 0);
     return stockPnl + fundPnl + globalPnl;
   }
 
@@ -13541,7 +13546,7 @@ const State = (() => {
   const api = { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
     isPriceStale, priceAgeLabel, logPortfolioSnapshot, recordIntradaySnapshot,
-    calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
+    calcTotalValue, calcManualAssetsValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
   window.State = api;
   load();
   return api;
@@ -13991,7 +13996,10 @@ const Hub = (() => {
 
     const s = PortfolioAnalyticsService.getSummary(state);
     const daily = State.calcDailyPnl();
-    const cash = Ledger.cashBalance(state.transactions || []);
+    // Real broker cash lives in manualAssets (statement figures), not the
+    // salary-minus-buys ledger estimate which clamps to 0 here.
+    const ma = state.manualAssets || {};
+    const cash = (ma.brokerCashPkr || 0) + (typeof FxService !== 'undefined' ? FxService.usdToPkr(ma.usdCash || 0) : 0);
 
     screen.innerHTML = `
       <div class="lc-dash">
@@ -14576,14 +14584,25 @@ const Funds = (() => {
   }
 
   function _listHtml(funds) {
+    // Cost basis comes from replaying the transaction ledger; the seed
+    // MEEZAN_FUNDS avgNav is a value snapshot (== currentNav), not cost.
+    const ledgerFunds = typeof Ledger !== 'undefined' && State.get()
+      ? Ledger.calcFundHoldings(State.get().transactions || [])
+      : [];
     return funds.map(f => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
       const nav = State.getPrice(f.symbol) || f.currentNav || 0;
-      const invested = (f.units || 0) * (f.avgNav || 0);
+      const lf = ledgerFunds.find(x => x.symbol === f.symbol);
+      const invested = lf?.totalInvested || 0;
+      const value = lf ? lf.units * nav : 0;
+      const pnl = invested > 0 ? value - invested : 0;
+      const right = invested
+        ? `<span class="${PsxUI.chgCls(pnl)}">${PsxUI.fmt(pnl, { signed: true })}</span> · Inv ${PsxUI.fmt(invested)}`
+        : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—');
       return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${f.symbol}">
         <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
-        <div class="lc-market-chg ${PsxUI.chgCls(a.oneYearReturn)}">${invested ? 'Inv ' + PsxUI.fmt(invested) : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—')}</div>
+        <div class="lc-market-chg">${right}</div>
       </button>`;
     }).join('');
   }
@@ -15051,7 +15070,19 @@ const Research = (() => {
     }
 
     const symbols = StockService.listSymbols();
-    if (!_symbol && symbols.length) _symbol = symbols[0];
+    if (!_symbol && symbols.length) {
+      // Default to the user's largest holding — never a random catalog
+      // entry with a $0 seed price.
+      try {
+        const txs = State.get().transactions || [];
+        const held = Ledger.calcHoldings(txs)
+          .map(h => ({ symbol: h.symbol, value: h.shares * (State.getPrice(h.symbol) || h.avgCost) }))
+          .sort((a, b) => b.value - a.value);
+        _symbol = held[0]?.symbol || symbols[0];
+      } catch (_) {
+        _symbol = symbols[0];
+      }
+    }
     if (!_symbol) {
       screen.innerHTML = `
         <div class="lc-dash">
@@ -19690,12 +19721,31 @@ const App = (() => {
     if (!el || typeof PsxUI === 'undefined') return;
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
-    const hist = (State.get('kseHistory') || []).map(h => h.value);
-    const spark = hist.length >= 2 && typeof Charts !== 'undefined'
-      ? `<span class="lc-ticker-spark">${Charts.lineChart(hist, { height: 28, width: 80, fill: false, color: k.cls === 'psx-up' ? '#22c55e' : '#ef4444' })}</span>`
-      : '';
-    const fresh = _priceFreshnessChip();
-    el.innerHTML = `${fresh}<span class="lc-ticker-pill">${spark}<span class="lc-ticker-label">KSE-100</span> <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></span>`;
+    const fresh = _freshnessLabel();
+    // One compact pill: index, change, freshness. Tap = refresh.
+    el.innerHTML = `<button type="button" class="lc-ticker-pill${fresh.cls ? ' ' + fresh.cls : ''}" data-action="App.refreshPrices" title="Tap to refresh prices">
+      <span class="lc-ticker-label">KSE-100</span>
+      <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
+      <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>
+      ${fresh.label ? `<span class="lc-ticker-fresh">· ${fresh.label}</span>` : ''}
+    </button>`;
+  }
+
+  function _freshnessLabel() {
+    if (typeof State === 'undefined') return { label: '', cls: '' };
+    const prices = State.get('prices') || {};
+    const ts = Object.values(prices).map((p) => p?.ts).filter(Boolean).sort((a, b) => b - a)[0];
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+    if (!ts && !offline) return { label: '', cls: '' };
+    const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
+    const stale = ts && (Date.now() - ts > 24 * 3600000);
+    const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
+    const live = sessionOpen && typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
+    const pktLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : null;
+    if (offline) return { label: 'Offline', cls: 'lc-ticker-pill--warn' };
+    if (live) return { label: 'Live', cls: 'lc-ticker-pill--live' };
+    if (pktLabel === 'Last close' || pktLabel === 'Pre-market') return { label: `${pktLabel} ${age}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
+    return { label: age, cls: stale ? 'lc-ticker-pill--warn' : '' };
   }
 
   function _priceFreshnessChip() {
@@ -20037,6 +20087,11 @@ const App = (() => {
           PinLock?.gate?.();
         }
         _scheduleAutoRefresh();
+        // Returning to the tab: refetch if newest quote is >10 min old so
+        // the user never reads stale numbers without a fetch attempt.
+        const prices = State.get('prices') || {};
+        const newest = Object.values(prices).map(p => p?.ts).filter(Boolean).sort((a, b) => b - a)[0] || 0;
+        if (navigator.onLine && Date.now() - newest > 10 * 60000) refreshPrices();
       }
     });
     setInterval(() => {

@@ -44,10 +44,10 @@ const PriceHealth = (() => {
     const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
-      ? `${pct}% of holdings on seed/fallback prices (snapshot ${updated}). Tap refresh or open during PSX session.`
-      : `${rep.stale} holding(s) have prices older than 24h. Tap refresh for latest close.`;
+      ? `Prices as of ${updated} snapshot (${pct}% not live)`
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h`;
     return `<div class="lc-price-health" role="status">
-      <span>${msg}</span>
+      <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;

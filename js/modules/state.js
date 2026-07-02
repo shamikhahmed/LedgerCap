@@ -97,7 +97,7 @@ const State = (() => {
       if (entry.prevClose < Math.max(usd * 10, 500)) prevUsd = entry.prevClose;
       else prevUsd = entry.prevClose / rate;
     }
-    if (!(prevUsd > 0)) prevUsd = usd * 0.999;
+    if (!(prevUsd > 0)) prevUsd = usd;
     entry.prevCloseUsd = prevUsd;
     entry.prevClose = prevUsd * rate;
     return entry;
@@ -181,12 +181,12 @@ const State = (() => {
     const fp = window.FALLBACK_PRICES || {};
     Object.entries(fp).forEach(([symbol, price]) => {
       if (!_s.prices[symbol]) {
-        _s.prices[symbol] = { price, prevClose: price * 0.998, ts: Date.now() - 86400000, source: 'fallback' };
+        _s.prices[symbol] = { price, prevClose: price, ts: Date.now() - 86400000, source: 'fallback' };
       }
     });
     (window.MEEZAN_FUNDS || []).forEach(f => {
       if (!_s.prices[f.symbol] && f.currentNav) {
-        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, ts: Date.now() - 86400000, source: 'fallback' };
+        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav, ts: Date.now() - 86400000, source: 'fallback' };
       }
     });
   }
@@ -218,11 +218,11 @@ const State = (() => {
       _s.manualAssets.brokerCashPkr = window.RAFI_BROKER_CASH_PKR;
     }
     Object.entries(window.FALLBACK_PRICES || {}).forEach(([sym, price]) => {
-      _s.prices[sym] = { price, prevClose: price * 0.998, source: 'seed', ts: Date.now() };
+      _s.prices[sym] = { price, prevClose: price, source: 'seed', ts: Date.now() };
     });
     (window.MEEZAN_FUNDS || []).forEach(f => {
       if (f.currentNav) {
-        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav * 0.999, source: 'meezan_seed', ts: Date.now() };
+        _s.prices[f.symbol] = { price: f.currentNav, prevClose: f.currentNav, source: 'meezan_seed', ts: Date.now() };
       }
     });
     _seedWatchlist();
@@ -493,15 +493,18 @@ const State = (() => {
       return sum + h.qty * (px || FxService.usdToPkr(h.avgCostUsd || 0));
     }, 0);
 
+    return stockVal + fundVal + globalVal + calcManualAssetsValue();
+  }
+
+  /** Cash/gold/real-estate — held value with no ledger cost basis. */
+  function calcManualAssetsValue() {
+    if (!_s) load();
     const ma = _s.manualAssets || {};
     const settings = _s.settings || {};
-    const manualVal =
-      (ma.usdCash || 0) * FxService.getUsdRate() +
+    return (ma.usdCash || 0) * FxService.getUsdRate() +
       (ma.goldGrams || 0) * (settings.goldPricePerGram || 18000) +
       (ma.realEstate || 0) +
       (ma.brokerCashPkr || 0);
-
-    return stockVal + fundVal + globalVal + manualVal;
   }
 
   function calcTotalCost() {
@@ -511,30 +514,27 @@ const State = (() => {
       : Ledger.totalInvested(_s.transactions);
   }
 
+  // Seed/fallback quotes have no real previous close — report zero day
+  // change instead of trusting a fabricated prevClose (incl. entries
+  // persisted by older versions with price*0.998 seeds).
+  const SYNTHETIC_SOURCES = new Set(['seed', 'fallback', 'meezan_seed']);
+  function _dayChange(symbol, qty) {
+    const entry = _s.prices[symbol];
+    if (!entry || SYNTHETIC_SOURCES.has(entry.source)) return 0;
+    const curr = getPrice(symbol);
+    const prev = getPrevClose(symbol);
+    if (!curr || !prev) return 0;
+    return qty * (curr - prev);
+  }
+
   function calcDailyPnl() {
     if (!_s) load();
     const holdings = Ledger.calcHoldings(_s.transactions);
     const funds = Ledger.calcFundHoldings(_s.transactions);
-    const stockPnl = holdings.reduce((sum, h) => {
-      const curr = getPrice(h.symbol);
-      const prev = getPrevClose(h.symbol);
-      if (!curr || !prev) return sum;
-      return sum + h.shares * (curr - prev);
-    }, 0);
-    const fundPnl = funds.reduce((sum, f) => {
-      const curr = getPrice(f.symbol);
-      const prev = getPrevClose(f.symbol);
-      const nav = curr || prev || f.avgNav;
-      const prevNav = prev || curr || f.avgNav;
-      if (!nav || !prevNav) return sum;
-      return sum + f.units * (nav - prevNav);
-    }, 0);
-    const globalPnl = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(_s.transactions) : []).reduce((sum, h) => {
-      const curr = getPrice(h.symbol);
-      const prev = getPrevClose(h.symbol);
-      if (!curr || !prev) return sum;
-      return sum + h.qty * (curr - prev);
-    }, 0);
+    const stockPnl = holdings.reduce((sum, h) => sum + _dayChange(h.symbol, h.shares), 0);
+    const fundPnl = funds.reduce((sum, f) => sum + _dayChange(f.symbol, f.units), 0);
+    const globalPnl = (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(_s.transactions) : []).reduce(
+      (sum, h) => sum + _dayChange(h.symbol, h.qty), 0);
     return stockPnl + fundPnl + globalPnl;
   }
 
@@ -576,7 +576,7 @@ const State = (() => {
   const api = { get, set, update, save, reset, exportJSON, importJSON,
     addTransaction, deleteTransaction, updateTransaction, updatePrice, getPrice, getPriceSource, getPrevClose,
     isPriceStale, priceAgeLabel, logPortfolioSnapshot, recordIntradaySnapshot,
-    calcTotalValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
+    calcTotalValue, calcManualAssetsValue, calcTotalCost, calcDailyPnl, dividendsBySymbol, getTotalDividends, getHoldingDividends, recordKseSnapshot };
   window.State = api;
   load();
   return api;

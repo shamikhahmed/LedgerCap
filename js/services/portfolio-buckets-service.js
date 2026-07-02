@@ -207,7 +207,7 @@ const PortfolioBuckets = (() => {
         </div>
         <div class="lc-portfolio-card-meta">
           <em class="lc-portfolio-card-value">${empty ? '—' : PsxUI.fmt(s.value)}</em>
-          ${!empty ? `<span class="lc-portfolio-invested" title="${typeof I18n !== 'undefined' ? I18n.t('portfolio.investedFootnote') : 'Invested = cost basis'}">${I18n?.t?.('portfolio.invested') || 'Invested'} ${PsxUI.fmt(s.invested)}</span>
+          ${!empty ? `<span class="lc-portfolio-invested" title="${s.deployedPkr > 0 ? 'Gross cash deployed — P&L is measured against this' : (typeof I18n !== 'undefined' ? I18n.t('portfolio.investedFootnote') : 'Invested = cost basis')}">${s.deployedPkr > 0 ? 'Deployed' : (I18n?.t?.('portfolio.invested') || 'Invested')} ${PsxUI.fmt(s.deployedPkr > 0 ? s.deployedPkr : s.invested)}</span>
           <span class="lc-portfolio-pnl ${PsxUI.chgCls(s.pnl)}">${I18n?.t?.('portfolio.gainLoss') || 'P&L'} ${PsxUI.fmt(s.pnl, { signed: true })} · ${PsxUI.fmt(s.pnlPct, { pct: true, signed: true })}</span>` : ''}
           <label>${s.positions} pos</label>
         </div>

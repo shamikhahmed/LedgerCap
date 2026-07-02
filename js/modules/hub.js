@@ -365,7 +365,10 @@ const Hub = (() => {
 
     const s = PortfolioAnalyticsService.getSummary(state);
     const daily = State.calcDailyPnl();
-    const cash = Ledger.cashBalance(state.transactions || []);
+    // Real broker cash lives in manualAssets (statement figures), not the
+    // salary-minus-buys ledger estimate which clamps to 0 here.
+    const ma = state.manualAssets || {};
+    const cash = (ma.brokerCashPkr || 0) + (typeof FxService !== 'undefined' ? FxService.usdToPkr(ma.usdCash || 0) : 0);
 
     screen.innerHTML = `
       <div class="lc-dash">

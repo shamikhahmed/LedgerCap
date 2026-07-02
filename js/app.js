@@ -57,12 +57,31 @@ const App = (() => {
     if (!el || typeof PsxUI === 'undefined') return;
     const k = PsxUI.kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
-    const hist = (State.get('kseHistory') || []).map(h => h.value);
-    const spark = hist.length >= 2 && typeof Charts !== 'undefined'
-      ? `<span class="lc-ticker-spark">${Charts.lineChart(hist, { height: 28, width: 80, fill: false, color: k.cls === 'psx-up' ? '#22c55e' : '#ef4444' })}</span>`
-      : '';
-    const fresh = _priceFreshnessChip();
-    el.innerHTML = `${fresh}<span class="lc-ticker-pill">${spark}<span class="lc-ticker-label">KSE-100</span> <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong> <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></span>`;
+    const fresh = _freshnessLabel();
+    // One compact pill: index, change, freshness. Tap = refresh.
+    el.innerHTML = `<button type="button" class="lc-ticker-pill${fresh.cls ? ' ' + fresh.cls : ''}" data-action="App.refreshPrices" title="Tap to refresh prices">
+      <span class="lc-ticker-label">KSE-100</span>
+      <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
+      <span class="lc-ticker-chg ${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span>
+      ${fresh.label ? `<span class="lc-ticker-fresh">· ${fresh.label}</span>` : ''}
+    </button>`;
+  }
+
+  function _freshnessLabel() {
+    if (typeof State === 'undefined') return { label: '', cls: '' };
+    const prices = State.get('prices') || {};
+    const ts = Object.values(prices).map((p) => p?.ts).filter(Boolean).sort((a, b) => b - a)[0];
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+    if (!ts && !offline) return { label: '', cls: '' };
+    const age = ts && typeof Prices !== 'undefined' ? Prices.formatTs(ts) : 'never';
+    const stale = ts && (Date.now() - ts > 24 * 3600000);
+    const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
+    const live = sessionOpen && typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
+    const pktLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : null;
+    if (offline) return { label: 'Offline', cls: 'lc-ticker-pill--warn' };
+    if (live) return { label: 'Live', cls: 'lc-ticker-pill--live' };
+    if (pktLabel === 'Last close' || pktLabel === 'Pre-market') return { label: `${pktLabel} ${age}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
+    return { label: age, cls: stale ? 'lc-ticker-pill--warn' : '' };
   }
 
   function _priceFreshnessChip() {
@@ -404,6 +423,11 @@ const App = (() => {
           PinLock?.gate?.();
         }
         _scheduleAutoRefresh();
+        // Returning to the tab: refetch if newest quote is >10 min old so
+        // the user never reads stale numbers without a fetch attempt.
+        const prices = State.get('prices') || {};
+        const newest = Object.values(prices).map(p => p?.ts).filter(Boolean).sort((a, b) => b - a)[0] || 0;
+        if (navigator.onLine && Date.now() - newest > 10 * 60000) refreshPrices();
       }
     });
     setInterval(() => {

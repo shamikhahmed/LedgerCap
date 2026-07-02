@@ -720,17 +720,28 @@ body.lc-pro .psx-ticker {
 .lc-ticker-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 4px 10px;
+  gap: 5px;
+  /* Never wrap — overflow ellipsis keeps the topbar one clean row */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--psx-bg-muted);
   border: 1px solid var(--psx-border);
   font-size: 11px;
   color: var(--psx-text-2);
   max-width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 28px;
 }
+.lc-ticker-fresh { color: var(--psx-text-3); font-weight: 600; }
+.lc-ticker-pill--warn { border-color: rgba(245, 158, 11, 0.45); }
+.lc-ticker-pill--warn .lc-ticker-fresh { color: #f59e0b; }
+.lc-ticker-pill--live { border-color: rgba(34, 197, 94, 0.45); }
+.lc-ticker-pill--live .lc-ticker-fresh { color: var(--psx-up); }
 
 .lc-ticker-pill strong {
   color: var(--psx-text);

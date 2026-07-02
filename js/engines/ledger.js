@@ -137,7 +137,7 @@ const Ledger = (() => {
       if (!t.symbol) return;
       if (t.type === 'BUY') {
         _addShares(holdings, t.symbol, t.broker, t.shares || 0, (t.shares || 0) * (t.price || 0));
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         _removeShares(holdings, t.symbol, t.broker, t.shares || 0);
       } else if (t.type === 'IPO_SUBSCRIBE' && t.status === 'listed') {
         const shares = t.allottedShares || t.shares || 0;
@@ -277,7 +277,7 @@ const Ledger = (() => {
         const shares = t.allottedShares || t.shares || 0;
         holdings[key].shares += shares;
         holdings[key].totalCost += t.amount || shares * (t.listingPrice || 0);
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         const requested = t.shares || 0;
         const sold = holdings[key].shares > 0 ? Math.min(requested, holdings[key].shares) : 0;
         const avgCost = holdings[key].shares > 0 ? holdings[key].totalCost / holdings[key].shares : 0;
@@ -377,15 +377,15 @@ const Ledger = (() => {
       if (!t.date) return;
       if (['BUY', 'CONTRIBUTION', 'IPO_SUBSCRIBE'].includes(t.type) && !t.internal) {
         flow(t.date, -(t.amount || 0));
-      } else if (['INTL_BUY', 'CRYPTO_BUY'].includes(t.type)) {
+      } else if (['INTL_BUY', 'CRYPTO_BUY'].includes(t.type) && !t.internal) {
         const usd = t.costUsd != null ? t.costUsd : (t.priceUsd || 0) * (t.shares || t.qty || 0);
         const pkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
         flow(t.date, -pkr);
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         flow(t.date, (t.shares || 0) * (t.price || 0));
-      } else if (['REDEMPTION', 'FUND_OUT'].includes(t.type)) {
+      } else if (['REDEMPTION', 'FUND_OUT'].includes(t.type) && !t.internal) {
         flow(t.date, Math.abs(t.amount || 0));
-      } else if (['INTL_SELL', 'CRYPTO_SELL'].includes(t.type)) {
+      } else if (['INTL_SELL', 'CRYPTO_SELL'].includes(t.type) && !t.internal) {
         const usd = (t.priceUsd || 0) * (t.shares || t.qty || 0);
         const pkr = typeof FxService !== 'undefined' ? FxService.usdToPkr(usd) : usd * 280;
         flow(t.date, pkr);
@@ -459,7 +459,7 @@ const Ledger = (() => {
     sorted.forEach(t => {
       if (t.type === 'BUY') {
         _addShares(stockLedger, t.symbol, t.broker, t.shares || 0, (t.shares || 0) * (t.price || 0));
-      } else if (t.type === 'SELL') {
+      } else if (t.type === 'SELL' && !t.internal) {
         _removeShares(stockLedger, t.symbol, t.broker, t.shares || 0);
       } else if (t.type === 'CONTRIBUTION') {
         if (!fundLedger[t.symbol]) fundLedger[t.symbol] = { symbol: t.symbol, units: 0, totalInvested: 0, avgNav: 0 };
@@ -526,7 +526,7 @@ const Ledger = (() => {
       const prev = hist[i - 1];
       const cur = hist[i];
       if (!cur.date || cur.value == null || prev.value == null) continue;
-      valueByDate[cur.date] = (cur.value - prev.value) - (cashFlow[cur.date] || 0);
+      valueByDate[cur.date] = (cur.value - prev.value) + (cashFlow[cur.date] || 0);
     }
 
     if (hist.length < 2 && typeof priceFn === 'function') {
@@ -534,7 +534,7 @@ const Ledger = (() => {
       timeline.forEach((pt, i) => {
         if (i === 0) return;
         const prev = timeline[i - 1];
-        valueByDate[pt.date] = (pt.cost - prev.cost) - (cashFlow[pt.date] || 0);
+        valueByDate[pt.date] = (pt.cost - prev.cost) + (cashFlow[pt.date] || 0);
       });
     }
 
