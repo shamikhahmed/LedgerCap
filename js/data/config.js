@@ -1,9 +1,9 @@
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.43.0',
-  sw: 110,
-  cache: 'ledgercap-v110',
+  app: '3.44.0',
+  sw: 111,
+  cache: 'ledgercap-v111',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -35,3 +35,23 @@ function psxProxyBases() {
 }
 
 window.LedgerCapConfig = { resolvePsxProxyUrl, psxProxyBases };
+
+/**
+ * Escape a string for safe interpolation into innerHTML.
+ * Use on every API-derived or user-imported string (news titles,
+ * announcement text, CSV symbols/brokers, AI summaries).
+ */
+window.esc = function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+/** Allow only http(s) URLs for interpolated hrefs; everything else → '#'. */
+window.escUrl = function escUrl(u) {
+  const s = String(u ?? '').trim();
+  return /^https?:\/\//i.test(s) ? window.esc(s) : '#';
+};

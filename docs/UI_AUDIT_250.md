@@ -327,20 +327,22 @@
 
 ---
 
-## Open issues (tracked)
+## Open issues (tracked) — updated v3.44.0 (2026-07-02, Fable audit)
 
-| ID | Severity | Item | Fix |
-|----|----------|------|-----|
-| LC-UI-001 | Low | Tx ledger type icons still emoji (`TX_META`) | Map to LcIcons keys in `transactions.js` |
-| LC-UI-002 | Low | PIN dots lack `aria-label` / progress | Add `aria-valuenow` on dot row |
-| LC-UI-003 | Low | Android TWA not configured | Future Play Store track |
-| LC-UI-004 | Medium | PIN vault uses lock icon not `icon-mark.svg` | Inject brand mark in `pin-logo-host` |
-| LC-UI-005 | Medium | `widget-glance.html` text-only kicker | Add `icon-mark.svg` above net worth |
-| LC-UI-006 | Medium | Gallery PNG regen incomplete on disk | Run `npm run gallery` (infra ✅) |
-| LC-UI-007 | Low | Module empty-state emojis | Replace with LcIcons in phased pass |
-| LC-UI-008 | Low | `presentation.html` content-card emojis | Accepted for slide storytelling |
-| LC-UI-009 | Low | Urdu nav label clip risk at 390px | Shorten `nav.*` ur strings or `text-overflow` |
-| LC-UI-010 | Low | `pitch.html` hero emoji (marketing accent) | Optional SVG swap in pitch pass |
+| ID | Severity | Item | Status |
+|----|----------|------|--------|
+| LC-UI-001 | Low | Tx ledger type icons emoji | ✅ FIXED 3.44 — `TYPE_META` maps to LcIcons keys (`transaction-ledger-service.js`), rendered via `LcIcons.icon()` |
+| LC-UI-002 | Low | PIN dots lack aria progress | ✅ FIXED 3.44 — `role=progressbar` + `aria-valuenow` (`pin-lock.js`) |
+| LC-UI-003 | Low | Android TWA not configured | OPEN — future Play Store track |
+| LC-UI-004 | Medium | PIN vault brand mark | ✅ FIXED 3.43 |
+| LC-UI-005 | Medium | widget-glance kicker mark | ✅ FIXED 3.43 |
+| LC-UI-006 | Medium | Gallery PNG regen | ✅ FIXED 3.43 |
+| LC-UI-007 | Low | Module empty-state emojis | ✅ FIXED 3.44 — LcIcons in comparison/dashboard/home/insights/risk-audit |
+| LC-UI-008 | Low | presentation.html emojis | ACCEPTED — slide storytelling |
+| LC-UI-009 | Low | Urdu nav label clip risk | ✅ MITIGATED 3.44 — ur strings shortened + `text-overflow: ellipsis` + `min-height: 48px` on `.psx-nav-btn` |
+| LC-UI-010 | Low | pitch.html hero emoji | OPEN — optional marketing pass |
+
+See `docs/FABLE_AUDIT_REPORT.md` for the full v3.44.0 security + UX fix list (XSS escaping, SW offline fix, PBKDF2 PIN, Urdu locale repair, account-number privacy, worker CORS/SSE).
 
 **No Critical or High severity Fail items open.**
 

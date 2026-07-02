@@ -14,11 +14,28 @@ import { aggregatePortfolioNews } from './news.js';
 const TG_API = 'https://api.telegram.org/bot';
 const ALLOWED_BOT_METHODS = new Set(['sendMessage', 'getUpdates', 'getMe']);
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Telegram-Bot-Token, X-LedgerCap-Sync-Key',
-};
+// Telegram routes carry secrets (bot token / sync key) — restrict browser
+// callers to known app origins instead of `*`. Non-browser callers (no
+// Origin header, e.g. curl/cron) are unaffected by CORS.
+const TG_ALLOWED_ORIGINS = [
+  'https://shamikhahmed.github.io',
+  'http://127.0.0.1:8769',
+  'http://localhost:8769',
+  'capacitor://localhost',
+];
+
+function tgCors(request) {
+  const origin = request?.headers?.get?.('Origin') || '';
+  return {
+    'Access-Control-Allow-Origin': TG_ALLOWED_ORIGINS.includes(origin) ? origin : TG_ALLOWED_ORIGINS[0],
+    Vary: 'Origin',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Telegram-Bot-Token, X-LedgerCap-Sync-Key',
+  };
+}
+
+// Set per-request in handleTelegramRequest; default covers cron/json paths.
+let CORS = tgCors(null);
 
 function pktParts() {
   const now = new Date();
@@ -121,6 +138,7 @@ async function postTelegramMessage(token, chatId, text) {
 
 export async function handleTelegramRequest(request, env, url) {
   const path = url.pathname.replace(/^\//, '');
+  CORS = tgCors(request);
 
   if (request.method === 'OPTIONS' && path.startsWith('telegram/')) {
     return new Response(null, { headers: CORS });

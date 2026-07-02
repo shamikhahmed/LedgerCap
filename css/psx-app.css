@@ -161,6 +161,8 @@ body.psx-app {
   color: var(--psx-text-3); font-size: 10px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.04em;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 48px; min-width: 0; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
 }
 .psx-nav-btn svg { width: 22px; height: 22px; }
 .psx-nav-btn.active { color: var(--psx-accent); }
@@ -175,6 +177,7 @@ body.psx-app {
   padding: 10px 12px; border: none; border-radius: 10px;
   background: transparent; cursor: pointer; font-family: inherit;
   color: var(--psx-text-2); font-size: 14px; font-weight: 600; text-align: start;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
 }
 .psx-side-btn.active { background: var(--psx-accent-soft); color: var(--psx-accent); }
 .psx-side-btn svg { width: 20px; height: 20px; flex-shrink: 0; }

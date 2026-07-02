@@ -18,7 +18,7 @@ const Home = (() => {
       screen.innerHTML = `
       ${marketBlock}
       ${M().sectionHead('Portfolio', 'Start here')}
-      ${M().emptyState('📊', 'Track PSX like a pro', 'Stocks, Meezan funds, dividends, and net worth — dense tables and live index data, built for Pakistani investors.',
+      ${M().emptyState(LcIcons.icon('chart', 28), 'Track PSX like a pro', 'Stocks, Meezan funds, dividends, and net worth — dense tables and live index data, built for Pakistani investors.',
         `<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>
          <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo portfolio</button>`)}
       ${M().sectionHead('Platform', 'Tools')}

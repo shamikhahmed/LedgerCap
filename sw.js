@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v110';
+const CACHE = 'ledgercap-v111';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',
@@ -12,7 +12,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(() => {})));
+  // Cache each asset individually so one 404 doesn't abort the whole precache.
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(ASSETS.map(a => c.add(a)))
+    )
+  );
   self.skipWaiting();
 });
 
@@ -28,6 +33,9 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
+  // ignoreSearch: page requests use cache-busting queries (?v=…) that must
+  // still hit the unversioned precached entries when offline.
+  const matchOpts = { ignoreSearch: true };
   const networkFirst = e.request.mode === 'navigate'
     || /\.(html|js|css)(\?|$)/i.test(url.pathname);
   if (networkFirst) {
@@ -38,12 +46,12 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => caches.match(e.request))
+      }).catch(() => caches.match(e.request, matchOpts))
     );
     return;
   }
   e.respondWith(
-    caches.match(e.request).then(cached => {
+    caches.match(e.request, matchOpts).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
         if (res.ok) {

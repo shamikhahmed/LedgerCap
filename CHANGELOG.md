@@ -1,5 +1,19 @@
 # Changelog — LedgerCap
 
+## 3.44.0 (2026-07-02) — Fable audit: security hardening, offline fix, Urdu repair
+
+- **Security** — `esc()`/`escUrl()` helpers; all news/announcement/CSV-derived strings escaped before `innerHTML`; `javascript:` URLs blocked in news links; CSV import sanitizes symbol/broker at the boundary
+- **PIN vault** — PBKDF2-SHA256 (310k iterations) replaces single SHA-256; legacy hashes verify once and auto-upgrade; escalating lockout (30s → 30min); `gnewsApiKey` stripped from backups
+- **Offline fixed** — SW `ignoreSearch` match so `?v=` asset URLs hit precache on first-load-then-offline; per-asset precache (one 404 no longer aborts all); `ledgercap-v111`
+- **Price sanity** — intraday PSX batch quotes now sanity-checked (was unchecked); USD guard for intl/crypto quotes
+- **Urdu locale repaired** — mixed-script mojibake fixed (`پورٹ فولیو`, `لیجرکیپ`, `اسٹاک واچ`…); 12 missing ur + 4 roman keys translated; RTL line-height + table/sheet coverage
+- **Hub** — Settings tile in tools grid (was unreachable on mobile); refresh button busy-state (no double fetch); day-1 net-worth chart stub; greeting no longer shows version string
+- **Icons** — transaction ledger emojis → LcIcons SVGs; empty-state emojis replaced; distinct icons for market/portfolio/funds/research/screener/dividends/watchlist/performance
+- **A11y** — PIN dots `role=progressbar` + `aria-valuenow`; bottom sheet `role=dialog aria-modal`; nav labels ellipsis + explicit 48px touch target
+- **Privacy** — personal account numbers removed from bucket labels
+- **Worker** — SSE session re-check per tick (pre-market streams go live, post-close streams idle); Telegram routes CORS restricted to app origins
+- **CSP** — `base-uri 'self'; form-action 'self'` added
+
 ## 3.43.0 (2026-06-30) — Competitor parity (Sarmaaya · PSX Analyzer · Investify)
 
 - **Commodities** — gold, silver, crude, copper spot + PKR/gram; new screen in hub & tools

@@ -236,7 +236,7 @@ const Prices = (() => {
           const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
           parsed = _parseTimeseries(eodData, 'psx_eod');
         }
-        if (parsed) results[sym] = { ...parsed, symbol: sym };
+        if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
       }
       if (i + batchSize < symbols.length) await _sleep(120);
     }
@@ -284,7 +284,7 @@ const Prices = (() => {
       data = await _fetchPublicProxy(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=5d`);
       parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
     }
-    if (parsed) return parsed;
+    if (parsed && _sanityCheckUsd(symbol, parsed.priceUsd ?? parsed.price)) return parsed;
     const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
     return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
   }
@@ -296,6 +296,10 @@ const Prices = (() => {
     const row = data?.[id];
     const price = row?.usd;
     if (!price) {
+      const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
+      return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
+    }
+    if (!_sanityCheckUsd(symbol, price)) {
       const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
       return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
     }
@@ -391,6 +395,14 @@ const Prices = (() => {
     if (fallback > 0 && (price > fallback * 3 || price < fallback * 0.3)) {
       return false;
     }
+    return true;
+  }
+
+  /** Same guard for USD-quoted intl/crypto — curated fallbacks only ($100/$1 auto-fills are not anchors). */
+  function _sanityCheckUsd(symbol, price) {
+    if (!(price > 0)) return false;
+    const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol] || 0;
+    if (fb > 0 && fb !== 100 && fb !== 1 && (price > fb * 5 || price < fb * 0.2)) return false;
     return true;
   }
 

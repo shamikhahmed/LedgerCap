@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.43.0',
-  sw: 110,
-  cache: 'ledgercap-v110',
+  app: '3.44.0',
+  sw: 111,
+  cache: 'ledgercap-v111',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -4928,6 +4928,26 @@ function psxProxyBases() {
 
 window.LedgerCapConfig = { resolvePsxProxyUrl, psxProxyBases };
 
+/**
+ * Escape a string for safe interpolation into innerHTML.
+ * Use on every API-derived or user-imported string (news titles,
+ * announcement text, CSV symbols/brokers, AI summaries).
+ */
+window.esc = function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+/** Allow only http(s) URLs for interpolated hrefs; everything else → '#'. */
+window.escUrl = function escUrl(u) {
+  const s = String(u ?? '').trim();
+  return /^https?:\/\//i.test(s) ? window.esc(s) : '#';
+};
+
 ;/* === js/data/i18n-locales.js === */
 'use strict';
 /** LedgerCap v4 — English, Urdu (Nastaliq), Roman Urdu */
@@ -4949,7 +4969,7 @@ window.I18N_LOCALES = {
       hero: 'Pakistan\'s most complete tracker for stocks & mutual funds',
       sub: 'KSE-100 live · portfolio P&L · Meezan funds · dividends · screener — one stop for every Pakistani investor.',
       toolsTitle: 'Platform',
-      toolsSub: '16 tools · one ledger',
+      toolsSub: '19 tools · one ledger',
     },
     tools: {
       stockWatch: { t: 'Stock Watch', d: 'KSE-100 · sector grouped · live prices' },
@@ -4972,6 +4992,7 @@ window.I18N_LOCALES = {
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
       calendar: { t: 'Wealth calendar', d: 'Dividends · IPO · corporate' },
+      settingsTool: { t: 'Settings', d: 'Theme · language · data · PIN' },
     },
     market: {
       title: 'Stock Watch',
@@ -5007,69 +5028,76 @@ window.I18N_LOCALES = {
     },
   },
   ur: {
-    appName: 'لیجرکیп',
-    tagline: ' پاکستان کا مکمل PSX دولت ٹریکر',
+    appName: 'لیجرکیپ',
+    tagline: 'پاکستان کا مکمل PSX دولت ٹریکر',
     liveMarket: 'لائیو مارکیٹ',
     refresh: 'تازہ کریں',
     loading: 'لوڈ ہو رہا ہے…',
     open: 'کھولیں ←',
     addHoldings: 'ہولڈنگز شامل کریں',
-    loadDemo: 'ڈیمو پورٹ فولiyo',
-    nav: { hub: 'ہب', watch: 'Watch', funds: 'Funds', pnl: 'P&L', market: 'مارکیٹ', portfolio: ' پورٹ فولiyo', analyze: 'تجزیہ', more: 'مزید' },
+    loadDemo: 'ڈیمو پورٹ فولیو',
+    nav: { hub: 'ہب', watch: 'واچ', funds: 'فنڈز', pnl: 'P&L', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'تجزیہ', more: 'مزید' },
     theme: { dark: 'ڈارک', light: 'لائٹ', toggle: 'تھیم بدلیں' },
     lang: { en: 'English', ur: 'اردو', roman: 'رومن اردو', label: 'زبان' },
-    install: { title: 'لیجرکیп انسٹال کریں', body: 'Safari → Share → Add to Home Screen', browser: 'براؤزر اور ایpp دونوں میں' },
+    install: { title: 'لیجرکیپ انسٹال کریں', body: 'Safari → Share → Add to Home Screen', browser: 'براؤزر اور ایپ دونوں میں' },
     hub: {
-      hero: ' پاکستان کا مکمل اسٹاک اور میوچل فنڈ ٹریکر',
-      sub: 'KSE-100 لائیو · پورٹ فولiyo P&L · میزان فنڈز · ڈividend · screener — سب ایک جگہ۔',
-      toolsTitle: ' پلیٹ فارم',
-      toolsSub: '9 ٹولز · ایک ledger',
+      hero: 'پاکستان کا مکمل اسٹاک اور میوچل فنڈ ٹریکر',
+      sub: 'KSE-100 لائیو · پورٹ فولیو P&L · میزان فنڈز · ڈیویڈنڈ · اسکرینر — سب ایک جگہ۔',
+      toolsTitle: 'پلیٹ فارم',
+      toolsSub: '19 ٹولز · ایک کھاتہ',
     },
     tools: {
-      stockWatch: { t: 'اسٹاک وach', d: 'KSE-100 · سیکٹر · لائیو قیمتیں' },
-      fundNavs: { t: 'فنڈ NAV', d: 'میزان اور AMC · returns' },
-      lossTrack: { t: 'نقصان ٹریکنگ', d: 'ہر position کا P&L' },
-      technical: { t: ' تکنیکی تجزیہ', d: 'DMA · RSI · rating' },
-      dividends: { t: 'ڈividends', d: 'کیلنڈر · yield · forecast' },
-      screener: { t: 'اسٹاک screener', d: 'value · growth · Shariah' },
-      signals: { t: 'مارکیٹ strategy', d: 'روزانہ pulse · buy/hold/sell' },
-      watchlist: { t: 'watchlist', d: 'خريدنے سے پہلے track' },
-      transactions: { t: 'لین دین', d: 'buy · sell · dividend log' },
-      pilotTools: { t: 'ٹیکس اور rebalance', d: 'CGT · rebalance · IPO · calculators' },
-      riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
-      insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
-      commodities: { t: 'Commodities', d: 'Gold · silver · oil' },
-      announcements: { t: 'Announcements', d: 'Corporate · news' },
+      stockWatch: { t: 'اسٹاک واچ', d: 'KSE-100 · سیکٹر · لائیو قیمتیں' },
+      fundNavs: { t: 'فنڈ NAV', d: 'میزان اور AMC · منافع' },
+      lossTrack: { t: 'نقصان ٹریکنگ', d: 'ہر پوزیشن کا P&L' },
+      technical: { t: 'تکنیکی تجزیہ', d: 'DMA · RSI · ریٹنگ' },
+      dividends: { t: 'ڈیویڈنڈز', d: 'کیلنڈر · yield · پیش گوئی' },
+      screener: { t: 'اسٹاک اسکرینر', d: 'ویلیو · گروتھ · شرعی فلٹر' },
+      signals: { t: 'مارکیٹ حکمتِ عملی', d: 'روزانہ جائزہ · خرید/رکھیں/بیچیں' },
+      watchlist: { t: 'واچ لسٹ', d: 'خریدنے سے پہلے نظر رکھیں' },
+      transactions: { t: 'لین دین', d: 'خرید · فروخت · ڈیویڈنڈ لاگ' },
+      global: { t: 'عالمی مارکیٹس', d: 'امریکی اسٹاکس · کرپٹو · USD/PKR' },
+      commodities: { t: 'اجناس', d: 'سونا · چاندی · تیل' },
+      announcements: { t: 'اعلانات', d: 'کارپوریٹ · خبریں' },
+      zakat: { t: 'زکوٰۃ', d: 'نصاب · 2.5% تخمینہ' },
+      import: { t: 'CSV امپورٹ', d: 'IBKR · Binance · بروکر لاگز' },
+      globalMarkets: { t: 'عالمی مارکیٹس', d: 'امریکی حصص · کرپٹو · FX' },
+      zakatTool: { t: 'زکوٰۃ کیلکولیٹر', d: 'نصاب · قرض · سونا' },
+      pilotTools: { t: 'ٹیکس اور توازن', d: 'CGT · ری بیلنس · IPO · کیلکولیٹر' },
+      riskAudit: { t: 'رسک آڈٹ', d: 'ارتکاز · CGT · جھکاؤ' },
+      insightsTool: { t: 'بصیرت', d: 'اسکور · بینچ مارک · تاریخ' },
+      calendar: { t: 'ویلتھ کیلنڈر', d: 'ڈیویڈنڈ · IPO · کارپوریٹ' },
+      settingsTool: { t: 'سیٹنگز', d: 'تھیم · زبان · ڈیٹا · PIN' },
     },
     market: {
-      title: 'اسٹاک وach',
-      sub: 'PSX listed · سیکٹر wise',
-      symbol: 'symbol', last: 'آخري', chg: 'تبدیلی%', volume: 'volume',
+      title: 'اسٹاک واچ',
+      sub: 'PSX لسٹڈ · سیکٹر کے لحاظ سے',
+      symbol: 'سمبل', last: 'آخری', chg: 'تبدیلی%', volume: 'حجم',
       advancing: 'بڑھ رہے', declining: 'گر رہے', unchanged: 'بغیر تبدیلی',
-      shariah: 'Shariah', conventional: 'Conventional',
+      shariah: 'شرعی', conventional: 'روایتی',
     },
     portfolio: {
-      title: ' پورٹ فولiyo',
-      sub: 'آप کا P&L · holdings',
-      value: ' پورٹ فولiyo value', today: 'آج', allTime: 'کل',
-      invested: 'invested', gainLoss: 'منافع / نقصان', yield: 'سالانہ yield',
-      bucketsTitle: 'پورٹ فولiyo', bucketsSub: 'PSX · Funds · US',
-      addBucket: 'پورٹ فولiyo شامل',
-      investedFootnote: 'Invested = cost basis (gross deposits سے مختلف ہو سکتا ہے)',
+      title: 'پورٹ فولیو',
+      sub: 'آپ کا P&L · ہولڈنگز',
+      value: 'پورٹ فولیو ویلیو', today: 'آج', allTime: 'کل',
+      invested: 'سرمایہ کاری', gainLoss: 'منافع / نقصان', yield: 'سالانہ yield',
+      bucketsTitle: 'پورٹ فولیوز', bucketsSub: 'PSX · فنڈز · US',
+      addBucket: 'پورٹ فولیو شامل کریں',
+      investedFootnote: 'سرمایہ کاری = cost basis (مجموعی ڈپازٹس سے مختلف ہو سکتی ہے)',
     },
     analyze: {
       title: 'تجزیہ',
-      sub: 'research · screener · آسان زبان',
-      plainEnglish: 'آسان زبان میں verdict',
-      fundamentals: 'بunyadi', valuation: 'قیمت', risk: 'خطرہ',
-      shariahCompliant: 'Shariah compliant', notShariah: 'Shariah نہیں',
+      sub: 'ریسرچ · اسکرینر · آسان زبان',
+      plainEnglish: 'آسان زبان میں فیصلہ',
+      fundamentals: 'بنیادی', valuation: 'قیمت', risk: 'خطرہ',
+      shariahCompliant: 'شرعی مطابقت', notShariah: 'غیر شرعی',
     },
     screener: {
-      title: 'اسٹاک screener',
-      sub: 'yield · P/E · growth · Shariah',
-      all: 'سب', islamic: 'Islamic', highDiv: 'زیادہ dividend', value: 'value',
+      title: 'اسٹاک اسکرینر',
+      sub: 'yield · P/E · گروتھ · شرعی',
+      all: 'سب', islamic: 'اسلامی', highDiv: 'زیادہ ڈیویڈنڈ', value: 'ویلیو',
     },
-    more: { title: 'مزید', sub: 'settings · tools · data' },
+    more: { title: 'مزید', sub: 'سیٹنگز · ٹولز · ڈیٹا' },
   },
   roman: {
     appName: 'LedgerCap',
@@ -5088,7 +5116,7 @@ window.I18N_LOCALES = {
       hero: 'Pakistan ka mukammal stock aur mutual fund tracker',
       sub: 'KSE-100 live · portfolio P&L · Meezan funds · dividends · screener — sab ek jagah.',
       toolsTitle: 'Platform',
-      toolsSub: '9 tools · ek ledger',
+      toolsSub: '19 tools · ek ledger',
     },
     tools: {
       stockWatch: { t: 'Stock Watch', d: 'KSE-100 · sector · live prices' },
@@ -5108,6 +5136,10 @@ window.I18N_LOCALES = {
       announcements: { t: 'Announcements', d: 'Dividends · bonus · portfolio news' },
       zakat: { t: 'Zakat', d: 'Nisab · 2.5% estimate' },
       import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },
+      globalMarkets: { t: 'Global markets', d: 'US equities · crypto · FX' },
+      zakatTool: { t: 'Zakat calculator', d: 'Nisab · qarz · sona' },
+      calendar: { t: 'Wealth calendar', d: 'Dividends · IPO · corporate' },
+      settingsTool: { t: 'Settings', d: 'Theme · zuban · data · PIN' },
     },
     market: {
       title: 'Stock Watch',
@@ -5123,6 +5155,7 @@ window.I18N_LOCALES = {
       invested: 'Invested', gainLoss: 'Faida / nuqsan', yield: 'Salana yield',
       bucketsTitle: 'Portfolios', bucketsSub: 'PSX · Funds · US · custom',
       addBucket: 'Portfolio jodein',
+      investedFootnote: 'Invested = cost basis (gross deposits se mukhtalif ho sakta hai)',
     },
     analyze: {
       title: 'Tajzia',
@@ -6117,7 +6150,7 @@ const Prices = (() => {
           const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
           parsed = _parseTimeseries(eodData, 'psx_eod');
         }
-        if (parsed) results[sym] = { ...parsed, symbol: sym };
+        if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
       }
       if (i + batchSize < symbols.length) await _sleep(120);
     }
@@ -6165,7 +6198,7 @@ const Prices = (() => {
       data = await _fetchPublicProxy(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=5d`);
       parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
     }
-    if (parsed) return parsed;
+    if (parsed && _sanityCheckUsd(symbol, parsed.priceUsd ?? parsed.price)) return parsed;
     const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
     return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
   }
@@ -6177,6 +6210,10 @@ const Prices = (() => {
     const row = data?.[id];
     const price = row?.usd;
     if (!price) {
+      const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
+      return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
+    }
+    if (!_sanityCheckUsd(symbol, price)) {
       const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
       return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
     }
@@ -6272,6 +6309,14 @@ const Prices = (() => {
     if (fallback > 0 && (price > fallback * 3 || price < fallback * 0.3)) {
       return false;
     }
+    return true;
+  }
+
+  /** Same guard for USD-quoted intl/crypto — curated fallbacks only ($100/$1 auto-fills are not anchors). */
+  function _sanityCheckUsd(symbol, price) {
+    if (!(price > 0)) return false;
+    const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol] || 0;
+    if (fb > 0 && fb !== 100 && fb !== 1 && (price > fb * 5 || price < fb * 0.2)) return false;
     return true;
   }
 
@@ -8178,12 +8223,14 @@ window.PortfolioAnalyticsService = PortfolioAnalyticsService;
 ;/* === js/services/portfolio-buckets-service.js === */
 'use strict';
 const PortfolioBuckets = (() => {
+  // Account numbers intentionally omitted from labels — they render on-screen
+  // (screenshots, demos, screen-share). Keep identifiers in your broker portal.
   const BUILTIN = [
-    { id: 'rafi', name: 'Rafi Securities', kind: 'psx', brokerFilter: 'Rafi', icon: 'R', builtin: true, desc: 'CDC broker account 6773' },
-    { id: 'akd', name: 'AKD Securities', kind: 'psx', brokerFilter: 'AKD', icon: 'A', builtin: true, desc: 'Account COAF55870' },
+    { id: 'rafi', name: 'Rafi Securities', kind: 'psx', brokerFilter: 'Rafi', icon: 'R', builtin: true, desc: 'PSX broker · CDC sub-account' },
+    { id: 'akd', name: 'AKD Securities', kind: 'psx', brokerFilter: 'AKD', icon: 'A', builtin: true, desc: 'PSX broker account' },
     { id: 'cdc', name: 'CDC Custody', kind: 'psx', brokerFilter: 'CDC', icon: 'C', builtin: true, desc: 'Central depository · IPO allotments' },
-    { id: 'funds', name: 'Al Meezan Investments', kind: 'funds', icon: '☪', builtin: true, desc: 'Meezan AMC · account 733102-1' },
-    { id: 'usa', name: 'US Equities', kind: 'intl', icon: '🇺🇸', builtin: true, desc: 'IBKR · US stocks & crypto' },
+    { id: 'funds', name: 'Al Meezan Investments', kind: 'funds', icon: 'M', builtin: true, desc: 'Meezan AMC mutual funds' },
+    { id: 'usa', name: 'US Equities', kind: 'intl', icon: 'U', builtin: true, desc: 'IBKR · US stocks & crypto' },
   ];
 
   function _brokerMatch(txBroker, filter) {
@@ -8243,7 +8290,7 @@ const PortfolioBuckets = (() => {
       return { pkr: window.AKD_TOTAL_INVESTED_PKR, usd: null, note: 'Your AKD deposits (excl. friend custodial)' };
     }
     if (bucketId === 'funds' && window.MEEZAN_TOTAL_PURCHASES_PKR > 0) {
-      return { pkr: window.MEEZAN_TOTAL_PURCHASES_PKR, usd: null, note: 'AMC total purchases 733102-1' };
+      return { pkr: window.MEEZAN_TOTAL_PURCHASES_PKR, usd: null, note: 'AMC total purchases' };
     }
     if (bucketId === 'usa') {
       const usd = window.TTWO_TOTAL_INVESTED_USD || txs
@@ -8447,23 +8494,24 @@ window.PortfolioBuckets = PortfolioBuckets;
  * Unified transaction display, cash-flow math, and cross-screen linking.
  */
 const TransactionLedger = (() => {
+  // icon = LcIcons key (render with LcIcons.icon(meta.icon, size)).
   const TYPE_META = {
-    BUY:           { icon: '📈', cls: 'buy',          label: 'Buy',           flow: 'out'  },
-    SELL:          { icon: '📉', cls: 'sell',         label: 'Sell',          flow: 'in'   },
-    DIVIDEND:      { icon: '💰', cls: 'dividend',     label: 'Dividend',      flow: 'in'   },
-    SALARY:        { icon: '💵', cls: 'salary',       label: 'Salary',        flow: 'in'   },
-    DEPOSIT:       { icon: '🏧', cls: 'salary',       label: 'Deposit',       flow: 'in'   },
-    CONTRIBUTION:  { icon: '🏦', cls: 'contribution', label: 'Fund buy',      flow: 'out'  },
-    FUND_OUT:      { icon: '↔', cls: 'contribution', label: 'Fund convert',  flow: 'neutral'},
-    REDEMPTION:    { icon: '↩', cls: 'contribution', label: 'Redemption',    flow: 'in'   },
-    IPO_SUBSCRIBE: { icon: '🚀', cls: 'ipo',          label: 'IPO',           flow: 'out'  },
-    FEE:           { icon: '🧾', cls: 'fee',          label: 'Fee',           flow: 'out'  },
-    TAX:           { icon: '⚖', cls: 'tax',          label: 'Tax',           flow: 'out'  },
-    INTL_BUY:      { icon: '🌎', cls: 'buy',          label: 'US buy',        flow: 'out'  },
-    INTL_SELL:     { icon: '🌎', cls: 'sell',         label: 'US sell',       flow: 'in'   },
-    CRYPTO_BUY:    { icon: '₿', cls: 'buy',          label: 'Crypto buy',    flow: 'out'  },
-    CRYPTO_SELL:   { icon: '₿', cls: 'sell',         label: 'Crypto sell',   flow: 'in'   },
-    POSITION_ADJUST: { icon: '✎', cls: 'contribution', label: 'Reconcile',   flow: 'neutral' },
+    BUY:           { icon: 'trending',     cls: 'buy',          label: 'Buy',           flow: 'out'  },
+    SELL:          { icon: 'trendingDown', cls: 'sell',         label: 'Sell',          flow: 'in'   },
+    DIVIDEND:      { icon: 'banknote',     cls: 'dividend',     label: 'Dividend',      flow: 'in'   },
+    SALARY:        { icon: 'wallet',       cls: 'salary',       label: 'Salary',        flow: 'in'   },
+    DEPOSIT:       { icon: 'download',     cls: 'salary',       label: 'Deposit',       flow: 'in'   },
+    CONTRIBUTION:  { icon: 'briefcase',    cls: 'contribution', label: 'Fund buy',      flow: 'out'  },
+    FUND_OUT:      { icon: 'swap',         cls: 'contribution', label: 'Fund convert',  flow: 'neutral'},
+    REDEMPTION:    { icon: 'download',     cls: 'contribution', label: 'Redemption',    flow: 'in'   },
+    IPO_SUBSCRIBE: { icon: 'zap',          cls: 'ipo',          label: 'IPO',           flow: 'out'  },
+    FEE:           { icon: 'ledger',       cls: 'fee',          label: 'Fee',           flow: 'out'  },
+    TAX:           { icon: 'scale',        cls: 'tax',          label: 'Tax',           flow: 'out'  },
+    INTL_BUY:      { icon: 'globe',        cls: 'buy',          label: 'US buy',        flow: 'out'  },
+    INTL_SELL:     { icon: 'globe',        cls: 'sell',         label: 'US sell',       flow: 'in'   },
+    CRYPTO_BUY:    { icon: 'coins',        cls: 'buy',          label: 'Crypto buy',    flow: 'out'  },
+    CRYPTO_SELL:   { icon: 'coins',        cls: 'sell',         label: 'Crypto sell',   flow: 'in'   },
+    POSITION_ADJUST: { icon: 'edit',       cls: 'contribution', label: 'Reconcile',     flow: 'neutral' },
   };
 
   const CHARGE_LABELS = {
@@ -9262,6 +9310,7 @@ const SecretsVault = (() => {
     if (!settings || typeof settings !== 'object') return settings;
     const out = { ...settings };
     delete out.telegramBotToken;
+    delete out.gnewsApiKey;
     if (out.telegramSyncKey) out.telegramSyncKey = '[redacted — re-enter after import]';
     return out;
   }
@@ -9705,13 +9754,20 @@ window.TelegramService = TelegramService;
 
 ;/* === js/services/pin-vault.js === */
 'use strict';
-/** Client-side PIN vault — SHA-256 hash, never stores plaintext PIN. */
+/**
+ * Client-side PIN vault — PBKDF2-SHA256 (310k iterations), never stores
+ * plaintext PIN. Legacy single-SHA-256 hashes are verified once and
+ * transparently upgraded on the next successful unlock.
+ * Note: the PIN gates the UI; portfolio data itself is not encrypted with it.
+ */
 const PinVault = (() => {
   const KEY = 'ledgercap_pin_v1';
   const SESSION_KEY = 'ledgercap_pin_session';
   const BACKUP_KEY = 'ledgercap_pin_backup';
   const MAX_ATTEMPTS = 5;
   const LOCKOUT_MS = 30000;
+  const LOCKOUT_MAX_MS = 30 * 60000;
+  const PBKDF2_ITER = 310000;
   const PIN_RE = /^\d{4,6}$/;
 
   let _hiddenAt = 0;
@@ -9747,10 +9803,35 @@ const PinVault = (() => {
     return PIN_RE.test(String(pin || ''));
   }
 
-  async function digestPin(pin, salt) {
+  function _hex(buf) {
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /** Legacy scheme (pre-3.44): single SHA-256 of `salt:pin`. Kept for verify-and-upgrade only. */
+  async function digestPinLegacy(pin, salt) {
     const payload = `${salt}:${pin}`;
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return _hex(buf);
+  }
+
+  /** Current scheme: PBKDF2-SHA256, 310k iterations. Output prefixed `v2:`. */
+  async function digestPin(pin, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(String(salt)), iterations: PBKDF2_ITER },
+      keyMaterial,
+      256
+    );
+    return 'v2:' + _hex(bits);
+  }
+
+  async function _matchesStored(pin, salt, storedHash) {
+    if (!storedHash) return false;
+    if (String(storedHash).startsWith('v2:')) {
+      return (await digestPin(pin, salt)) === storedHash;
+    }
+    return (await digestPinLegacy(pin, salt)) === storedHash;
   }
 
   function isEnabled() {
@@ -9805,16 +9886,20 @@ const PinVault = (() => {
 
     if (!validateFormat(pin)) return { ok: false, reason: 'format' };
 
-    const hash = await digestPin(pin, cfg.salt);
-    if (hash === cfg.hash) {
+    if (await _matchesStored(pin, cfg.salt, cfg.hash)) {
+      // Transparent upgrade: re-hash legacy SHA-256 entries with PBKDF2.
+      if (!String(cfg.hash).startsWith('v2:')) cfg.hash = await digestPin(pin, cfg.salt);
       cfg.fails = 0;
       cfg.lockUntil = 0;
+      cfg.lockLevel = 0;
       saveConfig(cfg);
       return { ok: true, decoy: false };
     }
-    if (cfg.decoyHash && hash === cfg.decoyHash) {
+    if (cfg.decoyHash && await _matchesStored(pin, cfg.salt, cfg.decoyHash)) {
+      if (!String(cfg.decoyHash).startsWith('v2:')) cfg.decoyHash = await digestPin(pin, cfg.salt);
       cfg.fails = 0;
       cfg.lockUntil = 0;
+      cfg.lockLevel = 0;
       saveConfig(cfg);
       return { ok: true, decoy: true };
     }
@@ -9822,7 +9907,10 @@ const PinVault = (() => {
     cfg.fails = (cfg.fails || 0) + 1;
     let attemptsLeft = MAX_ATTEMPTS - cfg.fails;
     if (cfg.fails >= MAX_ATTEMPTS) {
-      cfg.lockUntil = Date.now() + LOCKOUT_MS;
+      // Escalating lockout: 30s, 1m, 2m, 4m … capped at 30m.
+      const level = (cfg.lockLevel || 0);
+      cfg.lockUntil = Date.now() + Math.min(LOCKOUT_MS * Math.pow(2, level), LOCKOUT_MAX_MS);
+      cfg.lockLevel = level + 1;
       cfg.fails = 0;
       attemptsLeft = 0;
     }
@@ -9873,8 +9961,7 @@ const PinVault = (() => {
     if (!validateFormat(pin)) throw new Error('Use 4–6 digits');
     const cfg = getConfig();
     if (!cfg.enabled) throw new Error('Set main PIN first');
-    const mainHash = await digestPin(mainPin, cfg.salt);
-    if (mainHash !== cfg.hash) throw new Error('Main PIN incorrect');
+    if (!(await _matchesStored(mainPin, cfg.salt, cfg.hash))) throw new Error('Main PIN incorrect');
     if (pin === mainPin) throw new Error('Decoy must differ from main PIN');
     cfg.decoyHash = await digestPin(pin, cfg.salt);
     saveConfig(cfg);
@@ -9882,8 +9969,7 @@ const PinVault = (() => {
 
   async function clearDecoyPin(mainPin) {
     const cfg = getConfig();
-    const mainHash = await digestPin(mainPin, cfg.salt);
-    if (mainHash !== cfg.hash) throw new Error('Main PIN incorrect');
+    if (!(await _matchesStored(mainPin, cfg.salt, cfg.hash))) throw new Error('Main PIN incorrect');
     cfg.decoyHash = '';
     saveConfig(cfg);
   }
@@ -11499,25 +11585,38 @@ const LcIcons = (() => {
     fullscreen: ['M8 3H5a2 2 0 0 0-2 2v3', 'M21 8V5a2 2 0 0 0-2-2h-3', 'M3 16v3a2 2 0 0 0 2 2h3', 'M16 21h3a2 2 0 0 0 2-2v-3'],
     x: ['M18 6 6 18', 'M6 6l12 12'],
     ledger: ['M4 4h16v4H4z', 'M4 12h10', 'M4 20h16', 'M18 12h2'],
+    star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z',
+    banknote: ['M2 6h20v12H2z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M6 12h.01', 'M18 12h.01'],
+    pulse: 'M22 12h-4l-3 9L9 3l-3 9H2',
+    filter: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3Z',
+    trendingDown: ['M22 17 13.5 8.5 8.5 13.5 2 7', 'M16 17h6v-6'],
+    download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
+    swap: ['M8 3 4 7l4 4', 'M4 7h16', 'M16 21l4-4-4-4', 'M20 17H4'],
+    edit: 'M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z',
   };
 
   const TOOL_ICONS = {
+    home: 'home',
+    market: 'chart',
+    portfolio: 'briefcase',
+    funds: 'wallet',
+    research: 'search',
     global: 'globe',
     commodities: 'coins',
     announcements: 'bell',
     zakat: 'scale',
     import: 'upload',
-    screener: 'search',
-    dividends: 'coins',
+    screener: 'filter',
+    dividends: 'banknote',
     calendar: 'calendar',
-    watchlist: 'bell',
+    watchlist: 'star',
     signals: 'zap',
     'risk-audit': 'shield',
     insights: 'chart',
     'pilot-tools': 'trending',
     transactions: 'list',
     comparison: 'scale',
-    performance: 'trending',
+    performance: 'pulse',
     journal: 'journal',
     settings: 'settings',
     more: 'list',
@@ -12936,6 +13035,7 @@ const Hub = (() => {
     { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
     { id: 'transactions', key: 'transactions', tone: 'slate' },
     { id: 'import', key: 'import', tone: 'slate' },
+    { id: 'settings', key: 'settingsTool', tone: 'slate' },
   ];
 
   function _greeting() {
@@ -13065,14 +13165,14 @@ const Hub = (() => {
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = PsxUI.emptyState('No headlines yet', 'Set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key in Settings.', '');
+        _newsHtml = PsxUI.emptyState('No headlines yet', 'Headlines appear once a news source is reachable. Check your connection, or open Settings → Live prices to configure sources.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
-        <a class="lc-news-row" href="${n.url}" target="_blank" rel="noopener noreferrer">
-          <div class="lc-news-title">${n.title}</div>
-          <div class="lc-news-meta">${n.portfolioSymbol || n.symbol} · ${n.publisher || n.source}${NewsService.impactBadge(n.impact)}</div>
-          <p class="lc-news-hint">${n.impact?.hint || ''}</p>
+        <a class="lc-news-row" href="${escUrl(n.url)}" target="_blank" rel="noopener noreferrer">
+          <div class="lc-news-title">${esc(n.title)}</div>
+          <div class="lc-news-meta">${esc(n.portfolioSymbol || n.symbol)} · ${esc(n.publisher || n.source)}${NewsService.impactBadge(n.impact)}</div>
+          <p class="lc-news-hint">${esc(n.impact?.hint || '')}</p>
         </a>`).join('');
     } catch (e) {
       _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? (e.message || 'Feed error — try again.') : 'You appear offline.', 'Hub.refreshNews()');
@@ -13141,7 +13241,15 @@ const Hub = (() => {
   function _portfolioChart(state) {
     const histRaw = state.priceHistory || [];
     const hist = histRaw.map(h => h.value).filter(v => v > 0);
-    if (hist.length < 2 || typeof Charts === 'undefined') return '';
+    if (typeof Charts === 'undefined') return '';
+    if (hist.length === 1) {
+      // Day 1: explain why the trend chart is empty instead of hiding it.
+      return `<div class="lc-dash-section" id="hub-networth-section">
+        <div class="lc-dash-section-head"><h3>Net worth trend</h3></div>
+        <div class="lc-sector-card"><p class="lc-empty-note">First snapshot saved today — your trend line starts tomorrow.</p></div>
+      </div>`;
+    }
+    if (hist.length < 2) return '';
     const first = hist[0];
     const last = hist[hist.length - 1];
     const chg = first ? ((last - first) / first) * 100 : 0;
@@ -13211,7 +13319,7 @@ const Hub = (() => {
       <div class="lc-dash">
         <div class="lc-dash-greet">
           <h2>${_greeting()}</h2>
-          <p>Your wealth · v${window.APP_VERSION || '—'}</p>
+          <p>Your wealth at a glance</p>
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>
@@ -14200,8 +14308,8 @@ const Research = (() => {
         <div class="lc-research-hero">
           <div class="lc-research-hero-top">
             <div>
-              <h2>${r.symbol}</h2>
-              <p>${profile.name}${profile.sector ? ' · ' + profile.sector : ''}</p>
+              <h2>${esc(r.symbol)}</h2>
+              <p>${esc(profile.name)}${profile.sector ? ' · ' + esc(profile.sector) : ''}</p>
             </div>
           </div>
           <div class="lc-research-price">${priceLabel}</div>
@@ -14210,7 +14318,7 @@ const Research = (() => {
         </div>
         <div class="lc-verdict">
           <h3>${I18n.t('analyze.plainEnglish')}</h3>
-          <p>${ai.summary}</p>
+          <p>${esc(ai.summary)}</p>
           <div class="lc-verdict-meta">${shLabel}</div>
         </div>
         <div class="lc-sym-scroll" id="rt-pills">${quickPicks.map(s =>
@@ -14893,7 +15001,7 @@ const Transactions = (() => {
     const internalTag = tx.internal ? '<span class="tx-tag tx-tag--internal">internal</span>' : '';
     const custodialTag = tx.custodial ? '<span class="tx-tag tx-tag--custodial">custodial</span>' : '';
     const symLink = tx.symbol
-      ? `<button type="button" class="tx-link" data-sym="${tx.symbol}">${tx.symbol}</button>`
+      ? `<button type="button" class="tx-link" data-sym="${esc(tx.symbol)}">${esc(tx.symbol)}</button>`
       : '';
 
     let amtClass = 't-muted';
@@ -14904,18 +15012,18 @@ const Transactions = (() => {
 
     const sub = [
       tx.date,
-      bucket,
-      tx.broker && tx.broker !== bucket ? tx.broker : null,
+      esc(bucket),
+      tx.broker && tx.broker !== bucket ? esc(tx.broker) : null,
       symLink,
       tx.shares ? `${tx.shares} sh` : null,
       tx.units ? `${Number(tx.units).toFixed(2)} units` : null,
-      tx.notes ? tx.notes.slice(0, 48) : null,
+      tx.notes ? esc(tx.notes.slice(0, 48)) : null,
     ].filter(Boolean).join(' · ');
 
-    return `<div class="tx-row" data-id="${tx.id}">
-      <div class="tx-type-dot ${m.cls}">${m.icon}</div>
+    return `<div class="tx-row" data-id="${esc(tx.id)}">
+      <div class="tx-type-dot ${m.cls}">${typeof LcIcons !== 'undefined' ? LcIcons.icon(m.icon, 14) : ''}</div>
       <div class="tx-left">
-        <div class="tx-title">${title}${_ipoStatusBadge(tx)} ${internalTag}${custodialTag}</div>
+        <div class="tx-title">${esc(title)}${_ipoStatusBadge(tx)} ${internalTag}${custodialTag}</div>
         <div class="tx-sub">${sub}</div>
       </div>
       <div class="tx-amount ${amtClass}">${flow !== 0 ? sign : ''}${amt}</div>
@@ -14983,7 +15091,7 @@ const Transactions = (() => {
       </div>
     </div>`;
 
-    App.openBottomSheet('tx-detail-sheet', `${m.icon} ${TL.title(tx)}`, content);
+    App.openBottomSheet('tx-detail-sheet', TL.title(tx), content);
   }
 
   function exportCsv() {
@@ -15967,8 +16075,14 @@ const PinLock = (() => {
     const dots = _el('pin-dots');
     if (!dots) return;
     const n = _digits.length;
+    dots.setAttribute('role', 'progressbar');
+    dots.setAttribute('aria-label', 'PIN entry progress');
+    dots.setAttribute('aria-valuemin', '0');
+    dots.setAttribute('aria-valuemax', '6');
+    dots.setAttribute('aria-valuenow', String(n));
+    dots.setAttribute('aria-valuetext', `${n} of up to 6 digits entered`);
     dots.innerHTML = Array.from({ length: 6 }, (_, i) =>
-      `<span class="lc-pin-dot${i < n ? ' lc-pin-dot--on' : ''}"></span>`
+      `<span class="lc-pin-dot${i < n ? ' lc-pin-dot--on' : ''}" aria-hidden="true"></span>`
     ).join('');
   }
 
@@ -16336,7 +16450,7 @@ const RiskAudit = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Risk audit</h1><p>Concentration · tax · allocation drift</p></div>
-        ${MarketUI.emptyState('🛡', 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('shield', 28), 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;
@@ -16455,7 +16569,7 @@ const InsightsScreen = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Insights</h1><p>Pilot score · benchmark · history</p></div>
-        ${MarketUI.emptyState('📊', 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;
@@ -16549,7 +16663,7 @@ const StockComparison = (() => {
     const symbols = holdings.map(h => h.symbol);
 
     if (symbols.length < 2) {
-      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState('⚖️', 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState(LcIcons.icon('scale', 28), 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }
@@ -17616,11 +17730,13 @@ const Announcements = (() => {
   function _itemRow(it) {
     const badge = it.kind === 'dividend' ? 'Dividend' : it.kind === 'bonus' ? 'Bonus' : it.kind === 'rights' ? 'Rights' : 'News';
     const date = it.date ? String(it.date).slice(0, 10) : (it.publishedAt ? String(it.publishedAt).slice(0, 10) : '');
-    const link = it.url ? `onclick="window.open('${it.url.replace(/'/g, '%27')}', '_blank')"` : (it.symbol ? `onclick="Research.open('${it.symbol}')"` : '');
+    const safeUrl = it.url && /^https?:\/\//i.test(String(it.url)) ? String(it.url) : '';
+    const safeSym = String(it.symbol || '').replace(/[^A-Za-z0-9.\-:]/g, '');
+    const link = safeUrl ? `onclick="window.open('${esc(safeUrl.replace(/'/g, '%27'))}', '_blank')"` : (safeSym ? `onclick="Research.open('${safeSym}')"` : '');
     return `<button type="button" class="lc-announce-row" ${link}>
-      <div class="lc-announce-top"><strong>${it.symbol || 'PSX'}</strong><span class="lc-announce-badge">${badge}</span></div>
-      <p>${it.title}</p>
-      <em>${date}${it.detail ? ' · ' + it.detail : ''}</em>
+      <div class="lc-announce-top"><strong>${esc(it.symbol || 'PSX')}</strong><span class="lc-announce-badge">${badge}</span></div>
+      <p>${esc(it.title)}</p>
+      <em>${date}${it.detail ? ' · ' + esc(it.detail) : ''}</em>
     </button>`;
   }
 
@@ -17781,7 +17897,11 @@ const ImportCsv = (() => {
   function _parseLine(line) {
     const parts = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
     if (parts.length < 4) return null;
-    const [date, symbol, type, qty, price, broker] = parts;
+    let [date, symbol, type, qty, price, broker] = parts;
+    // Sanitize identity fields at the import boundary — they are later
+    // interpolated into innerHTML across the app.
+    symbol = String(symbol || '').replace(/[^A-Za-z0-9.\-:]/g, '').slice(0, 16);
+    broker = String(broker || '').replace(/[<>"'&]/g, '').slice(0, 32);
     if (!date || !symbol || date === 'date') return null;
     const t = (type || 'BUY').toUpperCase();
     const quantity = parseFloat(qty) || 0;
@@ -17890,10 +18010,10 @@ const Intelligence = (() => {
         const el = document.getElementById('intel-news-list');
         if (!el) return;
         el.innerHTML = items.length ? items.slice(0, 8).map(n => `
-          <a class="lc-news-row" href="${n.url}" target="_blank" rel="noopener noreferrer">
-            <div class="lc-news-title">${n.title}</div>
-            <div class="lc-news-meta">${n.portfolioSymbol} · ${n.impact?.tags?.join(' · ') || 'General'}</div>
-            <p class="lc-news-hint">${n.impact?.hint || ''}</p>
+          <a class="lc-news-row" href="${escUrl(n.url)}" target="_blank" rel="noopener noreferrer">
+            <div class="lc-news-title">${esc(n.title)}</div>
+            <div class="lc-news-meta">${esc(n.portfolioSymbol)} · ${esc(n.impact?.tags?.join(' · ') || 'General')}</div>
+            <p class="lc-news-hint">${esc(n.impact?.hint || '')}</p>
           </a>`).join('') : '<p class="lc-empty-note">No headlines — check connection or add GNews key in Settings.</p>';
       }).catch(() => {});
     }
@@ -18745,6 +18865,8 @@ const App = (() => {
     }, 30 * 60 * 1000);
   }
 
+  let _refreshBusy = false;
+
   async function refreshPrices() {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
@@ -18752,6 +18874,18 @@ const App = (() => {
       showToast('Demo mode — showing seed NAVs. Remove ?demo=1 for live PSX refresh.', 'info');
       return;
     }
+    if (_refreshBusy) return;
+    _refreshBusy = true;
+    document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+    try {
+      await _refreshPricesInner();
+    } finally {
+      _refreshBusy = false;
+      document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+    }
+  }
+
+  async function _refreshPricesInner() {
 
     const state = State.get();
     const transactions = state.transactions || [];

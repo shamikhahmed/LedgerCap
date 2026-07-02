@@ -67,10 +67,10 @@ const Intelligence = (() => {
         const el = document.getElementById('intel-news-list');
         if (!el) return;
         el.innerHTML = items.length ? items.slice(0, 8).map(n => `
-          <a class="lc-news-row" href="${n.url}" target="_blank" rel="noopener noreferrer">
-            <div class="lc-news-title">${n.title}</div>
-            <div class="lc-news-meta">${n.portfolioSymbol} · ${n.impact?.tags?.join(' · ') || 'General'}</div>
-            <p class="lc-news-hint">${n.impact?.hint || ''}</p>
+          <a class="lc-news-row" href="${escUrl(n.url)}" target="_blank" rel="noopener noreferrer">
+            <div class="lc-news-title">${esc(n.title)}</div>
+            <div class="lc-news-meta">${esc(n.portfolioSymbol)} · ${esc(n.impact?.tags?.join(' · ') || 'General')}</div>
+            <p class="lc-news-hint">${esc(n.impact?.hint || '')}</p>
           </a>`).join('') : '<p class="lc-empty-note">No headlines — check connection or add GNews key in Settings.</p>';
       }).catch(() => {});
     }

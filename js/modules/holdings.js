@@ -17,7 +17,7 @@ const Holdings = (() => {
     <div class="rt-table-wrap cap-reveal">
       <table class="rt-table">
         <thead><tr>
-          <th>Symbol</th><th>Qty</th><th>Price</th><th>Value</th><th>G/L</th><th>Alloc</th><th>Yield</th><th>AI</th>
+          <th>Symbol</th><th>Qty</th><th>Price</th><th>Value</th><th>G/L</th><th>Alloc</th><th>Yield</th><th>Rating</th>
         </tr></thead>
         <tbody>
         ${rows.map(r => `

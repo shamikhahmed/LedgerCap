@@ -359,8 +359,8 @@ const Research = (() => {
         <div class="lc-research-hero">
           <div class="lc-research-hero-top">
             <div>
-              <h2>${r.symbol}</h2>
-              <p>${profile.name}${profile.sector ? ' · ' + profile.sector : ''}</p>
+              <h2>${esc(r.symbol)}</h2>
+              <p>${esc(profile.name)}${profile.sector ? ' · ' + esc(profile.sector) : ''}</p>
             </div>
           </div>
           <div class="lc-research-price">${priceLabel}</div>
@@ -369,7 +369,7 @@ const Research = (() => {
         </div>
         <div class="lc-verdict">
           <h3>${I18n.t('analyze.plainEnglish')}</h3>
-          <p>${ai.summary}</p>
+          <p>${esc(ai.summary)}</p>
           <div class="lc-verdict-meta">${shLabel}</div>
         </div>
         <div class="lc-sym-scroll" id="rt-pills">${quickPicks.map(s =>

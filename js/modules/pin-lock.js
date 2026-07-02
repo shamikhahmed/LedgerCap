@@ -12,8 +12,14 @@ const PinLock = (() => {
     const dots = _el('pin-dots');
     if (!dots) return;
     const n = _digits.length;
+    dots.setAttribute('role', 'progressbar');
+    dots.setAttribute('aria-label', 'PIN entry progress');
+    dots.setAttribute('aria-valuemin', '0');
+    dots.setAttribute('aria-valuemax', '6');
+    dots.setAttribute('aria-valuenow', String(n));
+    dots.setAttribute('aria-valuetext', `${n} of up to 6 digits entered`);
     dots.innerHTML = Array.from({ length: 6 }, (_, i) =>
-      `<span class="lc-pin-dot${i < n ? ' lc-pin-dot--on' : ''}"></span>`
+      `<span class="lc-pin-dot${i < n ? ' lc-pin-dot--on' : ''}" aria-hidden="true"></span>`
     ).join('');
   }
 

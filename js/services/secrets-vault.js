@@ -73,6 +73,7 @@ const SecretsVault = (() => {
     if (!settings || typeof settings !== 'object') return settings;
     const out = { ...settings };
     delete out.telegramBotToken;
+    delete out.gnewsApiKey;
     if (out.telegramSyncKey) out.telegramSyncKey = '[redacted — re-enter after import]';
     return out;
   }

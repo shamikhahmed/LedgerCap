@@ -1,11 +1,18 @@
 'use strict';
-/** Client-side PIN vault — SHA-256 hash, never stores plaintext PIN. */
+/**
+ * Client-side PIN vault — PBKDF2-SHA256 (310k iterations), never stores
+ * plaintext PIN. Legacy single-SHA-256 hashes are verified once and
+ * transparently upgraded on the next successful unlock.
+ * Note: the PIN gates the UI; portfolio data itself is not encrypted with it.
+ */
 const PinVault = (() => {
   const KEY = 'ledgercap_pin_v1';
   const SESSION_KEY = 'ledgercap_pin_session';
   const BACKUP_KEY = 'ledgercap_pin_backup';
   const MAX_ATTEMPTS = 5;
   const LOCKOUT_MS = 30000;
+  const LOCKOUT_MAX_MS = 30 * 60000;
+  const PBKDF2_ITER = 310000;
   const PIN_RE = /^\d{4,6}$/;
 
   let _hiddenAt = 0;
@@ -41,10 +48,35 @@ const PinVault = (() => {
     return PIN_RE.test(String(pin || ''));
   }
 
-  async function digestPin(pin, salt) {
+  function _hex(buf) {
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /** Legacy scheme (pre-3.44): single SHA-256 of `salt:pin`. Kept for verify-and-upgrade only. */
+  async function digestPinLegacy(pin, salt) {
     const payload = `${salt}:${pin}`;
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return _hex(buf);
+  }
+
+  /** Current scheme: PBKDF2-SHA256, 310k iterations. Output prefixed `v2:`. */
+  async function digestPin(pin, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(String(salt)), iterations: PBKDF2_ITER },
+      keyMaterial,
+      256
+    );
+    return 'v2:' + _hex(bits);
+  }
+
+  async function _matchesStored(pin, salt, storedHash) {
+    if (!storedHash) return false;
+    if (String(storedHash).startsWith('v2:')) {
+      return (await digestPin(pin, salt)) === storedHash;
+    }
+    return (await digestPinLegacy(pin, salt)) === storedHash;
   }
 
   function isEnabled() {
@@ -99,16 +131,20 @@ const PinVault = (() => {
 
     if (!validateFormat(pin)) return { ok: false, reason: 'format' };
 
-    const hash = await digestPin(pin, cfg.salt);
-    if (hash === cfg.hash) {
+    if (await _matchesStored(pin, cfg.salt, cfg.hash)) {
+      // Transparent upgrade: re-hash legacy SHA-256 entries with PBKDF2.
+      if (!String(cfg.hash).startsWith('v2:')) cfg.hash = await digestPin(pin, cfg.salt);
       cfg.fails = 0;
       cfg.lockUntil = 0;
+      cfg.lockLevel = 0;
       saveConfig(cfg);
       return { ok: true, decoy: false };
     }
-    if (cfg.decoyHash && hash === cfg.decoyHash) {
+    if (cfg.decoyHash && await _matchesStored(pin, cfg.salt, cfg.decoyHash)) {
+      if (!String(cfg.decoyHash).startsWith('v2:')) cfg.decoyHash = await digestPin(pin, cfg.salt);
       cfg.fails = 0;
       cfg.lockUntil = 0;
+      cfg.lockLevel = 0;
       saveConfig(cfg);
       return { ok: true, decoy: true };
     }
@@ -116,7 +152,10 @@ const PinVault = (() => {
     cfg.fails = (cfg.fails || 0) + 1;
     let attemptsLeft = MAX_ATTEMPTS - cfg.fails;
     if (cfg.fails >= MAX_ATTEMPTS) {
-      cfg.lockUntil = Date.now() + LOCKOUT_MS;
+      // Escalating lockout: 30s, 1m, 2m, 4m … capped at 30m.
+      const level = (cfg.lockLevel || 0);
+      cfg.lockUntil = Date.now() + Math.min(LOCKOUT_MS * Math.pow(2, level), LOCKOUT_MAX_MS);
+      cfg.lockLevel = level + 1;
       cfg.fails = 0;
       attemptsLeft = 0;
     }
@@ -167,8 +206,7 @@ const PinVault = (() => {
     if (!validateFormat(pin)) throw new Error('Use 4–6 digits');
     const cfg = getConfig();
     if (!cfg.enabled) throw new Error('Set main PIN first');
-    const mainHash = await digestPin(mainPin, cfg.salt);
-    if (mainHash !== cfg.hash) throw new Error('Main PIN incorrect');
+    if (!(await _matchesStored(mainPin, cfg.salt, cfg.hash))) throw new Error('Main PIN incorrect');
     if (pin === mainPin) throw new Error('Decoy must differ from main PIN');
     cfg.decoyHash = await digestPin(pin, cfg.salt);
     saveConfig(cfg);
@@ -176,8 +214,7 @@ const PinVault = (() => {
 
   async function clearDecoyPin(mainPin) {
     const cfg = getConfig();
-    const mainHash = await digestPin(mainPin, cfg.salt);
-    if (mainHash !== cfg.hash) throw new Error('Main PIN incorrect');
+    if (!(await _matchesStored(mainPin, cfg.salt, cfg.hash))) throw new Error('Main PIN incorrect');
     cfg.decoyHash = '';
     saveConfig(cfg);
   }

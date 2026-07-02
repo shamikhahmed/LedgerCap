@@ -19,6 +19,7 @@ const Hub = (() => {
     { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
     { id: 'transactions', key: 'transactions', tone: 'slate' },
     { id: 'import', key: 'import', tone: 'slate' },
+    { id: 'settings', key: 'settingsTool', tone: 'slate' },
   ];
 
   function _greeting() {
@@ -148,14 +149,14 @@ const Hub = (() => {
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = PsxUI.emptyState('No headlines yet', 'Set PSX proxy URL for Yahoo + Google RSS + BBC, or add GNews key in Settings.', '');
+        _newsHtml = PsxUI.emptyState('No headlines yet', 'Headlines appear once a news source is reachable. Check your connection, or open Settings → Live prices to configure sources.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
-        <a class="lc-news-row" href="${n.url}" target="_blank" rel="noopener noreferrer">
-          <div class="lc-news-title">${n.title}</div>
-          <div class="lc-news-meta">${n.portfolioSymbol || n.symbol} · ${n.publisher || n.source}${NewsService.impactBadge(n.impact)}</div>
-          <p class="lc-news-hint">${n.impact?.hint || ''}</p>
+        <a class="lc-news-row" href="${escUrl(n.url)}" target="_blank" rel="noopener noreferrer">
+          <div class="lc-news-title">${esc(n.title)}</div>
+          <div class="lc-news-meta">${esc(n.portfolioSymbol || n.symbol)} · ${esc(n.publisher || n.source)}${NewsService.impactBadge(n.impact)}</div>
+          <p class="lc-news-hint">${esc(n.impact?.hint || '')}</p>
         </a>`).join('');
     } catch (e) {
       _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? (e.message || 'Feed error — try again.') : 'You appear offline.', 'Hub.refreshNews()');
@@ -224,7 +225,15 @@ const Hub = (() => {
   function _portfolioChart(state) {
     const histRaw = state.priceHistory || [];
     const hist = histRaw.map(h => h.value).filter(v => v > 0);
-    if (hist.length < 2 || typeof Charts === 'undefined') return '';
+    if (typeof Charts === 'undefined') return '';
+    if (hist.length === 1) {
+      // Day 1: explain why the trend chart is empty instead of hiding it.
+      return `<div class="lc-dash-section" id="hub-networth-section">
+        <div class="lc-dash-section-head"><h3>Net worth trend</h3></div>
+        <div class="lc-sector-card"><p class="lc-empty-note">First snapshot saved today — your trend line starts tomorrow.</p></div>
+      </div>`;
+    }
+    if (hist.length < 2) return '';
     const first = hist[0];
     const last = hist[hist.length - 1];
     const chg = first ? ((last - first) / first) * 100 : 0;
@@ -294,7 +303,7 @@ const Hub = (() => {
       <div class="lc-dash">
         <div class="lc-dash-greet">
           <h2>${_greeting()}</h2>
-          <p>Your wealth · v${window.APP_VERSION || '—'}</p>
+          <p>Your wealth at a glance</p>
         </div>
         <div class="lc-dash-hero">
           <div class="lc-dash-hero-label">${I18n.t('portfolio.value')}</div>

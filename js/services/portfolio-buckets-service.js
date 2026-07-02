@@ -1,11 +1,13 @@
 'use strict';
 const PortfolioBuckets = (() => {
+  // Account numbers intentionally omitted from labels — they render on-screen
+  // (screenshots, demos, screen-share). Keep identifiers in your broker portal.
   const BUILTIN = [
-    { id: 'rafi', name: 'Rafi Securities', kind: 'psx', brokerFilter: 'Rafi', icon: 'R', builtin: true, desc: 'CDC broker account 6773' },
-    { id: 'akd', name: 'AKD Securities', kind: 'psx', brokerFilter: 'AKD', icon: 'A', builtin: true, desc: 'Account COAF55870' },
+    { id: 'rafi', name: 'Rafi Securities', kind: 'psx', brokerFilter: 'Rafi', icon: 'R', builtin: true, desc: 'PSX broker · CDC sub-account' },
+    { id: 'akd', name: 'AKD Securities', kind: 'psx', brokerFilter: 'AKD', icon: 'A', builtin: true, desc: 'PSX broker account' },
     { id: 'cdc', name: 'CDC Custody', kind: 'psx', brokerFilter: 'CDC', icon: 'C', builtin: true, desc: 'Central depository · IPO allotments' },
-    { id: 'funds', name: 'Al Meezan Investments', kind: 'funds', icon: '☪', builtin: true, desc: 'Meezan AMC · account 733102-1' },
-    { id: 'usa', name: 'US Equities', kind: 'intl', icon: '🇺🇸', builtin: true, desc: 'IBKR · US stocks & crypto' },
+    { id: 'funds', name: 'Al Meezan Investments', kind: 'funds', icon: 'M', builtin: true, desc: 'Meezan AMC mutual funds' },
+    { id: 'usa', name: 'US Equities', kind: 'intl', icon: 'U', builtin: true, desc: 'IBKR · US stocks & crypto' },
   ];
 
   function _brokerMatch(txBroker, filter) {
@@ -65,7 +67,7 @@ const PortfolioBuckets = (() => {
       return { pkr: window.AKD_TOTAL_INVESTED_PKR, usd: null, note: 'Your AKD deposits (excl. friend custodial)' };
     }
     if (bucketId === 'funds' && window.MEEZAN_TOTAL_PURCHASES_PKR > 0) {
-      return { pkr: window.MEEZAN_TOTAL_PURCHASES_PKR, usd: null, note: 'AMC total purchases 733102-1' };
+      return { pkr: window.MEEZAN_TOTAL_PURCHASES_PKR, usd: null, note: 'AMC total purchases' };
     }
     if (bucketId === 'usa') {
       const usd = window.TTWO_TOTAL_INVESTED_USD || txs

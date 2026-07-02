@@ -82,7 +82,6 @@ export async function handleSsePrices(request, url) {
   }
 
   const intervalMs = Math.min(Math.max(parseInt(url.searchParams.get('interval') || '20', 10) || 20, 10), 120) * 1000;
-  const sessionOpen = pktSessionOpen();
 
   const stream = new ReadableStream({
     start(controller) {
@@ -99,6 +98,9 @@ export async function handleSsePrices(request, url) {
 
       const tick = async () => {
         if (closed) return;
+        // Re-evaluate each tick: a pre-market connection goes live at 9:15
+        // and a post-close stream stops fetching instead of ticking forever.
+        const sessionOpen = pktSessionOpen();
         if (!sessionOpen) {
           controller.enqueue(enc.encode(`: psx session closed\n\n`));
           return;

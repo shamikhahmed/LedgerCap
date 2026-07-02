@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://s.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://s3.tradingview.com https://s.tradingview.com; connect-src 'self' https://api.telegram.org https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://query1.finance.yahoo.com https://open.er-api.com https://gnews.io https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev https://s3.tradingview.com https://s.tradingview.com https://symbol-search.tradingview.com https://prodata.tradingview.com https://notifications.tradingview.com; frame-src https://s3.tradingview.com https://www.tradingview.com https://s.tradingview.com; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://s.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://s3.tradingview.com https://s.tradingview.com; connect-src 'self' https://api.telegram.org https://dps.psx.com.pk https://api.allorigins.win https://corsproxy.io https://query2.finance.yahoo.com https://query1.finance.yahoo.com https://open.er-api.com https://gnews.io https://ledgercap-psx-proxy.shamikhahmed.workers.dev https://stunds-psx-proxy.shamikhahmed.workers.dev https://s3.tradingview.com https://s.tradingview.com https://symbol-search.tradingview.com https://prodata.tradingview.com https://notifications.tradingview.com; frame-src https://s3.tradingview.com https://www.tradingview.com https://s.tradingview.com; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -121,7 +121,7 @@
   </div>
   <div id="lc-price-announcer" class="lc-sr-only" aria-live="polite" aria-atomic="true"></div>
 
-  <div class="bottom-sheet" id="bottom-sheet">
+  <div class="bottom-sheet" id="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="bs-title">
     <div class="bs-backdrop" onclick="App.closeBottomSheet()"></div>
     <div class="bs-panel">
       <div class="bs-title" id="bs-title" style="font-weight:800;margin-bottom:12px"></div>
@@ -131,7 +131,7 @@
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
-  <script defer src="js/ledgercap.bundle.js?v=3.43.0"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.44.0"></script>
   <script>window.CapMotion = window.CapricornMotion;</script>
 
 <!-- Support modal (no paywall until Stripe) -->

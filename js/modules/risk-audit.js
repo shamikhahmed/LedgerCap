@@ -29,7 +29,7 @@ const RiskAudit = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Risk audit</h1><p>Concentration · tax · allocation drift</p></div>
-        ${MarketUI.emptyState('🛡', 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('shield', 28), 'No holdings', 'Load your ledger to run a rule-based risk audit.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;

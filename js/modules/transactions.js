@@ -143,7 +143,7 @@ const Transactions = (() => {
     const internalTag = tx.internal ? '<span class="tx-tag tx-tag--internal">internal</span>' : '';
     const custodialTag = tx.custodial ? '<span class="tx-tag tx-tag--custodial">custodial</span>' : '';
     const symLink = tx.symbol
-      ? `<button type="button" class="tx-link" data-sym="${tx.symbol}">${tx.symbol}</button>`
+      ? `<button type="button" class="tx-link" data-sym="${esc(tx.symbol)}">${esc(tx.symbol)}</button>`
       : '';
 
     let amtClass = 't-muted';
@@ -154,18 +154,18 @@ const Transactions = (() => {
 
     const sub = [
       tx.date,
-      bucket,
-      tx.broker && tx.broker !== bucket ? tx.broker : null,
+      esc(bucket),
+      tx.broker && tx.broker !== bucket ? esc(tx.broker) : null,
       symLink,
       tx.shares ? `${tx.shares} sh` : null,
       tx.units ? `${Number(tx.units).toFixed(2)} units` : null,
-      tx.notes ? tx.notes.slice(0, 48) : null,
+      tx.notes ? esc(tx.notes.slice(0, 48)) : null,
     ].filter(Boolean).join(' · ');
 
-    return `<div class="tx-row" data-id="${tx.id}">
-      <div class="tx-type-dot ${m.cls}">${m.icon}</div>
+    return `<div class="tx-row" data-id="${esc(tx.id)}">
+      <div class="tx-type-dot ${m.cls}">${typeof LcIcons !== 'undefined' ? LcIcons.icon(m.icon, 14) : ''}</div>
       <div class="tx-left">
-        <div class="tx-title">${title}${_ipoStatusBadge(tx)} ${internalTag}${custodialTag}</div>
+        <div class="tx-title">${esc(title)}${_ipoStatusBadge(tx)} ${internalTag}${custodialTag}</div>
         <div class="tx-sub">${sub}</div>
       </div>
       <div class="tx-amount ${amtClass}">${flow !== 0 ? sign : ''}${amt}</div>
@@ -233,7 +233,7 @@ const Transactions = (() => {
       </div>
     </div>`;
 
-    App.openBottomSheet('tx-detail-sheet', `${m.icon} ${TL.title(tx)}`, content);
+    App.openBottomSheet('tx-detail-sheet', TL.title(tx), content);
   }
 
   function exportCsv() {

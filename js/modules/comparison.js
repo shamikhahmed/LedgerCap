@@ -11,7 +11,7 @@ const StockComparison = (() => {
     const symbols = holdings.map(h => h.symbol);
 
     if (symbols.length < 2) {
-      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState('⚖️', 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
+      screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Compare</h1><p>Side by side</p></div>${MarketUI.emptyState(LcIcons.icon('scale', 28), 'Need 2+ holdings to compare', 'Add more stocks or funds to compare side-by-side performance.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}</div>`;
       CapMotion.refresh();
       return;
     }

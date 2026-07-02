@@ -13,7 +13,7 @@ const Dashboard = (() => {
       screen.innerHTML = `
       ${MarketUI.marketStripFull([])}
       ${MarketUI.sectionHead('Dashboard', 'Start here')}
-      ${MarketUI.emptyState('📊', 'Your wealth OS starts here', 'Track PSX stocks, Meezan funds, dividends, and net worth — all on your device.',
+      ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'Your wealth OS starts here', 'Track PSX stocks, Meezan funds, dividends, and net worth — all on your device.',
         `<button type="button" class="os-btn os-btn-primary" onclick="Navigation.go('holdings')">Add holdings</button>
          <button type="button" class="os-btn os-btn-ghost" style="margin-top:10px" onclick="location.search='?demo=1';location.reload()">Load demo portfolio</button>`)}`;
       CapMotion.refresh();

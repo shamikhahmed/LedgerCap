@@ -3,23 +3,24 @@
  * Unified transaction display, cash-flow math, and cross-screen linking.
  */
 const TransactionLedger = (() => {
+  // icon = LcIcons key (render with LcIcons.icon(meta.icon, size)).
   const TYPE_META = {
-    BUY:           { icon: '📈', cls: 'buy',          label: 'Buy',           flow: 'out'  },
-    SELL:          { icon: '📉', cls: 'sell',         label: 'Sell',          flow: 'in'   },
-    DIVIDEND:      { icon: '💰', cls: 'dividend',     label: 'Dividend',      flow: 'in'   },
-    SALARY:        { icon: '💵', cls: 'salary',       label: 'Salary',        flow: 'in'   },
-    DEPOSIT:       { icon: '🏧', cls: 'salary',       label: 'Deposit',       flow: 'in'   },
-    CONTRIBUTION:  { icon: '🏦', cls: 'contribution', label: 'Fund buy',      flow: 'out'  },
-    FUND_OUT:      { icon: '↔', cls: 'contribution', label: 'Fund convert',  flow: 'neutral'},
-    REDEMPTION:    { icon: '↩', cls: 'contribution', label: 'Redemption',    flow: 'in'   },
-    IPO_SUBSCRIBE: { icon: '🚀', cls: 'ipo',          label: 'IPO',           flow: 'out'  },
-    FEE:           { icon: '🧾', cls: 'fee',          label: 'Fee',           flow: 'out'  },
-    TAX:           { icon: '⚖', cls: 'tax',          label: 'Tax',           flow: 'out'  },
-    INTL_BUY:      { icon: '🌎', cls: 'buy',          label: 'US buy',        flow: 'out'  },
-    INTL_SELL:     { icon: '🌎', cls: 'sell',         label: 'US sell',       flow: 'in'   },
-    CRYPTO_BUY:    { icon: '₿', cls: 'buy',          label: 'Crypto buy',    flow: 'out'  },
-    CRYPTO_SELL:   { icon: '₿', cls: 'sell',         label: 'Crypto sell',   flow: 'in'   },
-    POSITION_ADJUST: { icon: '✎', cls: 'contribution', label: 'Reconcile',   flow: 'neutral' },
+    BUY:           { icon: 'trending',     cls: 'buy',          label: 'Buy',           flow: 'out'  },
+    SELL:          { icon: 'trendingDown', cls: 'sell',         label: 'Sell',          flow: 'in'   },
+    DIVIDEND:      { icon: 'banknote',     cls: 'dividend',     label: 'Dividend',      flow: 'in'   },
+    SALARY:        { icon: 'wallet',       cls: 'salary',       label: 'Salary',        flow: 'in'   },
+    DEPOSIT:       { icon: 'download',     cls: 'salary',       label: 'Deposit',       flow: 'in'   },
+    CONTRIBUTION:  { icon: 'briefcase',    cls: 'contribution', label: 'Fund buy',      flow: 'out'  },
+    FUND_OUT:      { icon: 'swap',         cls: 'contribution', label: 'Fund convert',  flow: 'neutral'},
+    REDEMPTION:    { icon: 'download',     cls: 'contribution', label: 'Redemption',    flow: 'in'   },
+    IPO_SUBSCRIBE: { icon: 'zap',          cls: 'ipo',          label: 'IPO',           flow: 'out'  },
+    FEE:           { icon: 'ledger',       cls: 'fee',          label: 'Fee',           flow: 'out'  },
+    TAX:           { icon: 'scale',        cls: 'tax',          label: 'Tax',           flow: 'out'  },
+    INTL_BUY:      { icon: 'globe',        cls: 'buy',          label: 'US buy',        flow: 'out'  },
+    INTL_SELL:     { icon: 'globe',        cls: 'sell',         label: 'US sell',       flow: 'in'   },
+    CRYPTO_BUY:    { icon: 'coins',        cls: 'buy',          label: 'Crypto buy',    flow: 'out'  },
+    CRYPTO_SELL:   { icon: 'coins',        cls: 'sell',         label: 'Crypto sell',   flow: 'in'   },
+    POSITION_ADJUST: { icon: 'edit',       cls: 'contribution', label: 'Reconcile',     flow: 'neutral' },
   };
 
   const CHARGE_LABELS = {

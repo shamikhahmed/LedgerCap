@@ -64,11 +64,13 @@ const Announcements = (() => {
   function _itemRow(it) {
     const badge = it.kind === 'dividend' ? 'Dividend' : it.kind === 'bonus' ? 'Bonus' : it.kind === 'rights' ? 'Rights' : 'News';
     const date = it.date ? String(it.date).slice(0, 10) : (it.publishedAt ? String(it.publishedAt).slice(0, 10) : '');
-    const link = it.url ? `onclick="window.open('${it.url.replace(/'/g, '%27')}', '_blank')"` : (it.symbol ? `onclick="Research.open('${it.symbol}')"` : '');
+    const safeUrl = it.url && /^https?:\/\//i.test(String(it.url)) ? String(it.url) : '';
+    const safeSym = String(it.symbol || '').replace(/[^A-Za-z0-9.\-:]/g, '');
+    const link = safeUrl ? `onclick="window.open('${esc(safeUrl.replace(/'/g, '%27'))}', '_blank')"` : (safeSym ? `onclick="Research.open('${safeSym}')"` : '');
     return `<button type="button" class="lc-announce-row" ${link}>
-      <div class="lc-announce-top"><strong>${it.symbol || 'PSX'}</strong><span class="lc-announce-badge">${badge}</span></div>
-      <p>${it.title}</p>
-      <em>${date}${it.detail ? ' · ' + it.detail : ''}</em>
+      <div class="lc-announce-top"><strong>${esc(it.symbol || 'PSX')}</strong><span class="lc-announce-badge">${badge}</span></div>
+      <p>${esc(it.title)}</p>
+      <em>${date}${it.detail ? ' · ' + esc(it.detail) : ''}</em>
     </button>`;
   }
 

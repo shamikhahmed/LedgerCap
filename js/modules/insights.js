@@ -60,7 +60,7 @@ const InsightsScreen = (() => {
 
     if (!state.transactions?.length) {
       screen.innerHTML = `<div class="lc-dash"><div class="lc-screen-head"><h1>Insights</h1><p>Pilot score · benchmark · history</p></div>
-        ${MarketUI.emptyState('📊', 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
+        ${MarketUI.emptyState(LcIcons.icon('chart', 28), 'No insights yet', 'Add holdings to see score, benchmark, and value history.', '<button type="button" class="os-btn os-btn-primary" onclick="App.openAddTransaction()">Add holdings</button>')}
       </div>`;
       CapMotion.refresh();
       return;

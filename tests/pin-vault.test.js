@@ -30,7 +30,14 @@ const subtle = {
     const buf = Buffer.from(data);
     return crypto.createHash('sha256').update(buf).digest().buffer;
   },
+  importKey: async (_fmt, keyData) => ({ keyData: Buffer.from(keyData) }),
+  deriveBits: async (params, key, bits) =>
+    crypto.pbkdf2Sync(key.keyData, Buffer.from(params.salt), params.iterations, bits / 8, 'sha256').buffer,
 };
+
+function nodePbkdf2(pin, salt) {
+  return 'v2:' + crypto.pbkdf2Sync(pin, salt, 310000, 32, 'sha256').toString('hex');
+}
 
 const ctx = {
   window: {},
@@ -62,7 +69,14 @@ function assert(cond, msg) {
 
   const salt = 'abc';
   const h = await PinVault.digestPin('4242', salt);
-  assert(h === nodeDigest('4242', salt), 'digest matches node crypto');
+  assert(h === nodePbkdf2('4242', salt), 'digest matches node PBKDF2 (v2)');
+
+  // Legacy SHA-256 config verifies and silently upgrades to v2.
+  PinVault.saveConfig({ enabled: true, salt, hash: nodeDigest('7777', salt), fails: 0, lockUntil: 0 });
+  const legacyOk = await PinVault.verifyPin('7777');
+  assert(legacyOk.ok, 'legacy sha256 pin still verifies');
+  assert(String(PinVault.getConfig().hash).startsWith('v2:'), 'legacy hash upgraded to v2 after verify');
+  storage.delete(PinVault.KEY);
 
   await PinVault.enablePin('4242', '4242');
   assert(PinVault.isEnabled(), 'enabled after set');

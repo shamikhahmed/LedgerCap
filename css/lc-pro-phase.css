@@ -393,6 +393,20 @@ body.lc-rtl .psx-sidebar {
   direction: rtl;
 }
 
+/* Nastaliq-style scripts need taller lines to avoid diacritic clipping */
+body.lc-rtl {
+  line-height: 1.75;
+}
+body.lc-rtl h1, body.lc-rtl h2, body.lc-rtl h3,
+body.lc-rtl .lc-dash-hero-val, body.lc-rtl .psx-nav-btn {
+  line-height: 1.5;
+}
+body.lc-rtl .rt-table td, body.lc-rtl .rt-table th,
+body.lc-rtl .bs-panel, body.lc-rtl .lc-sector-card {
+  direction: rtl;
+  text-align: right;
+}
+
 /* Perf budget hint — contain paints on scroll lists */
 .lc-dash .lc-market-row,
 .lc-dash .tx-row {

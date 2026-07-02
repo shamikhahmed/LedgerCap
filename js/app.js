@@ -451,6 +451,8 @@ const App = (() => {
     }, 30 * 60 * 1000);
   }
 
+  let _refreshBusy = false;
+
   async function refreshPrices() {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
@@ -458,6 +460,18 @@ const App = (() => {
       showToast('Demo mode — showing seed NAVs. Remove ?demo=1 for live PSX refresh.', 'info');
       return;
     }
+    if (_refreshBusy) return;
+    _refreshBusy = true;
+    document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+    try {
+      await _refreshPricesInner();
+    } finally {
+      _refreshBusy = false;
+      document.querySelectorAll('[onclick="App.refreshPrices()"]').forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+    }
+  }
+
+  async function _refreshPricesInner() {
 
     const state = State.get();
     const transactions = state.transactions || [];

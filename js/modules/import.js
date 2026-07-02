@@ -28,7 +28,11 @@ const ImportCsv = (() => {
   function _parseLine(line) {
     const parts = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
     if (parts.length < 4) return null;
-    const [date, symbol, type, qty, price, broker] = parts;
+    let [date, symbol, type, qty, price, broker] = parts;
+    // Sanitize identity fields at the import boundary — they are later
+    // interpolated into innerHTML across the app.
+    symbol = String(symbol || '').replace(/[^A-Za-z0-9.\-:]/g, '').slice(0, 16);
+    broker = String(broker || '').replace(/[<>"'&]/g, '').slice(0, 32);
     if (!date || !symbol || date === 'date') return null;
     const t = (type || 'BUY').toUpperCase();
     const quantity = parseFloat(qty) || 0;
