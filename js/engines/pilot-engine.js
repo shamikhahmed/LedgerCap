@@ -425,6 +425,7 @@ const PilotEngine = (() => {
   return {
     settings, holdingMeta, setHoldingMeta, isMutualFund,
     buildMorningBrief, buildCgtReport, buildRebalancePlan, buildPilotScore,
+    buildTechnical,
     runScreener, calculator, portfolioSummary, evaluateRow, scoreToAction,
   };
 })();

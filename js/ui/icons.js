@@ -30,6 +30,8 @@ const LcIcons = (() => {
 
   const TOOL_ICONS = {
     global: 'globe',
+    commodities: 'coins',
+    announcements: 'bell',
     zakat: 'scale',
     import: 'upload',
     screener: 'search',

@@ -166,6 +166,90 @@ const Research = (() => {
     el.innerHTML = _searchHitsHtml(_catalogSearch(q));
   }
 
+  function _peersBlock(symbol, sector) {
+    if (!sector) return '';
+    const peers = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])]
+      .filter(s => s.sector === sector && s.symbol !== symbol)
+      .slice(0, 6);
+    if (!peers.length) return '';
+    const rows = peers.map(p => {
+      const q = State.getPrice(p.symbol) || (window.FALLBACK_PRICES || {})[p.symbol] || 0;
+      const f = (window.FUNDAMENTALS_DB || {})[p.symbol] || {};
+      return `<button type="button" class="lc-peer-row" onclick="Research.pickSymbol('${p.symbol}')">
+        <strong>${p.symbol}</strong><span>${p.name || ''}</span>
+        <em>${q ? PsxUI.fmt(q) : '—'}</em><b>${f.pe ? 'P/E ' + Number(f.pe).toFixed(1) : ''}</b>
+      </button>`;
+    }).join('');
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Sector peers</h3><span>${sector}</span></div>
+      <div class="lc-peer-list">${rows}</div>
+    </div>`;
+  }
+
+  function _technicalBlock(symbol, price, prevClose) {
+    if (typeof PilotEngine === 'undefined') return '';
+    const t = PilotEngine.buildTechnical(symbol, price, prevClose || price);
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Technicals</h3><span>Rule-based</span></div>
+      ${_metricGrid([
+        { l: 'RSI (14)', v: t.rsi_14.toFixed(1) },
+        { l: 'MA (20 est.)', v: PsxUI.fmt(t.ma_20) },
+        { l: '52w position', v: t.position_in_52w_pct.toFixed(0) + '%' },
+        { l: 'Day chg', v: _fmtPct(t.day_change_pct), cls: PsxUI.chgCls(t.day_change_pct) },
+      ])}
+    </div>`;
+  }
+
+  function _dividendBlock(symbol) {
+    if (typeof CorporateActionsService === 'undefined') return '';
+    const up = CorporateActionsService.getUpcomingCash(symbol)[0];
+    const paid = CorporateActionsService.getPaidCash(symbol)[0];
+    if (!up && !paid) return '';
+    const cells = [];
+    if (up) cells.push({ l: 'Next dividend', v: up.paymentDate ? up.paymentDate.slice(0, 10) : 'TBD' });
+    if (up?.amount) cells.push({ l: 'Amount', v: '₨' + up.amount });
+    if (paid) cells.push({ l: 'Last paid', v: (paid.paymentDate || '').slice(0, 10) || '—' });
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" onclick="Navigation.go('announcements')">All →</button></div>
+      ${_metricGrid(cells)}
+    </div>`;
+  }
+
+  async function _loadOrderBook(sym, isPsx) {
+    const host = document.getElementById('research-orderbook');
+    if (!host) return;
+    if (!isPsx) {
+      host.innerHTML = '<p class="psx-muted lc-card-sub">Bid/offer depth available for PSX symbols during market hours.</p>';
+      return;
+    }
+    host.innerHTML = '<p class="psx-muted">Loading order book…</p>';
+    const data = typeof MarketWatchService !== 'undefined'
+      ? await MarketWatchService.getOrderBook(sym)
+      : null;
+    host.innerHTML = typeof MarketWatchService !== 'undefined'
+      ? MarketWatchService.panelHtml(data)
+      : '<p class="psx-muted">Order book unavailable.</p>';
+  }
+
+  async function _load52w(sym, price) {
+    const host = document.getElementById('research-52w');
+    if (!host || typeof Prices === 'undefined') return;
+    const series = await Prices.fetchPriceSeries(sym, 252);
+    if (series.length < 5) {
+      host.innerHTML = '<p class="psx-muted lc-card-sub">52-week range builds as EOD history loads.</p>';
+      return;
+    }
+    const low = Math.min(...series);
+    const high = Math.max(...series);
+    const pos = high > low ? ((price - low) / (high - low)) * 100 : 50;
+    host.innerHTML = _metricGrid([
+      { l: '52w low', v: PsxUI.fmt(low) },
+      { l: '52w high', v: PsxUI.fmt(high) },
+      { l: 'Range position', v: pos.toFixed(0) + '%' },
+      { l: 'Sessions', v: String(series.length) },
+    ]);
+  }
+
   function render() {
     const screen = document.getElementById('screen-research');
     if (!screen) return;
@@ -298,6 +382,14 @@ const Research = (() => {
           { l: 'Risk', v: ai.riskScore + '/100' },
         ])}
         ${!isFund ? `<div class="lc-dash-section"><div class="lc-dash-section-head"><h3>${I18n.t('analyze.fundamentals')}</h3></div></div>${fundNote}${fundMetrics}` : ''}
+        ${!isIntl && !isCrypto ? `<div class="lc-dash-section">
+          <div class="lc-dash-section-head"><h3>Market depth</h3><span>Bid · offer</span></div>
+          <div id="research-orderbook"><p class="psx-muted">Loading…</p></div>
+        </div>` : ''}
+        ${_technicalBlock(r.symbol, quote.price, quote.prevClose)}
+        <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>52-week range</h3><span>EOD history</span></div><div id="research-52w"><p class="psx-muted">Loading…</p></div></div>
+        ${_peersBlock(r.symbol, profile.sector)}
+        ${_dividendBlock(r.symbol)}
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Performance</h3><span>% change</span></div></div>
         ${perfMetrics}
         ${_portfolioContext(r.symbol)}
@@ -314,6 +406,9 @@ const Research = (() => {
       TradingViewUI.mount('research-tv-chart', r.symbol, assetClass);
     }
     _refreshQuote(r.symbol);
+    if (!isIntl && !isCrypto) _loadOrderBook(r.symbol, true);
+    else _loadOrderBook(r.symbol, false);
+    _load52w(r.symbol, quote.price);
   }
 
   return { render, open, pickSymbol, setMode, _onSearch };

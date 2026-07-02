@@ -6,6 +6,8 @@ const Hub = (() => {
     { id: 'funds', key: 'fundNavs', tone: 'green' },
     { id: 'research', key: 'technical', tone: 'violet' },
     { id: 'global', key: 'globalMarkets', tone: 'cyan' },
+    { id: 'commodities', key: 'commodities', tone: 'gold' },
+    { id: 'announcements', key: 'announcements', tone: 'amber' },
     { id: 'dividends', key: 'dividends', tone: 'green' },
     { id: 'calendar', key: 'calendar', tone: 'blue' },
     { id: 'screener', key: 'screener', tone: 'slate' },

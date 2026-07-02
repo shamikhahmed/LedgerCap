@@ -10,6 +10,8 @@ const Navigation = (() => {
 
   const MORE = [
     { id: 'global', labelKey: 'tools.global.t' },
+    { id: 'commodities', labelKey: 'tools.commodities.t' },
+    { id: 'announcements', labelKey: 'tools.announcements.t' },
     { id: 'zakat', labelKey: 'tools.zakat.t' },
     { id: 'import', labelKey: 'tools.import.t' },
     { id: 'screener', labelKey: 'tools.screener.t' },
@@ -25,7 +27,7 @@ const Navigation = (() => {
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
 
   let _current = 'home';
 
@@ -115,6 +117,8 @@ const Navigation = (() => {
       research: () => { Research.setMode(opts.portfolioIntel ? 'portfolio' : 'stock'); Research.render(); },
       more: () => More.render(),
       global: () => Global.render(),
+      commodities: () => Commodities.render(),
+      announcements: () => Announcements.render(),
       zakat: () => Zakat.render(),
       import: () => ImportCsv.render(),
       screener: () => Screener.render(),

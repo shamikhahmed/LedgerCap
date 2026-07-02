@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-02T09:10:53.495Z",
+  "generatedAt": "2026-07-02T09:48:34.911Z",
   "themes": [
     "dark",
     "light"
@@ -230,6 +230,45 @@
             "light": {
               "mobile": "light/mobile/tools/global-scroll.png",
               "desktop": "light/desktop/tools/global-scroll.png"
+            }
+          }
+        },
+        {
+          "id": "commodities",
+          "label": "Commodities",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/commodities.png",
+              "desktop": "dark/desktop/tools/commodities.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/commodities.png",
+              "desktop": "light/desktop/tools/commodities.png"
+            }
+          },
+          "scroll": {}
+        },
+        {
+          "id": "announcements",
+          "label": "Announcements",
+          "files": {
+            "dark": {
+              "mobile": "dark/mobile/tools/announcements.png",
+              "desktop": "dark/desktop/tools/announcements.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/announcements.png",
+              "desktop": "light/desktop/tools/announcements.png"
+            }
+          },
+          "scroll": {
+            "dark": {
+              "mobile": "dark/mobile/tools/announcements-scroll.png",
+              "desktop": "dark/desktop/tools/announcements-scroll.png"
+            },
+            "light": {
+              "mobile": "light/mobile/tools/announcements-scroll.png",
+              "desktop": "light/desktop/tools/announcements-scroll.png"
             }
           }
         },

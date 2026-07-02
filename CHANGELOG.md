@@ -1,5 +1,15 @@
 # Changelog — LedgerCap
 
+## 3.43.0 (2026-06-30) — Competitor parity (Sarmaaya · PSX Analyzer · Investify)
+
+- **Commodities** — gold, silver, crude, copper spot + PKR/gram; new screen in hub & tools
+- **Announcements** — corporate actions, upcoming dividends, portfolio news feed
+- **Market depth** — PSX bid/offer from trading board in Research analyzer
+- **Deeper analyzer** — sector peers, rule-based technicals, 52-week EOD range, dividend snippet
+- **KSE-100 benchmark** — Insights compares portfolio vs index (MZNPETF secondary)
+- **Docs** — `docs/COMPETITOR_PARITY.md` feature matrix
+- Service worker `ledgercap-v110`; gallery +82 screens
+
 ## 3.42.0 (2026-07-02) — Apple UI polish & premium screen gallery
 
 - **Screen gallery** — VaultCap-grade `screen-gallery.html`: strict viewport, dark/light/compare, lightbox, offline embed (`npm run gallery`)

@@ -31,6 +31,8 @@ const PRIMARY_NAV = [
 const TOOL_SCREENS = [
   { id: 'more', label: 'Tools index' },
   { id: 'global', label: 'Global markets' },
+  { id: 'commodities', label: 'Commodities' },
+  { id: 'announcements', label: 'Announcements' },
   { id: 'zakat', label: 'Zakat calculator' },
   { id: 'import', label: 'CSV import' },
   { id: 'screener', label: 'Stock screener' },
