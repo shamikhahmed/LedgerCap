@@ -10,6 +10,8 @@ const Navigation = (() => {
 
   const MORE = [
     { id: 'global', labelKey: 'tools.global.t' },
+    { id: 'commodities', labelKey: 'tools.commodities.t' },
+    { id: 'announcements', labelKey: 'tools.announcements.t' },
     { id: 'zakat', labelKey: 'tools.zakat.t' },
     { id: 'import', labelKey: 'tools.import.t' },
     { id: 'screener', labelKey: 'tools.screener.t' },
@@ -25,7 +27,7 @@ const Navigation = (() => {
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
 
   let _current = 'home';
 
@@ -51,7 +53,7 @@ const Navigation = (() => {
         <div class="psx-brand" style="padding:4px 12px 24px;font-size:18px">Ledger<span>Cap</span></div>
         <nav aria-label="Primary">${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <div style="height:1px;background:var(--psx-border);margin:16px 8px"></div>
-        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}"><span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
+        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 18) : ''}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
@@ -69,7 +71,15 @@ const Navigation = (() => {
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (btn && typeof LcIcons !== 'undefined') {
+      const icon = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+      const host = document.getElementById('theme-toggle-icon');
+      if (host) host.innerHTML = icon;
+      else btn.innerHTML = icon;
+      btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    } else if (btn) {
+      btn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
   }
 
   function go(tabId, silent, opts) {
@@ -107,6 +117,8 @@ const Navigation = (() => {
       research: () => { Research.setMode(opts.portfolioIntel ? 'portfolio' : 'stock'); Research.render(); },
       more: () => More.render(),
       global: () => Global.render(),
+      commodities: () => Commodities.render(),
+      announcements: () => Announcements.render(),
       zakat: () => Zakat.render(),
       import: () => ImportCsv.render(),
       screener: () => Screener.render(),

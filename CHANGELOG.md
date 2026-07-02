@@ -1,5 +1,24 @@
 # Changelog — LedgerCap
 
+## 3.43.0 (2026-06-30) — Competitor parity (Sarmaaya · PSX Analyzer · Investify)
+
+- **Commodities** — gold, silver, crude, copper spot + PKR/gram; new screen in hub & tools
+- **Announcements** — corporate actions, upcoming dividends, portfolio news feed
+- **Market depth** — PSX bid/offer from trading board in Research analyzer
+- **Deeper analyzer** — sector peers, rule-based technicals, 52-week EOD range, dividend snippet
+- **KSE-100 benchmark** — Insights compares portfolio vs index (MZNPETF secondary)
+- **Docs** — `docs/COMPETITOR_PARITY.md` feature matrix
+- Service worker `ledgercap-v110`; gallery +82 screens
+
+## 3.42.0 (2026-07-02) — Apple UI polish & premium screen gallery
+
+- **Screen gallery** — VaultCap-grade `screen-gallery.html`: strict viewport, dark/light/compare, lightbox, offline embed (`npm run gallery`)
+- **Icon system** — `js/ui/icons.js` monochrome SVG registry; sidebar tools, hub grid, chrome actions; shell emoji purged
+- **Brand mark** — `icon-mark.svg`, `css/brand-mark.css`; splash, PIN, demo banner, onboarding
+- **PWA icons** — `npm run icons:generate` / `icons:ios`; iOS `AppIcon.appiconset`
+- **UI audit** — `docs/UI_AUDIT_250.md` gallery-driven checklist
+- Service worker `ledgercap-v109`
+
 ## 3.41.0 (2026-07-01) — Honesty, security, bundle CI
 
 - **Fallback staleness banner** — `PriceHealth` audits seed/fallback %; topbar warning + refresh CTA; `npm run refresh-fallbacks` script for EOD snapshot

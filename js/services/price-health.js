@@ -49,7 +49,7 @@ const PriceHealth = (() => {
     return `<div class="lc-price-health" role="status">
       <span>${msg}</span>
       <button type="button" class="lc-price-health-btn" onclick="App.refreshPrices()">Refresh</button>
-      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">✕</button>
+      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
 

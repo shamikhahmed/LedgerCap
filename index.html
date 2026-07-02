@@ -31,6 +31,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/psx-app.css?v=20">
   <link rel="stylesheet" href="css/lc-pro.css?v=5">
+  <link rel="stylesheet" href="css/brand-mark.css?v=1">
   <link rel="stylesheet" href="css/lc-pro-phase.css?v=4">
   <script>
     const theme = localStorage.getItem('theme') || 'dark';
@@ -41,8 +42,6 @@
       body.setAttribute('data-theme', next);
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
-      const btn = document.getElementById('theme-toggle');
-      if (btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
       if (window.Navigation?.applyTheme) Navigation.applyTheme(next);
     };
   </script>
@@ -50,14 +49,14 @@
 <body class="psx-app lc-pro" data-theme="dark">
   <a href="#screens" class="psx-skip-link">Skip to content</a>
   <div id="splash" class="psx-splash">
-    <div class="psx-splash-logo">₨</div>
+    <div class="psx-splash-logo" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="72" height="72"></div>
     <div class="psx-splash-title">LedgerCap</div>
     <div class="psx-splash-sub">Wealth terminal · Pakistan</div>
   </div>
 
   <div id="pin-lock" class="lc-pin-lock hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Unlock LedgerCap">
     <div class="lc-pin-card">
-      <div class="lc-pin-logo" aria-hidden="true">🔒</div>
+      <div class="lc-pin-logo" aria-hidden="true" id="pin-logo-host"></div>
       <h2 class="lc-pin-title">Enter PIN</h2>
       <p class="lc-pin-sub">Your ledger stays on this device</p>
       <div class="lc-pin-dots" id="pin-dots" aria-live="polite"></div>
@@ -67,9 +66,9 @@
   </div>
 
   <div id="demo-banner" class="psx-demo hidden" role="status">
-    <span>🎯</span>
+    <span class="lc-demo-dot" aria-hidden="true"></span>
     <p><strong>Demo</strong> — sample portfolio · live refresh paused</p>
-    <button type="button" onclick="App.dismissDemo()" aria-label="Dismiss">✕</button>
+    <button type="button" onclick="App.dismissDemo()" aria-label="Dismiss"><span id="demo-dismiss-icon"></span></button>
   </div>
 
   <div class="psx-shell">
@@ -83,8 +82,8 @@
         </div>
         <div class="psx-topbar-actions">
           <button type="button" id="lc-currency-toggle" class="psx-icon-btn lc-currency-btn" onclick="App.toggleDisplayCurrency()" aria-label="Display currency PKR. Tap to switch." title="Toggle PKR / USD">PKR</button>
-          <button type="button" id="lc-fullscreen-btn" class="psx-icon-btn" onclick="LcTerminal.toggle()" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button>
-          <button type="button" id="theme-toggle" class="psx-icon-btn" onclick="window.toggleTheme?.()" aria-label="Toggle light or dark theme">🌙</button>
+          <button type="button" id="lc-fullscreen-btn" class="psx-icon-btn" onclick="LcTerminal.toggle()" aria-label="Toggle fullscreen" title="Fullscreen"><span id="lc-fullscreen-icon"></span></button>
+          <button type="button" id="theme-toggle" class="psx-icon-btn" onclick="window.toggleTheme?.()" aria-label="Toggle light or dark theme"><span id="theme-toggle-icon"></span></button>
         </div>
       </header>
 
@@ -111,11 +110,13 @@
         <div id="screen-risk-audit" class="psx-screen"></div>
         <div id="screen-insights" class="psx-screen"></div>
         <div id="screen-global" class="psx-screen"></div>
+        <div id="screen-commodities" class="psx-screen"></div>
+        <div id="screen-announcements" class="psx-screen"></div>
         <div id="screen-zakat" class="psx-screen"></div>
         <div id="screen-import" class="psx-screen"></div>
       </div>
 
-      <nav id="nav" class="psx-bottom-nav" aria-label="Main"></nav>
+      <nav id="nav" class="psx-bottom-nav" role="tablist" aria-label="Main"></nav>
     </div>
   </div>
   <div id="lc-price-announcer" class="lc-sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -130,7 +131,7 @@
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
-  <script defer src="js/ledgercap.bundle.js?v=3.41.0"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.43.0"></script>
   <script>window.CapMotion = window.CapricornMotion;</script>
 
 <!-- Support modal (no paywall until Stripe) -->

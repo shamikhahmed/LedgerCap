@@ -308,6 +308,19 @@ const App = (() => {
     }
   }
 
+  function _wireChromeIcons() {
+    if (typeof LcIcons === 'undefined') return;
+    const theme = document.body.getAttribute('data-theme') || 'dark';
+    const pin = document.getElementById('pin-logo-host');
+    if (pin) pin.innerHTML = '<img src="assets/icons/icon-mark.svg" alt="" width="48" height="48">';
+    const fs = document.getElementById('lc-fullscreen-icon');
+    if (fs) fs.innerHTML = LcIcons.icon('fullscreen', 18);
+    const dismiss = document.getElementById('demo-dismiss-icon');
+    if (dismiss) dismiss.innerHTML = LcIcons.icon('x', 16);
+    const themeHost = document.getElementById('theme-toggle-icon');
+    if (themeHost) themeHost.innerHTML = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+  }
+
   async function launch() {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
     if (demo) {
@@ -341,6 +354,7 @@ const App = (() => {
       }
     }
     Navigation.init();
+    _wireChromeIcons();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
       const hasLedger = (State.get().transactions || []).length > 0;
@@ -1085,7 +1099,10 @@ const App = (() => {
     if (meta) meta.content = theme === 'light' ? '#fafafa' : '#09090b';
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (btn) {
+      if (typeof LcIcons !== 'undefined') btn.innerHTML = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+      else btn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
   }
 
   function applyTheme(theme) {

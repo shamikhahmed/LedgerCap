@@ -1,17 +1,34 @@
 'use strict';
 /** Portfolio insights screen — distinct from engines/insights.js rule engine. */
 const InsightsScreen = (() => {
-  const BENCHMARK = 'MZNPETF';
+  const SECONDARY_BENCH = 'MZNPETF';
 
   function _benchmarkCompare(state) {
     const summary = PortfolioAnalyticsService.getSummary(state);
     const daily = State.calcDailyPnl();
     const portPct = summary.totalValue > 0 ? (daily / summary.totalValue) * 100 : 0;
-    const benchPrice = State.getPrice(BENCHMARK) || 0;
-    const benchPrev = State.getPrevClose(BENCHMARK) || benchPrice;
-    const benchPct = benchPrev > 0 ? ((benchPrice - benchPrev) / benchPrev) * 100 : 0;
+
+    const kse = state.kseIndex || {};
+    let benchPct = kse.changeP;
+    if (benchPct == null && kse.value && kse.prevClose) {
+      benchPct = ((kse.value - kse.prevClose) / kse.prevClose) * 100;
+    }
+    benchPct = benchPct != null ? benchPct : 0;
     const alpha = portPct - benchPct;
-    return { portPct, benchPct, alpha, benchSymbol: BENCHMARK };
+
+    const mznPrice = State.getPrice(SECONDARY_BENCH) || 0;
+    const mznPrev = State.getPrevClose(SECONDARY_BENCH) || mznPrice;
+    const mznPct = mznPrev > 0 ? ((mznPrice - mznPrev) / mznPrev) * 100 : 0;
+
+    return {
+      portPct,
+      benchPct,
+      alpha,
+      benchSymbol: 'KSE-100',
+      benchValue: kse.value,
+      secondarySymbol: SECONDARY_BENCH,
+      secondaryPct: mznPct,
+    };
   }
 
   function _valueSeries(state) {
@@ -61,7 +78,7 @@ const InsightsScreen = (() => {
     <div class="lc-dash">
       <div class="lc-screen-head">
         <h1>Insights</h1>
-        <p>Pilot score · KMI proxy benchmark · zakatable wealth</p>
+        <p>Pilot score · KSE-100 benchmark · zakatable wealth</p>
       </div>
 
       <div class="lc-dash-hero cap-reveal">
@@ -73,13 +90,17 @@ const InsightsScreen = (() => {
       </div>
 
       <div class="lc-dash-section">
-        <div class="lc-dash-section-head"><h3>vs ${bench.benchSymbol} (today)</h3><span>KMI equity fund proxy</span></div>
+        <div class="lc-dash-section-head"><h3>vs ${bench.benchSymbol} (today)</h3><span>PSX index</span></div>
         <div class="lc-metric-grid">
           <div class="lc-metric-cell"><label>Your portfolio</label><strong class="${bench.portPct >= 0 ? 't-gain' : 't-loss'}">${bench.portPct >= 0 ? '+' : ''}${bench.portPct.toFixed(2)}%</strong></div>
           <div class="lc-metric-cell"><label>${bench.benchSymbol}</label><strong class="${bench.benchPct >= 0 ? 't-gain' : 't-loss'}">${bench.benchPct >= 0 ? '+' : ''}${bench.benchPct.toFixed(2)}%</strong></div>
           <div class="lc-metric-cell"><label>Alpha (est.)</label><strong class="${alphaCls}">${bench.alpha >= 0 ? '+' : ''}${bench.alpha.toFixed(2)}%</strong></div>
         </div>
-        <p class="lc-card-sub" style="margin-top:8px">Uses session move vs previous close — not a formal index tracking report.</p>
+        <div class="lc-metric-grid" style="margin-top:8px">
+          <div class="lc-metric-cell"><label>${bench.secondarySymbol}</label><strong class="${bench.secondaryPct >= 0 ? 't-gain' : 't-loss'}">${bench.secondaryPct >= 0 ? '+' : ''}${bench.secondaryPct.toFixed(2)}%</strong></div>
+          <div class="lc-metric-cell"><label>Index level</label><strong>${bench.benchValue ? PsxUI.fmtIndex(bench.benchValue) : '—'}</strong></div>
+        </div>
+        <p class="lc-card-sub" style="margin-top:8px">KSE-100 primary benchmark (Sarmaaya-style). ${bench.secondarySymbol} shown as Shariah ETF proxy.</p>
       </div>
 
       <div class="lc-dash-section">

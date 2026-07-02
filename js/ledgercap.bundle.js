@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 79 modules — run: npm run bundle */
+/* LedgerCap bundle — 85 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4878,13 +4878,24 @@ const DIVIDEND_DATA = {
 
 window.DIVIDEND_DATA = DIVIDEND_DATA;
 
+;/* === js/data/commodities.js === */
+'use strict';
+/** Commodity watchlist — spot proxies via Yahoo (Sarmaaya-style). */
+window.COMMODITY_ASSETS = [
+  { id: 'gold', symbol: 'GOLD', name: 'Gold', yahoo: 'GC=F', unit: 'USD/oz', icon: 'gold' },
+  { id: 'silver', symbol: 'SILVER', name: 'Silver', yahoo: 'SI=F', unit: 'USD/oz', icon: 'silver' },
+  { id: 'crude', symbol: 'CRUDE', name: 'Crude oil (WTI)', yahoo: 'CL=F', unit: 'USD/bbl', icon: 'oil' },
+  { id: 'copper', symbol: 'COPPER', name: 'Copper', yahoo: 'HG=F', unit: 'USD/lb', icon: 'metal' },
+  { id: 'pkr_gold', symbol: 'PKR_GOLD', name: 'Gold (PKR/gram)', manual: true, unit: 'PKR/g', icon: 'gold' },
+];
+
 ;/* === js/data/config.js === */
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.41.0',
-  sw: 108,
-  cache: 'ledgercap-v108',
+  app: '3.43.0',
+  sw: 110,
+  cache: 'ledgercap-v110',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -4951,6 +4962,8 @@ window.I18N_LOCALES = {
       watchlist: { t: 'Watchlist', d: 'Track before you buy' },
       transactions: { t: 'Transactions', d: 'Buy · sell · dividend log' },
       global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
+      commodities: { t: 'Commodities', d: 'Gold · silver · oil · PKR/gram' },
+      announcements: { t: 'Announcements', d: 'Dividends · bonus · portfolio news' },
       zakat: { t: 'Zakat', d: 'Nisab · 2.5% estimate' },
       import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },
       globalMarkets: { t: 'Global markets', d: 'US equities · crypto · FX' },
@@ -5025,6 +5038,8 @@ window.I18N_LOCALES = {
       pilotTools: { t: 'ٹیکس اور rebalance', d: 'CGT · rebalance · IPO · calculators' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
+      commodities: { t: 'Commodities', d: 'Gold · silver · oil' },
+      announcements: { t: 'Announcements', d: 'Corporate · news' },
     },
     market: {
       title: 'اسٹاک وach',
@@ -5089,6 +5104,8 @@ window.I18N_LOCALES = {
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
       global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
+      commodities: { t: 'Commodities', d: 'Gold · silver · oil · PKR/gram' },
+      announcements: { t: 'Announcements', d: 'Dividends · bonus · portfolio news' },
       zakat: { t: 'Zakat', d: 'Nisab · 2.5% estimate' },
       import: { t: 'Import CSV', d: 'IBKR · Binance · broker logs' },
     },
@@ -7300,6 +7317,246 @@ const CorporateActionsService = (() => {
   };
 })();
 window.CorporateActionsService = CorporateActionsService;
+
+;/* === js/services/market-watch-service.js === */
+'use strict';
+/** PSX market-watch + trading-board parse (Investify-style bid/offer). */
+const MarketWatchService = (() => {
+  const CACHE_MS = 90000;
+  const _cache = new Map();
+
+  function _num(s) {
+    if (s == null) return 0;
+    const n = parseFloat(String(s).replace(/,/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function _parseTradingRow(html, symbol) {
+    const sym = (symbol || '').toUpperCase();
+    const re = new RegExp(
+      `<tr>[\\s\\S]*?data-search="${sym}"[\\s\\S]*?<\\/tr>`,
+      'i'
+    );
+    const row = html.match(re)?.[0];
+    if (!row) return null;
+    const tds = [...row.matchAll(/<td[^>]*data-order="([^"]*)"[^>]*>([\s\S]*?)<\/td>/gi)];
+    if (tds.length < 9) {
+      const rights = [...row.matchAll(/class="right"[^>]*data-order="([^"]*)"[^>]*>([^<]*)/gi)];
+      if (rights.length < 7) return null;
+      const [, bidVol, bidPrice, askVol, askPrice, ldcp, , volume] = rights.map(m => m[1]);
+      return {
+        symbol: sym,
+        bidVol: _num(bidVol),
+        bidPrice: _num(bidPrice),
+        askVol: _num(askVol),
+        askPrice: _num(askPrice),
+        ldcp: _num(ldcp),
+        volume: _num(volume),
+        spread: _num(askPrice) - _num(bidPrice),
+      };
+    }
+    const bidVol = _num(tds[2]?.[1]);
+    const bidPrice = _num(tds[3]?.[1]);
+    const askVol = _num(tds[4]?.[1]);
+    const askPrice = _num(tds[5]?.[1]);
+    const ldcp = _num(tds[6]?.[1]);
+    const volume = _num(tds[8]?.[1]);
+    return {
+      symbol: sym,
+      bidVol,
+      bidPrice,
+      askVol,
+      askPrice,
+      ldcp,
+      volume,
+      spread: askPrice > 0 && bidPrice > 0 ? askPrice - bidPrice : 0,
+    };
+  }
+
+  function _parseMarketRow(html, symbol) {
+    const sym = (symbol || '').toUpperCase();
+    const re = new RegExp(
+      `<tr>[\\s\\S]*?<strong>${sym}<\\/strong>[\\s\\S]*?<\\/tr>`,
+      'i'
+    );
+    const row = html.match(re)?.[0];
+    if (!row) return null;
+    const orders = [...row.matchAll(/class="right"[^>]*data-order="([^"]*)"/gi)].map(m => _num(m[1]));
+    if (orders.length < 8) return null;
+    const [ldcp, open, high, low, close, change, changePct, volume] = orders;
+    return { symbol: sym, ldcp, open, high, low, close, change, changePct, volume };
+  }
+
+  async function _fetchHtml(path) {
+    const clean = path.replace(/^\//, '');
+    const bases = [...(window.LedgerCapConfig?.psxProxyBases?.() || [])];
+    const fromState = (typeof State !== 'undefined' && State.get('settings')?.psxProxyUrl) || '';
+    if (fromState && window.LedgerCapConfig?.resolvePsxProxyUrl) {
+      const resolved = window.LedgerCapConfig.resolvePsxProxyUrl(fromState);
+      if (resolved && !bases.includes(resolved)) bases.unshift(resolved);
+    }
+    if (!bases.length) {
+      bases.push('https://ledgercap-psx-proxy.shamikhahmed.workers.dev');
+    }
+    for (const base of bases) {
+      try {
+        const res = await fetch(`${base.replace(/\/$/, '')}/${clean}`, { headers: { Accept: 'text/html,*/*' } });
+        if (!res.ok) continue;
+        const text = await res.text();
+        if (text && text.includes('<')) return text;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  async function getOrderBook(symbol) {
+    const sym = (symbol || '').toUpperCase();
+    if (!sym) return null;
+    const hit = _cache.get(`ob:${sym}`);
+    if (hit && Date.now() - hit.ts < CACHE_MS) return hit.data;
+
+    let html = await _fetchHtml('trading-board/REG/main');
+    if (typeof html !== 'string') html = '';
+    let data = _parseTradingRow(html, sym);
+
+    if (!data) {
+      const mw = await _fetchHtml('market-watch');
+      if (typeof mw === 'string') {
+        const row = _parseMarketRow(mw, sym);
+        if (row) {
+          data = {
+            symbol: sym,
+            bidVol: 0,
+            bidPrice: row.close || row.ldcp,
+            askVol: 0,
+            askPrice: row.close || row.ldcp,
+            ldcp: row.ldcp,
+            volume: row.volume,
+            open: row.open,
+            high: row.high,
+            low: row.low,
+            change: row.change,
+            changePct: row.changePct,
+            spread: 0,
+            fallback: true,
+          };
+        }
+      }
+    }
+
+    if (data) _cache.set(`ob:${sym}`, { ts: Date.now(), data });
+    return data;
+  }
+
+  function panelHtml(data) {
+    if (!data) {
+      return `<div class="lc-orderbook lc-orderbook--empty"><p class="psx-muted">Order book unavailable — market closed or PSX feed slow.</p></div>`;
+    }
+    const fmt = n => Number(n || 0).toLocaleString('en-PK', { maximumFractionDigits: 2 });
+    const spread = data.spread > 0 ? fmt(data.spread) : '—';
+    const note = data.fallback ? '<p class="lc-card-sub">Last trade — full bid/offer when PSX session open.</p>' : '';
+    return `<div class="lc-orderbook">
+      <div class="lc-orderbook-grid">
+        <div class="lc-orderbook-side lc-orderbook-side--bid">
+          <span class="lc-orderbook-label">Bid</span>
+          <strong>${fmt(data.bidPrice)}</strong>
+          <em>${fmt(data.bidVol)} vol</em>
+        </div>
+        <div class="lc-orderbook-mid">
+          <span>Spread</span>
+          <strong>${spread}</strong>
+          <em>Vol ${fmt(data.volume)}</em>
+        </div>
+        <div class="lc-orderbook-side lc-orderbook-side--ask">
+          <span class="lc-orderbook-label">Offer</span>
+          <strong>${fmt(data.askPrice)}</strong>
+          <em>${fmt(data.askVol)} vol</em>
+        </div>
+      </div>
+      ${data.high ? `<div class="lc-orderbook-ohlc">
+        <span>O ${fmt(data.open)}</span><span>H ${fmt(data.high)}</span><span>L ${fmt(data.low)}</span><span>LDCP ${fmt(data.ldcp)}</span>
+      </div>` : ''}
+      ${note}
+    </div>`;
+  }
+
+  return { getOrderBook, panelHtml, _parseTradingRow };
+})();
+window.MarketWatchService = MarketWatchService;
+
+;/* === js/services/commodities-service.js === */
+'use strict';
+const CommoditiesService = (() => {
+  const CACHE_MS = 300000;
+  let _cache = { ts: 0, rows: [] };
+
+  async function _yahooQuote(yahoo) {
+    let data = null;
+    if (typeof Prices !== 'undefined' && Prices.fetchPriceSeries) {
+      const bases = window.LedgerCapConfig?.psxProxyBases?.() || [];
+      for (const base of bases) {
+        try {
+          const res = await fetch(`${base.replace(/\/$/, '')}/yahoo/chart/${encodeURIComponent(yahoo)}`, { headers: { Accept: 'application/json' } });
+          if (res.ok) { data = await res.json(); break; }
+        } catch (_) {}
+      }
+    }
+    if (!data) {
+      data = await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=5d`)
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+    }
+    const meta = data?.chart?.result?.[0]?.meta;
+    if (!meta?.regularMarketPrice) return null;
+    const prev = meta.chartPreviousClose || meta.previousClose || meta.regularMarketPrice;
+    const chg = meta.regularMarketPrice - prev;
+    const chgPct = prev ? (chg / prev) * 100 : 0;
+    return {
+      price: meta.regularMarketPrice,
+      prevClose: prev,
+      change: chg,
+      changePct: chgPct,
+      currency: meta.currency || 'USD',
+      ts: Date.now(),
+    };
+  }
+
+  async function fetchAll() {
+    if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS) return _cache.rows;
+    const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    const goldPkr = settings.goldPricePerGram || 18000;
+    const usd = typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280;
+    const rows = [];
+
+    for (const c of window.COMMODITY_ASSETS || []) {
+      if (c.manual && c.id === 'pkr_gold') {
+        rows.push({
+          ...c,
+          price: goldPkr,
+          changePct: 0,
+          pkr: goldPkr,
+          label: 'Settings · manual',
+        });
+        continue;
+      }
+      const q = c.yahoo ? await _yahooQuote(c.yahoo) : null;
+      const pkr = q?.price ? q.price * usd : 0;
+      rows.push({
+        ...c,
+        price: q?.price || 0,
+        change: q?.change || 0,
+        changePct: q?.changePct || 0,
+        pkr,
+        label: q ? 'Yahoo spot' : 'Unavailable',
+      });
+    }
+
+    _cache = { ts: Date.now(), rows };
+    return rows;
+  }
+
+  return { fetchAll };
+})();
+window.CommoditiesService = CommoditiesService;
 
 ;/* === js/services/dividend-analytics-service.js === */
 'use strict';
@@ -10279,7 +10536,7 @@ const PriceHealth = (() => {
     return `<div class="lc-price-health" role="status">
       <span>${msg}</span>
       <button type="button" class="lc-price-health-btn" onclick="App.refreshPrices()">Refresh</button>
-      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">✕</button>
+      <button type="button" class="lc-price-health-dismiss" onclick="PriceHealth.dismiss()" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
 
@@ -11045,6 +11302,7 @@ const PilotEngine = (() => {
   return {
     settings, holdingMeta, setHoldingMeta, isMutualFund,
     buildMorningBrief, buildCgtReport, buildRebalancePlan, buildPilotScore,
+    buildTechnical,
     runScreener, calculator, portfolioSummary, evaluateRow, scoreToAction,
   };
 })();
@@ -11211,6 +11469,78 @@ const LcDebounce = (() => {
   return { debounce };
 })();
 window.LcDebounce = LcDebounce;
+
+;/* === js/ui/icons.js === */
+'use strict';
+/** LedgerCap monochrome SVG icon registry (SF Symbol–style) */
+const LcIcons = (() => {
+  const PATHS = {
+    home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z',
+    chart: ['M3 3v18h18', 'M7 16l4-4 4 4 5-6'],
+    wallet: ['M21 12V7H5a2 2 0 0 1 0-4h14v4', 'M3 5v14a2 2 0 0 0 2 2h16v-5', 'M18 12a2 2 0 1 0 0 4h4v-4h-4Z'],
+    briefcase: ['M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16', 'M2 8h20v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8Z'],
+    search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z', 'M21 21l-4.3-4.3'],
+    globe: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z', 'M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z'],
+    moon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z',
+    sun: ['M12 2v2', 'M12 20v2', 'M4.93 4.93l1.41 1.41', 'M2 12h2', 'M20 12h2', 'M19.07 4.93l-1.41 1.41', 'M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z'],
+    lock: ['M7 11V7a5 5 0 0 1 10 0v4', 'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z'],
+    settings: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z'],
+    shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z',
+    calendar: ['M8 2v4', 'M16 2v4', 'M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'],
+    list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+    bell: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.94 1.94 0 0 0 3.4 0'],
+    book: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z'],
+    upload: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M17 8l-5-5-5 5', 'M12 3v12'],
+    scale: ['M12 3v18', 'M5 7h14', 'M7 7l-2 5h4L7 7Z', 'M17 7l-2 5h4l-2-5Z'],
+    trending: ['M22 7 13.5 15.5 8.5 10.5 2 17', 'M16 7h6v6'],
+    journal: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z', 'M8 7h8', 'M8 11h8'],
+    zap: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z',
+    coins: ['M8 6h8', 'M6 10h12', 'M8 14h8', 'M12 18v4', 'M8 2h8a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8Z'],
+    fullscreen: ['M8 3H5a2 2 0 0 0-2 2v3', 'M21 8V5a2 2 0 0 0-2-2h-3', 'M3 16v3a2 2 0 0 0 2 2h3', 'M16 21h3a2 2 0 0 0 2-2v-3'],
+    x: ['M18 6 6 18', 'M6 6l12 12'],
+    ledger: ['M4 4h16v4H4z', 'M4 12h10', 'M4 20h16', 'M18 12h2'],
+  };
+
+  const TOOL_ICONS = {
+    global: 'globe',
+    commodities: 'coins',
+    announcements: 'bell',
+    zakat: 'scale',
+    import: 'upload',
+    screener: 'search',
+    dividends: 'coins',
+    calendar: 'calendar',
+    watchlist: 'bell',
+    signals: 'zap',
+    'risk-audit': 'shield',
+    insights: 'chart',
+    'pilot-tools': 'trending',
+    transactions: 'list',
+    comparison: 'scale',
+    performance: 'trending',
+    journal: 'journal',
+    settings: 'settings',
+    more: 'list',
+  };
+
+  function icon(name, size = 20, extraClass = '') {
+    const paths = PATHS[name];
+    if (!paths) {
+      return `<span class="lc-icon lc-icon--missing ${extraClass}" aria-hidden="true" style="width:${size}px;height:${size}px"></span>`;
+    }
+    const body = (Array.isArray(paths) ? paths : [paths])
+      .map((d) => `<path d="${d}"/>`)
+      .join('');
+    return `<svg class="lc-icon ${extraClass}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  }
+
+  function toolIcon(tabId, size = 18) {
+    return icon(TOOL_ICONS[tabId] || 'list', size, 'lc-icon--tool');
+  }
+
+  return { icon, toolIcon, PATHS, TOOL_ICONS };
+})();
+window.LcIcons = LcIcons;
 
 ;/* === js/ui/platform.js === */
 'use strict';
@@ -11774,8 +12104,10 @@ window.MarketUI = MarketUI;
   }
 
   function onFsChange() {
-    const btn = document.getElementById('lc-fullscreen-btn');
-    if (btn) btn.textContent = document.fullscreenElement ? '⛶' : '⛶';
+    const host = document.getElementById('lc-fullscreen-icon');
+    if (host && typeof LcIcons !== 'undefined') {
+      host.innerHTML = LcIcons.icon('fullscreen', 18);
+    }
     if (!document.fullscreenElement) document.body.classList.remove('lc-terminal-force');
   }
 
@@ -11808,6 +12140,8 @@ const Navigation = (() => {
 
   const MORE = [
     { id: 'global', labelKey: 'tools.global.t' },
+    { id: 'commodities', labelKey: 'tools.commodities.t' },
+    { id: 'announcements', labelKey: 'tools.announcements.t' },
     { id: 'zakat', labelKey: 'tools.zakat.t' },
     { id: 'import', labelKey: 'tools.import.t' },
     { id: 'screener', labelKey: 'tools.screener.t' },
@@ -11823,7 +12157,7 @@ const Navigation = (() => {
   ];
 
   const LEGACY = { dashboard: 'home', holdings: 'portfolio', income: 'dividends', intelligence: 'research', reports: 'research' };
-  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
+  const VALID = new Set(['home', 'market', 'funds', 'portfolio', 'research', 'more', 'global', 'commodities', 'announcements', 'zakat', 'import', 'screener', 'watchlist', 'dividends', 'calendar', 'settings', 'transactions', 'signals', 'risk-audit', 'insights', 'comparison', 'performance', 'journal', 'pilot-tools']);
 
   let _current = 'home';
 
@@ -11849,7 +12183,7 @@ const Navigation = (() => {
         <div class="psx-brand" style="padding:4px 12px 24px;font-size:18px">Ledger<span>Cap</span></div>
         <nav aria-label="Primary">${TABS.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${t.icon}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <div style="height:1px;background:var(--psx-border);margin:16px 8px"></div>
-        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}"><span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
+        <nav aria-label="Tools">${MORE.map(t => `<button type="button" class="psx-side-btn" data-tab="${t.id}">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 18) : ''}<span>${_t(t.labelKey)}</span></button>`).join('')}</nav>
         <button type="button" class="psx-side-btn nav-theme-btn" style="margin-top:auto" onclick="window.toggleTheme?.()">${_t('theme.toggle')}</button>`;
       sidebar.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
     }
@@ -11867,7 +12201,15 @@ const Navigation = (() => {
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (btn && typeof LcIcons !== 'undefined') {
+      const icon = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+      const host = document.getElementById('theme-toggle-icon');
+      if (host) host.innerHTML = icon;
+      else btn.innerHTML = icon;
+      btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    } else if (btn) {
+      btn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
   }
 
   function go(tabId, silent, opts) {
@@ -11905,6 +12247,8 @@ const Navigation = (() => {
       research: () => { Research.setMode(opts.portfolioIntel ? 'portfolio' : 'stock'); Research.render(); },
       more: () => More.render(),
       global: () => Global.render(),
+      commodities: () => Commodities.render(),
+      announcements: () => Announcements.render(),
       zakat: () => Zakat.render(),
       import: () => ImportCsv.render(),
       screener: () => Screener.render(),
@@ -12574,22 +12918,24 @@ window.Investment = Investment;
 'use strict';
 const Hub = (() => {
   const TOOLS = () => [
-    { id: 'market', key: 'stockWatch', icon: 'M', tone: 'blue' },
-    { id: 'portfolio', key: 'lossTrack', icon: '₨', tone: 'gold' },
-    { id: 'funds', key: 'fundNavs', icon: 'F', tone: 'green' },
-    { id: 'research', key: 'technical', icon: 'R', tone: 'violet' },
-    { id: 'global', key: 'globalMarkets', icon: 'G', tone: 'cyan' },
-    { id: 'dividends', key: 'dividends', icon: 'D', tone: 'green' },
-    { id: 'calendar', key: 'calendar', icon: 'C', tone: 'blue' },
-    { id: 'screener', key: 'screener', icon: 'S', tone: 'slate' },
-    { id: 'zakat', key: 'zakatTool', icon: 'Z', tone: 'gold' },
-    { id: 'watchlist', key: 'watchlist', icon: '★', tone: 'amber' },
-    { id: 'signals', key: 'signals', icon: '⚡', tone: 'orange' },
-    { id: 'risk-audit', key: 'riskAudit', icon: '!', tone: 'rose' },
-    { id: 'insights', key: 'insightsTool', icon: 'I', tone: 'violet' },
-    { id: 'pilot-tools', key: 'pilotTools', icon: 'P', tone: 'blue' },
-    { id: 'transactions', key: 'transactions', icon: '≡', tone: 'slate' },
-    { id: 'import', key: 'import', icon: '↓', tone: 'slate' },
+    { id: 'market', key: 'stockWatch', tone: 'blue' },
+    { id: 'portfolio', key: 'lossTrack', tone: 'gold' },
+    { id: 'funds', key: 'fundNavs', tone: 'green' },
+    { id: 'research', key: 'technical', tone: 'violet' },
+    { id: 'global', key: 'globalMarkets', tone: 'cyan' },
+    { id: 'commodities', key: 'commodities', tone: 'gold' },
+    { id: 'announcements', key: 'announcements', tone: 'amber' },
+    { id: 'dividends', key: 'dividends', tone: 'green' },
+    { id: 'calendar', key: 'calendar', tone: 'blue' },
+    { id: 'screener', key: 'screener', tone: 'slate' },
+    { id: 'zakat', key: 'zakatTool', tone: 'gold' },
+    { id: 'watchlist', key: 'watchlist', tone: 'amber' },
+    { id: 'signals', key: 'signals', tone: 'orange' },
+    { id: 'risk-audit', key: 'riskAudit', tone: 'rose' },
+    { id: 'insights', key: 'insightsTool', tone: 'violet' },
+    { id: 'pilot-tools', key: 'pilotTools', tone: 'blue' },
+    { id: 'transactions', key: 'transactions', tone: 'slate' },
+    { id: 'import', key: 'import', tone: 'slate' },
   ];
 
   function _greeting() {
@@ -12786,7 +13132,7 @@ const Hub = (() => {
   function _toolGrid() {
     return `<div class="lc-tool-grid">${TOOLS().map(t => `
       <button type="button" class="lc-tool-card" onclick="Navigation.go('${t.id}')">
-        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${t.icon}</div>
+        <div class="lc-tool-icon lc-tool-icon--${t.tone}" aria-hidden="true">${typeof LcIcons !== 'undefined' ? LcIcons.toolIcon(t.id, 20) : ''}</div>
         <strong>${I18n.t(`tools.${t.key}.t`)}</strong>
         <span>${I18n.t(`tools.${t.key}.d`)}</span>
       </button>`).join('')}</div>`;
@@ -13450,6 +13796,8 @@ window.Screener = Screener;
 const More = (() => {
   const ITEMS = () => [
     { id: 'global', t: I18n.t('tools.global.t'), d: I18n.t('tools.global.d') },
+    { id: 'commodities', t: I18n.t('tools.commodities.t'), d: I18n.t('tools.commodities.d') },
+    { id: 'announcements', t: I18n.t('tools.announcements.t'), d: I18n.t('tools.announcements.d') },
     { id: 'zakat', t: I18n.t('tools.zakat.t'), d: I18n.t('tools.zakat.d') },
     { id: 'import', t: I18n.t('tools.import.t'), d: I18n.t('tools.import.d') },
     { id: 'screener', t: I18n.t('tools.screener.t'), d: I18n.t('tools.screener.d') },
@@ -13659,6 +14007,90 @@ const Research = (() => {
     el.innerHTML = _searchHitsHtml(_catalogSearch(q));
   }
 
+  function _peersBlock(symbol, sector) {
+    if (!sector) return '';
+    const peers = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])]
+      .filter(s => s.sector === sector && s.symbol !== symbol)
+      .slice(0, 6);
+    if (!peers.length) return '';
+    const rows = peers.map(p => {
+      const q = State.getPrice(p.symbol) || (window.FALLBACK_PRICES || {})[p.symbol] || 0;
+      const f = (window.FUNDAMENTALS_DB || {})[p.symbol] || {};
+      return `<button type="button" class="lc-peer-row" onclick="Research.pickSymbol('${p.symbol}')">
+        <strong>${p.symbol}</strong><span>${p.name || ''}</span>
+        <em>${q ? PsxUI.fmt(q) : '—'}</em><b>${f.pe ? 'P/E ' + Number(f.pe).toFixed(1) : ''}</b>
+      </button>`;
+    }).join('');
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Sector peers</h3><span>${sector}</span></div>
+      <div class="lc-peer-list">${rows}</div>
+    </div>`;
+  }
+
+  function _technicalBlock(symbol, price, prevClose) {
+    if (typeof PilotEngine === 'undefined') return '';
+    const t = PilotEngine.buildTechnical(symbol, price, prevClose || price);
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Technicals</h3><span>Rule-based</span></div>
+      ${_metricGrid([
+        { l: 'RSI (14)', v: t.rsi_14.toFixed(1) },
+        { l: 'MA (20 est.)', v: PsxUI.fmt(t.ma_20) },
+        { l: '52w position', v: t.position_in_52w_pct.toFixed(0) + '%' },
+        { l: 'Day chg', v: _fmtPct(t.day_change_pct), cls: PsxUI.chgCls(t.day_change_pct) },
+      ])}
+    </div>`;
+  }
+
+  function _dividendBlock(symbol) {
+    if (typeof CorporateActionsService === 'undefined') return '';
+    const up = CorporateActionsService.getUpcomingCash(symbol)[0];
+    const paid = CorporateActionsService.getPaidCash(symbol)[0];
+    if (!up && !paid) return '';
+    const cells = [];
+    if (up) cells.push({ l: 'Next dividend', v: up.paymentDate ? up.paymentDate.slice(0, 10) : 'TBD' });
+    if (up?.amount) cells.push({ l: 'Amount', v: '₨' + up.amount });
+    if (paid) cells.push({ l: 'Last paid', v: (paid.paymentDate || '').slice(0, 10) || '—' });
+    return `<div class="lc-dash-section">
+      <div class="lc-dash-section-head"><h3>Corporate actions</h3><button type="button" class="lc-section-action" onclick="Navigation.go('announcements')">All →</button></div>
+      ${_metricGrid(cells)}
+    </div>`;
+  }
+
+  async function _loadOrderBook(sym, isPsx) {
+    const host = document.getElementById('research-orderbook');
+    if (!host) return;
+    if (!isPsx) {
+      host.innerHTML = '<p class="psx-muted lc-card-sub">Bid/offer depth available for PSX symbols during market hours.</p>';
+      return;
+    }
+    host.innerHTML = '<p class="psx-muted">Loading order book…</p>';
+    const data = typeof MarketWatchService !== 'undefined'
+      ? await MarketWatchService.getOrderBook(sym)
+      : null;
+    host.innerHTML = typeof MarketWatchService !== 'undefined'
+      ? MarketWatchService.panelHtml(data)
+      : '<p class="psx-muted">Order book unavailable.</p>';
+  }
+
+  async function _load52w(sym, price) {
+    const host = document.getElementById('research-52w');
+    if (!host || typeof Prices === 'undefined') return;
+    const series = await Prices.fetchPriceSeries(sym, 252);
+    if (series.length < 5) {
+      host.innerHTML = '<p class="psx-muted lc-card-sub">52-week range builds as EOD history loads.</p>';
+      return;
+    }
+    const low = Math.min(...series);
+    const high = Math.max(...series);
+    const pos = high > low ? ((price - low) / (high - low)) * 100 : 50;
+    host.innerHTML = _metricGrid([
+      { l: '52w low', v: PsxUI.fmt(low) },
+      { l: '52w high', v: PsxUI.fmt(high) },
+      { l: 'Range position', v: pos.toFixed(0) + '%' },
+      { l: 'Sessions', v: String(series.length) },
+    ]);
+  }
+
   function render() {
     const screen = document.getElementById('screen-research');
     if (!screen) return;
@@ -13791,6 +14223,14 @@ const Research = (() => {
           { l: 'Risk', v: ai.riskScore + '/100' },
         ])}
         ${!isFund ? `<div class="lc-dash-section"><div class="lc-dash-section-head"><h3>${I18n.t('analyze.fundamentals')}</h3></div></div>${fundNote}${fundMetrics}` : ''}
+        ${!isIntl && !isCrypto ? `<div class="lc-dash-section">
+          <div class="lc-dash-section-head"><h3>Market depth</h3><span>Bid · offer</span></div>
+          <div id="research-orderbook"><p class="psx-muted">Loading…</p></div>
+        </div>` : ''}
+        ${_technicalBlock(r.symbol, quote.price, quote.prevClose)}
+        <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>52-week range</h3><span>EOD history</span></div><div id="research-52w"><p class="psx-muted">Loading…</p></div></div>
+        ${_peersBlock(r.symbol, profile.sector)}
+        ${_dividendBlock(r.symbol)}
         <div class="lc-dash-section"><div class="lc-dash-section-head"><h3>Performance</h3><span>% change</span></div></div>
         ${perfMetrics}
         ${_portfolioContext(r.symbol)}
@@ -13807,6 +14247,9 @@ const Research = (() => {
       TradingViewUI.mount('research-tv-chart', r.symbol, assetClass);
     }
     _refreshQuote(r.symbol);
+    if (!isIntl && !isCrypto) _loadOrderBook(r.symbol, true);
+    else _loadOrderBook(r.symbol, false);
+    _load52w(r.symbol, quote.price);
   }
 
   return { render, open, pickSymbol, setMode, _onSearch };
@@ -15567,11 +16010,13 @@ const PinLock = (() => {
     const pad = _el('pin-pad');
     if (!pad || pad.dataset.built) return;
     pad.dataset.built = '1';
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
+    const delHtml = typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 18) : 'Del';
     pad.innerHTML = keys.map(k => {
       if (!k) return '<span class="lc-pin-key lc-pin-key--spacer"></span>';
-      const act = k === '⌫' ? 'back' : 'digit';
-      return `<button type="button" class="lc-pin-key" data-act="${act}" data-val="${k === '⌫' ? '' : k}">${k}</button>`;
+      const act = k === 'back' ? 'back' : 'digit';
+      const label = k === 'back' ? delHtml : k;
+      return `<button type="button" class="lc-pin-key${k === 'back' ? ' lc-pin-key--del' : ''}" data-act="${act}" data-val="${k === 'back' ? '' : k}" aria-label="${k === 'back' ? 'Delete' : k}">${label}</button>`;
     }).join('');
     pad.addEventListener('click', e => {
       const btn = e.target.closest('.lc-pin-key');
@@ -15951,17 +16396,34 @@ window.RiskAudit = RiskAudit;
 'use strict';
 /** Portfolio insights screen — distinct from engines/insights.js rule engine. */
 const InsightsScreen = (() => {
-  const BENCHMARK = 'MZNPETF';
+  const SECONDARY_BENCH = 'MZNPETF';
 
   function _benchmarkCompare(state) {
     const summary = PortfolioAnalyticsService.getSummary(state);
     const daily = State.calcDailyPnl();
     const portPct = summary.totalValue > 0 ? (daily / summary.totalValue) * 100 : 0;
-    const benchPrice = State.getPrice(BENCHMARK) || 0;
-    const benchPrev = State.getPrevClose(BENCHMARK) || benchPrice;
-    const benchPct = benchPrev > 0 ? ((benchPrice - benchPrev) / benchPrev) * 100 : 0;
+
+    const kse = state.kseIndex || {};
+    let benchPct = kse.changeP;
+    if (benchPct == null && kse.value && kse.prevClose) {
+      benchPct = ((kse.value - kse.prevClose) / kse.prevClose) * 100;
+    }
+    benchPct = benchPct != null ? benchPct : 0;
     const alpha = portPct - benchPct;
-    return { portPct, benchPct, alpha, benchSymbol: BENCHMARK };
+
+    const mznPrice = State.getPrice(SECONDARY_BENCH) || 0;
+    const mznPrev = State.getPrevClose(SECONDARY_BENCH) || mznPrice;
+    const mznPct = mznPrev > 0 ? ((mznPrice - mznPrev) / mznPrev) * 100 : 0;
+
+    return {
+      portPct,
+      benchPct,
+      alpha,
+      benchSymbol: 'KSE-100',
+      benchValue: kse.value,
+      secondarySymbol: SECONDARY_BENCH,
+      secondaryPct: mznPct,
+    };
   }
 
   function _valueSeries(state) {
@@ -16011,7 +16473,7 @@ const InsightsScreen = (() => {
     <div class="lc-dash">
       <div class="lc-screen-head">
         <h1>Insights</h1>
-        <p>Pilot score · KMI proxy benchmark · zakatable wealth</p>
+        <p>Pilot score · KSE-100 benchmark · zakatable wealth</p>
       </div>
 
       <div class="lc-dash-hero cap-reveal">
@@ -16023,13 +16485,17 @@ const InsightsScreen = (() => {
       </div>
 
       <div class="lc-dash-section">
-        <div class="lc-dash-section-head"><h3>vs ${bench.benchSymbol} (today)</h3><span>KMI equity fund proxy</span></div>
+        <div class="lc-dash-section-head"><h3>vs ${bench.benchSymbol} (today)</h3><span>PSX index</span></div>
         <div class="lc-metric-grid">
           <div class="lc-metric-cell"><label>Your portfolio</label><strong class="${bench.portPct >= 0 ? 't-gain' : 't-loss'}">${bench.portPct >= 0 ? '+' : ''}${bench.portPct.toFixed(2)}%</strong></div>
           <div class="lc-metric-cell"><label>${bench.benchSymbol}</label><strong class="${bench.benchPct >= 0 ? 't-gain' : 't-loss'}">${bench.benchPct >= 0 ? '+' : ''}${bench.benchPct.toFixed(2)}%</strong></div>
           <div class="lc-metric-cell"><label>Alpha (est.)</label><strong class="${alphaCls}">${bench.alpha >= 0 ? '+' : ''}${bench.alpha.toFixed(2)}%</strong></div>
         </div>
-        <p class="lc-card-sub" style="margin-top:8px">Uses session move vs previous close — not a formal index tracking report.</p>
+        <div class="lc-metric-grid" style="margin-top:8px">
+          <div class="lc-metric-cell"><label>${bench.secondarySymbol}</label><strong class="${bench.secondaryPct >= 0 ? 't-gain' : 't-loss'}">${bench.secondaryPct >= 0 ? '+' : ''}${bench.secondaryPct.toFixed(2)}%</strong></div>
+          <div class="lc-metric-cell"><label>Index level</label><strong>${bench.benchValue ? PsxUI.fmtIndex(bench.benchValue) : '—'}</strong></div>
+        </div>
+        <p class="lc-card-sub" style="margin-top:8px">KSE-100 primary benchmark (Sarmaaya-style). ${bench.secondarySymbol} shown as Shariah ETF proxy.</p>
       </div>
 
       <div class="lc-dash-section">
@@ -16801,13 +17267,13 @@ const Onboarding = (() => {
         <div class="ob-progress">${_dots(1)}</div>
 
         <div class="ob-panel on" id="ob-panel-1">
-          <div class="ob-hero-icon">₨</div>
+          <div class="ob-hero-icon"><img src="assets/icons/icon-mark.svg" alt="" width="56" height="56"></div>
           <h1 class="ob-title">Your wealth command center</h1>
           <p class="ob-desc">Track PSX stocks, Meezan funds, SIP goals, and how much you've invested over time — all on your phone.</p>
           <ul class="ob-features">
-            <li><span>📈</span> Live portfolio & P&amp;L</li>
-            <li><span>💰</span> Investment tracker</li>
-            <li><span>🎯</span> SIP &amp; freedom planning</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('trending', 16) : ''}</span> Live portfolio &amp; P&amp;L</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('wallet', 16) : ''}</span> Investment tracker</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('chart', 16) : ''}</span> SIP &amp; freedom planning</li>
           </ul>
           <button type="button" class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
         </div>
@@ -17022,6 +17488,209 @@ const Global = (() => {
   return { render, setTab, _onSearch, _refreshQuotes };
 })();
 window.Global = Global;
+
+;/* === js/modules/commodities.js === */
+'use strict';
+const Commodities = (() => {
+  let _rows = [];
+  let _loading = false;
+
+  function _rowHtml(r) {
+    const chgCls = (r.changePct || 0) >= 0 ? 't-gain' : 't-loss';
+    const sign = (r.changePct || 0) >= 0 ? '+' : '';
+    const priceLabel = r.manual
+      ? PsxUI.fmt(r.price) + '/g'
+      : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const pkrLine = r.manual ? '' : `<em>≈ ${PsxUI.fmt(r.pkr)}</em>`;
+    return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'onclick="Navigation.go(\'settings\')"' : ''}>
+      <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
+      <div class="lc-market-price">${priceLabel}</div>
+      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'} ${pkrLine}</div>
+    </button>`;
+  }
+
+  async function refresh() {
+    if (_loading) return;
+    _loading = true;
+    const list = document.getElementById('commodities-list');
+    if (list) list.innerHTML = '<p class="psx-muted">Refreshing spot prices…</p>';
+    _rows = await CommoditiesService.fetchAll();
+    _loading = false;
+    render();
+  }
+
+  function render() {
+    const screen = document.getElementById('screen-commodities');
+    if (!screen) return;
+    const usd = FxService.getUsdRate();
+    const listInner = _rows.length
+      ? _rows.map(_rowHtml).join('')
+      : '<p class="psx-muted">Loading commodities…</p>';
+
+    screen.innerHTML = PsxUI.lcDash('Commodities', `Gold · silver · oil · USD/PKR ₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}`, `
+      <div class="lc-pulse-row">
+        <div class="lc-pulse-pill"><label>USD/PKR</label><b>₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</b></div>
+        <div class="lc-pulse-pill"><label>PKR gold</label><b>${PsxUI.fmt((State.get('settings') || {}).goldPricePerGram || 18000)}/g</b></div>
+      </div>
+      <p class="lc-card-sub">Spot proxies via Yahoo (GC=F, SI=F, CL=F). PKR gold uses Settings — links to Zakat calculator.</p>
+      <div class="lc-sector-card" id="commodities-list">${listInner}</div>
+      <div class="lc-dash-actions">
+        <button type="button" class="psx-btn psx-btn-primary" onclick="Commodities.refresh()">Refresh</button>
+        <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('zakat')">Zakat calculator →</button>
+      </div>
+      <div class="lc-disclaimer">Illustrative spot prices — not a trading feed. Verify before zakat or hedging decisions.</div>
+    `);
+
+    if (!_rows.length && !_loading) refresh();
+    CapMotion.refresh();
+  }
+
+  return { render, refresh };
+})();
+window.Commodities = Commodities;
+
+;/* === js/modules/announcements.js === */
+'use strict';
+const Announcements = (() => {
+  let _news = [];
+  let _tab = 'all';
+
+  function _heldSymbols() {
+    const txs = State.get().transactions || [];
+    return [...new Set(txs.map(t => (t.symbol || '').toUpperCase()).filter(Boolean))];
+  }
+
+  function _corpItems(symbols) {
+    const items = [];
+    const symSet = new Set(symbols);
+    if (typeof CorporateActionsService === 'undefined') return items;
+
+    CorporateActionsService.getAllUpcoming().forEach(d => {
+      if (!symSet.size || symSet.has(d.symbol)) {
+        items.push({
+          kind: 'dividend',
+          symbol: d.symbol,
+          title: `${d.symbol} — ${d.type || 'cash'} dividend`,
+          date: d.paymentDate || d.exDate,
+          detail: d.amount ? `₨${d.amount}/share` : (d.status || 'upcoming'),
+          status: d.status || 'upcoming',
+        });
+      }
+    });
+
+    symbols.forEach(sym => {
+      CorporateActionsService.getBonusShares(sym).slice(0, 2).forEach(b => {
+        items.push({
+          kind: 'bonus',
+          symbol: sym,
+          title: `${sym} — bonus ${b.ratio || ''}`,
+          date: b.creditDate || b.announcementDate,
+          detail: b.ratio || 'Bonus issue',
+          status: 'announced',
+        });
+      });
+      CorporateActionsService.getRightsIssues(sym).slice(0, 2).forEach(r => {
+        items.push({
+          kind: 'rights',
+          symbol: sym,
+          title: `${sym} — rights issue`,
+          date: r.exDate || r.announcementDate,
+          detail: r.ratio || r.price ? `${r.ratio || ''} @ ₨${r.price || ''}` : 'Rights',
+          status: 'announced',
+        });
+      });
+    });
+
+    return items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
+  async function _loadNews(symbols) {
+    if (typeof NewsService === 'undefined' || !NewsService.fetchPortfolioNews) return [];
+    try {
+      return await NewsService.fetchPortfolioNews(State.get());
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function _itemRow(it) {
+    const badge = it.kind === 'dividend' ? 'Dividend' : it.kind === 'bonus' ? 'Bonus' : it.kind === 'rights' ? 'Rights' : 'News';
+    const date = it.date ? String(it.date).slice(0, 10) : (it.publishedAt ? String(it.publishedAt).slice(0, 10) : '');
+    const link = it.url ? `onclick="window.open('${it.url.replace(/'/g, '%27')}', '_blank')"` : (it.symbol ? `onclick="Research.open('${it.symbol}')"` : '');
+    return `<button type="button" class="lc-announce-row" ${link}>
+      <div class="lc-announce-top"><strong>${it.symbol || 'PSX'}</strong><span class="lc-announce-badge">${badge}</span></div>
+      <p>${it.title}</p>
+      <em>${date}${it.detail ? ' · ' + it.detail : ''}</em>
+    </button>`;
+  }
+
+  function _paintList() {
+    const el = document.getElementById('announcements-list');
+    if (!el) return;
+    const corp = _corpItems(_heldSymbols());
+    const news = _news.map(n => ({
+      kind: 'news',
+      symbol: n.portfolioSymbol || n.symbol,
+      title: n.title,
+      date: n.publishedAt,
+      detail: n.publisher || n.source,
+      url: n.url,
+    }));
+    let items = [...corp, ...news];
+    if (_tab === 'corp') items = corp;
+    if (_tab === 'news') items = news;
+    items = items.slice(0, 40);
+    el.innerHTML = items.length
+      ? items.map(_itemRow).join('')
+      : `<p class="psx-muted">No announcements for your holdings yet. Add transactions or load demo.</p>`;
+  }
+
+  function setTab(tab) {
+    _tab = tab;
+    _paintList();
+    document.querySelectorAll('#screen-announcements .lc-segment-btn').forEach(b => {
+      b.classList.toggle('on', b.textContent.trim().toLowerCase() === tab || b.getAttribute('onclick')?.includes(`'${tab}'`));
+    });
+  }
+
+  async function refresh() {
+    _news = await _loadNews(_heldSymbols());
+    _paintList();
+  }
+
+  function render() {
+    const screen = document.getElementById('screen-announcements');
+    if (!screen) return;
+    const syms = _heldSymbols();
+
+    screen.innerHTML = `
+      <div class="lc-dash">
+        <div class="lc-screen-head">
+          <h1>Announcements</h1>
+          <p>Corporate actions · dividends · portfolio news</p>
+        </div>
+        ${PsxUI.segment([
+          { id: 'all', label: 'All' },
+          { id: 'corp', label: 'Corporate' },
+          { id: 'news', label: 'News' },
+        ], _tab, 'Announcements', 'setTab')}
+        <p class="lc-card-sub">${syms.length ? syms.length + ' holding(s) tracked' : 'No holdings — showing market-wide upcoming dividends'}</p>
+        <div class="lc-sector-card" id="announcements-list"><p class="psx-muted">Loading…</p></div>
+        <div class="lc-dash-actions">
+          <button type="button" class="psx-btn psx-btn-primary" onclick="Announcements.refresh()">Refresh</button>
+          <button type="button" class="psx-btn psx-btn-ghost" onclick="Navigation.go('calendar')">Wealth calendar →</button>
+        </div>
+        <div class="lc-disclaimer">Headlines and dividend dates from public sources — confirm on PSX / company filings.</div>
+      </div>`;
+
+    _paintList();
+    if (!_news.length) refresh();
+    CapMotion.refresh();
+  }
+
+  return { render, refresh, setTab };
+})();
+window.Announcements = Announcements;
 
 ;/* === js/modules/zakat.js === */
 'use strict';
@@ -17933,6 +18602,19 @@ const App = (() => {
     }
   }
 
+  function _wireChromeIcons() {
+    if (typeof LcIcons === 'undefined') return;
+    const theme = document.body.getAttribute('data-theme') || 'dark';
+    const pin = document.getElementById('pin-logo-host');
+    if (pin) pin.innerHTML = '<img src="assets/icons/icon-mark.svg" alt="" width="48" height="48">';
+    const fs = document.getElementById('lc-fullscreen-icon');
+    if (fs) fs.innerHTML = LcIcons.icon('fullscreen', 18);
+    const dismiss = document.getElementById('demo-dismiss-icon');
+    if (dismiss) dismiss.innerHTML = LcIcons.icon('x', 16);
+    const themeHost = document.getElementById('theme-toggle-icon');
+    if (themeHost) themeHost.innerHTML = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+  }
+
   async function launch() {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
     if (demo) {
@@ -17966,6 +18648,7 @@ const App = (() => {
       }
     }
     Navigation.init();
+    _wireChromeIcons();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
     if (demo && window.Settings && Settings.loadSeedData) {
       const hasLedger = (State.get().transactions || []).length > 0;
@@ -18710,7 +19393,10 @@ const App = (() => {
     if (meta) meta.content = theme === 'light' ? '#fafafa' : '#09090b';
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (btn) {
+      if (typeof LcIcons !== 'undefined') btn.innerHTML = LcIcons.icon(theme === 'dark' ? 'moon' : 'sun', 20);
+      else btn.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
   }
 
   function applyTheme(theme) {

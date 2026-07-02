@@ -22,8 +22,10 @@
   }
 
   function onFsChange() {
-    const btn = document.getElementById('lc-fullscreen-btn');
-    if (btn) btn.textContent = document.fullscreenElement ? '⛶' : '⛶';
+    const host = document.getElementById('lc-fullscreen-icon');
+    if (host && typeof LcIcons !== 'undefined') {
+      host.innerHTML = LcIcons.icon('fullscreen', 18);
+    }
     if (!document.fullscreenElement) document.body.classList.remove('lc-terminal-force');
   }
 

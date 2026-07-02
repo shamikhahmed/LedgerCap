@@ -35,13 +35,13 @@ const Onboarding = (() => {
         <div class="ob-progress">${_dots(1)}</div>
 
         <div class="ob-panel on" id="ob-panel-1">
-          <div class="ob-hero-icon">₨</div>
+          <div class="ob-hero-icon"><img src="assets/icons/icon-mark.svg" alt="" width="56" height="56"></div>
           <h1 class="ob-title">Your wealth command center</h1>
           <p class="ob-desc">Track PSX stocks, Meezan funds, SIP goals, and how much you've invested over time — all on your phone.</p>
           <ul class="ob-features">
-            <li><span>📈</span> Live portfolio & P&amp;L</li>
-            <li><span>💰</span> Investment tracker</li>
-            <li><span>🎯</span> SIP &amp; freedom planning</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('trending', 16) : ''}</span> Live portfolio &amp; P&amp;L</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('wallet', 16) : ''}</span> Investment tracker</li>
+            <li><span class="ob-feat-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('chart', 16) : ''}</span> SIP &amp; freedom planning</li>
           </ul>
           <button type="button" class="btn-primary ob-cta" onclick="Onboarding.next()">Set up in 30 sec</button>
         </div>
