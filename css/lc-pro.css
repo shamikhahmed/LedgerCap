@@ -1033,9 +1033,10 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
   border-radius: 8px;
   background: var(--psx-bg-muted);
   color: var(--psx-text-2);
+  white-space: nowrap;
 }
-.lc-market-chg.psx-up { background: var(--psx-up-bg); color: var(--psx-up); }
-.lc-market-chg.psx-down { background: var(--psx-down-bg); color: var(--psx-down); }
+.lc-market-chg.psx-up, .lc-market-chg.t-gain { background: var(--psx-up-bg); color: var(--psx-up) !important; }
+.lc-market-chg.psx-down, .lc-market-chg.t-loss { background: var(--psx-down-bg); color: var(--psx-down) !important; }
 
 .lc-badge {
   display: inline-block;

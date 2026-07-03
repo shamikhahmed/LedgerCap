@@ -75,19 +75,17 @@ const Transactions = (() => {
         <div class="lc-pulse-pill"><label>Fees</label><b>${fmt(sum.fees)}</b></div>
       </div>
 
-      <div class="lc-filter-bar cap-reveal" style="border-top:none;padding-top:0">
-        <div class="lc-pill-group" style="margin-left:0;width:100%;flex-wrap:wrap">
-          ${filters.map(([f, label]) =>
-            `<button type="button" class="lc-view-pill${_filter === f ? ' active' : ''}" data-f="${f}">${label}</button>`
-          ).join('')}
-          <button type="button" class="lc-view-pill${_showInternal ? ' active' : ''}" data-internal="1">Internal</button>
-        </div>
-        <button type="button" class="lc-section-action" data-action="Transactions.exportCsv" style="margin-left:auto">Export CSV</button>
+      <div class="lc-hub-quick lc-hub-quick--scroll cap-reveal" role="group" aria-label="Transaction filters">
+        ${filters.map(([f, label]) =>
+          `<button type="button" class="lc-view-pill${_filter === f ? ' active' : ''}" data-f="${f}">${label}</button>`
+        ).join('')}
+        <button type="button" class="lc-view-pill${_showInternal ? ' active' : ''}" data-internal="1">Internal</button>
+        <button type="button" class="lc-view-pill" data-action="Transactions.exportCsv">Export CSV</button>
       </div>
 
       ${filterLabel ? `<div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="all">Clear filter</button></div>` : ''}
 
-      ${!filtered.length ? `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Try another filter or add a transaction</div></div>` : ''}
+      ${!filtered.length ? `<div class="empty-state"><div class="empty-state-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('list', 28) : ''}</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Try another filter or add a transaction</div></div>` : ''}
 
       ${monthKeys.map(month => {
         const txs = grouped[month];

@@ -57,7 +57,10 @@ const PlatformUI = (() => {
     return Number(n).toLocaleString('en-PK', { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
 
-  function chgCls(v) { return v >= 0 ? 't-gain' : 't-loss'; }
+  function chgCls(v) {
+    if (v == null || Math.abs(v) < 0.005) return ''; // rounds to 0.00% → neutral
+    return v > 0 ? 't-gain' : 't-loss';
+  }
 
   function ratingBadge(action) {
     const a = (action || 'HOLD').toUpperCase();

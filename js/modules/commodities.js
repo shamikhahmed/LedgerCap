@@ -4,8 +4,8 @@ const Commodities = (() => {
   let _loading = false;
 
   function _rowHtml(r) {
-    const chgCls = (r.changePct || 0) >= 0 ? 't-gain' : 't-loss';
-    const sign = (r.changePct || 0) >= 0 ? '+' : '';
+    const chgCls = r.manual ? '' : PsxUI.chgCls(r.changePct || 0);
+    const sign = (r.changePct || 0) > 0 ? '+' : '';
     const priceLabel = r.manual
       ? PsxUI.fmt(r.price) + '/g'
       : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

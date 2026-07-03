@@ -32,7 +32,7 @@ const Zakat = (() => {
       </div>
       <div class="lc-metric-grid">
         <div class="lc-metric-cell"><label>Gold nisab</label><strong>${NISAB_GOLD_G}g</strong></div>
-        <div class="lc-metric-cell"><label>Gold / g</label><strong>₨${goldG}</strong></div>
+        <div class="lc-metric-cell"><label>Gold / g</label><strong>${PsxUI.fmt(goldG)}</strong></div>
         <div class="lc-metric-cell"><label>Haul date</label><strong>${haul}</strong></div>
         <div class="lc-metric-cell"><label>Debts offset</label><strong>${PsxUI.fmt(settings.zakatDebts || 0)}</strong></div>
       </div>

@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.52.0',
-  sw: 124,
-  cache: 'ledgercap-v124',
+  app: '3.52.1',
+  sw: 125,
+  cache: 'ledgercap-v125',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -12279,7 +12279,10 @@ const PlatformUI = (() => {
     return Number(n).toLocaleString('en-PK', { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
 
-  function chgCls(v) { return v >= 0 ? 't-gain' : 't-loss'; }
+  function chgCls(v) {
+    if (v == null || Math.abs(v) < 0.005) return ''; // rounds to 0.00% → neutral
+    return v > 0 ? 't-gain' : 't-loss';
+  }
 
   function ratingBadge(action) {
     const a = (action || 'HOLD').toUpperCase();
@@ -15946,19 +15949,17 @@ const Transactions = (() => {
         <div class="lc-pulse-pill"><label>Fees</label><b>${fmt(sum.fees)}</b></div>
       </div>
 
-      <div class="lc-filter-bar cap-reveal" style="border-top:none;padding-top:0">
-        <div class="lc-pill-group" style="margin-left:0;width:100%;flex-wrap:wrap">
-          ${filters.map(([f, label]) =>
-            `<button type="button" class="lc-view-pill${_filter === f ? ' active' : ''}" data-f="${f}">${label}</button>`
-          ).join('')}
-          <button type="button" class="lc-view-pill${_showInternal ? ' active' : ''}" data-internal="1">Internal</button>
-        </div>
-        <button type="button" class="lc-section-action" data-action="Transactions.exportCsv" style="margin-left:auto">Export CSV</button>
+      <div class="lc-hub-quick lc-hub-quick--scroll cap-reveal" role="group" aria-label="Transaction filters">
+        ${filters.map(([f, label]) =>
+          `<button type="button" class="lc-view-pill${_filter === f ? ' active' : ''}" data-f="${f}">${label}</button>`
+        ).join('')}
+        <button type="button" class="lc-view-pill${_showInternal ? ' active' : ''}" data-internal="1">Internal</button>
+        <button type="button" class="lc-view-pill" data-action="Transactions.exportCsv">Export CSV</button>
       </div>
 
       ${filterLabel ? `<div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Transactions.setFilter" data-tab="all">Clear filter</button></div>` : ''}
 
-      ${!filtered.length ? `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Try another filter or add a transaction</div></div>` : ''}
+      ${!filtered.length ? `<div class="empty-state"><div class="empty-state-icon">${typeof LcIcons !== 'undefined' ? LcIcons.icon('list', 28) : ''}</div><div class="empty-state-title">No transactions</div><div class="empty-state-sub">Try another filter or add a transaction</div></div>` : ''}
 
       ${monthKeys.map(month => {
         const txs = grouped[month];
@@ -18972,8 +18973,8 @@ const Commodities = (() => {
   let _loading = false;
 
   function _rowHtml(r) {
-    const chgCls = (r.changePct || 0) >= 0 ? 't-gain' : 't-loss';
-    const sign = (r.changePct || 0) >= 0 ? '+' : '';
+    const chgCls = r.manual ? '' : PsxUI.chgCls(r.changePct || 0);
+    const sign = (r.changePct || 0) > 0 ? '+' : '';
     const priceLabel = r.manual
       ? PsxUI.fmt(r.price) + '/g'
       : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -19205,7 +19206,7 @@ const Zakat = (() => {
       </div>
       <div class="lc-metric-grid">
         <div class="lc-metric-cell"><label>Gold nisab</label><strong>${NISAB_GOLD_G}g</strong></div>
-        <div class="lc-metric-cell"><label>Gold / g</label><strong>₨${goldG}</strong></div>
+        <div class="lc-metric-cell"><label>Gold / g</label><strong>${PsxUI.fmt(goldG)}</strong></div>
         <div class="lc-metric-cell"><label>Haul date</label><strong>${haul}</strong></div>
         <div class="lc-metric-cell"><label>Debts offset</label><strong>${PsxUI.fmt(settings.zakatDebts || 0)}</strong></div>
       </div>
