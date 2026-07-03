@@ -3,15 +3,17 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
 
-# Weekdays PKT: 9:00 pre-open · 9:30 open · 10–14 news · 12:30 midday · 15:30 close
+# Weekdays PKT: telegram + price snapshot (same triggers — no extra cron quota)
 [triggers]
 crons = ["0 4 * * 1-5", "30 4 * * 1-5", "0 5,6,8,9 * * 1-5", "30 7 * * 1-5", "30 10 * * 1-5"]
 
-# Optional — create with: npx wrangler kv namespace create TELEGRAM_BRIEF
-# [[kv_namespaces]]
-# binding = "TELEGRAM_BRIEF"
-# id = "YOUR_KV_NAMESPACE_ID"
+[[kv_namespaces]]
+binding = "PRICE_CACHE"
+id = "908974ca90de4219bbd0f95417228e0b"
 
 [vars]
+# SKIP_US_CRON=1 — disable US batch if Yahoo 429 storm
+# SKIP_PRICE_CRON=1 — emergency disable price cron
+
 # Secrets (wrangler secret put):
 # TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_SYNC_KEY

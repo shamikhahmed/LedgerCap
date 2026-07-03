@@ -4,15 +4,20 @@ const Commodities = (() => {
   let _loading = false;
 
   function _rowHtml(r) {
-    const chgCls = r.manual ? '' : PsxUI.chgCls(r.changePct || 0);
+    const chgCls = (r.id === 'pkr_gold' && !r.manual) ? PsxUI.chgCls(r.changePct || 0) : (r.manual ? '' : PsxUI.chgCls(r.changePct || 0));
     const sign = (r.changePct || 0) > 0 ? '+' : '';
-    const priceLabel = r.manual
+    const priceLabel = r.manual && r.id !== 'pkr_gold'
       ? PsxUI.fmt(r.price) + '/g'
-      : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      : r.id === 'pkr_gold'
+        ? PsxUI.fmt(r.price) + '/g'
+        : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const chgLabel = r.id === 'pkr_gold'
+      ? (r.label || 'Auto')
+      : r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%';
     return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'data-nav="settings"' : ''}>
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
       <div class="lc-market-price">${priceLabel}</div>
-      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'}</div>
+      <div class="lc-market-meta ${chgCls}">${chgLabel}</div>
     </button>`;
   }
 
@@ -39,7 +44,7 @@ const Commodities = (() => {
         <div class="lc-pulse-pill"><label>USD/PKR</label><b>₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</b></div>
         <div class="lc-pulse-pill"><label>PKR gold</label><b>${PsxUI.fmt((State.get('settings') || {}).goldPricePerGram || 18000)}/g</b></div>
       </div>
-      <p class="lc-card-sub">Spot proxies via Yahoo (GC=F, SI=F, CL=F). PKR gold uses Settings — links to Zakat calculator.</p>
+      <p class="lc-card-sub">Spot via worker snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
       <div class="lc-sector-card" id="commodities-list">${listInner}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>

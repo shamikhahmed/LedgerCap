@@ -70,13 +70,27 @@ const FxService = (() => {
     return null;
   }
 
+  async function _fetchFrankfurter() {
+    const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=PKR', { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Frankfurter HTTP ${res.status}`);
+    const j = await res.json();
+    const rate = j?.rates?.PKR;
+    if (!(rate > 0)) throw new Error('PKR rate missing');
+    _persistRate(rate, 'Frankfurter');
+    return rate;
+  }
+
   async function refreshUsdPkr() {
     if (Date.now() - _ts < CACHE_MS && _usdPkr) return _usdPkr;
     try {
       return await _fetchOpenErApi();
     } catch (_) {
-      const worker = await _fetchWorkerProxy();
-      if (worker) return worker;
+      try {
+        return await _fetchFrankfurter();
+      } catch (_) {
+        const worker = await _fetchWorkerProxy();
+        if (worker) return worker;
+      }
     }
     return getUsdRate();
   }
@@ -93,6 +107,6 @@ const FxService = (() => {
     return `${usdStr} · ${pkrStr}`;
   }
 
-  return { getUsdRate, getMeta, usdToPkr, pkrToUsd, refreshUsdPkr, fmtUsdPkr };
+  return { getUsdRate, getMeta, usdToPkr, pkrToUsd, refreshUsdPkr, fmtUsdPkr, setUsdRate: _persistRate };
 })();
 window.FxService = FxService;

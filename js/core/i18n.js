@@ -16,6 +16,7 @@ const I18n = (() => {
     document.documentElement.lang = code === 'ur' ? 'ur' : 'en';
     document.documentElement.dir = code === 'ur' ? 'rtl' : 'ltr';
     document.body.classList.toggle('lc-rtl', code === 'ur');
+    document.body.classList.toggle('psx-rtl', code === 'ur');
     if (typeof State !== 'undefined') {
       State.update(s => { s.settings = s.settings || {}; s.settings.language = code; });
     }
@@ -32,6 +33,7 @@ const I18n = (() => {
     document.documentElement.lang = _lang === 'ur' ? 'ur' : 'en';
     document.documentElement.dir = _lang === 'ur' ? 'rtl' : 'ltr';
     document.body.classList.toggle('lc-rtl', _lang === 'ur');
+    document.body.classList.toggle('psx-rtl', _lang === 'ur');
   }
 
   function t(key) {

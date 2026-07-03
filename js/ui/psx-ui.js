@@ -112,7 +112,8 @@ const PsxUI = (() => {
 
   function segment(items, active, ns, method) {
     method = method || 'setFilter';
-    return `<div class="lc-segment" role="tablist">${items.map(it =>
+    const scroll = items.length >= 4 ? ' lc-segment--scroll' : '';
+    return `<div class="lc-segment${scroll}" role="tablist">${items.map(it =>
       `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" data-action="${ns}.${method}" data-tab="${it.id}">${it.label}</button>`
     ).join('')}</div>`;
   }

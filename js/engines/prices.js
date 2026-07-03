@@ -530,7 +530,46 @@ const Prices = (() => {
     return `<span class="${cls}" title="${age || ''}">${label}${age && !stale ? ' · ' + age : ''}</span>`;
   }
 
-  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries };
+  function applySnapshotPsx(quotes) {
+    if (!quotes || typeof State === 'undefined') return 0;
+    let n = 0;
+    Object.entries(quotes).forEach(([sym, q]) => {
+      if (!(q?.price > 0)) return;
+      const prevTs = State.get('prices')?.[sym]?.ts || 0;
+      if (prevTs > (q.ts || 0)) return;
+      State.updatePrice(sym, {
+        price: q.price,
+        prevClose: q.prevClose || q.price,
+        source: q.source || 'snapshot-psx',
+        ts: q.ts || Date.now(),
+      });
+      n++;
+    });
+    return n;
+  }
+
+  function applySnapshotUs(quotes, rate) {
+    if (!quotes || typeof State === 'undefined') return 0;
+    const fx = rate || (typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280);
+    let n = 0;
+    Object.entries(quotes).forEach(([sym, q]) => {
+      if (!(q?.priceUsd > 0)) return;
+      const prevTs = State.get('prices')?.[sym]?.ts || 0;
+      if (prevTs > (q.ts || 0)) return;
+      State.updatePrice(sym, {
+        priceUsd: q.priceUsd,
+        prevCloseUsd: q.prevCloseUsd || q.priceUsd,
+        price: q.priceUsd * fx,
+        prevClose: (q.prevCloseUsd || q.priceUsd) * fx,
+        source: q.source || 'snapshot-us',
+        ts: q.ts || Date.now(),
+      });
+      n++;
+    });
+    return n;
+  }
+
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {

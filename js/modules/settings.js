@@ -115,7 +115,9 @@ const Settings = (() => {
         <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" data-action="Settings._setDisplayCurrency" data-tab="USD">USD $</button>
       </div>
       <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} data-action-change="Settings._setLiveStream"> Live price stream (SSE push)</label>
-      <p class="field-hint" style="margin-top:8px">Stream: ${(() => {
+      <label class="lc-check-row"><input type="checkbox" id="s-snapshot" ${settings.snapshotEnabled !== false ? 'checked' : ''} data-action-change="Settings._setSnapshot"> Market snapshot (full PSX + US + commodities)</label>
+      <p class="field-hint" style="margin-top:8px">Snapshot: ${typeof PriceSnapshotService !== 'undefined' ? (PriceSnapshotService.freshnessLabel() || 'worker KV · 15m refresh') : 'worker KV'}</p>
+      <p class="field-hint" style="margin-top:4px">Stream: ${(() => {
         const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
         const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
         if (st.connected) return open ? '● connected · intraday push' : '● connected · last close (EOD)';
@@ -796,9 +798,18 @@ const Settings = (() => {
 
   function _setLiveStream(on) {
     State.update(s => { s.settings.liveStreamEnabled = !!on; });
-    if (on && typeof LivePriceStream !== 'undefined') LivePriceStream.start();
-    else if (typeof LivePriceStream !== 'undefined') LivePriceStream.stop();
+    if (typeof LivePriceStream !== 'undefined') {
+      if (on) LivePriceStream.init();
+      else LivePriceStream.stop?.();
+    }
     App.showToast(on ? 'Live stream on' : 'Live stream off', 'success');
+    render();
+  }
+
+  function _setSnapshot(on) {
+    State.update(s => { s.settings.snapshotEnabled = !!on; });
+    if (on && typeof PriceSnapshotService !== 'undefined') PriceSnapshotService.init();
+    App.showToast(on ? 'Market snapshot on' : 'Market snapshot off', 'success');
     render();
   }
 
@@ -1004,6 +1015,6 @@ const Settings = (() => {
     }
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;

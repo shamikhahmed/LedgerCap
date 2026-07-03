@@ -37,7 +37,7 @@ const LcPolish = (() => {
 
   function bindTapFeedback(root) {
     root = root || document;
-    root.querySelectorAll('.psx-btn, .psx-nav-btn, .psx-side-btn, .lc-tool-card, .lc-link-btn, .lc-pulse-pill--btn, .lc-dash-market-card--btn').forEach((el) => {
+    root.querySelectorAll('.psx-btn, .psx-nav-btn, .psx-side-btn, .lc-tool-card, .lc-link-btn, .lc-pulse-pill--btn, .lc-dash-market-card--btn, .lc-market-row, .lc-segment-btn, .rt-wl-card').forEach((el) => {
       if (el.dataset.lcTapBound) return;
       el.dataset.lcTapBound = '1';
       el.addEventListener('pointerdown', () => {

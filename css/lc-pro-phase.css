@@ -1157,7 +1157,7 @@ body.lc-pro[data-theme="dark"] {
 .lc-sparkline { display: block; vertical-align: middle; opacity: 0.9; }
 .psx-table .lc-spark-cell { width: 64px; padding: 8px 6px !important; }
 
-.lc-tap-active { transform: scale(0.98); transition: transform 0.08s var(--lc-ease); }
+.lc-tap-active { transform: scale(0.97); transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .lc-tap-target { transition: transform 0.12s var(--lc-ease); }
 
 .lc-sector-card,

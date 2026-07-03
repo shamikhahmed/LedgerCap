@@ -147,7 +147,7 @@ const PaperTrade = (() => {
     const mkt = holdings.reduce((a, h) => a + h.value, 0);
     const pnl = mkt - invested;
 
-    screen.innerHTML = `
+    screen.innerHTML = `<div class="lc-dash">
     ${MarketUI.pageHeader('Paper trading', 'Simulated PSX', 'Isolated from your real ledger')}
     <div class="lc-filter-bar cap-reveal">
       <button type="button" class="lc-view-pill${_tab === 'portfolio' ? ' active' : ''}" data-action="PaperTrade.setTab" data-tab="portfolio">Portfolio</button>
@@ -168,7 +168,7 @@ const PaperTrade = (() => {
         <div class="os-row cap-reveal">
           <div><div class="os-row-sym">${h.symbol}</div>
             <div style="font-size:11px;color:var(--os-text-tertiary)">${h.shares} sh · avg ${U.fmt(h.avgCost)}</div></div>
-          <div style="text-align:right">
+          <div class="rt-price-col">
             <div class="${h.pnl >= 0 ? 't-gain' : 't-loss'}">${U.fmt(h.pnl)} (${h.pnlPct.toFixed(1)}%)</div>
             <button type="button" class="btn-sm btn-secondary" data-action="PaperTrade.openSellRow" data-symbol="${h.symbol}">Sell</button>
           </div>
@@ -179,7 +179,7 @@ const PaperTrade = (() => {
           <div class="perf-item"><div>${t.date} · ${t.type} ${t.symbol}</div>
           <div>${t.shares} @ ${U.fmt(t.price)}</div></div>`).join('') || '<p class="psx-muted" style="padding:16px">No paper trades yet.</p>'}
       </div>`}
-    <div style="height:24px"></div>`;
+    <div style="height:24px"></div></div>`;
     CapMotion.refresh();
   }
 

@@ -4,7 +4,7 @@
   "scripts": {
     "bundle": "node scripts/bundle-app.js",
     "refresh-fallbacks": "node scripts/refresh-fallback-prices.js",
-    "test": "node tests/telegram-format.test.js && node tests/signals-logic.test.js && node tests/pin-vault.test.js && node tests/charts.test.js && node tests/market-data-global.test.js && node tests/calc-regression.test.js && playwright test",
+    "test": "node tests/telegram-format.test.js && node tests/signals-logic.test.js && node tests/pin-vault.test.js && node tests/charts.test.js && node tests/market-data-global.test.js && node tests/calc-regression.test.js && node tests/worker/karat-math.test.mjs && node tests/worker/psx-universe.test.mjs && node tests/worker/snapshot-shape.test.mjs && playwright test",
     "serve": "python3 -m http.server 8769",
     "cap:init": "npx cap add ios 2>/dev/null || true && npx cap sync ios",
     "cap:sync": "npx cap sync ios",

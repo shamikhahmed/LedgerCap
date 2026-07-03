@@ -72,6 +72,23 @@ Then commit/push if you want it baked into the deployed site.
 | `register a workers.dev subdomain` | Answer **yes** when prompted, or use the Workers onboarding link above. |
 | `CLOUDFLARE_API_TOKEN` required | Run `npx wrangler login` first |
 
+## Price snapshot KV (v3.55+)
+
+```bash
+npx wrangler kv namespace create PRICE_CACHE
+# paste id into wrangler.toml [[kv_namespaces]]
+npx wrangler deploy
+```
+
+- `GET /prices/snapshot?bucket=all|psx|us|commodities|fx|meta`
+- Cron reuses existing Telegram schedules (no extra cron quota): catalog at 09:00 PKT, PSX batches during session, US 511 during NY, commodities + FX
+- Edit OGRA fallback: `worker/data/ogra-fallback.json`
+- Rollback: `SKIP_PRICE_CRON=1` in wrangler vars; client Settings → disable Market snapshot
+
+```bash
+curl "https://ledgercap-psx-proxy.<subdomain>.workers.dev/prices/snapshot?bucket=meta"
+```
+
 ## Test the proxy
 
 ```bash

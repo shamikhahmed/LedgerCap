@@ -1,12 +1,19 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.53.0  
-**Service worker:** `ledgercap-v126`  
+**Version:** 3.55.0  
+**Service worker:** `ledgercap-v128`  
 **Last updated:** 3 Jul 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
-**Latest `main`:** `main` — feat: v3.53.0 — Yahoo live unblock, commodities, tool sweep  
+**Latest `main`:** `main` — feat: v3.55.0 — full market KV snapshot, PSX catalog, commodities expand  
+
+### v3.55.0 — Market universe cron
+
+- Worker `PRICE_CACHE` KV + `GET /prices/snapshot` (~754 PSX equities from `dps.psx.com.pk/symbols`, US 511, commodities)
+- Price cron piggybacks existing Telegram schedules (no extra CF cron quota)
+- Client `PriceSnapshotService`; full market screener; KMI Islamic tags; OGRA + derived gold karats
+- Settings toggle: Market snapshot; rollback via `SKIP_PRICE_CRON` or disable in app
 
 ---
 

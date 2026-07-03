@@ -6,17 +6,35 @@ const Market = (() => {
   let _query = '';
 
   function _rows() {
-    const seen = new Set();
-    const rows = [];
-    [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].forEach(s => {
-      if (seen.has(s.symbol)) return;
-      seen.add(s.symbol);
+    const catalog = typeof PsxStocksCatalog !== 'undefined' ? PsxStocksCatalog.rows() : [];
+    return catalog.map((s) => {
       const price = State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0;
       const prev = State.getPrevClose(s.symbol) || price;
       const chg = prev ? ((price - prev) / prev) * 100 : 0;
-      rows.push({ ...s, price, chg });
+      return { ...s, price, chg };
     });
-    return rows;
+  }
+
+  const PAGE = 80;
+  let _page = 0;
+
+  function _pagedSectorBlocks(bySector, totalRows) {
+    const flat = [];
+    Object.keys(bySector).sort().forEach((sec) => {
+      bySector[sec].forEach((r) => flat.push({ ...r, sector: sec }));
+    });
+    const start = _page * PAGE;
+    const slice = flat.slice(start, start + PAGE);
+    const byPage = {};
+    slice.forEach((r) => { (byPage[r.sector || 'Other'] = byPage[r.sector || 'Other'] || []).push(r); });
+    const blocks = _sectorBlocks(byPage);
+    const more = start + PAGE < totalRows
+      ? `<button type="button" class="psx-btn psx-btn-ghost" data-action="Market.nextPage">Show more (${Math.min(PAGE, totalRows - start - PAGE)} of ${totalRows - start - PAGE} left)</button>`
+      : '';
+    const reset = _page > 0
+      ? `<button type="button" class="psx-btn psx-btn-ghost" data-action="Market.prevPage">Back to start</button>`
+      : '';
+    return blocks + `<div class="lc-dash-actions">${reset}${more}</div>`;
   }
 
   function _segment() {
@@ -97,7 +115,7 @@ const Market = (() => {
     const bySector = {};
     rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
     host.innerHTML = rows.length
-      ? _sectorBlocks(bySector)
+      ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length))
       : `<div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol or clear filters.</p></div>`;
   }
 
@@ -138,7 +156,7 @@ const Market = (() => {
         </div>
         ${_pulseRow(baseRows)}
         ${filterHint}
-        <div id="market-list">${rows.length ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`) : `
+        <div id="market-list">${rows.length ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length)) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
         <div class="lc-dash-actions">
           <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
@@ -155,13 +173,15 @@ const Market = (() => {
     }
   }
 
-  function setFilter(f) { _filter = f; render(); }
-  function setMoveFilter(f) { _moveFilter = _moveFilter === f ? 'all' : f; render(); }
-  function setSectorFilter(sec) { _sectorFilter = _sectorFilter === sec ? '' : sec; render(); }
-  function clearFilters() { _moveFilter = 'all'; _sectorFilter = ''; render(); }
+  function nextPage() { _page++; _paintList(); }
+  function prevPage() { _page = 0; _paintList(); }
+  function setFilter(f) { _filter = f; _page = 0; render(); }
+  function setMoveFilter(f) { _moveFilter = _moveFilter === f ? 'all' : f; _page = 0; render(); }
+  function setSectorFilter(sec) { _sectorFilter = _sectorFilter === sec ? '' : sec; _page = 0; render(); }
+  function clearFilters() { _moveFilter = 'all'; _sectorFilter = ''; _page = 0; render(); }
   function moveFilter() { return _moveFilter; }
-  function _onSearch(q) { _query = q; _paintList(); }
+  function _onSearch(q) { _query = q; _page = 0; _paintList(); }
 
-  return { render, setFilter, setMoveFilter, setSectorFilter, clearFilters, moveFilter, _onSearch };
+  return { render, setFilter, setMoveFilter, setSectorFilter, clearFilters, moveFilter, nextPage, prevPage, _onSearch };
 })();
 window.Market = Market;

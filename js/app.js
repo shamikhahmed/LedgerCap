@@ -398,6 +398,7 @@ const App = (() => {
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     if (typeof LcPolish !== 'undefined') LcPolish.init();
     if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
+    if (typeof PriceSnapshotService !== 'undefined') PriceSnapshotService.init();
     if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
     _updateCurrencyToggleBtn();
     _scheduleAutoRefresh();

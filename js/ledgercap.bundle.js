@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 91 modules — run: npm run bundle */
+/* LedgerCap bundle — 93 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4880,22 +4880,81 @@ window.DIVIDEND_DATA = DIVIDEND_DATA;
 
 ;/* === js/data/commodities.js === */
 'use strict';
-/** Commodity watchlist — spot proxies via Yahoo (Sarmaaya-style). */
+/** Commodity watchlist — worker snapshot + Yahoo fallback */
 window.COMMODITY_ASSETS = [
-  { id: 'gold', symbol: 'GOLD', name: 'Gold', yahoo: 'GC=F', unit: 'USD/oz', icon: 'gold' },
-  { id: 'silver', symbol: 'SILVER', name: 'Silver', yahoo: 'SI=F', unit: 'USD/oz', icon: 'silver' },
-  { id: 'crude', symbol: 'CRUDE', name: 'Crude oil (WTI)', yahoo: 'CL=F', unit: 'USD/bbl', icon: 'oil' },
-  { id: 'copper', symbol: 'COPPER', name: 'Copper', yahoo: 'HG=F', unit: 'USD/lb', icon: 'metal' },
-  { id: 'pkr_gold', symbol: 'PKR_GOLD', name: 'Gold (PKR/gram)', manual: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'gold', symbol: 'GOLD', name: 'Gold (COMEX)', yahoo: 'GC=F', snapId: 'GC=F', unit: 'USD/oz', icon: 'gold' },
+  { id: 'silver', symbol: 'SILVER', name: 'Silver', yahoo: 'SI=F', snapId: 'SI=F', unit: 'USD/oz', icon: 'silver' },
+  { id: 'platinum', symbol: 'PLAT', name: 'Platinum', yahoo: 'PL=F', snapId: 'PL=F', unit: 'USD/oz', icon: 'metal' },
+  { id: 'crude', symbol: 'CRUDE', name: 'Crude oil (WTI)', yahoo: 'CL=F', snapId: 'CL=F', unit: 'USD/bbl', icon: 'oil' },
+  { id: 'brent', symbol: 'BRENT', name: 'Brent crude', yahoo: 'BZ=F', snapId: 'BZ=F', unit: 'USD/bbl', icon: 'oil' },
+  { id: 'natgas', symbol: 'NATGAS', name: 'Natural gas', yahoo: 'NG=F', snapId: 'NG=F', unit: 'USD/MMBtu', icon: 'oil' },
+  { id: 'copper', symbol: 'COPPER', name: 'Copper', yahoo: 'HG=F', snapId: 'HG=F', unit: 'USD/lb', icon: 'metal' },
+  { id: 'gold_24k', symbol: 'G24K', name: 'Gold 24k (PKR/g)', snapId: 'GOLD_24K_PKR', derived: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'gold_22k', symbol: 'G22K', name: 'Gold 22k (PKR/g)', snapId: 'GOLD_22K_PKR', derived: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'gold_21k', symbol: 'G21K', name: 'Gold 21k (PKR/g)', snapId: 'GOLD_21K_PKR', derived: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'gold_18k', symbol: 'G18K', name: 'Gold 18k (PKR/g)', snapId: 'GOLD_18K_PKR', derived: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'gold_12k', symbol: 'G12K', name: 'Gold 12k (PKR/g)', snapId: 'GOLD_12K_PKR', derived: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'pkr_gold', symbol: 'PKR_GOLD', name: 'Gold 24k (Zakat)', snapId: 'GOLD_24K_PKR', derived: true, unit: 'PKR/g', icon: 'gold' },
+  { id: 'ogra_ms', symbol: 'OGRA_MS', name: 'Petrol MS (OGRA)', snapId: 'OGRA_MS', ogra: true, unit: 'PKR/L', icon: 'oil' },
+  { id: 'ogra_hsd', symbol: 'OGRA_HSD', name: 'Diesel HSD (OGRA)', snapId: 'OGRA_HSD', ogra: true, unit: 'PKR/L', icon: 'oil' },
 ];
+
+;/* === js/data/psx-stocks.js === */
+'use strict';
+/** PSX catalog — hydrated from worker snapshot meta:psx_catalog */
+window.PSX_STOCKS_CATALOG = window.PSX_STOCKS_CATALOG || [];
+
+window.PsxStocksCatalog = (() => {
+  const LS_KEY = 'lc_psx_catalog_v1';
+
+  function _seedFromHoldings() {
+    const seen = new Set();
+    const rows = [];
+    [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].forEach((s) => {
+      if (seen.has(s.symbol)) return;
+      seen.add(s.symbol);
+      rows.push({
+        symbol: s.symbol,
+        name: s.name || s.symbol,
+        sector: s.sector || 'Other',
+        isShariah: !!s.isShariah,
+      });
+    });
+    return rows;
+  }
+
+  function hydrate(catalog) {
+    if (!Array.isArray(catalog) || !catalog.length) return;
+    window.PSX_STOCKS_CATALOG = catalog;
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ catalog, ts: Date.now() })); } catch (_) {}
+  }
+
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return _seedFromHoldings();
+      const j = JSON.parse(raw);
+      if (j?.catalog?.length) return j.catalog;
+    } catch (_) {}
+    return _seedFromHoldings();
+  }
+
+  function rows() {
+    const cat = window.PSX_STOCKS_CATALOG?.length ? window.PSX_STOCKS_CATALOG : loadLocal();
+    if (!window.PSX_STOCKS_CATALOG?.length) window.PSX_STOCKS_CATALOG = cat;
+    return cat;
+  }
+
+  return { hydrate, loadLocal, rows };
+})();
 
 ;/* === js/data/config.js === */
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.53.0',
-  sw: 126,
-  cache: 'ledgercap-v126',
+  app: '3.55.0',
+  sw: 128,
+  cache: 'ledgercap-v128',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -4904,6 +4963,8 @@ window.LEDGERCAP_CONFIG = {
   psxProxyUrl: 'https://ledgercap-psx-proxy.shamikhahmed.workers.dev',
   /** Legacy worker hostname — kept as silent fallback until all users migrate */
   legacyPsxProxyUrl: 'https://stunds-psx-proxy.shamikhahmed.workers.dev',
+  /** Worker KV market snapshot (v3.55+) */
+  snapshotEnabled: true,
 };
 
 /** Normalize saved proxy URLs and prefer the LedgerCap worker hostname. */
@@ -5195,6 +5256,7 @@ const I18n = (() => {
     document.documentElement.lang = code === 'ur' ? 'ur' : 'en';
     document.documentElement.dir = code === 'ur' ? 'rtl' : 'ltr';
     document.body.classList.toggle('lc-rtl', code === 'ur');
+    document.body.classList.toggle('psx-rtl', code === 'ur');
     if (typeof State !== 'undefined') {
       State.update(s => { s.settings = s.settings || {}; s.settings.language = code; });
     }
@@ -5211,6 +5273,7 @@ const I18n = (() => {
     document.documentElement.lang = _lang === 'ur' ? 'ur' : 'en';
     document.documentElement.dir = _lang === 'ur' ? 'rtl' : 'ltr';
     document.body.classList.toggle('lc-rtl', _lang === 'ur');
+    document.body.classList.toggle('psx-rtl', _lang === 'ur');
   }
 
   function t(key) {
@@ -6447,7 +6510,46 @@ const Prices = (() => {
     return `<span class="${cls}" title="${age || ''}">${label}${age && !stale ? ' · ' + age : ''}</span>`;
   }
 
-  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries };
+  function applySnapshotPsx(quotes) {
+    if (!quotes || typeof State === 'undefined') return 0;
+    let n = 0;
+    Object.entries(quotes).forEach(([sym, q]) => {
+      if (!(q?.price > 0)) return;
+      const prevTs = State.get('prices')?.[sym]?.ts || 0;
+      if (prevTs > (q.ts || 0)) return;
+      State.updatePrice(sym, {
+        price: q.price,
+        prevClose: q.prevClose || q.price,
+        source: q.source || 'snapshot-psx',
+        ts: q.ts || Date.now(),
+      });
+      n++;
+    });
+    return n;
+  }
+
+  function applySnapshotUs(quotes, rate) {
+    if (!quotes || typeof State === 'undefined') return 0;
+    const fx = rate || (typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280);
+    let n = 0;
+    Object.entries(quotes).forEach(([sym, q]) => {
+      if (!(q?.priceUsd > 0)) return;
+      const prevTs = State.get('prices')?.[sym]?.ts || 0;
+      if (prevTs > (q.ts || 0)) return;
+      State.updatePrice(sym, {
+        priceUsd: q.priceUsd,
+        prevCloseUsd: q.prevCloseUsd || q.priceUsd,
+        price: q.priceUsd * fx,
+        prevClose: (q.prevCloseUsd || q.priceUsd) * fx,
+        source: q.source || 'snapshot-us',
+        ts: q.ts || Date.now(),
+      });
+      n++;
+    });
+    return n;
+  }
+
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {
@@ -7542,7 +7644,21 @@ window.MarketWatchService = MarketWatchService;
 'use strict';
 const CommoditiesService = (() => {
   const CACHE_MS = 300000;
+  const TROY_OZ_GRAMS = 31.1034768;
   let _cache = { ts: 0, rows: [] };
+
+  function _fromSnapshot(snapId) {
+    const snap = window._LC_CMD_SNAPSHOT || {};
+    const q = snap[snapId];
+    if (!q?.price) return null;
+    return {
+      price: q.price,
+      changePct: q.changePct || 0,
+      label: q.source === 'OGRA-fallback' ? `OGRA fallback · ${q.asOf || ''}` : (q.quoteKind === 'derived' ? 'Spot-derived' : 'Worker snapshot'),
+      asOf: q.asOf,
+      manual: q.quoteKind === 'ogra' && q.source === 'OGRA-fallback',
+    };
+  }
 
   async function _yahooQuote(yahoo) {
     let data = null;
@@ -7571,24 +7687,61 @@ const CommoditiesService = (() => {
       changePct: chgPct,
       currency: meta.currency || 'USD',
       ts: Date.now(),
+      label: 'Yahoo spot',
     };
+  }
+
+  async function _pkrGoldFromSpot() {
+    const snap = _fromSnapshot('GOLD_24K_PKR');
+    if (snap) return { ...snap, pkr: snap.price, label: snap.label || 'Snapshot 24k' };
+    const q = await _yahooQuote('GC=F');
+    if (!q?.price) return null;
+    const usd = typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280;
+    const pkrPerGram = Math.round((q.price * usd) / TROY_OZ_GRAMS);
+    if (pkrPerGram > 0 && typeof State !== 'undefined') {
+      State.update((s) => {
+        s.settings.goldPricePerGram = pkrPerGram;
+        s.settings.goldPriceSource = 'Yahoo GC=F';
+        s.settings.goldPriceUpdatedAt = new Date().toISOString();
+      });
+    }
+    return { price: pkrPerGram, changePct: q.changePct || 0, pkr: pkrPerGram, label: 'Yahoo GC=F · auto' };
   }
 
   async function fetchAll() {
     if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS) return _cache.rows;
+    if (typeof PriceSnapshotService !== 'undefined' && PriceSnapshotService.enabled()) {
+      await PriceSnapshotService.refresh('commodities').catch(() => {});
+    }
+    if (typeof FxService !== 'undefined') await FxService.refreshUsdPkr().catch(() => {});
     const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
-    const goldPkr = settings.goldPricePerGram || 18000;
+    const goldAuto = await _pkrGoldFromSpot();
     const usd = typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280;
     const rows = [];
 
     for (const c of window.COMMODITY_ASSETS || []) {
-      if (c.manual && c.id === 'pkr_gold') {
+      if (c.id === 'pkr_gold') {
+        const g = goldAuto || { price: settings.goldPricePerGram || 18000, changePct: 0 };
         rows.push({
           ...c,
-          price: goldPkr,
-          changePct: 0,
-          pkr: goldPkr,
-          label: 'Settings · manual',
+          price: g.price,
+          changePct: g.changePct || 0,
+          pkr: g.price,
+          label: g.label || 'Settings · manual fallback',
+          manual: !goldAuto,
+        });
+        continue;
+      }
+      const snap = c.snapId ? _fromSnapshot(c.snapId) : null;
+      if (snap) {
+        rows.push({
+          ...c,
+          price: snap.price,
+          changePct: snap.changePct || 0,
+          pkr: c.unit === 'PKR/g' || c.unit === 'PKR/L' ? snap.price : snap.price * usd,
+          label: snap.label,
+          asOf: snap.asOf,
+          manual: !!snap.manual,
         });
         continue;
       }
@@ -8796,13 +8949,27 @@ const FxService = (() => {
     return null;
   }
 
+  async function _fetchFrankfurter() {
+    const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=PKR', { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Frankfurter HTTP ${res.status}`);
+    const j = await res.json();
+    const rate = j?.rates?.PKR;
+    if (!(rate > 0)) throw new Error('PKR rate missing');
+    _persistRate(rate, 'Frankfurter');
+    return rate;
+  }
+
   async function refreshUsdPkr() {
     if (Date.now() - _ts < CACHE_MS && _usdPkr) return _usdPkr;
     try {
       return await _fetchOpenErApi();
     } catch (_) {
-      const worker = await _fetchWorkerProxy();
-      if (worker) return worker;
+      try {
+        return await _fetchFrankfurter();
+      } catch (_) {
+        const worker = await _fetchWorkerProxy();
+        if (worker) return worker;
+      }
     }
     return getUsdRate();
   }
@@ -8819,7 +8986,7 @@ const FxService = (() => {
     return `${usdStr} · ${pkrStr}`;
   }
 
-  return { getUsdRate, getMeta, usdToPkr, pkrToUsd, refreshUsdPkr, fmtUsdPkr };
+  return { getUsdRate, getMeta, usdToPkr, pkrToUsd, refreshUsdPkr, fmtUsdPkr, setUsdRate: _persistRate };
 })();
 window.FxService = FxService;
 
@@ -8871,6 +9038,125 @@ const PsxSession = (() => {
   return { pktParts, isWeekday, isOpen, priceLabel };
 })();
 window.PsxSession = PsxSession;
+
+;/* === js/services/price-snapshot.js === */
+'use strict';
+/** Worker KV snapshot → State.prices */
+const PriceSnapshotService = (() => {
+  const POLL_MS = 5 * 60 * 1000;
+  let _timer = null;
+  let _meta = { psxAt: null, usAt: null, cmdAt: null };
+
+  function enabled() {
+    const s = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    if (s.snapshotEnabled === false) return false;
+    return window.LEDGERCAP_CONFIG?.snapshotEnabled !== false;
+  }
+
+  function _proxyBase() {
+    const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    const raw = typeof resolvePsxProxyUrl === 'function'
+      ? resolvePsxProxyUrl(settings.psxProxyUrl)
+      : (window.LEDGERCAP_CONFIG?.psxProxyUrl || '').trim();
+    return raw.replace(/\/$/, '');
+  }
+
+  async function _fetchSnapshot(bucket) {
+    const base = _proxyBase();
+    if (!base) return null;
+    const url = `${base}/prices/snapshot?bucket=${encodeURIComponent(bucket || 'all')}`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    return res.json();
+  }
+
+  function applyToState(data) {
+    if (!data?.ok || typeof State === 'undefined') return 0;
+    let n = 0;
+    const rate = data.fx?.rate || (typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280);
+
+    if (data.catalog?.length && typeof PsxStocksCatalog !== 'undefined') {
+      PsxStocksCatalog.hydrate(data.catalog);
+    }
+
+    if (data.psx?.quotes && typeof Prices !== 'undefined' && Prices.applySnapshotPsx) {
+      n += Prices.applySnapshotPsx(data.psx.quotes);
+    } else if (data.psx?.quotes) {
+      Object.entries(data.psx.quotes).forEach(([sym, q]) => {
+        if (!q?.price) return;
+        State.updatePrice(sym, { ...q, source: q.source || 'snapshot-psx' });
+        n++;
+      });
+    }
+
+    if (data.us?.quotes && typeof Prices !== 'undefined' && Prices.applySnapshotUs) {
+      n += Prices.applySnapshotUs(data.us.quotes, rate);
+    } else if (data.us?.quotes) {
+      Object.entries(data.us.quotes).forEach(([sym, q]) => {
+        if (!(q?.priceUsd > 0)) return;
+        State.updatePrice(sym, {
+          priceUsd: q.priceUsd,
+          prevCloseUsd: q.prevCloseUsd,
+          price: q.priceUsd * rate,
+          prevClose: (q.prevCloseUsd || q.priceUsd) * rate,
+          source: q.source || 'snapshot-us',
+          ts: q.ts || Date.now(),
+        });
+        n++;
+      });
+    }
+
+    if (data.fx?.rate > 0 && typeof FxService !== 'undefined') {
+      FxService.setUsdRate?.(data.fx.rate, data.fx.source);
+    }
+
+    if (data.commodities?.quotes) {
+      window._LC_CMD_SNAPSHOT = data.commodities.quotes;
+    }
+
+    _meta = {
+      psxAt: data.psx?.updatedAt || null,
+      usAt: data.us?.updatedAt || null,
+      cmdAt: data.commodities?.updatedAt || null,
+      stale: data.stale || {},
+      session: data.session || {},
+    };
+    window._LC_SNAPSHOT_META = _meta;
+
+    if (n > 0 && typeof PriceHealth !== 'undefined') PriceHealth.mount();
+    return n;
+  }
+
+  async function refresh(bucket) {
+    if (!enabled()) return 0;
+    try {
+      const data = await _fetchSnapshot(bucket || 'all');
+      return applyToState(data);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function init() {
+    if (!enabled()) return;
+    refresh('all');
+    if (_timer) clearInterval(_timer);
+    _timer = setInterval(() => refresh('all'), POLL_MS);
+  }
+
+  function meta() { return { ..._meta }; }
+
+  function freshnessLabel() {
+    const at = _meta.psxAt || _meta.usAt;
+    if (!at) return '';
+    const d = new Date(at);
+    const pkt = d.toLocaleTimeString('en-PK', { timeZone: 'Asia/Karachi', hour: '2-digit', minute: '2-digit' });
+    return `snapshot ${pkt} PKT`;
+  }
+
+  return { init, refresh, applyToState, meta, freshnessLabel, enabled };
+})();
+window.PriceSnapshotService = PriceSnapshotService;
 
 ;/* === js/services/news-service.js === */
 'use strict';
@@ -11014,12 +11300,21 @@ const PriceHealth = (() => {
   }
 
   function bannerHtml(rep) {
+    const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
+    const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
+    if (snap && snapStale) {
+      return `<div class="lc-price-health" role="status">
+        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap refresh.</span>
+        <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh snapshot</button>
+        <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
+      </div>`;
+    }
     if (!rep?.showBanner) return '';
     const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
-      ? `Prices as of ${updated} snapshot (${pct}% not live)`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h`;
+      ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — refresh or accept EOD`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
@@ -12428,7 +12723,8 @@ const PsxUI = (() => {
 
   function segment(items, active, ns, method) {
     method = method || 'setFilter';
-    return `<div class="lc-segment" role="tablist">${items.map(it =>
+    const scroll = items.length >= 4 ? ' lc-segment--scroll' : '';
+    return `<div class="lc-segment${scroll}" role="tablist">${items.map(it =>
       `<button type="button" class="lc-segment-btn${active === it.id ? ' on' : ''}" role="tab" data-action="${ns}.${method}" data-tab="${it.id}">${it.label}</button>`
     ).join('')}</div>`;
   }
@@ -13814,7 +14110,7 @@ const Hub = (() => {
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = PsxUI.emptyState('No headlines yet', 'Headlines appear once a news source is reachable. Check your connection, or open Settings → Live prices to configure sources.', '');
+        _newsHtml = PsxUI.emptyState('Thin free feeds', 'No Bloomberg desk here — Yahoo + BBC via worker when reachable. Google RSS often blocks worker IP. Headlines are rule-tagged, not advice.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
@@ -13830,7 +14126,7 @@ const Hub = (() => {
 
   function _newsSection() {
     return `<div class="lc-dash-section" id="hub-news-section">
-      <div class="lc-dash-section-head"><h3>Market news</h3><span>Impact on your holdings</span></div>
+      <div class="lc-dash-section-head"><h3>Market news</h3><span>Free feeds · not Bloomberg</span></div>
       <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
       <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Hub.refreshNews">Refresh news</button></div>
     </div>`;
@@ -14096,17 +14392,35 @@ const Market = (() => {
   let _query = '';
 
   function _rows() {
-    const seen = new Set();
-    const rows = [];
-    [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].forEach(s => {
-      if (seen.has(s.symbol)) return;
-      seen.add(s.symbol);
+    const catalog = typeof PsxStocksCatalog !== 'undefined' ? PsxStocksCatalog.rows() : [];
+    return catalog.map((s) => {
       const price = State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0;
       const prev = State.getPrevClose(s.symbol) || price;
       const chg = prev ? ((price - prev) / prev) * 100 : 0;
-      rows.push({ ...s, price, chg });
+      return { ...s, price, chg };
     });
-    return rows;
+  }
+
+  const PAGE = 80;
+  let _page = 0;
+
+  function _pagedSectorBlocks(bySector, totalRows) {
+    const flat = [];
+    Object.keys(bySector).sort().forEach((sec) => {
+      bySector[sec].forEach((r) => flat.push({ ...r, sector: sec }));
+    });
+    const start = _page * PAGE;
+    const slice = flat.slice(start, start + PAGE);
+    const byPage = {};
+    slice.forEach((r) => { (byPage[r.sector || 'Other'] = byPage[r.sector || 'Other'] || []).push(r); });
+    const blocks = _sectorBlocks(byPage);
+    const more = start + PAGE < totalRows
+      ? `<button type="button" class="psx-btn psx-btn-ghost" data-action="Market.nextPage">Show more (${Math.min(PAGE, totalRows - start - PAGE)} of ${totalRows - start - PAGE} left)</button>`
+      : '';
+    const reset = _page > 0
+      ? `<button type="button" class="psx-btn psx-btn-ghost" data-action="Market.prevPage">Back to start</button>`
+      : '';
+    return blocks + `<div class="lc-dash-actions">${reset}${more}</div>`;
   }
 
   function _segment() {
@@ -14187,7 +14501,7 @@ const Market = (() => {
     const bySector = {};
     rows.forEach(r => { (bySector[r.sector || 'Other'] = bySector[r.sector || 'Other'] || []).push(r); });
     host.innerHTML = rows.length
-      ? _sectorBlocks(bySector)
+      ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length))
       : `<div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol or clear filters.</p></div>`;
   }
 
@@ -14228,7 +14542,7 @@ const Market = (() => {
         </div>
         ${_pulseRow(baseRows)}
         ${filterHint}
-        <div id="market-list">${rows.length ? _sectorBlocks(bySector, sym => `Research.open('${sym}')`) : `
+        <div id="market-list">${rows.length ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length)) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
         <div class="lc-dash-actions">
           <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
@@ -14245,14 +14559,16 @@ const Market = (() => {
     }
   }
 
-  function setFilter(f) { _filter = f; render(); }
-  function setMoveFilter(f) { _moveFilter = _moveFilter === f ? 'all' : f; render(); }
-  function setSectorFilter(sec) { _sectorFilter = _sectorFilter === sec ? '' : sec; render(); }
-  function clearFilters() { _moveFilter = 'all'; _sectorFilter = ''; render(); }
+  function nextPage() { _page++; _paintList(); }
+  function prevPage() { _page = 0; _paintList(); }
+  function setFilter(f) { _filter = f; _page = 0; render(); }
+  function setMoveFilter(f) { _moveFilter = _moveFilter === f ? 'all' : f; _page = 0; render(); }
+  function setSectorFilter(sec) { _sectorFilter = _sectorFilter === sec ? '' : sec; _page = 0; render(); }
+  function clearFilters() { _moveFilter = 'all'; _sectorFilter = ''; _page = 0; render(); }
   function moveFilter() { return _moveFilter; }
-  function _onSearch(q) { _query = q; _paintList(); }
+  function _onSearch(q) { _query = q; _page = 0; _paintList(); }
 
-  return { render, setFilter, setMoveFilter, setSectorFilter, clearFilters, moveFilter, _onSearch };
+  return { render, setFilter, setMoveFilter, setSectorFilter, clearFilters, moveFilter, nextPage, prevPage, _onSearch };
 })();
 window.Market = Market;
 
@@ -15424,9 +15740,13 @@ const Watchlist = (() => {
       const upside = quote.price > 0 ? ((ai.fairValue - quote.price) / quote.price * 100) : 0;
       const alertHit = w.targetPrice > 0 && quote.price > 0 && quote.price <= w.targetPrice;
       return `
-      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}" data-action="Research.open" data-symbol="${w.symbol}">
-        <div>
-          <div style="font-weight:700;font-size:1rem;">${w.symbol} ${U.ratingBadge(ai.action)} ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}</div>
+      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}">
+        <div class="rt-wl-card-main" data-action="Research.open" data-symbol="${w.symbol}">
+          <div class="rt-wl-head">
+            <strong>${w.symbol}</strong>
+            ${U.ratingBadge(ai.action)}
+            ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}
+          </div>
           <div class="lc-card-sub">${w.name}${w.thesis ? ' · ' + w.thesis.slice(0, 50) : ''}</div>
           <div class="lc-card-meta">
             <span>Fair: <strong>${U.fmt(ai.fairValue)}</strong></span>
@@ -15434,15 +15754,15 @@ const Watchlist = (() => {
             ${w.targetPrice ? `<span>Target ${U.fmt(w.targetPrice)}</span>` : ''}
           </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-weight:700;font-size:1.1rem;">${U.fmt(quote.price)}</div>
-          <div class="${U.chgCls(quote.changePct)}" style="font-size:0.78rem;">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
+        <div class="rt-wl-price" data-action="Research.open" data-symbol="${w.symbol}">
+          <div class="rt-wl-price-val">${U.fmt(quote.price)}</div>
+          <div class="${U.chgCls(quote.changePct)} rt-wl-price-chg">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
           <div class="lc-card-sub">${Prices.sourceLabel?.(quote.source) || quote.source || ''}</div>
         </div>
-      </div>
-      <div style="padding:0 20px 8px;display:flex;gap:8px;">
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.openEdit" data-tab="${w.id}" data-stop="1">Edit</button>
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.remove" data-tab="${w.id}" data-stop="1">Remove</button>
+        <div class="rt-wl-foot">
+          <button type="button" class="os-btn os-btn-ghost rt-wl-foot-btn" data-action="Watchlist.openEdit" data-tab="${w.id}" data-stop="1">Edit</button>
+          <button type="button" class="os-btn os-btn-ghost rt-wl-foot-btn" data-action="Watchlist.remove" data-tab="${w.id}" data-stop="1">Remove</button>
+        </div>
       </div>`;
     }).join('') : `<div class="lc-empty-note">Empty watchlist. Track symbols before you buy.</div>`}
     </div>`;
@@ -15854,7 +16174,7 @@ const WealthCalendar = (() => {
               <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
               <div class="lc-market-name">${e.kind} · ${e.detail}</div>
             </div>
-            <div class="lc-market-chg">${e.symbol}</div>
+            <div class="lc-market-meta">${e.symbol}</div>
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">
@@ -16257,7 +16577,9 @@ const Settings = (() => {
         <button type="button" class="os-theme-btn${settings.displayCurrency === 'USD' ? ' active' : ''}" data-action="Settings._setDisplayCurrency" data-tab="USD">USD $</button>
       </div>
       <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} data-action-change="Settings._setLiveStream"> Live price stream (SSE push)</label>
-      <p class="field-hint" style="margin-top:8px">Stream: ${(() => {
+      <label class="lc-check-row"><input type="checkbox" id="s-snapshot" ${settings.snapshotEnabled !== false ? 'checked' : ''} data-action-change="Settings._setSnapshot"> Market snapshot (full PSX + US + commodities)</label>
+      <p class="field-hint" style="margin-top:8px">Snapshot: ${typeof PriceSnapshotService !== 'undefined' ? (PriceSnapshotService.freshnessLabel() || 'worker KV · 15m refresh') : 'worker KV'}</p>
+      <p class="field-hint" style="margin-top:4px">Stream: ${(() => {
         const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
         const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
         if (st.connected) return open ? '● connected · intraday push' : '● connected · last close (EOD)';
@@ -16938,9 +17260,18 @@ const Settings = (() => {
 
   function _setLiveStream(on) {
     State.update(s => { s.settings.liveStreamEnabled = !!on; });
-    if (on && typeof LivePriceStream !== 'undefined') LivePriceStream.start();
-    else if (typeof LivePriceStream !== 'undefined') LivePriceStream.stop();
+    if (typeof LivePriceStream !== 'undefined') {
+      if (on) LivePriceStream.init();
+      else LivePriceStream.stop?.();
+    }
     App.showToast(on ? 'Live stream on' : 'Live stream off', 'success');
+    render();
+  }
+
+  function _setSnapshot(on) {
+    State.update(s => { s.settings.snapshotEnabled = !!on; });
+    if (on && typeof PriceSnapshotService !== 'undefined') PriceSnapshotService.init();
+    App.showToast(on ? 'Market snapshot on' : 'Market snapshot off', 'success');
     render();
   }
 
@@ -17146,7 +17477,7 @@ const Settings = (() => {
     }
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
 
@@ -18609,7 +18940,7 @@ const PaperTrade = (() => {
     const mkt = holdings.reduce((a, h) => a + h.value, 0);
     const pnl = mkt - invested;
 
-    screen.innerHTML = `
+    screen.innerHTML = `<div class="lc-dash">
     ${MarketUI.pageHeader('Paper trading', 'Simulated PSX', 'Isolated from your real ledger')}
     <div class="lc-filter-bar cap-reveal">
       <button type="button" class="lc-view-pill${_tab === 'portfolio' ? ' active' : ''}" data-action="PaperTrade.setTab" data-tab="portfolio">Portfolio</button>
@@ -18630,7 +18961,7 @@ const PaperTrade = (() => {
         <div class="os-row cap-reveal">
           <div><div class="os-row-sym">${h.symbol}</div>
             <div style="font-size:11px;color:var(--os-text-tertiary)">${h.shares} sh · avg ${U.fmt(h.avgCost)}</div></div>
-          <div style="text-align:right">
+          <div class="rt-price-col">
             <div class="${h.pnl >= 0 ? 't-gain' : 't-loss'}">${U.fmt(h.pnl)} (${h.pnlPct.toFixed(1)}%)</div>
             <button type="button" class="btn-sm btn-secondary" data-action="PaperTrade.openSellRow" data-symbol="${h.symbol}">Sell</button>
           </div>
@@ -18641,7 +18972,7 @@ const PaperTrade = (() => {
           <div class="perf-item"><div>${t.date} · ${t.type} ${t.symbol}</div>
           <div>${t.shares} @ ${U.fmt(t.price)}</div></div>`).join('') || '<p class="psx-muted" style="padding:16px">No paper trades yet.</p>'}
       </div>`}
-    <div style="height:24px"></div>`;
+    <div style="height:24px"></div></div>`;
     CapMotion.refresh();
   }
 
@@ -18900,9 +19231,9 @@ const Global = (() => {
     const shown = list.slice(0, 80);
     return `
       ${shown.map(r => `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
-        <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
+        <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}${r.held ? ' · ' + r.qty + ' held' : ''}</div></div>
         <div class="lc-market-price">$${Number(r.usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${typeof Prices !== 'undefined' && Prices.priceBadge ? Prices.priceBadge(r.symbol) : ''}</div>
-        <div class="lc-market-chg">${r.held ? r.qty + ' held · ' + PsxUI.fmt(r.pkr) : PsxUI.fmt(r.pkr)}</div>
+        <div class="lc-market-meta">${PsxUI.fmt(r.pkr)}</div>
       </button>`).join('')}
       ${list.length > 80 ? `<p class="lc-search-empty">Showing 80 of ${list.length} — keep typing to narrow</p>` : ''}
       ${!list.length ? `<p class="lc-search-empty">No matches for “${_query.replace(/"/g, '&quot;')}”</p>` : ''}`;
@@ -18976,15 +19307,20 @@ const Commodities = (() => {
   let _loading = false;
 
   function _rowHtml(r) {
-    const chgCls = r.manual ? '' : PsxUI.chgCls(r.changePct || 0);
+    const chgCls = (r.id === 'pkr_gold' && !r.manual) ? PsxUI.chgCls(r.changePct || 0) : (r.manual ? '' : PsxUI.chgCls(r.changePct || 0));
     const sign = (r.changePct || 0) > 0 ? '+' : '';
-    const priceLabel = r.manual
+    const priceLabel = r.manual && r.id !== 'pkr_gold'
       ? PsxUI.fmt(r.price) + '/g'
-      : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      : r.id === 'pkr_gold'
+        ? PsxUI.fmt(r.price) + '/g'
+        : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const chgLabel = r.id === 'pkr_gold'
+      ? (r.label || 'Auto')
+      : r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%';
     return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'data-nav="settings"' : ''}>
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
       <div class="lc-market-price">${priceLabel}</div>
-      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'}</div>
+      <div class="lc-market-meta ${chgCls}">${chgLabel}</div>
     </button>`;
   }
 
@@ -19011,7 +19347,7 @@ const Commodities = (() => {
         <div class="lc-pulse-pill"><label>USD/PKR</label><b>₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</b></div>
         <div class="lc-pulse-pill"><label>PKR gold</label><b>${PsxUI.fmt((State.get('settings') || {}).goldPricePerGram || 18000)}/g</b></div>
       </div>
-      <p class="lc-card-sub">Spot proxies via Yahoo (GC=F, SI=F, CL=F). PKR gold uses Settings — links to Zakat calculator.</p>
+      <p class="lc-card-sub">Spot via worker snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
       <div class="lc-sector-card" id="commodities-list">${listInner}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>
@@ -19657,7 +19993,7 @@ const LcPolish = (() => {
 
   function bindTapFeedback(root) {
     root = root || document;
-    root.querySelectorAll('.psx-btn, .psx-nav-btn, .psx-side-btn, .lc-tool-card, .lc-link-btn, .lc-pulse-pill--btn, .lc-dash-market-card--btn').forEach((el) => {
+    root.querySelectorAll('.psx-btn, .psx-nav-btn, .psx-side-btn, .lc-tool-card, .lc-link-btn, .lc-pulse-pill--btn, .lc-dash-market-card--btn, .lc-market-row, .lc-segment-btn, .rt-wl-card').forEach((el) => {
       if (el.dataset.lcTapBound) return;
       el.dataset.lcTapBound = '1';
       el.addEventListener('pointerdown', () => {
@@ -20211,6 +20547,7 @@ const App = (() => {
     if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
     if (typeof LcPolish !== 'undefined') LcPolish.init();
     if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
+    if (typeof PriceSnapshotService !== 'undefined') PriceSnapshotService.init();
     if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
     _updateCurrencyToggleBtn();
     _scheduleAutoRefresh();

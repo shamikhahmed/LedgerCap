@@ -5,6 +5,8 @@
 import { handleTelegramRequest, runTelegramCron } from './telegram.js';
 import { handleNewsRequest } from './news.js';
 import { handleSsePrices } from './sse-prices.js';
+import { handleSnapshot } from './snapshot-api.js';
+import { runPriceCron } from './price-cron.js';
 
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const CORS = {
@@ -40,8 +42,11 @@ export default {
     const path = url.pathname.replace(/^\//, '');
 
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news', 'sse'] });
+      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news', 'sse', 'prices/snapshot'] });
     }
+
+    const snap = await handleSnapshot(request, env, url);
+    if (snap) return snap;
 
     const tg = await handleTelegramRequest(request, env, url);
     if (tg) return tg;
@@ -117,6 +122,11 @@ export default {
       runTelegramCron(env)
         .then((r) => { if (r && !r.ok && !r.skipped) console.error('telegram cron', r); })
         .catch((e) => console.error('telegram cron', e)),
+    );
+    ctx.waitUntil(
+      runPriceCron(env, event)
+        .then((r) => { if (r && !r.ok && !r.skipped) console.error('price cron', r); })
+        .catch((e) => console.error('price cron', e)),
     );
   },
 };

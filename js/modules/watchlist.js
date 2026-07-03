@@ -53,9 +53,13 @@ const Watchlist = (() => {
       const upside = quote.price > 0 ? ((ai.fairValue - quote.price) / quote.price * 100) : 0;
       const alertHit = w.targetPrice > 0 && quote.price > 0 && quote.price <= w.targetPrice;
       return `
-      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}" data-action="Research.open" data-symbol="${w.symbol}">
-        <div>
-          <div style="font-weight:700;font-size:1rem;">${w.symbol} ${U.ratingBadge(ai.action)} ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}</div>
+      <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}">
+        <div class="rt-wl-card-main" data-action="Research.open" data-symbol="${w.symbol}">
+          <div class="rt-wl-head">
+            <strong>${w.symbol}</strong>
+            ${U.ratingBadge(ai.action)}
+            ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}
+          </div>
           <div class="lc-card-sub">${w.name}${w.thesis ? ' · ' + w.thesis.slice(0, 50) : ''}</div>
           <div class="lc-card-meta">
             <span>Fair: <strong>${U.fmt(ai.fairValue)}</strong></span>
@@ -63,15 +67,15 @@ const Watchlist = (() => {
             ${w.targetPrice ? `<span>Target ${U.fmt(w.targetPrice)}</span>` : ''}
           </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-weight:700;font-size:1.1rem;">${U.fmt(quote.price)}</div>
-          <div class="${U.chgCls(quote.changePct)}" style="font-size:0.78rem;">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
+        <div class="rt-wl-price" data-action="Research.open" data-symbol="${w.symbol}">
+          <div class="rt-wl-price-val">${U.fmt(quote.price)}</div>
+          <div class="${U.chgCls(quote.changePct)} rt-wl-price-chg">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
           <div class="lc-card-sub">${Prices.sourceLabel?.(quote.source) || quote.source || ''}</div>
         </div>
-      </div>
-      <div style="padding:0 20px 8px;display:flex;gap:8px;">
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.openEdit" data-tab="${w.id}" data-stop="1">Edit</button>
-        <button type="button" class="os-btn os-btn-ghost" style="font-size:0.72rem;padding:6px 10px;" data-action="Watchlist.remove" data-tab="${w.id}" data-stop="1">Remove</button>
+        <div class="rt-wl-foot">
+          <button type="button" class="os-btn os-btn-ghost rt-wl-foot-btn" data-action="Watchlist.openEdit" data-tab="${w.id}" data-stop="1">Edit</button>
+          <button type="button" class="os-btn os-btn-ghost rt-wl-foot-btn" data-action="Watchlist.remove" data-tab="${w.id}" data-stop="1">Remove</button>
+        </div>
       </div>`;
     }).join('') : `<div class="lc-empty-note">Empty watchlist. Track symbols before you buy.</div>`}
     </div>`;

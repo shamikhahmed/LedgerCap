@@ -150,7 +150,7 @@ const Hub = (() => {
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = PsxUI.emptyState('No headlines yet', 'Headlines appear once a news source is reachable. Check your connection, or open Settings → Live prices to configure sources.', '');
+        _newsHtml = PsxUI.emptyState('Thin free feeds', 'No Bloomberg desk here — Yahoo + BBC via worker when reachable. Google RSS often blocks worker IP. Headlines are rule-tagged, not advice.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
@@ -166,7 +166,7 @@ const Hub = (() => {
 
   function _newsSection() {
     return `<div class="lc-dash-section" id="hub-news-section">
-      <div class="lc-dash-section-head"><h3>Market news</h3><span>Impact on your holdings</span></div>
+      <div class="lc-dash-section-head"><h3>Market news</h3><span>Free feeds · not Bloomberg</span></div>
       <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
       <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Hub.refreshNews">Refresh news</button></div>
     </div>`;

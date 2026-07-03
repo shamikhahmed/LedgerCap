@@ -166,7 +166,14 @@ body.psx-app {
   text-transform: uppercase; letter-spacing: 0.04em;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   min-height: 48px; min-width: 0; overflow: hidden;
-  white-space: nowrap; text-overflow: ellipsis;
+}
+.psx-nav-btn span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  line-height: 1.2;
 }
 .psx-nav-btn svg { width: 22px; height: 22px; }
 .psx-nav-btn.active { color: var(--psx-accent); }
@@ -437,6 +444,7 @@ body.psx-app {
   --bg2: var(--psx-bg-card);
   --bg3: var(--psx-bg-muted);
   --bg4: var(--psx-border);
+  --r-sm: var(--psx-radius-sm);
   --text3: var(--psx-text-3);
   --lc-bg-card: var(--psx-bg-card);
   --lc-border: var(--psx-border);
@@ -724,9 +732,34 @@ body.psx-app {
 .badge.trim, .badge.TRIM { background: #fef3c7; color: #92400e; }
 
 /* ── Watchlist screen ── */
-.rt-wl-card { background: var(--psx-bg-card); border: 1px solid var(--psx-border); border-radius: var(--psx-radius); padding: 14px 16px; margin: 0 20px 10px; }
+.rt-wl-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 12px;
+  background: var(--psx-bg-card);
+  border: 1px solid var(--psx-border);
+  border-radius: var(--psx-radius);
+  padding: 14px 16px;
+  margin: 0 20px 10px;
+}
+.rt-wl-card-main { min-width: 0; flex: 1 1 180px; cursor: pointer; }
+.rt-wl-price { text-align: end; flex-shrink: 0; cursor: pointer; }
+.rt-wl-price-val { font-weight: 700; font-size: 1.1rem; }
+.rt-wl-price-chg { font-size: 0.78rem; }
+.rt-wl-head { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.rt-wl-foot {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--psx-border);
+  margin-top: 2px;
+}
+.rt-wl-foot-btn { font-size: 0.72rem; padding: 6px 10px; }
 .rt-wl-card:hover { border-color: var(--psx-accent); }
-.rt-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-left: 6px; }
+.rt-price-col, .rt-wl-price-col { text-align: end; min-width: 88px; }
+.rt-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-inline-start: 6px; }
 .rt-buy { background: var(--psx-up-bg); color: var(--psx-up); }
 .rt-sell { background: var(--psx-down-bg); color: var(--psx-down); }
 

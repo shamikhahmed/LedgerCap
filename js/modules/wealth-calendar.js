@@ -95,7 +95,7 @@ const WealthCalendar = (() => {
               <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
               <div class="lc-market-name">${e.kind} · ${e.detail}</div>
             </div>
-            <div class="lc-market-chg">${e.symbol}</div>
+            <div class="lc-market-meta">${e.symbol}</div>
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">

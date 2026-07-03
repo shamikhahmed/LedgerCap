@@ -1,9 +1,9 @@
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.53.0',
-  sw: 126,
-  cache: 'ledgercap-v126',
+  app: '3.55.0',
+  sw: 128,
+  cache: 'ledgercap-v128',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -12,6 +12,8 @@ window.LEDGERCAP_CONFIG = {
   psxProxyUrl: 'https://ledgercap-psx-proxy.shamikhahmed.workers.dev',
   /** Legacy worker hostname — kept as silent fallback until all users migrate */
   legacyPsxProxyUrl: 'https://stunds-psx-proxy.shamikhahmed.workers.dev',
+  /** Worker KV market snapshot (v3.55+) */
+  snapshotEnabled: true,
 };
 
 /** Normalize saved proxy URLs and prefer the LedgerCap worker hostname. */

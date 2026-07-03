@@ -40,12 +40,21 @@ const PriceHealth = (() => {
   }
 
   function bannerHtml(rep) {
+    const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
+    const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
+    if (snap && snapStale) {
+      return `<div class="lc-price-health" role="status">
+        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap refresh.</span>
+        <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh snapshot</button>
+        <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
+      </div>`;
+    }
     if (!rep?.showBanner) return '';
     const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
-      ? `Prices as of ${updated} snapshot (${pct}% not live)`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h`;
+      ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — refresh or accept EOD`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>

@@ -1,7 +1,21 @@
 'use strict';
 const CommoditiesService = (() => {
   const CACHE_MS = 300000;
+  const TROY_OZ_GRAMS = 31.1034768;
   let _cache = { ts: 0, rows: [] };
+
+  function _fromSnapshot(snapId) {
+    const snap = window._LC_CMD_SNAPSHOT || {};
+    const q = snap[snapId];
+    if (!q?.price) return null;
+    return {
+      price: q.price,
+      changePct: q.changePct || 0,
+      label: q.source === 'OGRA-fallback' ? `OGRA fallback · ${q.asOf || ''}` : (q.quoteKind === 'derived' ? 'Spot-derived' : 'Worker snapshot'),
+      asOf: q.asOf,
+      manual: q.quoteKind === 'ogra' && q.source === 'OGRA-fallback',
+    };
+  }
 
   async function _yahooQuote(yahoo) {
     let data = null;
@@ -30,24 +44,61 @@ const CommoditiesService = (() => {
       changePct: chgPct,
       currency: meta.currency || 'USD',
       ts: Date.now(),
+      label: 'Yahoo spot',
     };
+  }
+
+  async function _pkrGoldFromSpot() {
+    const snap = _fromSnapshot('GOLD_24K_PKR');
+    if (snap) return { ...snap, pkr: snap.price, label: snap.label || 'Snapshot 24k' };
+    const q = await _yahooQuote('GC=F');
+    if (!q?.price) return null;
+    const usd = typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280;
+    const pkrPerGram = Math.round((q.price * usd) / TROY_OZ_GRAMS);
+    if (pkrPerGram > 0 && typeof State !== 'undefined') {
+      State.update((s) => {
+        s.settings.goldPricePerGram = pkrPerGram;
+        s.settings.goldPriceSource = 'Yahoo GC=F';
+        s.settings.goldPriceUpdatedAt = new Date().toISOString();
+      });
+    }
+    return { price: pkrPerGram, changePct: q.changePct || 0, pkr: pkrPerGram, label: 'Yahoo GC=F · auto' };
   }
 
   async function fetchAll() {
     if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS) return _cache.rows;
+    if (typeof PriceSnapshotService !== 'undefined' && PriceSnapshotService.enabled()) {
+      await PriceSnapshotService.refresh('commodities').catch(() => {});
+    }
+    if (typeof FxService !== 'undefined') await FxService.refreshUsdPkr().catch(() => {});
     const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
-    const goldPkr = settings.goldPricePerGram || 18000;
+    const goldAuto = await _pkrGoldFromSpot();
     const usd = typeof FxService !== 'undefined' ? FxService.getUsdRate() : 280;
     const rows = [];
 
     for (const c of window.COMMODITY_ASSETS || []) {
-      if (c.manual && c.id === 'pkr_gold') {
+      if (c.id === 'pkr_gold') {
+        const g = goldAuto || { price: settings.goldPricePerGram || 18000, changePct: 0 };
         rows.push({
           ...c,
-          price: goldPkr,
-          changePct: 0,
-          pkr: goldPkr,
-          label: 'Settings · manual',
+          price: g.price,
+          changePct: g.changePct || 0,
+          pkr: g.price,
+          label: g.label || 'Settings · manual fallback',
+          manual: !goldAuto,
+        });
+        continue;
+      }
+      const snap = c.snapId ? _fromSnapshot(c.snapId) : null;
+      if (snap) {
+        rows.push({
+          ...c,
+          price: snap.price,
+          changePct: snap.changePct || 0,
+          pkr: c.unit === 'PKR/g' || c.unit === 'PKR/L' ? snap.price : snap.price * usd,
+          label: snap.label,
+          asOf: snap.asOf,
+          manual: !!snap.manual,
         });
         continue;
       }

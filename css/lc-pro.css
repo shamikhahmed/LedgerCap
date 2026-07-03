@@ -1012,7 +1012,7 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: min(48vw, 200px);
 }
 
 .lc-market-price {
@@ -1037,6 +1037,56 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
 }
 .lc-market-chg.psx-up, .lc-market-chg.t-gain { background: var(--psx-up-bg); color: var(--psx-up) !important; }
 .lc-market-chg.psx-down, .lc-market-chg.t-loss { background: var(--psx-down-bg); color: var(--psx-down) !important; }
+
+.lc-market-meta {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--psx-text-2);
+  white-space: nowrap;
+  max-width: min(42vw, 128px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lc-market-meta.psx-up, .lc-market-meta.t-gain { color: var(--psx-up); }
+.lc-market-meta.psx-down, .lc-market-meta.t-loss { color: var(--psx-down); }
+
+@media (max-width: 420px) {
+  .lc-market-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 6px 10px;
+    align-items: center;
+  }
+  .lc-market-row > :first-child { grid-column: 1 / -1; }
+  .lc-market-price { grid-column: 1; justify-self: start; text-align: start; }
+  .lc-market-chg, .lc-market-meta { grid-column: 2; justify-self: end; }
+}
+
+.lc-segment--scroll {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.lc-segment--scroll::-webkit-scrollbar { display: none; }
+.lc-segment--scroll .lc-segment-btn {
+  flex: 0 0 auto;
+  min-width: max-content;
+  font-size: 11px;
+  padding-inline: 12px;
+}
+
+.lc-filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px var(--lc-space-4);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
 
 .lc-badge {
   display: inline-block;
@@ -1341,7 +1391,7 @@ body.lc-pro[data-theme="dark"] .lc-segment-btn.on {
   font-size: 17px;
   font-weight: 700;
   color: var(--psx-accent, #3b82f6);
-  text-align: right;
+  text-align: end;
   flex-shrink: 0;
 }
 

@@ -1,5 +1,22 @@
 # Changelog — LedgerCap
 
+## 3.55.0 (2026-07-03) — Full market snapshot + worker cron
+
+- **Worker** — `PRICE_CACHE` KV; `GET /prices/snapshot`; cron piggybacks existing Telegram schedules (catalog 09:00 PKT, PSX batch tick, US 511 Yahoo, commodities)
+- **PSX** — full equity catalog (~754) from `dps.psx.com.pk/symbols`; market screener uses catalog + paginated 80 rows; KMI Islamic tags from index scrape
+- **US** — 511 curated symbols snapshot during NY session
+- **Commodities** — platinum, Brent, nat gas, PKR gold 24k/22k/21k/18k/12k derived, OGRA MS/HSD with fallback
+- **Client** — `PriceSnapshotService` merges KV into State; settings toggle; snapshot freshness in price-health
+- **Tests** — worker karat/universe/snapshot-shape + existing regression suite
+
+## 3.54.0 (2026-07-03) — Layout polish + auto gold/FX
+
+- **Layout** — watchlist flex cards; market rows mobile stack; screener segment scroll; RTL nav ellipsis; paper-trade lc-dash wrap; calendar/global meta columns
+- **Commodities** — PKR gold/gram auto from Yahoo GC=F × USD/PKR (writes Settings for Zakat)
+- **FX** — Frankfurter.app fallback when ExchangeRate-API fails
+- **Honesty** — price-health banner names PSX dps.psx.com.pk flakiness; hub news labels free-feed limits
+- **Motion** — spring tap on market rows, segments, watchlist cards
+
 ## 3.53.0 (2026-07-03) — Live prices unblocked + commodities
 
 - **Yahoo live** — worker sent no User-Agent so Yahoo 429'd every US-stock and commodity quote; added browser `YAHOO_HEADERS`. US stocks (TTWO) + commodities (gold/silver/crude/copper) now live; FX already live
