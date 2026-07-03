@@ -1,0 +1,47 @@
+/* LedgerCap identity — calm premium overrides (loads last) */
+
+body {
+  font-family: var(--os-font, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif) !important;
+  background: var(--os-bg) !important;
+  letter-spacing: -0.01em;
+}
+
+body.light {
+  background: var(--os-bg) !important;
+}
+
+#nav {
+  border-top: 1px solid var(--os-border) !important;
+  background: var(--os-bg-elevated) !important;
+  border-radius: 0 !important;
+}
+
+.nav-tab.active,
+.nav-side-btn.active {
+  color: var(--os-accent) !important;
+}
+
+.hero-value,
+.metric-value,
+.os-hero-value,
+.os-metric-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-primary {
+  background: var(--os-accent) !important;
+  color: #fff !important;
+  border-radius: var(--os-radius-sm, 10px) !important;
+  font-weight: 600 !important;
+}
+
+.fab {
+  background: var(--os-accent) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.filter-tab.active {
+  background: var(--os-accent-soft) !important;
+  border-color: var(--os-accent) !important;
+  color: var(--os-accent) !important;
+}

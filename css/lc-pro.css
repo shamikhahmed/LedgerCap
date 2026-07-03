@@ -317,7 +317,9 @@ body.lc-pro .toast {
 
 /* ── Dashboard (lc-dash) ── */
 .lc-dash {
-  padding: 0 var(--lc-space-4) var(--lc-space-8);
+  /* Bottom clearance: nav height + safe area + breathing room, so the
+     last card is never clipped behind the fixed bottom nav. */
+  padding: 0 var(--lc-space-4) calc(84px + var(--psx-safe-b, 0px));
   animation: lc-fade-in 0.35s var(--lc-ease);
 }
 
