@@ -913,9 +913,14 @@ body.lc-rtl .bs-panel, body.lc-rtl .lc-sector-card {
 }
 .lc-news-row:last-child { border-bottom: none; }
 .lc-news-row:hover { background: rgba(255,255,255,0.03); }
-.lc-news-title { font-size: 13px; font-weight: 600; line-height: 1.35; margin-bottom: 4px; }
-.lc-news-meta { font-size: 11px; color: var(--psx-text-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.lc-news-hint { font-size: 11px; color: var(--psx-text-2); margin: 6px 0 0; line-height: 1.4; }
+.lc-news-title {
+  font-size: 14px; font-weight: 600; line-height: 1.35; margin-bottom: 5px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lc-news-meta { font-size: 11px; color: var(--psx-text-3); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lc-news-hint { font-size: 12px; color: var(--psx-text-2); margin: 5px 0 0; line-height: 1.4; }
+.lc-news-hint:empty { display: none; }
 .tx-type-dot.tax { background: rgba(239, 68, 68, 0.15); }
 .tx-type-dot.fee { background: rgba(251, 146, 60, 0.15); }
 .tx-tag { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle; }

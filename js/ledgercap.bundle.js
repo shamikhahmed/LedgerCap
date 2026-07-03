@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.51.1',
-  sw: 123,
-  cache: 'ledgercap-v123',
+  app: '3.52.0',
+  sw: 124,
+  cache: 'ledgercap-v124',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -8905,7 +8905,7 @@ const NewsService = (() => {
   function _tagImpact(title, summary) {
     const text = `${title || ''} ${summary || ''}`;
     const hits = IMPACT_RULES.filter(r => r.re.test(text));
-    if (!hits.length) return { tags: ['General'], severity: 'low', bias: 'neutral', hint: 'Monitor — no strong signal in headline.' };
+    if (!hits.length) return { tags: ['General'], severity: 'low', bias: 'neutral', hint: '' };
     const top = hits.sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.severity] - { high: 0, medium: 1, low: 2 }[b.severity]))[0];
     const bias = hits.some(h => h.bias === 'negative') ? 'negative' : hits.some(h => h.bias === 'positive') ? 'positive' : 'neutral';
     const hint = bias === 'positive'
@@ -9031,8 +9031,9 @@ const NewsService = (() => {
     state = state || (typeof State !== 'undefined' ? State.get() : {});
     const txs = state.transactions || [];
     const syms = [];
+    // Funds (Meezan NAVs) have no per-security news — querying their ticker
+    // returns unrelated global headlines. They are covered by macro PSX news.
     Ledger.calcHoldings(txs).forEach(h => syms.push({ symbol: h.symbol, kind: 'stock', weight: h.shares * (State.getPrice(h.symbol) || h.avgCost) }));
-    Ledger.calcFundHoldings(txs).forEach(f => syms.push({ symbol: f.symbol, kind: 'fund', weight: f.units * (State.getPrice(f.symbol) || f.avgNav) }));
     (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).forEach(h => syms.push({ symbol: h.symbol, kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', weight: h.qty }));
     return syms.sort((a, b) => (b.weight || 0) - (a.weight || 0)).slice(0, 8);
   }
@@ -9041,12 +9042,14 @@ const NewsService = (() => {
     const key = '__macro__';
     const hit = _cache.get(key);
     if (hit && Date.now() - hit.ts < CACHE_MS) return hit.items;
+    // Pakistan-specific only — generic BBC business was drowning out
+    // relevant PSX/economy headlines.
     const batches = await Promise.all([
-      _fetchBbcBusiness(),
       _fetchGoogleNewsRss('KSE-100 Pakistan stock market PSX', 'PSX'),
-      _fetchGoogleNewsRss('Pakistan rupee economy SBP', 'Macro'),
+      _fetchGoogleNewsRss('Pakistan rupee economy SBP inflation', 'Macro'),
+      _fetchGoogleNewsRss('Pakistan Stock Exchange listed companies', 'PSX'),
     ]);
-    const items = _dedupe(batches.flat()).map(it => _normalizeItem(it, it.symbol || 'Macro'));
+    const items = _dedupe(batches.flat()).map(it => _normalizeItem(it, it.symbol || 'PSX'));
     _cache.set(key, { ts: Date.now(), items });
     return items;
   }
@@ -9056,36 +9059,39 @@ const NewsService = (() => {
     const picks = portfolioSymbols(state);
     const base = _proxyBase();
 
-    if (base) {
-      const syms = picks.slice(0, 6).map(p => p.symbol).join(',');
-      const viaAgg = await _fetchWorkerNews(`news/aggregate?symbols=${encodeURIComponent(syms)}&limit=14`);
-      if (viaAgg.length) {
-        const gKey = State.get('settings')?.gnewsApiKey;
-        let extra = [];
-        if (gKey) {
-          try {
-            extra = await _fetchGNews('Pakistan PSX stock market', gKey);
-          } catch (_) {}
-        }
-        return _dedupe(viaAgg.concat(extra))
-          .map(it => _normalizeItem(it, it.portfolioSymbol || it.symbol))
-          .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))
-          .slice(0, 14);
-      }
-    }
+    // PSX macro news (KSE-100, rupee, SBP) is always relevant — it leads.
+    const macro = (await fetchMacroNews().catch(() => [])) || [];
 
-    const all = [];
-    const macro = await fetchMacroNews();
-    all.push(...macro.slice(0, 3));
-    for (const p of picks.slice(0, 5)) {
-      try {
-        const rows = await fetchForSymbol(p.symbol, { kind: p.kind });
-        rows.forEach(r => all.push({ ...r, portfolioSymbol: p.symbol }));
-      } catch (_) {}
+    // Per-symbol items are only kept when the headline actually names the
+    // company/ticker — PSX tickers aren't in global news indexes, so raw
+    // per-ticker feeds return unrelated noise otherwise.
+    const kindOf = {};
+    picks.forEach(p => { kindOf[p.symbol] = p.kind; });
+
+    let perSymbol = [];
+    if (picks.length && base) {
+      const syms = picks.slice(0, 6).map(p => p.symbol).join(',');
+      const viaAgg = await _fetchWorkerNews(`news/aggregate?symbols=${encodeURIComponent(syms)}&limit=14`).catch(() => []);
+      perSymbol = viaAgg.map(it => _normalizeItem(it, it.portfolioSymbol || it.symbol));
     }
-    return _dedupe(all)
+    const nameFor = (sym) => {
+      const s = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === sym);
+      return (s?.name || '').split(/\s+/).filter(w => w.length > 3).slice(0, 2);
+    };
+    const relevant = perSymbol.filter(n => {
+      const sym = n.portfolioSymbol || n.symbol || '';
+      // Yahoo indexes US/crypto tickers — their per-symbol news is genuine.
+      if (kindOf[sym] === 'intl' || kindOf[sym] === 'crypto') return true;
+      // PSX tickers aren't indexed — require the headline to name the company.
+      const title = (n.title || '').toUpperCase();
+      if (sym && title.includes(sym.toUpperCase())) return true;
+      return nameFor(sym).some(w => title.includes(w.toUpperCase()));
+    });
+
+    const merged = _dedupe(macro.concat(relevant))
       .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))
-      .slice(0, 14);
+      .slice(0, 12);
+    return merged;
   }
 
   function newsFingerprint(items) {
