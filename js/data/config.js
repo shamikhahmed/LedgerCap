@@ -1,7 +1,7 @@
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.55.0',
+  app: '3.55.1',
   sw: 128,
   cache: 'ledgercap-v128',
 };

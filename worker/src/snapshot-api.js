@@ -1,6 +1,7 @@
 import { pktSessionOpen, usSessionOpen, sessionLabels } from './us-session.js';
 import { fetchPsxCatalog } from './psx-universe.js';
 import { fetchCommoditySnapshot } from './commodity-catalog.js';
+import { runPriceCron } from './price-cron.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -121,6 +122,33 @@ export async function handleSnapshot(request, env, url) {
   }
 
   return json(body, 200, 60);
+}
+
+/** External cron hook — cron-job.org etc. Header X-LedgerCap-Cron-Key or ?key= matches CRON_SECRET / TELEGRAM_SYNC_KEY. */
+export async function handlePriceRun(request, env, url) {
+  const path = url.pathname.replace(/^\//, '');
+  if (path !== 'prices/run') return null;
+
+  const runCors = {
+    ...CORS,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Accept, X-LedgerCap-Cron-Key',
+  };
+
+  if (request.method === 'OPTIONS') return new Response(null, { headers: runCors });
+  if (request.method !== 'GET' && request.method !== 'POST') {
+    return new Response('GET/POST only', { status: 405, headers: runCors });
+  }
+
+  const key = request.headers.get('X-LedgerCap-Cron-Key') || url.searchParams.get('key');
+  const secret = env.CRON_SECRET || env.TELEGRAM_SYNC_KEY;
+  if (!secret || key !== secret) return json({ ok: false, error: 'unauthorized' }, 401);
+
+  const modeParam = url.searchParams.get('mode') || 'tick';
+  const forceMode = ['catalog', 'tick', 'psx_eod'].includes(modeParam) ? modeParam : 'tick';
+  const batchSize = url.searchParams.get('full') === '1' ? 800 : 240;
+  const result = await runPriceCron(env, {}, { forceMode, batchSize });
+  return json(result, result.ok ? 200 : 500);
 }
 
 function json(data, status = 200, maxAge = 0) {

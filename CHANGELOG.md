@@ -1,5 +1,13 @@
 # Changelog — LedgerCap
 
+## 3.55.1 (2026-07-03) — Audit sprint (screener, pulse, NAV, cron hook)
+
+- **Screener** — full PSX catalog + pagination; value/dividend filters require fundamentals seed
+- **Market** — pulse movers count priced symbols only; `Priced X/Y` badge on pulse + listed card
+- **Funds** — manual Meezan NAV overrides in Settings; `FundNavService` applies on load
+- **Worker** — `GET|POST /prices/run` for external cron (`X-LedgerCap-Cron-Key`); batch 240 (800 with `?full=1`)
+- **Docs** — `changelog.html`, presentation, CAPRICORN_HANDOFF synced to 3.55.x
+
 ## 3.55.0 (2026-07-03) — Full market snapshot + worker cron
 
 - **Worker** — `PRICE_CACHE` KV; `GET /prices/snapshot`; cron piggybacks existing Telegram schedules (catalog 09:00 PKT, PSX batch tick, US 511 Yahoo, commodities)

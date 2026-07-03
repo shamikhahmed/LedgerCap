@@ -36,6 +36,7 @@ const files = [
   'js/services/fx-service.js',
   'js/services/psx-session.js',
   'js/services/price-snapshot.js',
+  'js/services/fund-nav-service.js',
   'js/services/news-service.js',
   'js/shared/telegram-brief-format.js',
   'js/services/secrets-vault.js',

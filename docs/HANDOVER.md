@@ -1,12 +1,19 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.55.0  
-**Service worker:** `ledgercap-v128`  
+**Version:** 3.55.1  
+**Service worker:** `ledgercap-v129`  
 **Last updated:** 3 Jul 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
-**Latest `main`:** `main` — feat: v3.55.0 — full market KV snapshot, PSX catalog, commodities expand  
+**Latest `main`:** pending — v3.55.1 audit sprint  
+
+### v3.55.1 — Audit sprint
+
+- Screener → full PSX catalog + pagination (value/div filters need fundamentals seed)
+- Market pulse → priced symbols only; `Priced X/Y` badge
+- `FundNavService` + Settings manual Meezan NAV overrides
+- Worker `GET /prices/run` external cron hook (`X-LedgerCap-Cron-Key`)
 
 ### v3.55.0 — Market universe cron
 

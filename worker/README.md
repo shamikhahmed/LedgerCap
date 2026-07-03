@@ -103,6 +103,21 @@ curl "https://ledgercap-psx-proxy.<your-subdomain>.workers.dev/health"
 
 Legacy `/live` path redirects to KSE-100 EOD timeseries (PSX removed the bare `/live` endpoint).
 
+## Market snapshot KV (`PRICE_CACHE`)
+
+Cron piggybacks existing Telegram schedules (no extra CF cron triggers on free tier). Fetches PSX catalog/quotes, US 511, commodities/OGRA into KV.
+
+- `GET /prices/snapshot?bucket=all|psx|us|commodities|fx|meta`
+- External tick: `GET /prices/run?mode=tick` with header `X-LedgerCap-Cron-Key` (same as `CRON_SECRET` or `TELEGRAM_SYNC_KEY`)
+- Modes: `catalog`, `tick`, `psx_eod` · `?full=1` fetches up to 800 PSX symbols per run
+
+Example (cron-job.org every 15 min during PKT session):
+
+```bash
+curl -s -H "X-LedgerCap-Cron-Key: $YOUR_SYNC_KEY" \
+  "https://ledgercap-psx-proxy.<subdomain>.workers.dev/prices/run?mode=tick"
+```
+
 ## Telegram morning brief (background)
 
 Weekday **9:00 PKT** briefs while the PWA is closed:

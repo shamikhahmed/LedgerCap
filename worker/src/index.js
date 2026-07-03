@@ -5,14 +5,14 @@
 import { handleTelegramRequest, runTelegramCron } from './telegram.js';
 import { handleNewsRequest } from './news.js';
 import { handleSsePrices } from './sse-prices.js';
-import { handleSnapshot } from './snapshot-api.js';
+import { handleSnapshot, handlePriceRun } from './snapshot-api.js';
 import { runPriceCron } from './price-cron.js';
 
 const PSX_ORIGIN = 'https://dps.psx.com.pk';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Telegram-Bot-Token, X-LedgerCap-Sync-Key',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Telegram-Bot-Token, X-LedgerCap-Sync-Key, X-LedgerCap-Cron-Key',
 };
 
 const PSX_HEADERS = {
@@ -42,8 +42,11 @@ export default {
     const path = url.pathname.replace(/^\//, '');
 
     if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news', 'sse', 'prices/snapshot'] });
+      return json({ ok: true, service: 'ledgercap-market-proxy', routes: ['psx', 'yahoo', 'crypto', 'fx', 'telegram', 'news', 'sse', 'prices/snapshot', 'prices/run'] });
     }
+
+    const priceRun = await handlePriceRun(request, env, url);
+    if (priceRun) return priceRun;
 
     const snap = await handleSnapshot(request, env, url);
     if (snap) return snap;

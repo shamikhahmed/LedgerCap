@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 93 modules — run: npm run bundle */
+/* LedgerCap bundle — 94 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4952,7 +4952,7 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.55.0',
+  app: '3.55.1',
   sw: 128,
   cache: 'ledgercap-v128',
 };
@@ -9157,6 +9157,70 @@ const PriceSnapshotService = (() => {
   return { init, refresh, applyToState, meta, freshnessLabel, enabled };
 })();
 window.PriceSnapshotService = PriceSnapshotService;
+
+;/* === js/services/fund-nav-service.js === */
+'use strict';
+/** Meezan / AMC fund NAV — manual overrides in settings (no public API). */
+const FundNavService = (() => {
+  function overrides() {
+    const s = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    return s.fundNavOverrides || {};
+  }
+
+  function navFor(symbol) {
+    const sym = String(symbol || '').toUpperCase();
+    const o = overrides()[sym];
+    if (o?.nav > 0) return { nav: o.nav, source: 'manual_nav', asOf: o.asOf || null };
+    const seed = (window.MEEZAN_FUNDS || []).find((f) => f.symbol === sym);
+    const fromState = typeof State !== 'undefined' ? State.getPrice(sym) : 0;
+    if (fromState > 0) return { nav: fromState, source: State.getPriceSource?.(sym) || 'seed', asOf: null };
+    if (seed?.currentNav > 0) return { nav: seed.currentNav, source: 'meezan_seed', asOf: seed.navAsOf || null };
+    return { nav: 0, source: 'none', asOf: null };
+  }
+
+  function applyAll() {
+    if (typeof State === 'undefined') return 0;
+    let n = 0;
+    Object.entries(overrides()).forEach(([sym, row]) => {
+      if (!(row?.nav > 0)) return;
+      State.updatePrice(sym, {
+        price: row.nav,
+        prevClose: row.nav,
+        source: 'manual_nav',
+        ts: row.updatedAt ? Date.parse(row.updatedAt) || Date.now() : Date.now(),
+      });
+      n++;
+    });
+    return n;
+  }
+
+  function saveNav(symbol, nav, asOf) {
+    const sym = String(symbol || '').toUpperCase();
+    const val = parseFloat(nav);
+    if (!(val > 0)) return false;
+    State.update((s) => {
+      s.settings = s.settings || {};
+      s.settings.fundNavOverrides = s.settings.fundNavOverrides || {};
+      s.settings.fundNavOverrides[sym] = {
+        nav: val,
+        asOf: asOf || new Date().toISOString().slice(0, 10),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    State.updatePrice(sym, { price: val, prevClose: val, source: 'manual_nav', ts: Date.now() });
+    return true;
+  }
+
+  function label(symbol) {
+    const { source, asOf } = navFor(symbol);
+    if (source === 'manual_nav') return asOf ? `Manual NAV · ${asOf}` : 'Manual NAV';
+    if (source === 'meezan_seed') return 'Statement seed';
+    return '';
+  }
+
+  return { overrides, navFor, applyAll, saveNav, label };
+})();
+window.FundNavService = FundNavService;
 
 ;/* === js/services/news-service.js === */
 'use strict';
@@ -14397,8 +14461,12 @@ const Market = (() => {
       const price = State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0;
       const prev = State.getPrevClose(s.symbol) || price;
       const chg = prev ? ((price - prev) / prev) * 100 : 0;
-      return { ...s, price, chg };
+      return { ...s, price, chg, priced: price > 0 };
     });
+  }
+
+  function _pricedRows(rows) {
+    return rows.filter((r) => r.priced && r.price > 0);
   }
 
   const PAGE = 80;
@@ -14431,13 +14499,15 @@ const Market = (() => {
   }
 
   function _pulseRow(baseRows) {
+    const priced = _pricedRows(baseRows);
     let adv = 0, dec = 0, unch = 0;
-    baseRows.forEach(r => {
+    priced.forEach(r => {
       if (r.chg > 0.05) adv++;
       else if (r.chg < -0.05) dec++;
       else unch++;
     });
     const listed = baseRows.length;
+    const pricedN = priced.length;
     return `<div class="lc-pulse-row" role="group" aria-label="Market movers">
       <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'advancing' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="advancing" aria-pressed="${_moveFilter === 'advancing'}">
         <label>${I18n.t('market.advancing')}</label><b class="psx-up">${adv}</b>
@@ -14451,6 +14521,7 @@ const Market = (() => {
       <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'all' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="all" aria-pressed="${_moveFilter === 'all'}">
         <label>Listed</label><b>${listed}</b>
       </button>
+      <div class="lc-pulse-pill" title="Symbols with a snapshot or live price"><label>Priced</label><b>${pricedN}/${listed}</b></div>
     </div>`;
   }
 
@@ -14532,7 +14603,7 @@ const Market = (() => {
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
-            <em>${_filter === 'islamic' ? I18n.t('market.shariah') : I18n.t('screener.all')}</em>
+            <em>${_pricedRows(baseRows).length} priced</em>
           </button>
         </div>
         ${_segment()}
@@ -14940,7 +15011,9 @@ const Funds = (() => {
       : [];
     return funds.map(f => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
-      const nav = State.getPrice(f.symbol) || f.currentNav || 0;
+      const navRow = typeof FundNavService !== 'undefined' ? FundNavService.navFor(f.symbol) : { nav: State.getPrice(f.symbol) || f.currentNav || 0 };
+      const nav = navRow.nav || 0;
+      const navHint = typeof FundNavService !== 'undefined' ? FundNavService.label(f.symbol) : '';
       const lf = ledgerFunds.find(x => x.symbol === f.symbol);
       const invested = lf?.totalInvested || 0;
       const value = lf ? lf.units * nav : 0;
@@ -14949,7 +15022,7 @@ const Funds = (() => {
         ? `<span class="${PsxUI.chgCls(pnl)}">${PsxUI.fmt(pnl, { signed: true })}</span> · Inv ${PsxUI.fmt(invested)}`
         : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—');
       return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${f.symbol}">
-        <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
+        <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}${navHint ? ` · <span style="opacity:0.7">${navHint}</span>` : ''}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
         <div class="lc-market-chg">${right}</div>
       </button>`;
@@ -14968,8 +15041,8 @@ const Funds = (() => {
     const funds = _filteredFunds();
     const meezanInvested = window.MEEZAN_TOTAL_PURCHASES_PKR || 0;
     const meezanValue = window.MEEZAN_PORTFOLIO_VALUE_PKR || funds.reduce((s, f) => {
-      const nav = State.getPrice(f.symbol) || f.currentNav || 0;
-      return s + (f.units || 0) * nav;
+      const navRow = typeof FundNavService !== 'undefined' ? FundNavService.navFor(f.symbol) : { nav: State.getPrice(f.symbol) || f.currentNav || 0 };
+      return s + (f.units || 0) * (navRow.nav || 0);
     }, 0);
 
     screen.innerHTML = PsxUI.lcDash(I18n.t('tools.fundNavs.t'), I18n.t('tools.fundNavs.d'), `
@@ -14989,7 +15062,10 @@ const Funds = (() => {
         <p class="lc-search-hint">Type to shortlist — list updates in place</p>
       </div>
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
-      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button></div>
+      <div class="lc-dash-actions">
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Navigation.go" data-screen="settings" data-hash="fund-nav-section">Update NAVs</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
+      </div>
     `);
 
     const inp = document.getElementById('funds-search');
@@ -15010,55 +15086,90 @@ window.Funds = Funds;
 const Screener = (() => {
   let _filter = 'all';
   let _query = '';
+  let _page = 0;
+  const PAGE = 80;
 
   function _rows() {
+    const catalog = typeof PsxStocksCatalog !== 'undefined' ? PsxStocksCatalog.rows() : [];
     const db = window.FUNDAMENTALS_DB || {};
-    const seen = new Set();
-    const rows = [];
-    [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].forEach(s => {
-      if (seen.has(s.symbol)) return;
-      seen.add(s.symbol);
+    return catalog.map((s) => {
       const f = db[s.symbol] || {};
-      rows.push({ ...s, pe: f.pe, divYield: f.divYield, profitGrowth: f.profitGrowth, roe: f.roe, price: State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0 });
+      const price = State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0;
+      return {
+        ...s,
+        pe: f.pe,
+        divYield: f.divYield,
+        profitGrowth: f.profitGrowth,
+        roe: f.roe,
+        price,
+        hasFundamentals: !!(f.pe || f.divYield),
+      };
     });
-    return rows;
   }
 
   function _match(r) {
     if (_filter === 'islamic' && !r.isShariah) return false;
-    if (_filter === 'highDiv' && (!r.divYield || r.divYield < 6)) return false;
-    if (_filter === 'value' && (!r.pe || r.pe > 12)) return false;
+    if (_filter === 'highDiv') {
+      if (!r.hasFundamentals) return false;
+      if (!r.divYield || r.divYield < 6) return false;
+    }
+    if (_filter === 'value') {
+      if (!r.hasFundamentals) return false;
+      if (!r.pe || r.pe > 12) return false;
+    }
     return true;
   }
 
   function _filteredRows() {
     const q = _query.trim().toLowerCase();
-    let rows = _rows().filter(_match).sort((a, b) => (b.divYield || 0) - (a.divYield || 0));
-    if (q) rows = rows.filter(r => r.symbol.toLowerCase().includes(q) || (r.name || '').toLowerCase().includes(q));
+    let rows = _rows().filter(_match);
+    if (q) rows = rows.filter((r) => r.symbol.toLowerCase().includes(q) || (r.name || '').toLowerCase().includes(q));
+    rows.sort((a, b) => {
+      const da = a.divYield || 0;
+      const db = b.divYield || 0;
+      if (db !== da) return db - da;
+      return a.symbol.localeCompare(b.symbol);
+    });
     return rows;
   }
 
   function _listHtml(rows) {
-    return rows.map(r => `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
-      <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">P/E ${r.pe ?? '—'} · Yld ${r.divYield ? r.divYield + '%' : '—'}</div></div>
-      <div class="lc-market-price">${PsxUI.fmt(r.price)}</div>
-      <div class="lc-market-chg ${PsxUI.chgCls(r.profitGrowth)}">${r.profitGrowth != null ? r.profitGrowth + '% gr' : '—'}</div>
-    </button>`).join('');
+    return rows.map((r) => {
+      const pe = r.pe != null ? r.pe : '—';
+      const yld = r.divYield != null ? r.divYield + '%' : '—';
+      const gr = r.profitGrowth != null ? r.profitGrowth + '% gr' : '—';
+      return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${r.symbol}">
+      <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">P/E ${pe} · Yld ${yld}</div></div>
+      <div class="lc-market-price">${r.price > 0 ? PsxUI.fmt(r.price) : '—'}</div>
+      <div class="lc-market-chg ${PsxUI.chgCls(r.profitGrowth)}">${gr}</div>
+    </button>`;
+    }).join('');
   }
 
   function _paintList() {
     const listEl = document.getElementById('screener-list');
     const countEl = document.getElementById('screener-count');
+    const fundEl = document.getElementById('screener-fund-count');
     if (!listEl) { render(); return; }
-    const rows = _filteredRows();
-    listEl.innerHTML = _listHtml(rows);
-    if (countEl) countEl.textContent = String(rows.length);
+    const all = _filteredRows();
+    const withFund = all.filter((r) => r.hasFundamentals).length;
+    const start = _page * PAGE;
+    const pageRows = all.slice(start, start + PAGE);
+    const pages = Math.max(1, Math.ceil(all.length / PAGE));
+    listEl.innerHTML = (pageRows.length ? _listHtml(pageRows) : '<p class="lc-empty-hint">No matches — try another filter.</p>')
+      + (pages > 1 ? `<div class="lc-pager"><button type="button" class="psx-btn psx-btn-ghost" data-action="Screener.prevPage" ${_page <= 0 ? 'disabled' : ''}>Prev</button><span>${_page + 1} / ${pages}</span><button type="button" class="psx-btn psx-btn-ghost" data-action="Screener.nextPage" ${_page >= pages - 1 ? 'disabled' : ''}>Next</button></div>` : '');
+    if (countEl) countEl.textContent = String(all.length);
+    if (fundEl) fundEl.textContent = String(withFund);
   }
 
   function render() {
     const screen = document.getElementById('screen-screener');
     if (!screen) return;
-    const rows = _filteredRows();
+    const all = _filteredRows();
+    const withFund = all.filter((r) => r.hasFundamentals).length;
+    const start = _page * PAGE;
+    const pageRows = all.slice(start, start + PAGE);
+    const pages = Math.max(1, Math.ceil(all.length / PAGE));
 
     screen.innerHTML = PsxUI.lcDash(I18n.t('screener.title'), I18n.t('screener.sub'), `
       ${PsxUI.segment([
@@ -15069,22 +15180,27 @@ const Screener = (() => {
       ], _filter, 'Screener')}
       <div class="lc-search-wrap">
         <input type="search" id="screener-search" placeholder="Filter results…" value="${_query.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Filter screener">
-        <p class="lc-search-hint">Type to shortlist — list updates in place</p>
+        <p class="lc-search-hint">Full PSX catalog · dividend/value filters need fundamentals seed</p>
       </div>
-      <div class="lc-pulse-row"><div class="lc-pulse-pill"><label>Matches</label><b id="screener-count">${rows.length}</b></div></div>
-      <div class="lc-sector-card" id="screener-list">${_listHtml(rows)}</div>
+      <div class="lc-pulse-row">
+        <div class="lc-pulse-pill"><label>Matches</label><b id="screener-count">${all.length}</b></div>
+        <div class="lc-pulse-pill" title="Symbols with P/E or yield in seed DB"><label>With fundamentals</label><b id="screener-fund-count">${withFund}</b></div>
+      </div>
+      <div class="lc-sector-card" id="screener-list">${pageRows.length ? _listHtml(pageRows) : '<p class="lc-empty-hint">No matches.</p>'}${pages > 1 ? `<div class="lc-pager"><button type="button" class="psx-btn psx-btn-ghost" data-action="Screener.prevPage" ${_page <= 0 ? 'disabled' : ''}>Prev</button><span>${_page + 1} / ${pages}</span><button type="button" class="psx-btn psx-btn-ghost" data-action="Screener.nextPage" ${_page >= pages - 1 ? 'disabled' : ''}>Next</button></div>` : ''}</div>
     `);
 
     const inp = document.getElementById('screener-search');
     if (inp && !inp.dataset.bound) {
       inp.dataset.bound = '1';
-      inp.addEventListener('input', e => { _query = e.target.value; _paintList(); });
+      inp.addEventListener('input', (e) => { _query = e.target.value; _page = 0; _paintList(); });
     }
   }
 
-  function setFilter(f) { _filter = f; render(); }
-  function _onSearch(q) { _query = q; _paintList(); }
-  return { render, setFilter, _onSearch };
+  function setFilter(f) { _filter = f; _page = 0; render(); }
+  function nextPage() { _page++; _paintList(); }
+  function prevPage() { _page = Math.max(0, _page - 1); _paintList(); }
+  function _onSearch(q) { _query = q; _page = 0; _paintList(); }
+  return { render, setFilter, nextPage, prevPage, _onSearch };
 })();
 window.Screener = Screener;
 
@@ -16541,6 +16657,23 @@ const Settings = (() => {
     const theme = settings.theme || 'dark';
     const pilot = state.pilotSettings || {};
     const ma = state.manualAssets || {};
+    const fundOverrides = settings.fundNavOverrides || {};
+    const fundNavFields = (window.MEEZAN_FUNDS || []).map((f) => {
+      const o = fundOverrides[f.symbol];
+      const nav = o?.nav ?? '';
+      const asOf = o?.asOf ?? '';
+      const symEsc = f.symbol.replace(/"/g, '&quot;');
+      return `<div class="field-row" style="margin-bottom:8px">
+        <div class="field" style="flex:1.4">
+          <label class="field-label">${f.symbol}</label>
+          <input class="field-input fn-nav" data-symbol="${symEsc}" type="number" step="0.0001" value="${nav}" placeholder="${f.currentNav || ''}">
+        </div>
+        <div class="field" style="flex:1">
+          <label class="field-label">Statement date</label>
+          <input class="field-input fn-asof" data-symbol="${symEsc}" type="date" value="${asOf}">
+        </div>
+      </div>`;
+    }).join('');
 
     screen.innerHTML = `
     <div class="lc-dash">
@@ -16673,6 +16806,13 @@ const Settings = (() => {
         <button type="button" class="btn-primary" style="flex:1;" data-action="Settings._saveAssumptions">Save Assumptions</button>
         <button type="button" class="btn-ghost" data-action="Settings._resetAssumptions">Reset Defaults</button>
       </div>
+    </div>
+
+    <div class="sec-head"><span class="sec-title" id="fund-nav-section">Meezan fund NAVs</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">No public AMC API — paste latest NAV from your Meezan statement. Overrides portfolio value &amp; zakat.</p>
+      ${fundNavFields || '<p class="field-hint">No fund seed loaded.</p>'}
+      <button type="button" class="btn-primary" style="margin-top:12px" data-action="Settings._saveFundNavs">Save fund NAVs</button>
     </div>
 
     <div class="sec-head"><span class="sec-title" id="zakat-section">Zakat Calculator</span></div>
@@ -16938,6 +17078,27 @@ const Settings = (() => {
     App.renderCurrent();
     render();
   }
+
+  function _saveFundNavs() {
+    if (typeof FundNavService === 'undefined') {
+      App.showToast('Fund NAV service not loaded', 'error');
+      return;
+    }
+    let n = 0;
+    document.querySelectorAll('.fn-nav').forEach((inp) => {
+      const sym = inp.dataset.symbol;
+      const nav = parseFloat(inp.value);
+      if (!(nav > 0)) return;
+      const asOf = document.querySelector(`.fn-asof[data-symbol="${sym}"]`)?.value;
+      FundNavService.saveNav(sym, nav, asOf);
+      n++;
+    });
+    App.showToast(n ? `Saved ${n} fund NAV${n > 1 ? 's' : ''}` : 'Enter at least one NAV', n ? 'success' : 'error');
+    App.renderCurrent();
+    render();
+  }
+
+  function _saveNav() { _saveFundNavs(); }
 
   function _saveAssumptions() {
     const ret = parseFloat(document.getElementById('s-return')?.value) / 100 || 0.18;
@@ -17477,7 +17638,7 @@ const Settings = (() => {
     }
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _saveFundNavs, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
 
@@ -20548,6 +20709,7 @@ const App = (() => {
     if (typeof LcPolish !== 'undefined') LcPolish.init();
     if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
     if (typeof PriceSnapshotService !== 'undefined') PriceSnapshotService.init();
+    if (typeof FundNavService !== 'undefined') FundNavService.applyAll();
     if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
     _updateCurrencyToggleBtn();
     _scheduleAutoRefresh();

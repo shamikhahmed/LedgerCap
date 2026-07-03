@@ -30,7 +30,22 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.0
 </nav>
 <article>
 <h1>Changelog — LedgerCap</h1>
-<p>Current release: <strong>v3.46.0</strong> · service worker <code>ledgercap-v115</code></p>
+<p>Current release: <strong>v3.55.1</strong> · service worker <code>ledgercap-v129</code></p>
+
+<h2>3.55.1 (2026-07-03) — Audit sprint</h2>
+<ul>
+  <li>Screener uses full PSX catalog (paginated) — not 30 seed stocks</li>
+  <li>Market pulse counts priced symbols only; <code>Priced X/Y</code> badge</li>
+  <li>Manual Meezan fund NAV overrides in Settings</li>
+  <li>Worker <code>GET /prices/run</code> for external cron (header <code>X-LedgerCap-Cron-Key</code>)</li>
+</ul>
+
+<h2>3.55.0 (2026-07-03) — Full market snapshot</h2>
+<ul>
+  <li>Worker KV <code>PRICE_CACHE</code> + <code>GET /prices/snapshot</code></li>
+  <li>~754 PSX equities, 511 US symbols, commodities + OGRA fuel</li>
+  <li>Client <code>PriceSnapshotService</code> merges snapshot into State</li>
+</ul>
 
 <h2>3.46.0 (2026-07-02) — Undo, cloud sync, rebalance hub</h2>
 <ul>

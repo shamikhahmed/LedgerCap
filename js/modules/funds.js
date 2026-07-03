@@ -22,7 +22,9 @@ const Funds = (() => {
       : [];
     return funds.map(f => {
       const a = (window.FUND_ANALYTICS_DB || {})[f.symbol] || {};
-      const nav = State.getPrice(f.symbol) || f.currentNav || 0;
+      const navRow = typeof FundNavService !== 'undefined' ? FundNavService.navFor(f.symbol) : { nav: State.getPrice(f.symbol) || f.currentNav || 0 };
+      const nav = navRow.nav || 0;
+      const navHint = typeof FundNavService !== 'undefined' ? FundNavService.label(f.symbol) : '';
       const lf = ledgerFunds.find(x => x.symbol === f.symbol);
       const invested = lf?.totalInvested || 0;
       const value = lf ? lf.units * nav : 0;
@@ -31,7 +33,7 @@ const Funds = (() => {
         ? `<span class="${PsxUI.chgCls(pnl)}">${PsxUI.fmt(pnl, { signed: true })}</span> · Inv ${PsxUI.fmt(invested)}`
         : (a.oneYearReturn != null ? a.oneYearReturn + '% 1Y' : f.type || '—');
       return `<button type="button" class="lc-market-row" data-action="Research.open" data-symbol="${f.symbol}">
-        <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}</div></div>
+        <div><div class="lc-market-sym">${f.symbol}</div><div class="lc-market-name">${f.name}${navHint ? ` · <span style="opacity:0.7">${navHint}</span>` : ''}</div></div>
         <div class="lc-market-price">${PsxUI.fmt(nav)}</div>
         <div class="lc-market-chg">${right}</div>
       </button>`;
@@ -50,8 +52,8 @@ const Funds = (() => {
     const funds = _filteredFunds();
     const meezanInvested = window.MEEZAN_TOTAL_PURCHASES_PKR || 0;
     const meezanValue = window.MEEZAN_PORTFOLIO_VALUE_PKR || funds.reduce((s, f) => {
-      const nav = State.getPrice(f.symbol) || f.currentNav || 0;
-      return s + (f.units || 0) * nav;
+      const navRow = typeof FundNavService !== 'undefined' ? FundNavService.navFor(f.symbol) : { nav: State.getPrice(f.symbol) || f.currentNav || 0 };
+      return s + (f.units || 0) * (navRow.nav || 0);
     }, 0);
 
     screen.innerHTML = PsxUI.lcDash(I18n.t('tools.fundNavs.t'), I18n.t('tools.fundNavs.d'), `
@@ -71,7 +73,10 @@ const Funds = (() => {
         <p class="lc-search-hint">Type to shortlist — list updates in place</p>
       </div>
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
-      <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button></div>
+      <div class="lc-dash-actions">
+        <button type="button" class="psx-btn psx-btn-ghost" data-action="Navigation.go" data-screen="settings" data-hash="fund-nav-section">Update NAVs</button>
+        <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
+      </div>
     `);
 
     const inp = document.getElementById('funds-search');

@@ -19,12 +19,12 @@ function cronMode(cron) {
   return 'tick';
 }
 
-export async function runPriceCron(env, event) {
+export async function runPriceCron(env, event, options = {}) {
   const kv = env?.PRICE_CACHE;
   if (!kv) return { ok: false, skipped: true, reason: 'no PRICE_CACHE' };
   if (env.SKIP_PRICE_CRON === '1') return { ok: true, skipped: true };
 
-  const mode = cronMode(event?.cron || '');
+  const mode = options.forceMode || cronMode(event?.cron || '');
   const now = new Date();
   const results = { mode, psx: 0, us: 0, cmd: 0 };
 
@@ -62,7 +62,7 @@ export async function runPriceCron(env, event) {
       const symbols = (catalog || []).map((c) => c.symbol);
       if (symbols.length) {
         const prev = (await kv.get('psx:quotes', 'json')) || {};
-        const batchSize = 120;
+        const batchSize = options.batchSize || 120;
         let offset = Number(await kv.get('meta:psx_tick_offset')) || 0;
         if (offset >= symbols.length) offset = 0;
         const rotated = symbols.slice(offset).concat(symbols.slice(0, offset));
@@ -98,7 +98,7 @@ export async function runPriceCron(env, event) {
       }
     }
 
-    await kvPut(kv, 'meta:version', { schema: 1, built: '3.55.0' });
+    await kvPut(kv, 'meta:version', { schema: 1, built: '3.55.1' });
     return { ok: true, ...results };
   } catch (e) {
     await kvPut(kv, 'meta:last_error:psx', { at: now.toISOString(), message: e.message || 'cron failed' });

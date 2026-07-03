@@ -11,8 +11,12 @@ const Market = (() => {
       const price = State.getPrice(s.symbol) || (window.FALLBACK_PRICES || {})[s.symbol] || 0;
       const prev = State.getPrevClose(s.symbol) || price;
       const chg = prev ? ((price - prev) / prev) * 100 : 0;
-      return { ...s, price, chg };
+      return { ...s, price, chg, priced: price > 0 };
     });
+  }
+
+  function _pricedRows(rows) {
+    return rows.filter((r) => r.priced && r.price > 0);
   }
 
   const PAGE = 80;
@@ -45,13 +49,15 @@ const Market = (() => {
   }
 
   function _pulseRow(baseRows) {
+    const priced = _pricedRows(baseRows);
     let adv = 0, dec = 0, unch = 0;
-    baseRows.forEach(r => {
+    priced.forEach(r => {
       if (r.chg > 0.05) adv++;
       else if (r.chg < -0.05) dec++;
       else unch++;
     });
     const listed = baseRows.length;
+    const pricedN = priced.length;
     return `<div class="lc-pulse-row" role="group" aria-label="Market movers">
       <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'advancing' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="advancing" aria-pressed="${_moveFilter === 'advancing'}">
         <label>${I18n.t('market.advancing')}</label><b class="psx-up">${adv}</b>
@@ -65,6 +71,7 @@ const Market = (() => {
       <button type="button" class="lc-pulse-pill lc-pulse-pill--btn${_moveFilter === 'all' ? ' on' : ''}" data-action="Market.setMoveFilter" data-tab="all" aria-pressed="${_moveFilter === 'all'}">
         <label>Listed</label><b>${listed}</b>
       </button>
+      <div class="lc-pulse-pill" title="Symbols with a snapshot or live price"><label>Priced</label><b>${pricedN}/${listed}</b></div>
     </div>`;
   }
 
@@ -146,7 +153,7 @@ const Market = (() => {
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
-            <em>${_filter === 'islamic' ? I18n.t('market.shariah') : I18n.t('screener.all')}</em>
+            <em>${_pricedRows(baseRows).length} priced</em>
           </button>
         </div>
         ${_segment()}

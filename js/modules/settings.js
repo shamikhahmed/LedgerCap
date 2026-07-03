@@ -79,6 +79,23 @@ const Settings = (() => {
     const theme = settings.theme || 'dark';
     const pilot = state.pilotSettings || {};
     const ma = state.manualAssets || {};
+    const fundOverrides = settings.fundNavOverrides || {};
+    const fundNavFields = (window.MEEZAN_FUNDS || []).map((f) => {
+      const o = fundOverrides[f.symbol];
+      const nav = o?.nav ?? '';
+      const asOf = o?.asOf ?? '';
+      const symEsc = f.symbol.replace(/"/g, '&quot;');
+      return `<div class="field-row" style="margin-bottom:8px">
+        <div class="field" style="flex:1.4">
+          <label class="field-label">${f.symbol}</label>
+          <input class="field-input fn-nav" data-symbol="${symEsc}" type="number" step="0.0001" value="${nav}" placeholder="${f.currentNav || ''}">
+        </div>
+        <div class="field" style="flex:1">
+          <label class="field-label">Statement date</label>
+          <input class="field-input fn-asof" data-symbol="${symEsc}" type="date" value="${asOf}">
+        </div>
+      </div>`;
+    }).join('');
 
     screen.innerHTML = `
     <div class="lc-dash">
@@ -211,6 +228,13 @@ const Settings = (() => {
         <button type="button" class="btn-primary" style="flex:1;" data-action="Settings._saveAssumptions">Save Assumptions</button>
         <button type="button" class="btn-ghost" data-action="Settings._resetAssumptions">Reset Defaults</button>
       </div>
+    </div>
+
+    <div class="sec-head"><span class="sec-title" id="fund-nav-section">Meezan fund NAVs</span></div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
+      <p style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;line-height:1.5;">No public AMC API — paste latest NAV from your Meezan statement. Overrides portfolio value &amp; zakat.</p>
+      ${fundNavFields || '<p class="field-hint">No fund seed loaded.</p>'}
+      <button type="button" class="btn-primary" style="margin-top:12px" data-action="Settings._saveFundNavs">Save fund NAVs</button>
     </div>
 
     <div class="sec-head"><span class="sec-title" id="zakat-section">Zakat Calculator</span></div>
@@ -476,6 +500,27 @@ const Settings = (() => {
     App.renderCurrent();
     render();
   }
+
+  function _saveFundNavs() {
+    if (typeof FundNavService === 'undefined') {
+      App.showToast('Fund NAV service not loaded', 'error');
+      return;
+    }
+    let n = 0;
+    document.querySelectorAll('.fn-nav').forEach((inp) => {
+      const sym = inp.dataset.symbol;
+      const nav = parseFloat(inp.value);
+      if (!(nav > 0)) return;
+      const asOf = document.querySelector(`.fn-asof[data-symbol="${sym}"]`)?.value;
+      FundNavService.saveNav(sym, nav, asOf);
+      n++;
+    });
+    App.showToast(n ? `Saved ${n} fund NAV${n > 1 ? 's' : ''}` : 'Enter at least one NAV', n ? 'success' : 'error');
+    App.renderCurrent();
+    render();
+  }
+
+  function _saveNav() { _saveFundNavs(); }
 
   function _saveAssumptions() {
     const ret = parseFloat(document.getElementById('s-return')?.value) / 100 || 0.18;
@@ -1015,6 +1060,6 @@ const Settings = (() => {
     }
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _saveFundNavs, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
