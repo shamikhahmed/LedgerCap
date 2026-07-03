@@ -20,6 +20,16 @@ const PSX_HEADERS = {
   Origin: PSX_ORIGIN,
 };
 
+// Yahoo 429s requests without a browser identity. A real UA + Referer make
+// the datacenter IP look like an ordinary browser and unblock quotes/news.
+const YAHOO_HEADERS = {
+  Accept: 'application/json, text/plain, */*',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  Referer: 'https://finance.yahoo.com/',
+  Origin: 'https://finance.yahoo.com',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -63,7 +73,7 @@ export default {
     if (path.startsWith('yahoo/chart/')) {
       const sym = decodeURIComponent(path.slice('yahoo/chart/'.length));
       const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=5d`;
-      return proxyFetch(yUrl, { headers: { Accept: 'application/json' } }, (text) => okJson(text, 90));
+      return proxyFetch(yUrl, { headers: YAHOO_HEADERS, cf: { cacheTtl: 60 } }, (text) => okJson(text, 90));
     }
 
     // PSX passthrough

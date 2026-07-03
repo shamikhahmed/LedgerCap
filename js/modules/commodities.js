@@ -9,11 +9,10 @@ const Commodities = (() => {
     const priceLabel = r.manual
       ? PsxUI.fmt(r.price) + '/g'
       : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const pkrLine = r.manual ? '' : `<em>≈ ${PsxUI.fmt(r.pkr)}</em>`;
     return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'data-nav="settings"' : ''}>
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
       <div class="lc-market-price">${priceLabel}</div>
-      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'} ${pkrLine}</div>
+      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'}</div>
     </button>`;
   }
 

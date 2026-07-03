@@ -57,7 +57,13 @@ export async function fetchBbcBusiness() {
 export async function fetchYahooSymbolNews(symbol, kind) {
   const ysym = kind === 'intl' || kind === 'crypto' ? symbol : `${symbol}.KA`;
   const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ysym)}&newsCount=8`;
-  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': UA } });
+  const res = await fetch(url, { headers: {
+    Accept: 'application/json, text/plain, */*',
+    'User-Agent': UA,
+    Referer: 'https://finance.yahoo.com/',
+    Origin: 'https://finance.yahoo.com',
+    'Accept-Language': 'en-US,en;q=0.9',
+  } });
   if (!res.ok) throw new Error(`Yahoo ${res.status}`);
   const j = await res.json();
   return (j.news || []).map((n) => ({

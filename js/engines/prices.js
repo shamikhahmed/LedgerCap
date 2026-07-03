@@ -138,7 +138,10 @@ const Prices = (() => {
       try {
         const res = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
         if (!res.ok) {
-          if (attempt < WORKER_RETRIES) {
+          // Saturation/upstream-down statuses: retrying amplifies the problem
+          // (Yahoo 429, PSX origin 520). Back off immediately, don't retry.
+          const noRetry = [429, 502, 503, 520, 522, 524].includes(res.status);
+          if (!noRetry && attempt < WORKER_RETRIES) {
             await _sleep(WORKER_RETRY_MS * (attempt + 1));
             return _fetchAppProxy(url, attempt + 1);
           }

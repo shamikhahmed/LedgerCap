@@ -1,5 +1,43 @@
 # Changelog — LedgerCap
 
+## 3.53.0 (2026-07-03) — Live prices unblocked + commodities
+
+- **Yahoo live** — worker sent no User-Agent so Yahoo 429'd every US-stock and commodity quote; added browser `YAHOO_HEADERS`. US stocks (TTWO) + commodities (gold/silver/crude/copper) now live; FX already live
+- **Price reliability** — proxy no longer retries on saturation statuses (429/502/503/520/522/524); retrying was amplifying rate-limits
+- **Commodities** — live spot prices, red/green tinted change, PKR-per-oz noise removed from pill
+
+## 3.52.1 (2026-07-03) — Tool-screen sweep
+
+- **Change pills** — neutral (grey) at exactly 0.00% instead of green; pills actually tint (bg keyed on t-gain/t-loss) and no longer wrap
+- **Transactions** — filter chips collapse to one horizontal-scroll row (was a ragged 4-row wrap); empty-state icon
+- **Zakat** — gold/g formatted with thousands separator
+
+## 3.52.0 (2026-07-03) — News relevance
+
+- Funds excluded from per-symbol news (Meezan NAVs have no ticker news → global noise); Pakistan-only macro; per-symbol items kept only when the headline names the company (US/crypto pass through); 2-line headline clamp; empty impact hints hidden
+
+## 3.51.1 (2026-07-03) — Bottom-nav clearance
+
+- Playwright asserts no content clipped behind bottom nav on all 5 tabs; `.lc-dash` bottom padding fix
+
+## 3.51.0 (2026-07-03) — Market rows
+
+- Binance-style tinted change pills, per-row freshness badges, company-name ellipsis
+
+## 3.50.0–3.50.1 (2026-07-03) — Analyzer complete + regression tests
+
+- Research per-stock page finished: investor parameters (rule-tinted), dividend-check payout bars, glossary accordion
+- `tests/calc-regression.test.js` locks the daily-P&L fixes; P&L screen reorder
+
+## 3.49.0 (2026-07-03) — Analyzer visuals
+
+- `Charts.rangeBar()`; 52-week range bar, price-trend chart with range picker, value-check gauge, tinted verdict banner; 12s history-fetch cap → honest empty state
+
+## 3.47.0–3.48.1 (2026-07-03) — Calc fixes + redesign
+
+- **9 calculation bugs fixed** (ledger-replay verified): fabricated day change, daily-P&L sign inversion, internal-convert fake flows, broker-cash-inflated return, bucket base mismatch, funds cost=value, ₨0 cash chip, TTWO fake move
+- Single-row topbar; portfolio bucket cards (iOS-Stocks style); hero 44px; whole-rupee display; hub shortcuts scroll row; price fetch-on-focus
+
 ## 3.46.0 (2026-07-02) — Undo, cloud sync, rebalance hub
 
 - **Transactions** — 10-second undo toast after adding a transaction

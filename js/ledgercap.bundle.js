@@ -4893,9 +4893,9 @@ window.COMMODITY_ASSETS = [
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.52.1',
-  sw: 125,
-  cache: 'ledgercap-v125',
+  app: '3.53.0',
+  sw: 126,
+  cache: 'ledgercap-v126',
 };
 
 /** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
@@ -6055,7 +6055,10 @@ const Prices = (() => {
       try {
         const res = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
         if (!res.ok) {
-          if (attempt < WORKER_RETRIES) {
+          // Saturation/upstream-down statuses: retrying amplifies the problem
+          // (Yahoo 429, PSX origin 520). Back off immediately, don't retry.
+          const noRetry = [429, 502, 503, 520, 522, 524].includes(res.status);
+          if (!noRetry && attempt < WORKER_RETRIES) {
             await _sleep(WORKER_RETRY_MS * (attempt + 1));
             return _fetchAppProxy(url, attempt + 1);
           }
@@ -18978,11 +18981,10 @@ const Commodities = (() => {
     const priceLabel = r.manual
       ? PsxUI.fmt(r.price) + '/g'
       : `$${Number(r.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const pkrLine = r.manual ? '' : `<em>≈ ${PsxUI.fmt(r.pkr)}</em>`;
     return `<button type="button" class="lc-market-row" ${r.id === 'pkr_gold' ? 'data-nav="settings"' : ''}>
       <div><div class="lc-market-sym">${r.symbol}</div><div class="lc-market-name">${r.name}</div></div>
       <div class="lc-market-price">${priceLabel}</div>
-      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'} ${pkrLine}</div>
+      <div class="lc-market-chg ${chgCls}">${r.manual ? 'Manual' : sign + Number(r.changePct || 0).toFixed(2) + '%'}</div>
     </button>`;
   }
 

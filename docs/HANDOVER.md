@@ -1,16 +1,37 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.46.0  
-**Service worker:** `ledgercap-v115`  
-**Last updated:** 2 Jul 2026  
+**Version:** 3.53.0  
+**Service worker:** `ledgercap-v126`  
+**Last updated:** 3 Jul 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
-**Latest `main`:** `2633510` — feat: v3.46.0 — undo tx, cloud backup, portfolio UX sprint  
+**Latest `main`:** `main` — feat: v3.53.0 — Yahoo live unblock, commodities, tool sweep  
 
 ---
 
-## 0. Current status (Jul 2026 — v3.46.0)
+## 0b. Redesign + reliability sprint (v3.47.0 → v3.53.0, 3 Jul 2026)
+
+Durable plan: **`docs/REDESIGN_ROADMAP.md`**. Session state memory: `ledgercap-redesign-state`.
+
+| Area | What shipped |
+|------|----------------|
+| **Calculation bugs** | Fixed 9 confirmed via ledger replay: fake day change from synthetic prevClose; daily-P&L sign inversion (buy day showed 2× profit); internal fund converts as fake flows; all-time return inflated by broker cash (+4.47%→+2.49%); bucket Deployed/Invested mismatch; funds cost=value; Cash chip ₨0; TTWO +0.1%/day. **Regression-locked** in `tests/calc-regression.test.js` |
+| **Chrome** | Single-row topbar (brand / KSE pill / actions); freshness merged into KSE pill; language switcher removed from chrome; slim price-health strip |
+| **Redesign** | Portfolio bucket cards (iOS-Stocks two-line rows); hero 44px; whole-rupee ≥₨1,000; hub shortcuts single-scroll row; P&L screen reorder; market/watch rows with tinted change pills + freshness badges |
+| **Analyzer (Research)** | Full per-stock page: 52-week range bar, price-trend chart (1M/6M/1Y), value-check gauge, investor-parameters grid (rule-tinted), dividend-check payout bars, verdict banner, glossary accordion. `Charts.rangeBar()` added |
+| **Live prices** | **Yahoo unblocked** — worker was sending no User-Agent, Yahoo 429'd all US-stock + commodity quotes. Added `YAHOO_HEADERS` (browser UA + Referer). US stocks (TTWO $255) + commodities (gold/silver/crude/copper) now live. FX already live (₨277.9). PSX EOD still upstream-dependent (dps.psx.com.pk 520s intermittently) |
+| **Price reliability** | `_fetchAppProxy` no longer retries on saturation statuses (429/502/503/520/522/524) — retrying amplified rate-limiting |
+| **News** | Funds excluded from per-symbol news (no ticker news → global noise); Pakistan-only macro; per-symbol kept only when headline names the company (US/crypto pass); 2-line clamp; empty-hint hidden |
+| **Bottom-nav clearance** | `.lc-dash` padding = `calc(84px + safe-area)`; playwright asserts no clipping on all 5 tabs |
+| **Chart pills / neutral-at-zero** | `chgCls` returns neutral for values rounding to 0.00% |
+| **Dead files** | css/app.css, identity.css, platform.css, js/modules/portfolio.js deleted (kept resurrecting — delete on sight) |
+
+**Worker deploy:** `cd worker && npx wrangler deploy`. Current version `9cd4fd10` (Yahoo headers).
+
+---
+
+## 0. Current status (Jul 2026 — v3.53.0)
 
 ### Shipped in this release train (3.44.0 → 3.46.0)
 
