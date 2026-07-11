@@ -39,6 +39,15 @@ npm test   # or see ci.yml for the real entrypoints
 
 Gaps are tracked as tasks in `ROADMAP.md`.
 
+## Cloudflare Worker (worker/)
+
+- **Name:** `ledgercap-psx-proxy` · deploy: `cd worker && npx wrangler deploy`
+- **KV:** binding `PRICE_CACHE` (id `908974ca90de4219bbd0f95417228e0b`) — full-market snapshot cache
+- **Crons (UTC, = PKT weekday market hours):** `0 4`, `30 4`, `0 5,6,8,9`, `30 7`, `30 10` Mon–Fri — telegram + price snapshot share triggers (cron quota)
+- **Secrets** via `wrangler secret put`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_SYNC_KEY`
+- **Kill switches** (vars): `SKIP_US_CRON=1` (Yahoo 429 storm), `SKIP_PRICE_CRON=1` (emergency)
+- Worker unit tests run in `npm test` (karat-math, psx-universe, snapshot-shape)
+
 ## Gotchas — read before coding
 - Price data path has fallbacks (live Yahoo -> KV snapshot -> stale) — test all three before touching fetch code.
 - 128 commits of rapid v3.4x-v3.5x iteration — read recent CHANGELOG before assuming behavior.
