@@ -4952,12 +4952,12 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.55.1',
-  sw: 128,
-  cache: 'ledgercap-v128',
+  app: '3.55.2',
+  sw: 130,
+  cache: 'ledgercap-v130',
 };
 
-/** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
+/** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
 window.LEDGERCAP_CONFIG = {
   /** Primary LedgerCap worker (preferred) */
   psxProxyUrl: 'https://ledgercap-psx-proxy.shamikhahmed.workers.dev',
@@ -16863,15 +16863,15 @@ const Settings = (() => {
       <div class="setting-row">
         <div>
           <div class="setting-label">PSX Proxy</div>
-          <div class="setting-sub" id="proxy-health-sub">${_proxyHealth.detail || (proxyUrl ? 'Worker health check' : 'Set URL below to enable live PSX')}</div>
+          <div class="setting-sub" id="proxy-health-sub">${_proxyHealth.detail || (proxyUrl ? 'Worker health check — live quotes need this path' : 'No Worker URL — live PSX/Yahoo quotes unavailable (cached/fallback only)')}</div>
         </div>
         <span class="setting-value ${proxyHealth.cls}" id="proxy-health-val">${proxyHealth.text}</span>
       </div>
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
         <div class="field">
-          <label class="field-label">PSX Proxy URL (optional)</label>
+          <label class="field-label">PSX Proxy URL (Cloudflare Worker)</label>
           <input class="field-input" id="s-proxy" type="url" placeholder="https://ledgercap-psx-proxy.yourname.workers.dev" value="${proxyUrl}">
-          <div class="field-hint">Deploy worker/ to Cloudflare for reliable PSX prices</div>
+          <div class="field-hint">Live PSX/Yahoo quotes route through this Worker (default Capricorn endpoint is pre-filled). Portfolio never leaves your device. Cached/fallback prices if unreachable.</div>
         </div>
         <button type="button" class="btn-ghost" data-action="Settings._saveProxy">Save Proxy URL</button>
         <button type="button" class="btn-secondary" data-action="App.refreshPrices">⟳ Refresh All Prices</button>

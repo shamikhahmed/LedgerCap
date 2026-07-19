@@ -39,7 +39,7 @@ Holdings grouped by custodian:
 Each holding shows:
 
 - Quantity and average cost
-- Live price (Yahoo Finance via optional Cloudflare Worker proxy)
+- Live price (Yahoo Finance via Cloudflare Worker proxy — required for live quotes; cached/fallback without it)
 - Unrealised P&L and weight in portfolio
 
 Tap a holding for detail and transaction history.
@@ -131,7 +131,7 @@ This is record-keeping only — not a securities offering or brokerage service.
 ## Data & privacy
 
 - All data in `localStorage` on your device
-- No accounts; optional Worker only for public price feeds and encrypted cloud backup (opt-in)
+- No accounts; Cloudflare Worker for public price feeds (and optional encrypted cloud backup). Portfolio ledger stays in `localStorage`.
 - Works offline with last-known prices
 
 ---

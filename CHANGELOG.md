@@ -1,5 +1,11 @@
 # Changelog — LedgerCap
 
+## 3.55.2 (2026-07-19) — Cap Family Mega-Wave brand lock
+
+- **Brand** — Capricorn OS mark wired: `favicon.svg`, `apple-touch-icon-180`, separate any/maskable PWA icons in `manifest.json` + `index.html` / landing; splash uses `mark.svg`
+- **Honesty** — live-data copy no longer soft-pedals the Worker: Settings, landing, README, and GUIDE state that live PSX/Yahoo quotes route through Cloudflare Worker; portfolio stays on-device; cached/fallback if unreachable
+- **SW** — `ledgercap-v130` precaches brand icon pack; version aligned (`VERSION.json` / `LEDGERCAP_VERSION`)
+
 ## 3.55.1 (2026-07-03) — Audit sprint (screener, pulse, NAV, cron hook)
 
 - **Screener** — full PSX catalog + pagination; value/dividend filters require fundamentals seed

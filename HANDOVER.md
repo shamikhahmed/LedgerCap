@@ -7,7 +7,7 @@
 Personal wealth OS — PSX stocks, Meezan funds, portfolio, analyzer, screener.
 
 ## Facts
-**Version:** 3.55.1
+**Version:** 3.55.2
 **Live:** https://shamikhahmed.github.io/LedgerCap/
 **Repo:** https://github.com/shamikhahmed/LedgerCap
 **Stack:** Vanilla JS PWA + Cloudflare Worker price cron (KV market snapshot). Yahoo live quotes. Playwright tests.

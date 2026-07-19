@@ -2,7 +2,7 @@
 
 **Personal Wealth Operating System — by Capricorn Systems.** PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections.
 
-**Version:** 3.46.0 · **SW:** `ledgercap-v115`
+**Version:** 3.55.2 · **SW:** `ledgercap-v130`
 
 🔗 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 📁 **Repo:** https://github.com/shamikhahmed/LedgerCap
@@ -21,7 +21,7 @@
 - **Backup** — JSON export, PIN-encrypted `.ledgercap.enc`, optional cloud sync via worker
 - **Paper trade** — Isolated sandbox (More → Paper trade)
 - **i18n** — English + Urdu (header switcher, RTL nav fixes)
-- **PSX Proxy** — Optional Cloudflare Worker for live Yahoo/PSX quotes
+- **PSX Proxy** — Cloudflare Worker for live Yahoo/PSX quotes (default Capricorn Worker pre-filled; portfolio stays on-device; cached/fallback if unreachable)
 
 ## Install on iPhone
 

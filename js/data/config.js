@@ -1,12 +1,12 @@
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.55.1',
-  sw: 128,
-  cache: 'ledgercap-v128',
+  app: '3.55.2',
+  sw: 130,
+  cache: 'ledgercap-v130',
 };
 
-/** LedgerCap runtime config — optional PSX proxy (deploy worker/ then paste URL in Settings) */
+/** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
 window.LEDGERCAP_CONFIG = {
   /** Primary LedgerCap worker (preferred) */
   psxProxyUrl: 'https://ledgercap-psx-proxy.shamikhahmed.workers.dev',

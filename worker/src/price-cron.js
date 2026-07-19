@@ -98,7 +98,7 @@ export async function runPriceCron(env, event, options = {}) {
       }
     }
 
-    await kvPut(kv, 'meta:version', { schema: 1, built: '3.55.1' });
+    await kvPut(kv, 'meta:version', { schema: 1, built: '3.55.2' });
     return { ok: true, ...results };
   } catch (e) {
     await kvPut(kv, 'meta:last_error:psx', { at: now.toISOString(), message: e.message || 'cron failed' });

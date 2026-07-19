@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LedgerCap">
-  <rect width="64" height="64" rx="14" fill="#0B0E11"/>
-  <path d="M14 18h36v6H14zm0 14h22v4H14zm0 14h36v4H14zm30-14h6v4h-6z" fill="#FF6B35"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="LedgerCap">
+  <rect width="48" height="48" rx="10" fill="#0B0E11"/>
+  <rect x="8" y="8" width="32" height="32" rx="6" stroke="#F59E0B" stroke-width="2.6"/>
+  <path d="M16 31 V25 M24 31 V19 M32 31 V14" stroke="#F59E0B" stroke-width="2.8" stroke-linecap="round"/>
+  <circle cx="32" cy="10" r="1.8" fill="#F4F0E8"/>
 </svg>

@@ -1,12 +1,16 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.55.1  
-**Service worker:** `ledgercap-v129`  
+**Version:** 3.55.2  
+**Service worker:** `ledgercap-v130`  
 **Last updated:** 3 Jul 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
-**Latest `main`:** pending — v3.55.1 audit sprint  
+**Latest `main`:** v3.55.2 — Cap Family Mega-Wave brand lock  
+
+### v3.55.2 — Cap Family Mega-Wave
+- Brand icon pack wired (favicon, apple-touch-180, any + maskable)
+- Honest live-data copy: Worker required for live quotes
 
 ### v3.55.1 — Audit sprint
 

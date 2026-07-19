@@ -8,7 +8,7 @@
 
 ## Network surface
 
-- **PSX proxy (optional):** Settings → PSX Proxy URL calls a Cloudflare Worker you configure for public price feeds only. No portfolio data is sent — only symbol lookups.
+- **PSX proxy:** Settings → PSX Proxy URL calls a Cloudflare Worker for public price feeds (default Capricorn Worker pre-filled). Live quotes need this path; cached/fallback without it. No portfolio data is sent — only symbol lookups.
 - Works offline with last-known or manually entered NAV/prices.
 
 ## Investment disclaimer

@@ -1,12 +1,15 @@
 'use strict';
-const CACHE = 'ledgercap-v129';
+const CACHE = 'ledgercap-v130';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',
   './css/lc-pro-phase.css',
   './css/brand-mark.css',
   './', './index.html', './landing.html', './widget-glance.html', './screen-gallery.html', './manifest.json', './VERSION.json',
-  './assets/icons/icon.svg', './assets/icons/icon-mark.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png',
+  './assets/icons/favicon.svg', './assets/icons/icon.svg', './assets/icons/mark.svg', './assets/icons/icon-mark.svg',
+  './assets/icons/icon-192.png', './assets/icons/icon-512.png',
+  './assets/icons/icon-maskable-192.png', './assets/icons/icon-maskable-512.png',
+  './assets/icons/apple-touch-icon-180.png',
   './js/ledgercap.bundle.js',
   './shared/telegram-brief.mjs',
 ];

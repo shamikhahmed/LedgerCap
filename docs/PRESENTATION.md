@@ -114,7 +114,7 @@ Vanilla JS PWA. No npm for the app itself.
 
 - localStorage only
 - No brokerage login credentials stored
-- Optional Worker sees only public ticker URLs
+- Cloudflare Worker sees only public ticker URLs (live quotes require Worker; portfolio stays on-device)
 - Export JSON anytime
 
 ---
