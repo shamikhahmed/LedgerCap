@@ -1,4 +1,4 @@
-/* LedgerCap Pro — Apple HIG–inspired design system (v3.12) */
+/* LedgerCap Pro — ledger book / gold foil (light + dark) */
 
 :root {
   --lc-space-1: 4px;
@@ -8,61 +8,63 @@
   --lc-space-5: 20px;
   --lc-space-6: 24px;
   --lc-space-8: 32px;
-  --lc-radius: 14px;
-  --lc-radius-lg: 20px;
-  --lc-radius-sm: 10px;
+  --lc-radius: 12px;
+  --lc-radius-lg: 16px;
+  --lc-radius-sm: 8px;
   --lc-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --lc-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
-  --lc-shadow-dark: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 40px rgba(0, 0, 0, 0.45);
-  --lc-brand: #f59e0b;
-  --lc-chart-stroke: var(--psx-accent, #0a84ff);
+  --lc-shadow: 0 1px 2px rgba(40, 30, 10, 0.04), 0 8px 24px rgba(40, 30, 10, 0.06);
+  --lc-shadow-dark: 0 1px 0 rgba(212, 175, 55, 0.06), 0 12px 40px rgba(0, 0, 0, 0.5);
+  --lc-brand: #c9a227;
+  --lc-foil: #c9a227;
+  --lc-chart-stroke: var(--psx-accent, #c9a227);
 }
 
 body.lc-pro {
-  --psx-bg: #f2f2f7;
-  --psx-bg-card: #ffffff;
-  --psx-bg-muted: #e9e9ee;
-  --psx-border: rgba(60, 60, 67, 0.12);
-  --psx-text: #1c1c1e;
-  --psx-text-2: #636366;
-  --psx-text-3: #6e6e73;
-  --psx-accent: #007aff;
+  --psx-bg: #f7f4ef;
+  --psx-bg-card: #fffcf7;
+  --psx-bg-muted: #eee8de;
+  --psx-border: rgba(60, 45, 20, 0.12);
+  --psx-text: #1c1810;
+  --psx-text-2: #5c5344;
+  --psx-text-3: #7a7060;
+  --psx-accent: #a67c1a;
   --psx-surface: var(--psx-bg-card);
   --psx-surface-1: var(--psx-bg-muted);
   --psx-surface-2: color-mix(in srgb, var(--psx-bg-muted) 80%, var(--psx-border));
   --psx-surface-3: color-mix(in srgb, var(--psx-text) 6%, var(--psx-bg-card));
   --text2: var(--psx-text-2);
-  --psx-accent-soft: rgba(0, 122, 255, 0.12);
-  --psx-up: #34c759;
-  --psx-up-bg: rgba(52, 199, 89, 0.14);
-  --psx-down: #ff3b30;
-  --psx-down-bg: rgba(255, 59, 48, 0.12);
+  --psx-accent-soft: rgba(166, 124, 26, 0.14);
+  --psx-up: #2f7a5c;
+  --psx-up-bg: rgba(47, 122, 92, 0.12);
+  --psx-down: #a8483c;
+  --psx-down-bg: rgba(168, 72, 60, 0.12);
   --psx-radius: var(--lc-radius);
   --psx-radius-sm: var(--lc-radius-sm);
-  --psx-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+  --psx-font: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --psx-display: "Cormorant Garamond", "Libre Baskerville", Georgia, serif;
   --psx-top: 48px;
   --psx-nav: 56px;
 }
 
 body.lc-pro[data-theme="dark"] {
-  --psx-bg: #000000;
-  --psx-bg-card: #1c1c1e;
-  --psx-bg-muted: #2c2c2e;
-  --psx-border: rgba(255, 255, 255, 0.08);
-  --psx-text: #f5f5f7;
-  --psx-text-2: #c7c7cc;
-  --psx-text-3: #98989d;
+  --psx-bg: #0c0b09;
+  --psx-bg-card: #161410;
+  --psx-bg-muted: #1e1b16;
+  --psx-border: rgba(212, 175, 55, 0.12);
+  --psx-text: #f3eee4;
+  --psx-text-2: #c4b9a6;
+  --psx-text-3: #8f8574;
   --psx-surface: var(--psx-bg-card);
   --psx-surface-1: var(--psx-bg-muted);
-  --psx-surface-2: rgba(255, 255, 255, 0.06);
-  --psx-surface-3: rgba(255, 255, 255, 0.1);
+  --psx-surface-2: rgba(212, 175, 55, 0.06);
+  --psx-surface-3: rgba(212, 175, 55, 0.1);
   --text2: var(--psx-text-2);
-  --psx-accent: #0a84ff;
-  --psx-accent-soft: rgba(10, 132, 255, 0.18);
-  --psx-up: #30d158;
-  --psx-up-bg: rgba(48, 209, 88, 0.16);
-  --psx-down: #ff453a;
-  --psx-down-bg: rgba(255, 69, 58, 0.16);
+  --psx-accent: #d4af37;
+  --psx-accent-soft: rgba(212, 175, 55, 0.16);
+  --psx-up: #3d9b7a;
+  --psx-up-bg: rgba(61, 155, 122, 0.14);
+  --psx-down: #c45b4e;
+  --psx-down-bg: rgba(196, 91, 78, 0.14);
   --lc-shadow: var(--lc-shadow-dark);
 }
 
@@ -72,18 +74,20 @@ body.lc-pro.psx-app {
 
 @media (prefers-color-scheme: dark) {
   body.lc-pro:not([data-theme="light"]) {
-    --psx-bg: #000000;
-    --psx-bg-card: #1c1c1e;
-    --psx-bg-muted: #2c2c2e;
-    --psx-border: rgba(255, 255, 255, 0.08);
-    --psx-text: #f5f5f7;
-    --psx-text-2: #c7c7cc;
-    --psx-text-3: #98989d;
+    --psx-bg: #0c0b09;
+    --psx-bg-card: #161410;
+    --psx-bg-muted: #1e1b16;
+    --psx-border: rgba(212, 175, 55, 0.12);
+    --psx-text: #f3eee4;
+    --psx-text-2: #c4b9a6;
+    --psx-text-3: #8f8574;
     --psx-surface: var(--psx-bg-card);
     --psx-surface-1: var(--psx-bg-muted);
-    --psx-surface-2: rgba(255, 255, 255, 0.06);
-    --psx-surface-3: rgba(255, 255, 255, 0.1);
+    --psx-surface-2: rgba(212, 175, 55, 0.06);
+    --psx-surface-3: rgba(212, 175, 55, 0.1);
     --text2: var(--psx-text-2);
+    --psx-accent: #d4af37;
+    --psx-accent-soft: rgba(212, 175, 55, 0.16);
     --lc-shadow: var(--lc-shadow-dark);
   }
 }
@@ -344,6 +348,7 @@ body.lc-pro .toast {
   font-weight: 600;
   letter-spacing: -0.03em;
   color: var(--psx-text);
+  font-family: var(--psx-display, inherit);
 }
 
 .lc-dash-hero {
@@ -354,13 +359,23 @@ body.lc-pro .toast {
   box-shadow: var(--lc-shadow);
   margin-bottom: var(--lc-space-5);
   overflow: hidden;
+  border: 1px solid var(--psx-border);
+  border-left: 3px solid var(--psx-accent);
 }
 
 .lc-dash-hero::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in srgb, var(--psx-accent) 18%, transparent), transparent 55%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--psx-accent) 12%, transparent), transparent 42%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 23px,
+      color-mix(in srgb, var(--psx-text) 4%, transparent) 23px,
+      color-mix(in srgb, var(--psx-text) 4%, transparent) 24px
+    );
   pointer-events: none;
 }
 
@@ -1666,4 +1681,71 @@ body.lc-rtl .lc-hub-quick {
 
 body.lc-rtl .toast-wrap {
   max-width: min(92vw, 420px);
+}
+
+/* —— Ledger book splash / foil —— */
+.psx-splash {
+  background:
+    radial-gradient(70% 50% at 50% 0%, color-mix(in srgb, var(--psx-accent) 14%, transparent), transparent 60%),
+    var(--psx-bg) !important;
+}
+.psx-splash-logo {
+  width: min(72vw, 200px) !important;
+  height: auto !important;
+  aspect-ratio: 3 / 4 !important;
+  border-radius: 4px 12px 12px 4px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--psx-bg-card) 90%, var(--psx-accent)), var(--psx-bg-muted)) !important;
+  border: 1px solid var(--psx-border);
+  box-shadow: var(--lc-shadow), inset 0 0 0 1px color-mix(in srgb, var(--psx-accent) 25%, transparent);
+  position: relative;
+  overflow: hidden;
+  color: transparent !important;
+}
+.psx-splash-logo::before {
+  content: "";
+  position: absolute;
+  inset: 10% 8% 12% 14%;
+  border: 1px solid color-mix(in srgb, var(--psx-accent) 45%, transparent);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 9px,
+    color-mix(in srgb, var(--psx-text) 8%, transparent) 9px,
+    color-mix(in srgb, var(--psx-text) 8%, transparent) 10px
+  );
+}
+.psx-splash-logo::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 6%; bottom: 6%; width: 7px;
+  background: linear-gradient(180deg, var(--psx-accent), color-mix(in srgb, var(--psx-accent) 40%, #000));
+}
+.psx-splash-logo img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+  opacity: 0.92;
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+.psx-splash-title {
+  font-family: var(--psx-display, Georgia, serif) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+}
+.psx-brand {
+  font-family: var(--psx-display, inherit);
+}
+
+.lc-pin-card {
+  border: 1px solid var(--psx-border) !important;
+  border-top: 3px solid var(--psx-accent) !important;
+  box-shadow: var(--lc-shadow) !important;
+  background: var(--psx-bg-card) !important;
+}
+.lc-pin-title {
+  font-family: var(--psx-display, Georgia, serif);
 }

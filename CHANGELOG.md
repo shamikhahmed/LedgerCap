@@ -1,3 +1,11 @@
+## [3.56.0] — 2026-07-20
+
+### Beauty — ledger book / gold foil
+- Splash: open ledger object; Cormorant display + paper/ink/brass tokens (light+dark)
+- Hub hero: statement stub foil (not iOS blue card); PIN clasp border
+- Accent reminted from system blue → brass `#c9a227` / `#d4af37`
+- SW `ledgercap-v133`
+
 ## [3.55.4] — 2026-07-19
 
 ### QA
