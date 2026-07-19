@@ -1,3 +1,11 @@
+## [3.55.3] — 2026-07-19
+
+### Pitch
+- Premium Capricorn QR (`assets/qr-ledgercap.png`) — H ECC, Capricorn Systems center mark, gold quiet frame on CTA
+
+### Ops
+- SW `ledgercap-v131`
+
 # Changelog — LedgerCap
 
 ## 3.55.2 (2026-07-19) — Cap Family Mega-Wave brand lock

@@ -1,9 +1,9 @@
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.55.2',
-  sw: 130,
-  cache: 'ledgercap-v130',
+  app: '3.55.3',
+  sw: 131,
+  cache: 'ledgercap-v131',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
