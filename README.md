@@ -2,7 +2,7 @@
 
 **Personal Wealth Operating System — by Capricorn Systems.** PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections.
 
-**Version:** 3.55.3 · **SW:** `ledgercap-v131`
+**Version:** 3.55.4 · **SW:** `ledgercap-v132`
 
 🔗 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 📁 **Repo:** https://github.com/shamikhahmed/LedgerCap

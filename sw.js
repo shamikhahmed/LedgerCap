@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v131';
+const CACHE = 'ledgercap-v132';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',
@@ -12,6 +12,7 @@ const ASSETS = [
   './assets/icons/apple-touch-icon-180.png',
   './js/ledgercap.bundle.js',
   './shared/telegram-brief.mjs',
+  './assets/qr-ledgercap.png',
 ];
 
 self.addEventListener('install', e => {

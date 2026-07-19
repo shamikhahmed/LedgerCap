@@ -1,3 +1,9 @@
+## [3.55.4] — 2026-07-19
+
+### QA
+- Capricorn QR in SW allowlist
+- SW `ledgercap-v132`
+
 ## [3.55.3] — 2026-07-19
 
 ### Pitch
