@@ -4952,9 +4952,9 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.56.1',
-  sw: 134,
-  cache: 'ledgercap-v134',
+  app: '3.56.2',
+  sw: 135,
+  cache: 'ledgercap-v135',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -5319,7 +5319,7 @@ const I18n = (() => {
     if (splashSub) {
       const urdu = splashSub.querySelector('.lc-bahi-urdu');
       if (urdu && getLang() === 'ur') {
-        splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">${esc(t('tagline'))}</span>`;
+        splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">${window.esc(t('tagline'))}</span>`;
       } else if (urdu) {
         splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">بھی کھاتا</span> · Pakistan`;
       } else {
@@ -14354,6 +14354,28 @@ const Hub = (() => {
     </div>`;
   }
 
+  function _folioWrap(innerMain, toolsHtml) {
+    return `
+      <div class="lc-hub-folio">
+        <aside class="lc-hub-folio__cover" aria-label="Bahi khata cover">
+          <div class="lc-hub-folio__cloth">
+            <div class="lc-hub-folio__string" aria-hidden="true"></div>
+            <div class="lc-hub-folio__clasp" aria-hidden="true"></div>
+            <div class="lc-hub-folio__cover-title">LedgerCap</div>
+            <div class="lc-hub-folio__cover-urdu" lang="ur" dir="rtl">بھی کھاتا</div>
+            <button type="button" class="lc-hub-folio__zakat" data-nav="zakat">Zakat</button>
+          </div>
+        </aside>
+        <div class="lc-hub-folio__pages">
+          <div class="lc-hub-folio__sheet">${innerMain}</div>
+        </div>
+        <aside class="lc-hub-folio__tools" aria-label="Shop tools">
+          <div class="lc-hub-folio__tools-label">Tools</div>
+          ${toolsHtml || _toolGrid()}
+        </aside>
+      </div>`;
+  }
+
   function render() {
     const screen = document.getElementById('screen-home');
     if (!screen) return;
@@ -14364,8 +14386,8 @@ const Hub = (() => {
     const stats = _marketStats();
 
     if (!hasHoldings) {
-      screen.innerHTML = `
-        <div class="lc-dash">
+      const main = `
+          <div class="lc-dash lc-dash--folio">
           <div class="lc-dash-greet">
             <h2>${_greeting()}</h2>
             <p>LedgerCap</p>
@@ -14388,11 +14410,12 @@ const Hub = (() => {
               <button type="button" class="psx-btn psx-btn-ghost" data-action="App.loadDemo">${I18n.t('loadDemo')}</button>
             </div>
           </div>
-          <div class="lc-dash-section">
+          <div class="lc-dash-section lc-dash-section--mobile-tools">
             <div class="lc-dash-section-head"><h3>${I18n.t('hub.toolsTitle')}</h3><span>${I18n.t('hub.toolsSub')}</span></div>
             ${_toolGrid()}
           </div>
         </div>`;
+      screen.innerHTML = _folioWrap(main);
       return;
     }
 
@@ -14403,8 +14426,8 @@ const Hub = (() => {
     const ma = state.manualAssets || {};
     const cash = (ma.brokerCashPkr || 0) + (typeof FxService !== 'undefined' ? FxService.usdToPkr(ma.usdCash || 0) : 0);
 
-    screen.innerHTML = `
-      <div class="lc-dash">
+    const main = `
+      <div class="lc-dash lc-dash--folio">
         <div class="lc-dash-greet">
           <h2>${_greeting()}</h2>
           <p>Your wealth at a glance</p>
@@ -14441,11 +14464,12 @@ const Hub = (() => {
         ${_portfolioChart(state)}
         ${_portfolioMovers()}
         ${_recentTools()}
-        <div class="lc-dash-section">
+        <div class="lc-dash-section lc-dash-section--mobile-tools">
           <div class="lc-dash-section-head"><h3>${I18n.t('hub.toolsTitle')}</h3><span>${I18n.t('hub.toolsSub')}</span></div>
           ${_toolGrid()}
         </div>
       </div>`;
+    screen.innerHTML = _folioWrap(main);
     _loadNews(state).then(() => {
       if (Navigation?.current?.() === 'home') refreshNews();
     });

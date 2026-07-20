@@ -1,3 +1,6 @@
+## 3.56.2 — 2026-07-20
+- Hub remint: bahi-khata open folio — maroon cloth cover + cream page stack + tools rail on desktop; red-string accent on mobile. SW `ledgercap-v135`.
+
 ## [3.56.1] — 2026-07-20
 
 ### Beauty — Bahi khata uniqueness remint

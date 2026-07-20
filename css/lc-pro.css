@@ -1838,3 +1838,162 @@ body.lc-rtl .toast-wrap {
 .lc-pin-title {
   font-family: var(--psx-display, Georgia, serif);
 }
+
+/* —— Hub open folio: cloth cover · cream pages · tools rail —— */
+.lc-hub-folio {
+  display: block;
+}
+.lc-hub-folio__cover,
+.lc-hub-folio__tools {
+  display: none;
+}
+.lc-hub-folio__pages {
+  min-width: 0;
+}
+.lc-dash--folio {
+  /* keep existing dash padding */
+}
+
+/* Mobile: thin red-string accent under greet — cloth smell without full cover */
+.lc-hub-folio__pages .lc-dash-greet {
+  position: relative;
+  padding-bottom: 14px;
+  margin-bottom: 4px;
+}
+.lc-hub-folio__pages .lc-dash-greet::after {
+  content: "";
+  display: block;
+  height: 3px;
+  width: 48px;
+  margin-top: 10px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--lc-string, #b91c1c), var(--lc-brass, #d4af37));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--lc-brass) 40%, transparent);
+}
+.lc-hub-folio__pages .lc-dash-hero {
+  background: var(--lc-folio, #f7f4ef);
+  border-left-color: var(--lc-maroon, #9c2f2f);
+}
+body.dark .lc-hub-folio__pages .lc-dash-hero,
+[data-theme="dark"] .lc-hub-folio__pages .lc-dash-hero {
+  background: color-mix(in srgb, var(--psx-bg-card) 92%, var(--lc-maroon) 8%);
+}
+
+@media (min-width: 900px) {
+  body.lc-desktop-nav .lc-hub-folio {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr) 220px;
+    gap: 14px;
+    align-items: start;
+    padding: 8px 8px 24px;
+  }
+  body.lc-desktop-nav .lc-hub-folio__cover,
+  body.lc-desktop-nav .lc-hub-folio__tools {
+    display: block;
+    position: sticky;
+    top: 12px;
+  }
+  body.lc-desktop-nav .lc-hub-folio__cloth {
+    position: relative;
+    min-height: 280px;
+    border-radius: 4px 10px 10px 4px;
+    padding: 20px 14px;
+    background:
+      repeating-linear-gradient(92deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px),
+      linear-gradient(165deg, color-mix(in srgb, var(--lc-maroon) 92%, #000) 0%, var(--lc-maroon) 50%, color-mix(in srgb, var(--lc-maroon) 85%, #000) 100%);
+    color: var(--lc-folio, #f7f4ef);
+    box-shadow: 4px 6px 0 rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+    border: 1px solid color-mix(in srgb, var(--lc-brass) 35%, transparent);
+  }
+  body.lc-desktop-nav .lc-hub-folio__string {
+    position: absolute;
+    left: 10px;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--lc-string, #b91c1c), color-mix(in srgb, var(--lc-string) 60%, #000));
+    box-shadow: 1px 0 0 rgba(255,255,255,0.12);
+  }
+  body.lc-desktop-nav .lc-hub-folio__clasp {
+    position: absolute;
+    right: 10px;
+    top: 14px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f0e6a8, var(--lc-brass) 55%, #8a7020);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  }
+  body.lc-desktop-nav .lc-hub-folio__cover-title {
+    font-family: var(--psx-display, Cinzel, Georgia, serif);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin: 36px 0 6px 12px;
+  }
+  body.lc-desktop-nav .lc-hub-folio__cover-urdu {
+    font-family: "Noto Nastaliq Urdu", serif;
+    font-size: 18px;
+    margin: 0 0 20px 12px;
+    opacity: 0.9;
+  }
+  body.lc-desktop-nav .lc-hub-folio__zakat {
+    margin-left: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--lc-brass) 55%, transparent);
+    background: color-mix(in srgb, var(--lc-brass) 22%, transparent);
+    color: var(--lc-folio);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  body.lc-desktop-nav .lc-hub-folio__sheet {
+    background: var(--lc-folio, #f7f4ef);
+    border: 1px solid color-mix(in srgb, var(--lc-maroon) 18%, var(--psx-border));
+    border-radius: 2px 12px 12px 2px;
+    box-shadow:
+      6px 0 0 color-mix(in srgb, var(--lc-folio) 70%, #ddd),
+      12px 0 0 color-mix(in srgb, var(--lc-folio) 50%, #ccc),
+      4px 8px 20px rgba(0,0,0,0.12);
+    min-height: 420px;
+  }
+  body.dark.lc-desktop-nav .lc-hub-folio__sheet,
+  [data-theme="dark"] body.lc-desktop-nav .lc-hub-folio__sheet {
+    background: var(--psx-bg-card);
+  }
+  body.lc-desktop-nav .lc-dash--folio {
+    padding-bottom: 32px;
+  }
+  body.lc-desktop-nav .lc-hub-folio__tools {
+    background: var(--psx-bg-card);
+    border: 1px solid var(--psx-border);
+    border-top: 3px solid var(--lc-brass);
+    border-radius: 10px;
+    padding: 12px 10px 16px;
+    box-shadow: var(--lc-shadow);
+  }
+  body.lc-desktop-nav .lc-hub-folio__tools-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--psx-text-3);
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  body.lc-desktop-nav .lc-hub-folio__tools .lc-tool-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  /* Tools live in right rail on desktop */
+  body.lc-desktop-nav .lc-dash-section--mobile-tools {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-dash { animation: none; }
+}
