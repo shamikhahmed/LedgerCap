@@ -79,7 +79,7 @@ const I18n = (() => {
     if (splashSub) {
       const urdu = splashSub.querySelector('.lc-bahi-urdu');
       if (urdu && getLang() === 'ur') {
-        splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">${esc(t('tagline'))}</span>`;
+        splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">${window.esc(t('tagline'))}</span>`;
       } else if (urdu) {
         splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">بھی کھاتا</span> · Pakistan`;
       } else {
