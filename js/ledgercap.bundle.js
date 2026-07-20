@@ -4952,9 +4952,9 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.56.2',
-  sw: 135,
-  cache: 'ledgercap-v135',
+  app: '3.56.3',
+  sw: 136,
+  cache: 'ledgercap-v136',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -20783,34 +20783,9 @@ const App = (() => {
     }, 20000);
   }
 
-  function _checkDeployVersion() {
-    const local = window.LEDGERCAP_VERSION?.app || window.APP_VERSION || '';
-    fetch('./VERSION.json?_=' + Date.now(), { cache: 'no-store' })
-      .then(r => r.json())
-      .then(v => {
-        const remote = v.version || v.appVersion || '';
-        if (remote && local && remote !== local) _showUpdateBanner(remote);
-      })
-      .catch(() => {});
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        _showUpdateBanner(window.LEDGERCAP_VERSION?.app || 'new', true);
-      });
-    }
-  }
+  function _checkDeployVersion() {}
 
-  function _showUpdateBanner(version, swReady) {
-    let bar = document.getElementById('lc-update-bar');
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.id = 'lc-update-bar';
-      bar.className = 'lc-update-bar';
-      bar.setAttribute('role', 'status');
-      document.body.prepend(bar);
-    }
-    bar.innerHTML = `<span>${swReady ? 'App updated' : 'Update available'} (v${version})</span>
-      <button type="button" class="psx-btn psx-btn-primary psx-btn-sm" data-action="App.reloadForUpdate">Refresh</button>`;
-  }
+  function _showUpdateBanner() {}
 
   function reloadForUpdate() {
     if ('serviceWorker' in navigator) {
