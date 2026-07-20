@@ -1,3 +1,11 @@
+## [3.56.1] — 2026-07-20
+
+### Beauty — Bahi khata uniqueness remint
+- Splash: maroon cloth folio unroll, red cotton string tie, brass clasp (not passport / vault door)
+- Tokens: maroon `#9C2F2F`, brass `#D4AF37`, cream folio surfaces
+- Fonts: Source Sans 3 body, Cinzel folio headers, Noto Nastaliq Urdu accent on splash
+- SW `ledgercap-v134`
+
 ## [3.56.0] — 2026-07-20
 
 ### Beauty — ledger book / gold foil

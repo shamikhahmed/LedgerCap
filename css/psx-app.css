@@ -18,7 +18,7 @@
   --psx-down-bg: #fee2e2;
   --psx-radius: 12px;
   --psx-radius-sm: 8px;
-  --psx-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --psx-font: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --psx-mono: ui-monospace, "JetBrains Mono", monospace;
   --psx-top: 52px;
   --psx-nav: 64px;
@@ -410,11 +410,6 @@ body.psx-app {
   background: var(--psx-bg); transition: opacity 0.4s, visibility 0.4s;
 }
 .psx-splash.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-.psx-splash-logo {
-  width: 72px; height: 72px; border-radius: 18px;
-  background: var(--psx-accent); color: #fff;
-  display: grid; place-items: center; font-size: 28px; font-weight: 800;
-}
 .psx-splash-title { margin-top: 16px; font-size: 22px; font-weight: 800; }
 .psx-splash-sub { margin-top: 6px; font-size: 14px; color: var(--psx-text-2); }
 

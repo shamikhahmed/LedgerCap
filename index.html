@@ -31,8 +31,8 @@
   <meta name="twitter:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Source+Sans+3:wght@400;500;600;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Source+Sans+3:wght@400;500;600;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/psx-app.css?v=21">
   <link rel="stylesheet" href="css/lc-pro.css?v=7">
   <link rel="stylesheet" href="css/brand-mark.css?v=1">
@@ -41,10 +41,18 @@
 </head>
 <body class="psx-app lc-pro" data-theme="dark">
   <a href="#screens" class="psx-skip-link">Skip to content</a>
-  <div id="splash" class="psx-splash">
-    <div class="psx-splash-logo" aria-hidden="true"><img src="assets/icons/mark.svg" alt="" width="40" height="40"></div>
-    <div class="psx-splash-title">LedgerCap</div>
-    <div class="psx-splash-sub">Gold-foil ledger · Pakistan</div>
+  <div id="splash" class="psx-splash lc-bahi-splash">
+    <div class="lc-bahi-folio" aria-hidden="true">
+      <div class="lc-bahi-cloth"></div>
+      <div class="lc-bahi-pages">
+        <div class="lc-bahi-sheet lc-bahi-sheet--rear"></div>
+        <div class="lc-bahi-sheet lc-bahi-sheet--face"></div>
+      </div>
+      <div class="lc-bahi-string"></div>
+      <div class="lc-bahi-clasp"><img src="assets/icons/mark.svg" alt="" width="32" height="32"></div>
+    </div>
+    <div class="psx-splash-title lc-bahi-title">LedgerCap</div>
+    <div class="psx-splash-sub lc-bahi-tagline"><span class="lc-bahi-urdu" lang="ur">بھی کھاتا</span> · Pakistan</div>
   </div>
 
   <div id="pin-lock" class="lc-pin-lock hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Unlock LedgerCap">
@@ -121,7 +129,7 @@
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
-  <script defer src="js/ledgercap.bundle.js?v=3.56.0"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.56.1"></script>
   <script defer src="js/pro-modal.js"></script>
 
 <!-- Support modal (no paywall until Stripe) -->

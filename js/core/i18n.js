@@ -73,10 +73,19 @@ const I18n = (() => {
   function _refreshChrome() {
     const title = document.getElementById('app-title');
     if (title) title.textContent = t('appName');
-    const splashTitle = document.querySelector('.splash-title');
+    const splashTitle = document.querySelector('.psx-splash-title, .lc-bahi-title');
     if (splashTitle) splashTitle.textContent = t('appName');
-    const splashSub = document.querySelector('.splash-sub');
-    if (splashSub) splashSub.textContent = t('tagline');
+    const splashSub = document.querySelector('.psx-splash-sub, .lc-bahi-tagline');
+    if (splashSub) {
+      const urdu = splashSub.querySelector('.lc-bahi-urdu');
+      if (urdu && getLang() === 'ur') {
+        splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">${esc(t('tagline'))}</span>`;
+      } else if (urdu) {
+        splashSub.innerHTML = `<span class="lc-bahi-urdu" lang="ur">بھی کھاتا</span> · Pakistan`;
+      } else {
+        splashSub.textContent = t('tagline');
+      }
+    }
     const langHost = document.getElementById('lc-header-lang');
     if (langHost) {
       langHost.innerHTML = langSwitcher('lc-header-lang-inner');

@@ -1,7 +1,10 @@
 /* LedgerCap v4 — PSX Tactics inspired · light/dark only */
 
 :root {
-  --lc-bg: #ffffff;
+  --lc-maroon: #9c2f2f;
+  --lc-brass: #d4af37;
+  --lc-folio: #f7f4ef;
+  --lc-bg: var(--lc-folio);
   --lc-bg-2: #f4f4f5;
   --lc-bg-card: #ffffff;
   --lc-bg-hover: #f4f4f5;

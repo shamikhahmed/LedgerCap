@@ -2,7 +2,7 @@
   "name": "LedgerCap",
   "short_name": "LedgerCap",
   "description": "LedgerCap by Capricorn Systems — Personal Wealth Operating System",
-  "version": "3.56.0",
+  "version": "3.56.1",
   "start_url": "./",
   "scope": "./",
   "id": "./",
