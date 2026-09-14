@@ -1235,6 +1235,10 @@ const App = (() => {
     localStorage.setItem('theme', next);
   };
 
+  function openHeaderMenu() {
+    if (typeof Navigation !== 'undefined') Navigation.go('settings');
+  }
+
   function renderCurrent() {
     Navigation.go(Navigation.current(), true);
   }
@@ -1245,7 +1249,8 @@ const App = (() => {
     checkPriceAlerts, requestAlertPermission, _filterIntlSymbols, _pickIntlSymbol,
     openAddPortfolio, _submitPortfolio, openAddForPortfolio, deletePortfolio, renamePortfolio,
     openReconcilePosition, _submitReconcile, loadDemo,
-    toggleDisplayCurrency, _updateCurrencyToggleBtn, openPriceAlert, _submitPriceAlert, _removePriceAlert };
+    toggleDisplayCurrency, _updateCurrencyToggleBtn, openPriceAlert, _submitPriceAlert, _removePriceAlert,
+    openHeaderMenu };
 })();
 window.App = App;
 
