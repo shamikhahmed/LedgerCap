@@ -4952,9 +4952,9 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.56.3',
-  sw: 136,
-  cache: 'ledgercap-v136',
+  app: '3.56.4',
+  sw: 137,
+  cache: 'ledgercap-v137',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */

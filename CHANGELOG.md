@@ -1,3 +1,6 @@
+## 3.56.4 — 2026-09-14
+- Release (C-01): version + SW cache bump so installed PWAs receive Phase 0 security (Worker-only prices). SW `ledgercap-v137`.
+
 ## 3.56.2 — 2026-07-20
 - Hub remint: bahi-khata open folio — maroon cloth cover + cream page stack + tools rail on desktop; red-string accent on mobile. SW `ledgercap-v135`.
 
