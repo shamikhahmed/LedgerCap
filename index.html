@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon-180.png" sizes="180x180">
   <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
   <link rel="apple-touch-icon" sizes="512x512" href="assets/icons/icon-512.png">
-  <meta name="description" content="LedgerCap is a private wealth OS for Pakistani investors — PSX stocks, Meezan funds, Zakat, net worth in PKR. Offline-first, by Capricorn Systems.">
+  <meta name="description" content="LedgerCap is a private wealth ledger for Pakistani investors — PSX stocks, Meezan funds, Zakat, net worth in PKR. Offline-first, by Capricorn Systems.">
   <title>LedgerCap — Pakistani wealth. One ledger. · Capricorn Systems</title>
   <link rel="canonical" href="https://shamikhahmed.github.io/LedgerCap/">
   <meta property="og:type" content="website">
@@ -76,11 +76,10 @@
     <aside id="nav-sidebar" class="psx-sidebar" aria-label="Sidebar"></aside>
     <div class="psx-main">
       <header class="psx-topbar">
-        <div class="psx-brand">Ledger<span>Cap</span></div>
+        <div class="psx-brand">Your wealth</div>
         <div id="lc-app-ticker" class="psx-ticker" aria-live="polite"></div>
         <div class="psx-topbar-actions">
-          <button type="button" id="lc-currency-toggle" class="psx-icon-btn lc-currency-btn" data-action="App.toggleDisplayCurrency" aria-label="Display currency PKR. Tap to switch." title="Toggle PKR / USD">PKR</button>
-          <button type="button" id="theme-toggle" class="psx-icon-btn" data-action="window.toggleTheme" aria-label="Toggle light or dark theme"><span id="theme-toggle-icon"></span></button>
+          <button type="button" id="lc-header-more" class="psx-icon-btn" data-action="App.openHeaderMenu" aria-label="More" aria-haspopup="menu" title="More">⋯</button>
         </div>
       </header>
 
@@ -129,7 +128,7 @@
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
-  <script defer src="js/ledgercap.bundle.js?v=3.56.4"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.57.0"></script>
   <script defer src="js/pro-modal.js"></script>
 
 <!-- Support modal (no paywall until Stripe) -->

@@ -67,8 +67,8 @@ const Research = (() => {
         || (window.CRYPTO_ASSETS || []).find(x => x.symbol === s)
         || [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === s);
       const name = meta?.name || '';
-      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${s}')">
-        <strong>${s}</strong><span>${name}</span>
+      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${esc(s)}')">
+        <strong>${esc(s)}</strong><span>${esc(name)}</span>
       </button>`;
     }).join('');
   }
@@ -529,6 +529,7 @@ const Research = (() => {
           <div id="research-tv-chart" style="min-height:320px"></div>
         </div>
         ${_glossaryBlock()}
+        <div class="lc-disclaimer">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</div>
       </div>`;
 
     const assetClass = isCrypto ? 'crypto' : isIntl ? 'intl' : 'psx';

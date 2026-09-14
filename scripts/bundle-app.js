@@ -57,6 +57,7 @@ const files = [
   'js/engines/pilot-engine.js',
   'js/ui/charts.js',
   'js/ui/debounce.js',
+  'js/ui/dialogs.js',
   'js/ui/lc-events.js',
   'js/ui/icons.js',
   'js/ui/platform.js',

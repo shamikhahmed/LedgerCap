@@ -47,8 +47,9 @@ const Journal = (() => {
     render();
   }
 
-  function remove(id) {
-    if (!confirm('Delete this journal entry?')) return;
+  async function remove(id) {
+    const ok = await CapConfirm({ title: 'Delete this journal entry?', confirmLabel: 'Delete', destructive: true });
+    if (!ok) return;
     State.update(s => { s.journal = s.journal.filter(j => j.id !== id); });
     render();
   }
@@ -68,13 +69,13 @@ const Journal = (() => {
       <div class="os-card cap-reveal" role="button" tabindex="0" aria-label="Edit journal entry" style="margin:0 20px 12px;cursor:pointer;" data-action="Journal.openEdit" data-tab="${e.id}">
         <div style="display:flex;justify-content:space-between;align-items:start;">
           <div>
-            <div style="font-weight:700;font-size:1rem;">${e.title || 'Untitled'}</div>
-            <div style="font-size:0.72rem;color:var(--os-text-tertiary);margin-top:4px;">${e.date || ''}${e.symbol ? ' · ' + e.symbol : ''}</div>
+            <div style="font-weight:700;font-size:1rem;">${esc(e.title || 'Untitled')}</div>
+            <div style="font-size:0.72rem;color:var(--os-text-tertiary);margin-top:4px;">${esc(e.date || '')}${e.symbol ? ' · ' + esc(e.symbol) : ''}</div>
           </div>
           <button type="button" class="os-btn os-btn-ghost" style="padding:4px 8px;font-size:0.7rem;" data-action="Journal.remove" data-tab="${e.id}" data-stop="1">Delete</button>
         </div>
-        ${e.body ? `<p style="font-size:0.85rem;color:var(--os-text-secondary);margin:10px 0 0;line-height:1.5;">${e.body.slice(0, 160)}${e.body.length > 160 ? '…' : ''}</p>` : ''}
-        ${e.review ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--os-border);font-size:0.8rem;color:var(--os-gain);">Review: ${e.review.slice(0, 100)}${e.review.length > 100 ? '…' : ''}</div>` : ''}
+        ${e.body ? `<p style="font-size:0.85rem;color:var(--os-text-secondary);margin:10px 0 0;line-height:1.5;">${esc(e.body.slice(0, 160))}${e.body.length > 160 ? '…' : ''}</p>` : ''}
+        ${e.review ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--os-border);font-size:0.8rem;color:var(--os-gain);">Review: ${esc(e.review.slice(0, 100))}${e.review.length > 100 ? '…' : ''}</div>` : ''}
       </div>`).join('') : `<div class="lc-empty-note">No journal entries yet. Document your investment thesis before you buy.</div>`}
     </div>`;
     CapMotion.refresh();

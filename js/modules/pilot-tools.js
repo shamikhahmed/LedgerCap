@@ -143,7 +143,7 @@ const PilotTools = (() => {
       </div>`;
   }
 
-  function calc(kind) {
+  async function calc(kind) {
     const prompts = {
       cagr: [['Principal ₨', 'principal', 100000], ['Final value ₨', 'final_value', 250000], ['Years', 'years', 5]],
       position_size: [['Risk ₨', 'risk_pkr', 10000], ['Stop loss %', 'stop_loss_pct', 5], ['Price ₨', 'price', 500]],
@@ -152,13 +152,13 @@ const PilotTools = (() => {
     const fields = prompts[kind] || [];
     const input = {};
     for (const [label, key, def] of fields) {
-      const v = prompt(label, String(def));
+      const v = await CapPrompt({ title: label, value: String(def), confirmLabel: 'Next' });
       if (v === null) return;
       input[key] = parseFloat(v) || 0;
     }
     const r = PilotEngine.calculator(kind, input);
     const el = document.getElementById('calc-result');
-    if (el) el.innerHTML = `<strong>${r.label}:</strong> ${typeof r.result === 'number' ? r.result.toLocaleString(undefined, { maximumFractionDigits: 2 }) : r.result}<br>${r.detail}`;
+    if (el) el.innerHTML = `<strong>${esc(r.label)}:</strong> ${typeof r.result === 'number' ? r.result.toLocaleString(undefined, { maximumFractionDigits: 2 }) : esc(r.result)}<br>${esc(r.detail)}`;
   }
 
   function _ipo() {
@@ -175,14 +175,14 @@ const PilotTools = (() => {
         </div>`).join('') : '<div style="padding:12px 16px;color:var(--os-text-secondary)">No IPO events — add PSX primary offerings you are tracking.</div>');
   }
 
-  function addIpo() {
-    const company = prompt('Company name');
+  async function addIpo() {
+    const company = await CapPrompt({ title: 'Company name', confirmLabel: 'Next' });
     if (!company) return;
-    const symbol = prompt('Symbol (optional)') || '';
-    const end = prompt('Subscription end (YYYY-MM-DD)', '') || '';
+    const symbol = (await CapPrompt({ title: 'Symbol (optional)', confirmLabel: 'Next' })) || '';
+    const end = (await CapPrompt({ title: 'Subscription end (YYYY-MM-DD)', confirmLabel: 'Add' })) || '';
     State.update(s => {
       if (!s.ipoEvents) s.ipoEvents = [];
-      s.ipoEvents.push({ id: 'ipo_' + Date.now(), company, symbol: symbol.toUpperCase(), subscription_end: end || null, listing_date: null, notes: '' });
+      s.ipoEvents.push({ id: 'ipo_' + Date.now(), company, symbol: String(symbol).toUpperCase(), subscription_end: end || null, listing_date: null, notes: '' });
     });
     if (window.App?.showToast) App.showToast('IPO added', 'ok');
     render(null, 'ipo');
@@ -204,8 +204,12 @@ const PilotTools = (() => {
         <div class="os-row"><div>${e.entry_type}</div><div>${U.fmt(e.amount)}</div></div>`).join('') || '<div style="padding:12px 16px;color:var(--os-text-secondary)">No cash movements logged.</div>');
   }
 
-  function addCash(type) {
-    const amount = parseFloat(prompt(type === 'deposit' ? 'Deposit amount ₨' : 'Withdraw amount ₨', '0'));
+  async function addCash(type) {
+    const amount = parseFloat(await CapPrompt({
+      title: type === 'deposit' ? 'Deposit amount ₨' : 'Withdraw amount ₨',
+      value: '0',
+      confirmLabel: 'Save',
+    }));
     if (!amount || amount <= 0) return;
     State.update(s => {
       if (!s.cashLedger) s.cashLedger = [];

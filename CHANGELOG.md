@@ -1,3 +1,10 @@
+## 3.57.0 — 2026-09-14
+- Tier 1 finish (LDG-P0/P1): header “Your wealth” + ⋯ menu; tab labels Home·Watchlist·Funds·Performance·Research.
+- Freshness line with LedgerCap server attribution; pull-to-refresh; totals without paisa + ▲/▼.
+- CapConfirm/CapPrompt replace native dialogs; Telegram token removable/masked; §4.2 disclaimer on About/Research/Signals.
+- Price validation ±20% of last close with last-good fallback; sink inventory + esc() on journal/watchlist/import/research.
+- SW `ledgercap-v138`.
+
 ## 3.56.4 — 2026-09-14
 - Release (C-01): version + SW cache bump so installed PWAs receive Phase 0 security (Worker-only prices). SW `ledgercap-v137`.
 

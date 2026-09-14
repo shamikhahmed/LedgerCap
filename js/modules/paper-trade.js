@@ -129,8 +129,9 @@ const PaperTrade = (() => {
     App.showToast(`Paper sold ${shares} ${h.symbol}`, 'success');
   }
 
-  function resetLedger() {
-    if (!confirm('Reset paper ledger? Clears all simulated trades.')) return;
+  async function resetLedger() {
+    const ok = await CapConfirm({ title: 'Reset paper ledger?', body: 'Clears all simulated trades.', confirmLabel: 'Reset', destructive: true });
+    if (!ok) return;
     _save((pl) => {
       pl.cashPkr = 500000;
       pl.transactions = [];
