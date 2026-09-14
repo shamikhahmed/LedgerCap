@@ -5,9 +5,9 @@ const Watchlist = (() => {
   function _form(item) {
     const w = item || {};
     return `
-    <div class="field"><label class="field-label">Symbol</label><input class="field-input" id="wl-symbol" value="${w.symbol || ''}"></div>
-    <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${w.name || ''}"></div>
-    <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
+    <div class="field"><label class="field-label">Symbol</label><input class="field-input" id="wl-symbol" value="${esc(w.symbol || '')}"></div>
+    <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${esc(w.name || '')}"></div>
+    <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${esc(w.thesis || '')}</textarea></div>
     <div class="field"><label class="field-label">Alert target price (PKR)</label><input class="field-input" id="wl-target" type="number" step="0.01" value="${w.targetPrice || ''}" placeholder="Buy below this price"></div>
     <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Alert on crossover ≤ target (PSX session)</label>
     <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" data-action="Watchlist.save" data-tab="${w.id || ''}">Save</button>`;
@@ -54,13 +54,13 @@ const Watchlist = (() => {
       const alertHit = w.targetPrice > 0 && quote.price > 0 && quote.price <= w.targetPrice;
       return `
       <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}">
-        <div class="rt-wl-card-main" data-action="Research.open" data-symbol="${w.symbol}">
+        <div class="rt-wl-card-main" data-action="Research.open" data-symbol="${esc(w.symbol)}">
           <div class="rt-wl-head">
-            <strong>${w.symbol}</strong>
+            <strong>${esc(w.symbol)}</strong>
             ${U.ratingBadge(ai.action)}
             ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}
           </div>
-          <div class="lc-card-sub">${w.name}${w.thesis ? ' · ' + w.thesis.slice(0, 50) : ''}</div>
+          <div class="lc-card-sub">${esc(w.name)}${w.thesis ? ' · ' + esc(w.thesis.slice(0, 50)) : ''}</div>
           <div class="lc-card-meta">
             <span>Fair: <strong>${U.fmt(ai.fairValue)}</strong></span>
             <span class="${U.chgCls(upside)}">Upside ${U.fmt(upside, { pct: true, signed: true })}</span>

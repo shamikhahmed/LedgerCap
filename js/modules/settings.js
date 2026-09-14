@@ -309,6 +309,10 @@ const Settings = (() => {
       <div class="field">
         <label class="field-label">Bot token</label>
         <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${(typeof SecretsVault !== 'undefined' && SecretsVault.hasTelegramToken()) || settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
+        <p class="field-hint">Token is masked and stored encrypted when PIN is on. Never logged.</p>
+      </div>
+      <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button type="button" class="btn-ghost btn-sm" data-action="Settings._clearTelegramToken">Remove saved token</button>
       </div>
       <div class="field">
         <label class="field-label">Chat ID</label>
@@ -448,9 +452,11 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || '3.14.0'}</span></div>
-      <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || window.LEDGERCAP_VERSION?.app || '3.57.0'}</span></div>
+      <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first · PWA</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
+      <div class="setting-row" style="align-items:flex-start"><div class="setting-label">Prices</div><span class="setting-value" style="text-align:right;max-width:62%;line-height:1.35">PSX and Yahoo Finance via LedgerCap's server. May be delayed.</span></div>
+      <p class="lc-disclaimer" style="margin:8px 12px 14px;font-size:0.75rem;line-height:1.45;color:var(--text3)">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</p>
     </div>
     </div>`;
     if (typeof I18n !== 'undefined') I18n.bindLangSwitch(screen);
@@ -538,8 +544,9 @@ const Settings = (() => {
     render();
   }
 
-  function _resetAssumptions() {
-    if (!confirm('Reset assumptions to defaults?')) return;
+  async function _resetAssumptions() {
+    const ok = await CapConfirm({ title: 'Reset assumptions to defaults?', confirmLabel: 'Reset' });
+    if (!ok) return;
     State.update(s => {
       s.settings.targetReturn = 0.18;
       s.settings.inflationRate = 0.20;
@@ -608,7 +615,8 @@ const Settings = (() => {
 
   async function _setDecoyPin() {
     if (PinVault.hasDecoy()) {
-      if (!confirm('Replace existing decoy PIN?')) return;
+      const ok = await CapConfirm({ title: 'Replace existing decoy PIN?', confirmLabel: 'Replace', destructive: true });
+      if (!ok) return;
     }
     const vals = await _pinPrompt('Decoy PIN', [
       { id: 'pin-main', label: 'Main PIN (verify)' },
@@ -659,7 +667,7 @@ const Settings = (() => {
       App.showToast('Encryption unavailable', 'error');
       return;
     }
-    const pin = prompt('Enter PIN to encrypt this backup (4+ digits):');
+    const pin = await CapPrompt({ title: 'Encrypt backup', body: 'Enter PIN to encrypt this backup (4+ digits).', type: 'password', confirmLabel: 'Encrypt' });
     if (!pin || pin.length < 4) {
       App.showToast('PIN required for encrypted backup', 'warning');
       return;
@@ -692,7 +700,7 @@ const Settings = (() => {
         try {
           const parsed = JSON.parse(raw);
           if (parsed?.ledgercapEnc) {
-            const pin = prompt('Enter PIN to decrypt backup:');
+            const pin = await CapPrompt({ title: 'Decrypt backup', body: 'Enter PIN to decrypt backup.', type: 'password', confirmLabel: 'Decrypt' });
             if (!pin) return;
             raw = await BackupCrypto.decrypt(parsed, pin);
             if (!raw) { App.showToast('Decrypt failed — wrong PIN?', 'error'); return; }
@@ -734,24 +742,43 @@ const Settings = (() => {
     } catch (e) {}
   }
 
-  function _resetVault() {
+  async function _resetVault() {
     if (PinVault?.isDecoyMode?.()) {
       App.showToast('Reset blocked in decoy view', 'warning');
       return;
     }
-    if (!confirm('Reset all data? Export a .ledgercap backup first if you need to recover.')) return;
+    const ok1 = await CapConfirm({
+      title: 'Reset all data?',
+      body: 'Export a .ledgercap backup first if you need to recover.',
+      confirmLabel: 'Continue',
+      destructive: true,
+    });
+    if (!ok1) return;
     _snapshotBeforeDestructive();
-    if (!confirm('Final confirmation — delete all ledger data on this device?')) return;
+    const ok2 = await CapConfirm({
+      title: 'Final confirmation',
+      body: 'Delete all ledger data on this device?',
+      confirmLabel: 'Delete everything',
+      destructive: true,
+    });
+    if (!ok2) return;
     State.reset();
     App.showToast('Data reset', 'warning');
     App.renderCurrent();
   }
 
-  function loadSeedData(opts) {
+  async function loadSeedData(opts) {
     const silent = opts && opts.silent;
     const seed = window.INITIAL_TRANSACTIONS || [];
     if (!seed.length) { if (!silent) App.showToast('Seed data unavailable', 'error'); return false; }
-    if (!silent && !confirm(`Load ${seed.length} portfolio transactions? Existing ledger will be replaced.`)) return false;
+    if (!silent) {
+      const ok = await CapConfirm({
+        title: 'Load demo portfolio?',
+        body: `Load ${seed.length} portfolio transactions? Existing ledger will be replaced.`,
+        confirmLabel: 'Load demo',
+      });
+      if (!ok) return false;
+    }
     State.update(s => {
       s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
       s.settings.onboardingDone = true;
@@ -793,8 +820,14 @@ const Settings = (() => {
     loadSeedData();
   }
 
-  function _clearHoldings() {
-    if (!confirm('Remove all transactions? Settings and prices stay.')) return;
+  async function _clearHoldings() {
+    const ok = await CapConfirm({
+      title: 'Remove all transactions?',
+      body: 'Settings and prices stay.',
+      confirmLabel: 'Clear',
+      destructive: true,
+    });
+    if (!ok) return;
     State.update(s => { s.transactions = []; });
     App.showToast('Transactions cleared', 'warning');
     App.renderCurrent();
@@ -884,6 +917,24 @@ const Settings = (() => {
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
     App.showToast(`${theme === 'light' ? 'Light' : 'Dark'} theme applied`, 'success');
+    render();
+  }
+
+  async function _clearTelegramToken() {
+    const ok = await CapConfirm({
+      title: 'Remove Telegram bot token?',
+      body: 'Alerts will stop until you save a new token.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    if (!ok) return;
+    if (typeof SecretsVault !== 'undefined' && SecretsVault.clearTelegramToken) {
+      await SecretsVault.clearTelegramToken();
+    }
+    State.update((s) => { delete s.settings.telegramBotToken; });
+    const inp = document.getElementById('tg-token');
+    if (inp) inp.value = '';
+    App.showToast('Telegram token removed', 'success');
     render();
   }
 
@@ -1060,6 +1111,6 @@ const Settings = (() => {
     }
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _saveFundNavs, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _saveFundNavs, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _clearTelegramToken, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;

@@ -131,6 +131,13 @@ const SecretsVault = (() => {
     }
   }
 
+  async function clearTelegramToken() {
+    localStorage.removeItem(ENC);
+    if (typeof State !== 'undefined') {
+      State.update((s) => { delete s.settings.telegramBotToken; });
+    }
+  }
+
   async function migratePlaintextToken() {
     if (typeof State === 'undefined') return;
     const plain = State.get('settings')?.telegramBotToken;
@@ -150,6 +157,7 @@ const SecretsVault = (() => {
   return {
     setTelegramToken,
     getTelegramToken,
+    clearTelegramToken,
     hasTelegramToken,
     migratePlaintextToken,
     stripSensitiveSettings,

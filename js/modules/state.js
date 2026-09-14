@@ -390,9 +390,22 @@ const State = (() => {
     const source = typeof priceData === 'object' ? priceData.source : 'manual';
     const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'live-sse', 'live-sse-int', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
+    const lastGood = _s.prices[symbol]?.price || 0;
+    const prevClose = (typeof priceData === 'object' && priceData.prevClose > 0)
+      ? priceData.prevClose
+      : (_s.prices[symbol]?.prevClose || lastGood || fallback || 0);
+    // LDG-P1-08 — finite, positive, within ±20% of last close / last-good; else keep last-good.
+    if (!Number.isFinite(price) || price <= 0) return;
+    if (prevClose > 0 && (price > prevClose * 1.2 || price < prevClose * 0.8)) {
+      if (lastGood > 0) return; // keep last-good
+      if (fallback > 0) {
+        _s.prices[symbol] = { price: fallback, prevClose: fallback, ts: Date.now(), source: 'fallback' };
+        save();
+      }
+      return;
+    }
     if (!trusted && fallback && price && price > 0) {
       if (price > fallback * 2.5 || price < fallback * 0.4) {
-        console.warn(`Rejected bad price for ${symbol}: ₨${price} (fallback: ₨${fallback})`);
         return;
       }
     }

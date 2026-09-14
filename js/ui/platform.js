@@ -37,13 +37,16 @@ const PlatformUI = (() => {
         if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
       }
     }
-    // Whole units once amounts reach 4 digits — paisa noise on large
-    // figures reads cheap and slows the 3-second glance.
-    const d = opts.decimals ?? (abs >= 1000 ? 0 : 2);
+    // Totals / P&L: whole rupees (no paisa). Pass { price: true } or decimals for quotes.
+    const signedMoney = !!(opts.signed && !opts.pct);
+    const d = opts.decimals ?? (opts.price ? 2 : (signedMoney || abs >= 100 ? 0 : 2));
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
-    if (opts.signed && val > 0) return '+' + sym + formatted;
-    if (val < 0) return '-' + sym + formatted;
-    return sym + formatted;
+    let out;
+    if (opts.signed && val > 0) out = '+' + sym + formatted;
+    else if (val < 0) out = '-' + sym + formatted;
+    else out = sym + formatted;
+    if (signedMoney && val !== 0) out += val > 0 ? ' ▲' : ' ▼';
+    return out;
   }
 
   /** Index / points — no currency prefix, 2 decimals */

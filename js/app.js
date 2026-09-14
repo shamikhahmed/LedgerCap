@@ -10,10 +10,11 @@ const App = (() => {
     return mf?.currentNav > 0 ? mf.currentNav : 0;
   }
 
-  function _isBadPrice(sym, stored) {
+  function _isBadPrice(sym, stored, prevClose) {
     if (!Number.isFinite(stored) || stored <= 0) return true;
-    const ref = _priceRef(sym);
-    if (ref > 0 && (stored > ref * 3 || stored < ref * 0.3)) return true;
+    const last = (Number.isFinite(prevClose) && prevClose > 0) ? prevClose : _priceRef(sym);
+    // LDG-P1-08: reject swings beyond ±20% of last close / last-good; keep last-good.
+    if (last > 0 && (stored > last * 1.2 || stored < last * 0.8)) return true;
     return false;
   }
 
@@ -24,7 +25,8 @@ const App = (() => {
     Object.keys(state.prices || {}).forEach(sym => {
       const entry = state.prices[sym];
       const stored = entry?.price;
-      if (!entry || typeof entry !== 'object' || _isBadPrice(sym, stored)) {
+      const prev = entry?.prevClose;
+      if (!entry || typeof entry !== 'object' || _isBadPrice(sym, stored, prev)) {
         delete state.prices[sym];
         cleaned++;
         changed = true;
@@ -32,7 +34,6 @@ const App = (() => {
     });
     if (changed) {
       State.save();
-      console.log(`Cleared ${cleaned} invalid cached prices on init`);
     }
   }
 
@@ -41,8 +42,8 @@ const App = (() => {
     State.update(s => {
       Object.keys(s.prices || {}).forEach(sym => {
         const stored = s.prices[sym]?.price;
-        if (_isBadPrice(sym, stored)) {
-          console.log(`Clearing bad price for ${sym}: ${stored} (ref: ${_priceRef(sym)})`);
+        const prev = s.prices[sym]?.prevClose;
+        if (_isBadPrice(sym, stored, prev)) {
           delete s.prices[sym];
           cleaned++;
         }
@@ -78,10 +79,14 @@ const App = (() => {
     const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
     const live = sessionOpen && typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
     const pktLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : null;
-    if (offline) return { label: 'Offline', cls: 'lc-ticker-pill--warn' };
-    if (live) return { label: 'Live', cls: 'lc-ticker-pill--live' };
-    if (pktLabel === 'Last close' || pktLabel === 'Pre-market') return { label: `${pktLabel} ${age}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
-    return { label: age, cls: stale ? 'lc-ticker-pill--warn' : '' };
+    // D-09 / LDG-P1-01 — one freshness line with source attribution
+    const src = 'via LedgerCap server';
+    if (offline) return { label: `Offline · ${src}`, cls: 'lc-ticker-pill--warn' };
+    if (live) return { label: `Live · ${src}`, cls: 'lc-ticker-pill--live' };
+    if (pktLabel === 'Last close' || pktLabel === 'Pre-market') {
+      return { label: `${pktLabel} ${age} · ${src}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
+    }
+    return { label: `${age} · ${src}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
   }
 
   function _priceFreshnessChip() {
@@ -146,12 +151,20 @@ const App = (() => {
     if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
   }
 
-  function deletePortfolio(id) {
+  async function deletePortfolio(id) {
     if (typeof PortfolioBuckets === 'undefined') return;
     const b = PortfolioBuckets.list().find(x => x.id === id);
     if (!b || b.builtin) { showToast('Built-in portfolios cannot be deleted', 'warning'); return; }
     const txs = PortfolioBuckets.txsForBucket(State.get(), id);
-    if (txs.length && !confirm(`Delete “${b.name}” and ${txs.length} transaction(s)? Cannot undo.`)) return;
+    if (txs.length) {
+      const ok = await CapConfirm({
+        title: `Delete “${b.name}”?`,
+        body: `Also deletes ${txs.length} transaction(s). This cannot be undone.`,
+        confirmLabel: 'Delete',
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     State.update(s => {
       s.portfolios = (s.portfolios || []).filter(p => p.id !== id);
       if (txs.length) s.transactions = (s.transactions || []).filter(t => t.portfolioId !== id);
@@ -161,10 +174,10 @@ const App = (() => {
     if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
   }
 
-  function renamePortfolio(id) {
+  async function renamePortfolio(id) {
     const b = PortfolioBuckets.list().find(x => x.id === id);
     if (!b || b.builtin) return;
-    const name = prompt('Portfolio name', b.name);
+    const name = await CapPrompt({ title: 'Portfolio name', value: b.name, confirmLabel: 'Rename' });
     if (!name || !name.trim()) return;
     State.update(s => {
       const p = (s.portfolios || []).find(x => x.id === id);
@@ -416,6 +429,7 @@ const App = (() => {
     _maybeDemoBanner();
     _maybeInstallHint();
     if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
+    _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -438,6 +452,24 @@ const App = (() => {
         PinLock?.gate?.();
       }
     }, 20000);
+  }
+
+  function _wirePullToRefresh() {
+    const root = document.getElementById('app') || document.body;
+    let startY = 0;
+    let pulling = false;
+    root.addEventListener('touchstart', (e) => {
+      const screen = document.querySelector('.psx-screen.active');
+      if (!screen || screen.scrollTop > 2) { pulling = false; return; }
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+    root.addEventListener('touchend', (e) => {
+      if (!pulling) return;
+      pulling = false;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy > 72 && navigator.onLine) refreshPrices();
+    }, { passive: true });
   }
 
   function _checkDeployVersion() {}
@@ -1066,8 +1098,9 @@ const App = (() => {
     });
   }
 
-  function deleteTransaction(id) {
-    if (!confirm('Delete this transaction?')) return;
+  async function deleteTransaction(id) {
+    const ok = await CapConfirm({ title: 'Delete this transaction?', confirmLabel: 'Delete', destructive: true });
+    if (!ok) return;
     if (typeof LcPolish !== 'undefined') LcPolish.hapticDelete();
     State.deleteTransaction(id);
     closeBottomSheet();

@@ -6,7 +6,7 @@ const ImportCsv = (() => {
     if (typeof PortfolioBuckets === 'undefined') return '';
     const custom = PortfolioBuckets.list().filter(p => !p.builtin);
     if (!custom.length) return '';
-    const opts = custom.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const opts = custom.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
     return `<div class="field"><label class="field-label">Assign to portfolio (optional)</label>
       <select class="field-select" id="csv-portfolio-id">
         <option value="">Default ledger</option>${opts}
@@ -74,7 +74,7 @@ const ImportCsv = (() => {
       return;
     }
     el.innerHTML = `<table class="psx-table"><thead><tr><th>Date</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Price</th><th>Broker</th></tr></thead><tbody>
-      ${_pending.slice(0, 20).map((t) => `<tr><td>${t.date}</td><td>${t.symbol}</td><td>${t.type}</td><td>${t.shares ?? t.qty ?? ''}</td><td>${t.price ?? t.priceUsd ?? ''}</td><td>${t.broker || ''}</td></tr>`).join('')}
+      ${_pending.slice(0, 20).map((t) => `<tr><td>${esc(t.date)}</td><td>${esc(t.symbol)}</td><td>${esc(t.type)}</td><td>${esc(t.shares ?? t.qty ?? '')}</td><td>${esc(t.price ?? t.priceUsd ?? '')}</td><td>${esc(t.broker || '')}</td></tr>`).join('')}
       </tbody></table>${_pending.length > 20 ? `<p class="lc-empty-note">+${_pending.length - 20} more rows</p>` : ''}`;
   }
 

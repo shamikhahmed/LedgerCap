@@ -51,7 +51,13 @@ const CloudBackupService = (() => {
       if (!data.payload) return { ok: false, error: 'No backup on server' };
       const json = await BackupCrypto.decryptWithPassphrase(data.payload, key);
       if (!json) return { ok: false, error: 'Decrypt failed — wrong sync key?' };
-      if (!confirm('Replace local ledger with cloud backup? Export first if unsure.')) {
+      const okReplace = await CapConfirm({
+        title: 'Replace local ledger?',
+        body: 'Replace local ledger with cloud backup? Export first if unsure.',
+        confirmLabel: 'Replace',
+        destructive: true,
+      });
+      if (!okReplace) {
         return { ok: false, error: 'Cancelled' };
       }
       const ok = State.importJSON(json);

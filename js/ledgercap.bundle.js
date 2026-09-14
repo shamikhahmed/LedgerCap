@@ -1,4 +1,4 @@
-/* LedgerCap bundle — 94 modules — run: npm run bundle */
+/* LedgerCap bundle — 95 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -4952,9 +4952,9 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.56.4',
-  sw: 137,
-  cache: 'ledgercap-v137',
+  app: '3.57.0',
+  sw: 138,
+  cache: 'ledgercap-v138',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -5022,7 +5022,7 @@ window.I18N_LOCALES = {
     open: 'Open →',
     addHoldings: 'Add holdings',
     loadDemo: 'Load demo portfolio',
-    nav: { hub: 'Hub', watch: 'Watch', funds: 'Funds', pnl: 'P&L', market: 'Market', portfolio: 'Portfolio', analyze: 'Analyze', more: 'More' },
+    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Performance', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'More' },
     theme: { dark: 'Dark', light: 'Light', toggle: 'Toggle theme' },
     lang: { en: 'English', ur: 'اردو', roman: 'Roman Urdu', label: 'Language' },
     install: { title: 'Install LedgerCap', body: 'Safari → Share → Add to Home Screen', browser: 'Works in browser & as app' },
@@ -5098,7 +5098,7 @@ window.I18N_LOCALES = {
     open: 'کھولیں ←',
     addHoldings: 'ہولڈنگز شامل کریں',
     loadDemo: 'ڈیمو پورٹ فولیو',
-    nav: { hub: 'ہب', watch: 'واچ', funds: 'فنڈز', pnl: 'P&L', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'تجزیہ', more: 'مزید' },
+    nav: { hub: 'ہوم', watch: 'واچ لسٹ', funds: 'فنڈز', pnl: 'کارکردگی', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'ریسرچ', more: 'مزید' },
     theme: { dark: 'ڈارک', light: 'لائٹ', toggle: 'تھیم بدلیں' },
     lang: { en: 'English', ur: 'اردو', roman: 'رومن اردو', label: 'زبان' },
     install: { title: 'لیجرکیپ انسٹال کریں', body: 'Safari → Share → Add to Home Screen', browser: 'براؤزر اور ایپ دونوں میں' },
@@ -5171,7 +5171,7 @@ window.I18N_LOCALES = {
     open: 'Kholen →',
     addHoldings: 'Holdings shamil karein',
     loadDemo: 'Demo portfolio load karein',
-    nav: { hub: 'Hub', watch: 'Watch', funds: 'Funds', pnl: 'P&L', market: 'Market', portfolio: 'Portfolio', analyze: 'Tajzia', more: 'Mazeed' },
+    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Performance', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'Mazeed' },
     theme: { dark: 'Dark', light: 'Light', toggle: ' Theme badlein' },
     lang: { en: 'English', ur: 'اردو', roman: 'Roman Urdu', label: 'Zuban' },
     install: { title: 'LedgerCap install karein', body: 'Safari → Share → Add to Home Screen', browser: 'Browser aur app dono mein' },
@@ -9722,6 +9722,13 @@ const SecretsVault = (() => {
     }
   }
 
+  async function clearTelegramToken() {
+    localStorage.removeItem(ENC);
+    if (typeof State !== 'undefined') {
+      State.update((s) => { delete s.settings.telegramBotToken; });
+    }
+  }
+
   async function migratePlaintextToken() {
     if (typeof State === 'undefined') return;
     const plain = State.get('settings')?.telegramBotToken;
@@ -9741,6 +9748,7 @@ const SecretsVault = (() => {
   return {
     setTelegramToken,
     getTelegramToken,
+    clearTelegramToken,
     hasTelegramToken,
     migratePlaintextToken,
     stripSensitiveSettings,
@@ -10890,7 +10898,13 @@ const CloudBackupService = (() => {
       if (!data.payload) return { ok: false, error: 'No backup on server' };
       const json = await BackupCrypto.decryptWithPassphrase(data.payload, key);
       if (!json) return { ok: false, error: 'Decrypt failed — wrong sync key?' };
-      if (!confirm('Replace local ledger with cloud backup? Export first if unsure.')) {
+      const okReplace = await CapConfirm({
+        title: 'Replace local ledger?',
+        body: 'Replace local ledger with cloud backup? Export first if unsure.',
+        confirmLabel: 'Replace',
+        destructive: true,
+      });
+      if (!okReplace) {
         return { ok: false, error: 'Cancelled' };
       }
       const ok = State.importJSON(json);
@@ -12304,6 +12318,131 @@ const LcDebounce = (() => {
 })();
 window.LcDebounce = LcDebounce;
 
+;/* === js/ui/dialogs.js === */
+'use strict';
+/* Accessible dialogs — replaces window.alert / confirm / prompt (LDG-P1-04). */
+(function () {
+  function ensureStyles() {
+    if (document.getElementById('lc-dialog-css')) return;
+    const style = document.createElement('style');
+    style.id = 'lc-dialog-css';
+    style.textContent = `
+.lc-dialog-backdrop{position:fixed;inset:0;background:rgba(10,10,12,.48);z-index:9000;display:flex;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-bottom))}
+@media(min-width:560px){.lc-dialog-backdrop{align-items:center}}
+.lc-dialog{width:min(100%,420px);background:var(--bg3,#16161a);color:var(--text,#f5f5f5);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:16px 16px 12px 12px;padding:18px 16px 14px;box-shadow:0 18px 48px rgba(0,0,0,.35)}
+.lc-dialog h2{margin:0 0 8px;font:600 1.125rem/1.25 var(--font,system-ui);color:var(--text)}
+.lc-dialog p{margin:0;font-size:.9375rem;line-height:1.45;color:var(--text2,#a1a1a6)}
+.lc-dialog__actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.lc-dialog__actions .btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.12));background:var(--bg2,#1c1c1e);color:var(--text);font:600 .9rem/1 system-ui}
+.lc-dialog__actions .btn-primary{background:var(--accent,#0a84ff);border-color:transparent;color:#fff}
+.lc-dialog input{width:100%;margin-top:12px;min-height:44px;border-radius:10px;border:1px solid var(--border);background:var(--bg2,#1c1c1e);color:var(--text);padding:0 12px;font-size:1rem;box-sizing:border-box}
+`;
+    document.head.appendChild(style);
+  }
+
+  function mountDialog({ title, body, input, confirmLabel, cancelLabel, destructive, showCancel }) {
+    ensureStyles();
+    return new Promise((resolve) => {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'lc-dialog-backdrop';
+      backdrop.setAttribute('role', 'presentation');
+      const dialog = document.createElement('div');
+      dialog.className = 'lc-dialog';
+      dialog.setAttribute('role', 'alertdialog');
+      dialog.setAttribute('aria-modal', 'true');
+      dialog.setAttribute('aria-labelledby', 'lc-dlg-title');
+      const h = document.createElement('h2');
+      h.id = 'lc-dlg-title';
+      h.tabIndex = -1;
+      h.textContent = title || '';
+      dialog.appendChild(h);
+      if (body) {
+        const p = document.createElement('p');
+        p.textContent = body;
+        dialog.appendChild(p);
+      }
+      let inputEl = null;
+      if (input) {
+        inputEl = document.createElement('input');
+        inputEl.type = input.type || 'text';
+        inputEl.autocomplete = 'off';
+        inputEl.placeholder = input.placeholder || '';
+        if (input.value != null) inputEl.value = String(input.value);
+        dialog.appendChild(inputEl);
+      }
+      const actions = document.createElement('div');
+      actions.className = 'lc-dialog__actions';
+      const close = (val) => {
+        backdrop.remove();
+        window.removeEventListener('keydown', onKey);
+        resolve(val);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape') close(input ? null : false);
+        if (e.key === 'Enter' && inputEl && document.activeElement === inputEl) {
+          e.preventDefault();
+          close(inputEl.value);
+        }
+      };
+      if (showCancel !== false) {
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'btn';
+        cancel.textContent = cancelLabel || 'Cancel';
+        cancel.addEventListener('click', () => close(input ? null : false));
+        actions.appendChild(cancel);
+      }
+      const confirm = document.createElement('button');
+      confirm.type = 'button';
+      confirm.className = 'btn btn-primary';
+      if (destructive) confirm.style.color = 'var(--danger, #ff453a)';
+      confirm.textContent = confirmLabel || 'OK';
+      confirm.addEventListener('click', () => close(input ? inputEl.value : true));
+      actions.appendChild(confirm);
+      dialog.appendChild(actions);
+      backdrop.appendChild(dialog);
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) close(input ? null : false);
+      });
+      document.body.appendChild(backdrop);
+      window.addEventListener('keydown', onKey);
+      (inputEl || h).focus();
+    });
+  }
+
+  window.CapConfirm = function CapConfirm(opts) {
+    opts = opts || {};
+    return mountDialog({
+      title: opts.title,
+      body: opts.body || '',
+      confirmLabel: opts.confirmLabel || 'Confirm',
+      cancelLabel: opts.cancelLabel || 'Cancel',
+      destructive: !!opts.destructive,
+      showCancel: true
+    });
+  };
+  window.CapAlert = function CapAlert(opts) {
+    opts = opts || {};
+    return mountDialog({
+      title: opts.title,
+      body: opts.body || '',
+      confirmLabel: opts.confirmLabel || 'OK',
+      showCancel: false
+    });
+  };
+  window.CapPrompt = function CapPrompt(opts) {
+    opts = opts || {};
+    return mountDialog({
+      title: opts.title,
+      body: opts.body || '',
+      input: { placeholder: opts.placeholder || '', type: opts.type || 'text', value: opts.value },
+      confirmLabel: opts.confirmLabel || 'OK',
+      cancelLabel: opts.cancelLabel || 'Cancel',
+      showCancel: true
+    });
+  };
+})();
+
 ;/* === js/ui/lc-events.js === */
 'use strict';
 /** CSP-safe delegated UI actions — replaces inline onclick handlers. */
@@ -12588,13 +12727,16 @@ const PlatformUI = (() => {
         if (abs >= 1e3) return sym + (val / 1e3).toFixed(2) + 'k';
       }
     }
-    // Whole units once amounts reach 4 digits — paisa noise on large
-    // figures reads cheap and slows the 3-second glance.
-    const d = opts.decimals ?? (abs >= 1000 ? 0 : 2);
+    // Totals / P&L: whole rupees (no paisa). Pass { price: true } or decimals for quotes.
+    const signedMoney = !!(opts.signed && !opts.pct);
+    const d = opts.decimals ?? (opts.price ? 2 : (signedMoney || abs >= 100 ? 0 : 2));
     const formatted = abs.toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d });
-    if (opts.signed && val > 0) return '+' + sym + formatted;
-    if (val < 0) return '-' + sym + formatted;
-    return sym + formatted;
+    let out;
+    if (opts.signed && val > 0) out = '+' + sym + formatted;
+    else if (val < 0) out = '-' + sym + formatted;
+    else out = sym + formatted;
+    if (signedMoney && val !== 0) out += val > 0 ? ' ▲' : ' ▼';
+    return out;
   }
 
   /** Index / points — no currency prefix, 2 decimals */
@@ -13720,9 +13862,22 @@ const State = (() => {
     const source = typeof priceData === 'object' ? priceData.source : 'manual';
     const trusted = ['psx_live', 'psx_int', 'psx_symbol', 'psx_eod', 'live-sse', 'live-sse-int', 'yahoo_intl', 'coingecko', 'yahoo', 'manual', 'meezan_seed'].includes(source);
     const fallback = (window.FALLBACK_PRICES || {})[symbol];
+    const lastGood = _s.prices[symbol]?.price || 0;
+    const prevClose = (typeof priceData === 'object' && priceData.prevClose > 0)
+      ? priceData.prevClose
+      : (_s.prices[symbol]?.prevClose || lastGood || fallback || 0);
+    // LDG-P1-08 — finite, positive, within ±20% of last close / last-good; else keep last-good.
+    if (!Number.isFinite(price) || price <= 0) return;
+    if (prevClose > 0 && (price > prevClose * 1.2 || price < prevClose * 0.8)) {
+      if (lastGood > 0) return; // keep last-good
+      if (fallback > 0) {
+        _s.prices[symbol] = { price: fallback, prevClose: fallback, ts: Date.now(), source: 'fallback' };
+        save();
+      }
+      return;
+    }
     if (!trusted && fallback && price && price > 0) {
       if (price > fallback * 2.5 || price < fallback * 0.4) {
-        console.warn(`Rejected bad price for ${symbol}: ₨${price} (fallback: ₨${fallback})`);
         return;
       }
     }
@@ -15312,8 +15467,8 @@ const Research = (() => {
         || (window.CRYPTO_ASSETS || []).find(x => x.symbol === s)
         || [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === s);
       const name = meta?.name || '';
-      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${s}')">
-        <strong>${s}</strong><span>${name}</span>
+      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${esc(s)}')">
+        <strong>${esc(s)}</strong><span>${esc(name)}</span>
       </button>`;
     }).join('');
   }
@@ -15774,6 +15929,7 @@ const Research = (() => {
           <div id="research-tv-chart" style="min-height:320px"></div>
         </div>
         ${_glossaryBlock()}
+        <div class="lc-disclaimer">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</div>
       </div>`;
 
     const assetClass = isCrypto ? 'crypto' : isIntl ? 'intl' : 'psx';
@@ -15799,9 +15955,9 @@ const Watchlist = (() => {
   function _form(item) {
     const w = item || {};
     return `
-    <div class="field"><label class="field-label">Symbol</label><input class="field-input" id="wl-symbol" value="${w.symbol || ''}"></div>
-    <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${w.name || ''}"></div>
-    <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${w.thesis || ''}</textarea></div>
+    <div class="field"><label class="field-label">Symbol</label><input class="field-input" id="wl-symbol" value="${esc(w.symbol || '')}"></div>
+    <div class="field"><label class="field-label">Name</label><input class="field-input" id="wl-name" value="${esc(w.name || '')}"></div>
+    <div class="field"><label class="field-label">Thesis</label><textarea class="field-input" id="wl-thesis" rows="3">${esc(w.thesis || '')}</textarea></div>
     <div class="field"><label class="field-label">Alert target price (PKR)</label><input class="field-input" id="wl-target" type="number" step="0.01" value="${w.targetPrice || ''}" placeholder="Buy below this price"></div>
     <label class="lc-check-row"><input type="checkbox" id="wl-alert" ${w.alertEnabled !== false ? 'checked' : ''}> Alert on crossover ≤ target (PSX session)</label>
     <button type="button" class="os-btn os-btn-primary" style="width:100%;margin-top:8px;" data-action="Watchlist.save" data-tab="${w.id || ''}">Save</button>`;
@@ -15848,13 +16004,13 @@ const Watchlist = (() => {
       const alertHit = w.targetPrice > 0 && quote.price > 0 && quote.price <= w.targetPrice;
       return `
       <div class="rt-wl-card cap-reveal${alertHit ? ' lc-alert-hit' : ''}">
-        <div class="rt-wl-card-main" data-action="Research.open" data-symbol="${w.symbol}">
+        <div class="rt-wl-card-main" data-action="Research.open" data-symbol="${esc(w.symbol)}">
           <div class="rt-wl-head">
-            <strong>${w.symbol}</strong>
+            <strong>${esc(w.symbol)}</strong>
             ${U.ratingBadge(ai.action)}
             ${alertHit ? '<span class="lc-alert-badge">Target hit</span>' : ''}
           </div>
-          <div class="lc-card-sub">${w.name}${w.thesis ? ' · ' + w.thesis.slice(0, 50) : ''}</div>
+          <div class="lc-card-sub">${esc(w.name)}${w.thesis ? ' · ' + esc(w.thesis.slice(0, 50)) : ''}</div>
           <div class="lc-card-meta">
             <span>Fair: <strong>${U.fmt(ai.fairValue)}</strong></span>
             <span class="${U.chgCls(upside)}">Upside ${U.fmt(upside, { pct: true, signed: true })}</span>
@@ -16878,6 +17034,10 @@ const Settings = (() => {
       <div class="field">
         <label class="field-label">Bot token</label>
         <input class="field-input" id="tg-token" type="password" autocomplete="off" placeholder="${(typeof SecretsVault !== 'undefined' && SecretsVault.hasTelegramToken()) || settings.telegramBotToken ? 'Saved — enter new token to replace' : '123456:ABC…'}" value="">
+        <p class="field-hint">Token is masked and stored encrypted when PIN is on. Never logged.</p>
+      </div>
+      <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button type="button" class="btn-ghost btn-sm" data-action="Settings._clearTelegramToken">Remove saved token</button>
       </div>
       <div class="field">
         <label class="field-label">Chat ID</label>
@@ -17017,9 +17177,11 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || '3.14.0'}</span></div>
-      <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || window.LEDGERCAP_VERSION?.app || '3.57.0'}</span></div>
+      <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first · PWA</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
+      <div class="setting-row" style="align-items:flex-start"><div class="setting-label">Prices</div><span class="setting-value" style="text-align:right;max-width:62%;line-height:1.35">PSX and Yahoo Finance via LedgerCap's server. May be delayed.</span></div>
+      <p class="lc-disclaimer" style="margin:8px 12px 14px;font-size:0.75rem;line-height:1.45;color:var(--text3)">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</p>
     </div>
     </div>`;
     if (typeof I18n !== 'undefined') I18n.bindLangSwitch(screen);
@@ -17107,8 +17269,9 @@ const Settings = (() => {
     render();
   }
 
-  function _resetAssumptions() {
-    if (!confirm('Reset assumptions to defaults?')) return;
+  async function _resetAssumptions() {
+    const ok = await CapConfirm({ title: 'Reset assumptions to defaults?', confirmLabel: 'Reset' });
+    if (!ok) return;
     State.update(s => {
       s.settings.targetReturn = 0.18;
       s.settings.inflationRate = 0.20;
@@ -17177,7 +17340,8 @@ const Settings = (() => {
 
   async function _setDecoyPin() {
     if (PinVault.hasDecoy()) {
-      if (!confirm('Replace existing decoy PIN?')) return;
+      const ok = await CapConfirm({ title: 'Replace existing decoy PIN?', confirmLabel: 'Replace', destructive: true });
+      if (!ok) return;
     }
     const vals = await _pinPrompt('Decoy PIN', [
       { id: 'pin-main', label: 'Main PIN (verify)' },
@@ -17228,7 +17392,7 @@ const Settings = (() => {
       App.showToast('Encryption unavailable', 'error');
       return;
     }
-    const pin = prompt('Enter PIN to encrypt this backup (4+ digits):');
+    const pin = await CapPrompt({ title: 'Encrypt backup', body: 'Enter PIN to encrypt this backup (4+ digits).', type: 'password', confirmLabel: 'Encrypt' });
     if (!pin || pin.length < 4) {
       App.showToast('PIN required for encrypted backup', 'warning');
       return;
@@ -17261,7 +17425,7 @@ const Settings = (() => {
         try {
           const parsed = JSON.parse(raw);
           if (parsed?.ledgercapEnc) {
-            const pin = prompt('Enter PIN to decrypt backup:');
+            const pin = await CapPrompt({ title: 'Decrypt backup', body: 'Enter PIN to decrypt backup.', type: 'password', confirmLabel: 'Decrypt' });
             if (!pin) return;
             raw = await BackupCrypto.decrypt(parsed, pin);
             if (!raw) { App.showToast('Decrypt failed — wrong PIN?', 'error'); return; }
@@ -17303,24 +17467,43 @@ const Settings = (() => {
     } catch (e) {}
   }
 
-  function _resetVault() {
+  async function _resetVault() {
     if (PinVault?.isDecoyMode?.()) {
       App.showToast('Reset blocked in decoy view', 'warning');
       return;
     }
-    if (!confirm('Reset all data? Export a .ledgercap backup first if you need to recover.')) return;
+    const ok1 = await CapConfirm({
+      title: 'Reset all data?',
+      body: 'Export a .ledgercap backup first if you need to recover.',
+      confirmLabel: 'Continue',
+      destructive: true,
+    });
+    if (!ok1) return;
     _snapshotBeforeDestructive();
-    if (!confirm('Final confirmation — delete all ledger data on this device?')) return;
+    const ok2 = await CapConfirm({
+      title: 'Final confirmation',
+      body: 'Delete all ledger data on this device?',
+      confirmLabel: 'Delete everything',
+      destructive: true,
+    });
+    if (!ok2) return;
     State.reset();
     App.showToast('Data reset', 'warning');
     App.renderCurrent();
   }
 
-  function loadSeedData(opts) {
+  async function loadSeedData(opts) {
     const silent = opts && opts.silent;
     const seed = window.INITIAL_TRANSACTIONS || [];
     if (!seed.length) { if (!silent) App.showToast('Seed data unavailable', 'error'); return false; }
-    if (!silent && !confirm(`Load ${seed.length} portfolio transactions? Existing ledger will be replaced.`)) return false;
+    if (!silent) {
+      const ok = await CapConfirm({
+        title: 'Load demo portfolio?',
+        body: `Load ${seed.length} portfolio transactions? Existing ledger will be replaced.`,
+        confirmLabel: 'Load demo',
+      });
+      if (!ok) return false;
+    }
     State.update(s => {
       s.transactions = seed.map(t => ({ ...t, id: t.id || Ledger.newId(), createdAt: Date.now() }));
       s.settings.onboardingDone = true;
@@ -17362,8 +17545,14 @@ const Settings = (() => {
     loadSeedData();
   }
 
-  function _clearHoldings() {
-    if (!confirm('Remove all transactions? Settings and prices stay.')) return;
+  async function _clearHoldings() {
+    const ok = await CapConfirm({
+      title: 'Remove all transactions?',
+      body: 'Settings and prices stay.',
+      confirmLabel: 'Clear',
+      destructive: true,
+    });
+    if (!ok) return;
     State.update(s => { s.transactions = []; });
     App.showToast('Transactions cleared', 'warning');
     App.renderCurrent();
@@ -17453,6 +17642,24 @@ const Settings = (() => {
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
     App.showToast(`${theme === 'light' ? 'Light' : 'Dark'} theme applied`, 'success');
+    render();
+  }
+
+  async function _clearTelegramToken() {
+    const ok = await CapConfirm({
+      title: 'Remove Telegram bot token?',
+      body: 'Alerts will stop until you save a new token.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    if (!ok) return;
+    if (typeof SecretsVault !== 'undefined' && SecretsVault.clearTelegramToken) {
+      await SecretsVault.clearTelegramToken();
+    }
+    State.update((s) => { delete s.settings.telegramBotToken; });
+    const inp = document.getElementById('tg-token');
+    if (inp) inp.value = '';
+    App.showToast('Telegram token removed', 'success');
     render();
   }
 
@@ -17629,7 +17836,7 @@ const Settings = (() => {
     }
   }
 
-  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _saveFundNavs, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
+  return { render, loadSeedData, _saveProfile, _saveManualAssets, _saveAssumptions, _resetAssumptions, _saveProxy, _saveNav, _saveFundNavs, _savePilot, _exportData, _exportEncryptedBackup, _importData, _resetVault, _loadSeed, _clearHoldings, _setTheme, _setHaptics, _setNumberFormat, _setDisplayCurrency, _setLiveStream, _setSnapshot, _exportStatementCsv, _exportStatementPdf, _refreshFx, _saveTelegram, _clearTelegramToken, _sendTelegramTest, _sendTelegramBrief, _sendTelegramPortfolioDigests, _sendTelegramNews, _detectTelegramChat, _genTelegramSyncKey, _syncTelegramCloud, _checkTelegramProxy, _pushCloudBackup, _pullCloudBackup, _enablePin, _changePin, _disablePin, _setDecoyPin, _setPinAutoLock, _lockNow };
 })();
 window.Settings = Settings;
 
@@ -17904,7 +18111,7 @@ const Signals = (() => {
 
     ${U.section('Book tags', _bookTagEditor())}
 
-    <div class="lc-disclaimer">${brief.disclaimer}</div>
+      <div class="lc-disclaimer">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</div>
     </div>`;
   }
 
@@ -17923,7 +18130,7 @@ const Signals = (() => {
       ${U.section('Intraday flags', rows.length
         ? rows.map(_intradayRow).join('')
         : '<div style="color:var(--os-text-secondary);padding:8px 0">No PSX moves above thresholds in your holdings.</div>')}
-      <div class="lc-disclaimer">Rule-based session scan — refresh prices during market hours. Not financial advice.</div>
+      <div class="lc-disclaimer">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</div>
     </div>`;
   }
 
@@ -18684,8 +18891,9 @@ const Journal = (() => {
     render();
   }
 
-  function remove(id) {
-    if (!confirm('Delete this journal entry?')) return;
+  async function remove(id) {
+    const ok = await CapConfirm({ title: 'Delete this journal entry?', confirmLabel: 'Delete', destructive: true });
+    if (!ok) return;
     State.update(s => { s.journal = s.journal.filter(j => j.id !== id); });
     render();
   }
@@ -18705,13 +18913,13 @@ const Journal = (() => {
       <div class="os-card cap-reveal" role="button" tabindex="0" aria-label="Edit journal entry" style="margin:0 20px 12px;cursor:pointer;" data-action="Journal.openEdit" data-tab="${e.id}">
         <div style="display:flex;justify-content:space-between;align-items:start;">
           <div>
-            <div style="font-weight:700;font-size:1rem;">${e.title || 'Untitled'}</div>
-            <div style="font-size:0.72rem;color:var(--os-text-tertiary);margin-top:4px;">${e.date || ''}${e.symbol ? ' · ' + e.symbol : ''}</div>
+            <div style="font-weight:700;font-size:1rem;">${esc(e.title || 'Untitled')}</div>
+            <div style="font-size:0.72rem;color:var(--os-text-tertiary);margin-top:4px;">${esc(e.date || '')}${e.symbol ? ' · ' + esc(e.symbol) : ''}</div>
           </div>
           <button type="button" class="os-btn os-btn-ghost" style="padding:4px 8px;font-size:0.7rem;" data-action="Journal.remove" data-tab="${e.id}" data-stop="1">Delete</button>
         </div>
-        ${e.body ? `<p style="font-size:0.85rem;color:var(--os-text-secondary);margin:10px 0 0;line-height:1.5;">${e.body.slice(0, 160)}${e.body.length > 160 ? '…' : ''}</p>` : ''}
-        ${e.review ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--os-border);font-size:0.8rem;color:var(--os-gain);">Review: ${e.review.slice(0, 100)}${e.review.length > 100 ? '…' : ''}</div>` : ''}
+        ${e.body ? `<p style="font-size:0.85rem;color:var(--os-text-secondary);margin:10px 0 0;line-height:1.5;">${esc(e.body.slice(0, 160))}${e.body.length > 160 ? '…' : ''}</p>` : ''}
+        ${e.review ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--os-border);font-size:0.8rem;color:var(--os-gain);">Review: ${esc(e.review.slice(0, 100))}${e.review.length > 100 ? '…' : ''}</div>` : ''}
       </div>`).join('') : `<div class="lc-empty-note">No journal entries yet. Document your investment thesis before you buy.</div>`}
     </div>`;
     CapMotion.refresh();
@@ -18867,7 +19075,7 @@ const PilotTools = (() => {
       </div>`;
   }
 
-  function calc(kind) {
+  async function calc(kind) {
     const prompts = {
       cagr: [['Principal ₨', 'principal', 100000], ['Final value ₨', 'final_value', 250000], ['Years', 'years', 5]],
       position_size: [['Risk ₨', 'risk_pkr', 10000], ['Stop loss %', 'stop_loss_pct', 5], ['Price ₨', 'price', 500]],
@@ -18876,13 +19084,13 @@ const PilotTools = (() => {
     const fields = prompts[kind] || [];
     const input = {};
     for (const [label, key, def] of fields) {
-      const v = prompt(label, String(def));
+      const v = await CapPrompt({ title: label, value: String(def), confirmLabel: 'Next' });
       if (v === null) return;
       input[key] = parseFloat(v) || 0;
     }
     const r = PilotEngine.calculator(kind, input);
     const el = document.getElementById('calc-result');
-    if (el) el.innerHTML = `<strong>${r.label}:</strong> ${typeof r.result === 'number' ? r.result.toLocaleString(undefined, { maximumFractionDigits: 2 }) : r.result}<br>${r.detail}`;
+    if (el) el.innerHTML = `<strong>${esc(r.label)}:</strong> ${typeof r.result === 'number' ? r.result.toLocaleString(undefined, { maximumFractionDigits: 2 }) : esc(r.result)}<br>${esc(r.detail)}`;
   }
 
   function _ipo() {
@@ -18899,14 +19107,14 @@ const PilotTools = (() => {
         </div>`).join('') : '<div style="padding:12px 16px;color:var(--os-text-secondary)">No IPO events — add PSX primary offerings you are tracking.</div>');
   }
 
-  function addIpo() {
-    const company = prompt('Company name');
+  async function addIpo() {
+    const company = await CapPrompt({ title: 'Company name', confirmLabel: 'Next' });
     if (!company) return;
-    const symbol = prompt('Symbol (optional)') || '';
-    const end = prompt('Subscription end (YYYY-MM-DD)', '') || '';
+    const symbol = (await CapPrompt({ title: 'Symbol (optional)', confirmLabel: 'Next' })) || '';
+    const end = (await CapPrompt({ title: 'Subscription end (YYYY-MM-DD)', confirmLabel: 'Add' })) || '';
     State.update(s => {
       if (!s.ipoEvents) s.ipoEvents = [];
-      s.ipoEvents.push({ id: 'ipo_' + Date.now(), company, symbol: symbol.toUpperCase(), subscription_end: end || null, listing_date: null, notes: '' });
+      s.ipoEvents.push({ id: 'ipo_' + Date.now(), company, symbol: String(symbol).toUpperCase(), subscription_end: end || null, listing_date: null, notes: '' });
     });
     if (window.App?.showToast) App.showToast('IPO added', 'ok');
     render(null, 'ipo');
@@ -18928,8 +19136,12 @@ const PilotTools = (() => {
         <div class="os-row"><div>${e.entry_type}</div><div>${U.fmt(e.amount)}</div></div>`).join('') || '<div style="padding:12px 16px;color:var(--os-text-secondary)">No cash movements logged.</div>');
   }
 
-  function addCash(type) {
-    const amount = parseFloat(prompt(type === 'deposit' ? 'Deposit amount ₨' : 'Withdraw amount ₨', '0'));
+  async function addCash(type) {
+    const amount = parseFloat(await CapPrompt({
+      title: type === 'deposit' ? 'Deposit amount ₨' : 'Withdraw amount ₨',
+      value: '0',
+      confirmLabel: 'Save',
+    }));
     if (!amount || amount <= 0) return;
     State.update(s => {
       if (!s.cashLedger) s.cashLedger = [];
@@ -19074,8 +19286,9 @@ const PaperTrade = (() => {
     App.showToast(`Paper sold ${shares} ${h.symbol}`, 'success');
   }
 
-  function resetLedger() {
-    if (!confirm('Reset paper ledger? Clears all simulated trades.')) return;
+  async function resetLedger() {
+    const ok = await CapConfirm({ title: 'Reset paper ledger?', body: 'Clears all simulated trades.', confirmLabel: 'Reset', destructive: true });
+    if (!ok) return;
     _save((pl) => {
       pl.cashPkr = 500000;
       pl.transactions = [];
@@ -19728,7 +19941,7 @@ const ImportCsv = (() => {
     if (typeof PortfolioBuckets === 'undefined') return '';
     const custom = PortfolioBuckets.list().filter(p => !p.builtin);
     if (!custom.length) return '';
-    const opts = custom.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const opts = custom.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
     return `<div class="field"><label class="field-label">Assign to portfolio (optional)</label>
       <select class="field-select" id="csv-portfolio-id">
         <option value="">Default ledger</option>${opts}
@@ -19796,7 +20009,7 @@ const ImportCsv = (() => {
       return;
     }
     el.innerHTML = `<table class="psx-table"><thead><tr><th>Date</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Price</th><th>Broker</th></tr></thead><tbody>
-      ${_pending.slice(0, 20).map((t) => `<tr><td>${t.date}</td><td>${t.symbol}</td><td>${t.type}</td><td>${t.shares ?? t.qty ?? ''}</td><td>${t.price ?? t.priceUsd ?? ''}</td><td>${t.broker || ''}</td></tr>`).join('')}
+      ${_pending.slice(0, 20).map((t) => `<tr><td>${esc(t.date)}</td><td>${esc(t.symbol)}</td><td>${esc(t.type)}</td><td>${esc(t.shares ?? t.qty ?? '')}</td><td>${esc(t.price ?? t.priceUsd ?? '')}</td><td>${esc(t.broker || '')}</td></tr>`).join('')}
       </tbody></table>${_pending.length > 20 ? `<p class="lc-empty-note">+${_pending.length - 20} more rows</p>` : ''}`;
   }
 
@@ -20311,10 +20524,11 @@ const App = (() => {
     return mf?.currentNav > 0 ? mf.currentNav : 0;
   }
 
-  function _isBadPrice(sym, stored) {
+  function _isBadPrice(sym, stored, prevClose) {
     if (!Number.isFinite(stored) || stored <= 0) return true;
-    const ref = _priceRef(sym);
-    if (ref > 0 && (stored > ref * 3 || stored < ref * 0.3)) return true;
+    const last = (Number.isFinite(prevClose) && prevClose > 0) ? prevClose : _priceRef(sym);
+    // LDG-P1-08: reject swings beyond ±20% of last close / last-good; keep last-good.
+    if (last > 0 && (stored > last * 1.2 || stored < last * 0.8)) return true;
     return false;
   }
 
@@ -20325,7 +20539,8 @@ const App = (() => {
     Object.keys(state.prices || {}).forEach(sym => {
       const entry = state.prices[sym];
       const stored = entry?.price;
-      if (!entry || typeof entry !== 'object' || _isBadPrice(sym, stored)) {
+      const prev = entry?.prevClose;
+      if (!entry || typeof entry !== 'object' || _isBadPrice(sym, stored, prev)) {
         delete state.prices[sym];
         cleaned++;
         changed = true;
@@ -20333,7 +20548,6 @@ const App = (() => {
     });
     if (changed) {
       State.save();
-      console.log(`Cleared ${cleaned} invalid cached prices on init`);
     }
   }
 
@@ -20342,8 +20556,8 @@ const App = (() => {
     State.update(s => {
       Object.keys(s.prices || {}).forEach(sym => {
         const stored = s.prices[sym]?.price;
-        if (_isBadPrice(sym, stored)) {
-          console.log(`Clearing bad price for ${sym}: ${stored} (ref: ${_priceRef(sym)})`);
+        const prev = s.prices[sym]?.prevClose;
+        if (_isBadPrice(sym, stored, prev)) {
           delete s.prices[sym];
           cleaned++;
         }
@@ -20379,10 +20593,14 @@ const App = (() => {
     const sessionOpen = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
     const live = sessionOpen && typeof LivePriceStream !== 'undefined' && LivePriceStream.status().connected;
     const pktLabel = typeof PsxSession !== 'undefined' ? PsxSession.priceLabel() : null;
-    if (offline) return { label: 'Offline', cls: 'lc-ticker-pill--warn' };
-    if (live) return { label: 'Live', cls: 'lc-ticker-pill--live' };
-    if (pktLabel === 'Last close' || pktLabel === 'Pre-market') return { label: `${pktLabel} ${age}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
-    return { label: age, cls: stale ? 'lc-ticker-pill--warn' : '' };
+    // D-09 / LDG-P1-01 — one freshness line with source attribution
+    const src = 'via LedgerCap server';
+    if (offline) return { label: `Offline · ${src}`, cls: 'lc-ticker-pill--warn' };
+    if (live) return { label: `Live · ${src}`, cls: 'lc-ticker-pill--live' };
+    if (pktLabel === 'Last close' || pktLabel === 'Pre-market') {
+      return { label: `${pktLabel} ${age} · ${src}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
+    }
+    return { label: `${age} · ${src}`, cls: stale ? 'lc-ticker-pill--warn' : '' };
   }
 
   function _priceFreshnessChip() {
@@ -20447,12 +20665,20 @@ const App = (() => {
     if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
   }
 
-  function deletePortfolio(id) {
+  async function deletePortfolio(id) {
     if (typeof PortfolioBuckets === 'undefined') return;
     const b = PortfolioBuckets.list().find(x => x.id === id);
     if (!b || b.builtin) { showToast('Built-in portfolios cannot be deleted', 'warning'); return; }
     const txs = PortfolioBuckets.txsForBucket(State.get(), id);
-    if (txs.length && !confirm(`Delete “${b.name}” and ${txs.length} transaction(s)? Cannot undo.`)) return;
+    if (txs.length) {
+      const ok = await CapConfirm({
+        title: `Delete “${b.name}”?`,
+        body: `Also deletes ${txs.length} transaction(s). This cannot be undone.`,
+        confirmLabel: 'Delete',
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     State.update(s => {
       s.portfolios = (s.portfolios || []).filter(p => p.id !== id);
       if (txs.length) s.transactions = (s.transactions || []).filter(t => t.portfolioId !== id);
@@ -20462,10 +20688,10 @@ const App = (() => {
     if (typeof PortfolioScreen !== 'undefined') PortfolioScreen.render();
   }
 
-  function renamePortfolio(id) {
+  async function renamePortfolio(id) {
     const b = PortfolioBuckets.list().find(x => x.id === id);
     if (!b || b.builtin) return;
-    const name = prompt('Portfolio name', b.name);
+    const name = await CapPrompt({ title: 'Portfolio name', value: b.name, confirmLabel: 'Rename' });
     if (!name || !name.trim()) return;
     State.update(s => {
       const p = (s.portfolios || []).find(x => x.id === id);
@@ -20717,6 +20943,7 @@ const App = (() => {
     _maybeDemoBanner();
     _maybeInstallHint();
     if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
+    _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -20739,6 +20966,24 @@ const App = (() => {
         PinLock?.gate?.();
       }
     }, 20000);
+  }
+
+  function _wirePullToRefresh() {
+    const root = document.getElementById('app') || document.body;
+    let startY = 0;
+    let pulling = false;
+    root.addEventListener('touchstart', (e) => {
+      const screen = document.querySelector('.psx-screen.active');
+      if (!screen || screen.scrollTop > 2) { pulling = false; return; }
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+    root.addEventListener('touchend', (e) => {
+      if (!pulling) return;
+      pulling = false;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy > 72 && navigator.onLine) refreshPrices();
+    }, { passive: true });
   }
 
   function _checkDeployVersion() {}
@@ -21367,8 +21612,9 @@ const App = (() => {
     });
   }
 
-  function deleteTransaction(id) {
-    if (!confirm('Delete this transaction?')) return;
+  async function deleteTransaction(id) {
+    const ok = await CapConfirm({ title: 'Delete this transaction?', confirmLabel: 'Delete', destructive: true });
+    if (!ok) return;
     if (typeof LcPolish !== 'undefined') LcPolish.hapticDelete();
     State.deleteTransaction(id);
     closeBottomSheet();

@@ -102,7 +102,7 @@ const Signals = (() => {
 
     ${U.section('Book tags', _bookTagEditor())}
 
-    <div class="lc-disclaimer">${brief.disclaimer}</div>
+      <div class="lc-disclaimer">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</div>
     </div>`;
   }
 
@@ -121,7 +121,7 @@ const Signals = (() => {
       ${U.section('Intraday flags', rows.length
         ? rows.map(_intradayRow).join('')
         : '<div style="color:var(--os-text-secondary);padding:8px 0">No PSX moves above thresholds in your holdings.</div>')}
-      <div class="lc-disclaimer">Rule-based session scan — refresh prices during market hours. Not financial advice.</div>
+      <div class="lc-disclaimer">LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</div>
     </div>`;
   }
 
