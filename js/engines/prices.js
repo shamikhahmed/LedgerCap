@@ -1,10 +1,5 @@
 'use strict';
 const Prices = (() => {
-  const PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?url=',
-  ];
-
   const YAHOO_SYMBOL_MAP = {
     'ENGROH': 'ENGROH.KA',
     'MIIETF': null,
@@ -93,10 +88,7 @@ const Prices = (() => {
       const yahoo = intl?.yahoo || sym;
       let data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
       let closes = _yahooCloses(data);
-      if (closes.length < 2) {
-        data = await _fetchPublicProxy(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=3mo`);
-        closes = _yahooCloses(data);
-      }
+      // Public CORS proxies removed (LDG-P0-01) — Worker only.
       if (closes.length >= 2) return closes.slice(-points);
     }
     const raw = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
@@ -173,38 +165,9 @@ const Prices = (() => {
     return null;
   }
 
-  /** Public CORS proxies — Yahoo only. PSX via allorigins/corsproxy is rate-limited and noisy. */
-  async function _fetchPublicProxy(url) {
-    if (/dps\.psx\.com\.pk/i.test(url)) return null;
-    for (const proxyUrl of PROXIES) {
-      try {
-        const res = await fetch(proxyUrl + encodeURIComponent(url), {
-          headers: { Accept: 'application/json,text/plain,*/*' }
-        });
-        if (!res.ok) continue;
-        const text = await res.text();
-        if (_isBadPayload(text)) continue;
-        let payload = text;
-        try {
-          const j = JSON.parse(text);
-          if (j && j.contents !== undefined) payload = j.contents;
-          else if (j && typeof j === 'object' && !Array.isArray(j)) return j;
-        } catch {}
-        if (typeof payload === 'string') {
-          const parsed = _parseJson(payload);
-          if (parsed) return parsed;
-          continue;
-        }
-        return payload;
-      } catch {}
-    }
-    return null;
-  }
-
   async function _fetchRaw(url) {
-    const appProxy = await _fetchAppProxy(url);
-    if (appProxy) return appProxy;
-    return _fetchPublicProxy(url);
+    // Owned Worker only — no public CORS proxies (LDG-P0-01).
+    return _fetchAppProxy(url);
   }
 
   async function fetchPsxSymbol(symbol) {
@@ -281,12 +244,8 @@ const Prices = (() => {
   async function fetchIntlSymbol(symbol) {
     const meta = (window.INTL_STOCKS || []).find(s => s.symbol === symbol);
     const yahoo = meta?.yahoo || symbol;
-    let data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
-    let parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
-    if (!parsed) {
-      data = await _fetchPublicProxy(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?interval=1d&range=5d`);
-      parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
-    }
+    const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
+    const parsed = _parseYahooChart(data, symbol, 'yahoo_intl');
     if (parsed && _sanityCheckUsd(symbol, parsed.priceUsd ?? parsed.price)) return parsed;
     const fb = (window.GLOBAL_FALLBACK_USD || {})[symbol];
     return fb ? { symbol, price: fb, priceUsd: fb, prevClose: fb * 0.999, source: 'fallback', currency: 'USD', ts: Date.now() } : null;
@@ -348,8 +307,7 @@ const Prices = (() => {
     const yahooSym = symbol in YAHOO_SYMBOL_MAP ? YAHOO_SYMBOL_MAP[symbol] : `${symbol}.KA`;
     if (yahooSym === null) return null;
 
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=1d&range=5d`;
-    const data = await _fetchPublicProxy(url);
+    const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahooSym)}`);
     const meta = data?.chart?.result?.[0]?.meta;
     const price = meta?.regularMarketPrice;
     const prevClose = meta?.previousClose || meta?.chartPreviousClose;
@@ -417,7 +375,7 @@ const Prices = (() => {
       const changeP = parsed.prevClose ? (change / parsed.prevClose) * 100 : 0;
       return { value: parsed.price, change, changeP, prevClose: parsed.prevClose, ts: Date.now() };
     }
-    const yahoo = await _fetchPublicProxy('https://query2.finance.yahoo.com/v8/finance/chart/%5EKSE100?interval=1d&range=1d');
+    const yahoo = await _fetchWorkerPath('yahoo/chart/%5EKSE100');
     const meta = yahoo?.chart?.result?.[0]?.meta;
     if (meta?.regularMarketPrice) {
       return {
