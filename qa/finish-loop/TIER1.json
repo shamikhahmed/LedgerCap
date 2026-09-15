@@ -2,8 +2,8 @@
   "app": "LedgerCap",
   "version": "3.57.2",
   "swCache": "ledgercap-v140",
-  "generatedAt": "2026-09-15T12:10:46.017Z",
-  "status": "FAIL",
+  "generatedAt": "2026-09-15T12:18:42.984Z",
+  "status": "PASS",
   "pass": [
     {
       "id": "version:field",
@@ -34,6 +34,10 @@
       "detail": "present"
     },
     {
+      "id": "records:APP-REPORT-size",
+      "detail": "1245 bytes (need ≥1024)"
+    },
+    {
       "id": "suppressions",
       "detail": "none"
     },
@@ -43,7 +47,11 @@
     },
     {
       "id": "ci:main",
-      "detail": "Merge branch 'finish/tier1-wire': C-10 npm run tier1 → success https://github.com/shamikhahmed/LedgerCap/actions/runs/34958755423"
+      "detail": "Merge finish/ledgercap-test-vm-brand — LCBrand in ledger.spec → success https://github.com/shamikhahmed/LedgerCap/actions/runs/34967963640"
+    },
+    {
+      "id": "tag",
+      "detail": "found v3.57.2"
     },
     {
       "id": "matrix:spec",
@@ -90,16 +98,7 @@
       "detail": "106 sinks; SINKS.md ok"
     }
   ],
-  "fail": [
-    {
-      "id": "records:APP-REPORT-size",
-      "detail": "917 bytes (need ≥1024)"
-    },
-    {
-      "id": "tag",
-      "detail": "missing tag v3.57.2 (have: ledgercap-v138, v3.56.4, v3.57.0, v3.57.1)"
-    }
-  ],
+  "fail": [],
   "warn": [
     {
       "id": "matrix:shots",
