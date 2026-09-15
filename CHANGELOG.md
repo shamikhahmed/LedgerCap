@@ -1,3 +1,8 @@
+## 3.57.1 — 2026-09-15
+- C-16: Self-host Cinzel, Source Sans 3, Noto Nastaliq Urdu (and Inter on pitch); remove Google Fonts + CSP font CDN entries.
+- C-20: Set `window.__APP_READY__` after splash dismiss.
+- SW `ledgercap-v139`.
+
 ## 3.57.0 — 2026-09-14
 - Tier 1 finish (LDG-P0/P1): header “Your wealth” + ⋯ menu; tab labels Home·Watchlist·Funds·Performance·Research.
 - Freshness line with LedgerCap server attribution; pull-to-refresh; totals without paisa + ▲/▼.
