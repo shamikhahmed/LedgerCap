@@ -8,9 +8,14 @@ const fs = require('fs');
 const vm = require('vm');
 
 const root = __dirname.replace(/\/scripts$/, '');
-const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280 } } };
+const ctx = {
+  window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280 } },
+  console,
+};
+ctx.globalThis = ctx;
 vm.createContext(ctx);
 
+vm.runInContext(fs.readFileSync(`${root}/js/brand/colors.js`, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(`${root}/js/services/fx-service.js`, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(`${root}/js/data/holdings.js`, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(`${root}/js/engines/ledger.js`, 'utf8'), ctx);
