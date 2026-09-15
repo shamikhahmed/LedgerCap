@@ -5,9 +5,12 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
+const brand = fs.readFileSync(path.join(root, 'js/brand/colors.js'), 'utf8');
 const code = fs.readFileSync(path.join(root, 'js/ui/charts.js'), 'utf8');
 const ctx = { window: {}, document: undefined, console };
+ctx.globalThis = ctx;
 vm.createContext(ctx);
+vm.runInContext(brand, ctx);
 vm.runInContext(code, ctx);
 const Charts = ctx.window.Charts;
 
