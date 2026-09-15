@@ -31,7 +31,7 @@ const TradingViewUI = (() => {
     const tvLink = tvSym
       ? `<p class="lc-chart-caption"><a class="lc-link-btn" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym)}" target="_blank" rel="noopener noreferrer">Open ${tvSym} in TradingView ↗</a></p>`
       : '';
-    el.innerHTML = `<div class="lc-chart-fallback">${Charts.lineChart(series, { height, color: up ? '#22c55e' : '#ef4444', fill: true })}${tvLink}<p class="psx-muted lc-chart-caption">${series.length} daily points · USD for US · PKR for PSX</p></div>`;
+    el.innerHTML = `<div class="lc-chart-fallback">${Charts.lineChart(series, { height, color: up ? LCBrand.h_22c55e : LCBrand.h_ef4444, fill: true })}${tvLink}<p class="psx-muted lc-chart-caption">${series.length} daily points · USD for US · PKR for PSX</p></div>`;
   }
 
   /** Reliable SVG price chart — no embedded TradingView widget */

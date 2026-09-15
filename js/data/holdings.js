@@ -101,10 +101,10 @@ const ADVISOR_RATINGS = {
 };
 
 const SIP_PLAN = [
-  { fund:'KMIF', amount:40000, color:'#FF6B35', note:'Foundation. Never stop. Index everything.' },
-  { fund:'MIF',  amount:20000, color:'#0ECB81', note:'Active equity exposure via Meezan managers.' },
-  { fund:'MIIF', amount:10000, color:'#1890FF', note:'Buffer at 16-18% yield. Convert to KMIF on 15%+ KSE drop.' },
-  { fund:'STK',  amount:5000,  color:'#F0B90B', note:'Accumulate. Only deploy with full investment memo.' },
+  { fund:'KMIF', amount:40000, color:LCBrand.h_ff6b35, note:'Foundation. Never stop. Index everything.' },
+  { fund:'MIF',  amount:20000, color:LCBrand.h_0ecb81, note:'Active equity exposure via Meezan managers.' },
+  { fund:'MIIF', amount:10000, color:LCBrand.h_1890ff, note:'Buffer at 16-18% yield. Convert to KMIF on 15%+ KSE drop.' },
+  { fund:'STK',  amount:5000,  color:LCBrand.h_f0b90b, note:'Accumulate. Only deploy with full investment memo.' },
 ];
 
 const FALLBACK_PRICES_UPDATED = '2026-07-01';

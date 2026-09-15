@@ -55,7 +55,7 @@ const RiskAudit = (() => {
         <div class="lc-verdict ${_sevClass(f.severity)} cap-reveal">
           <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">
             <strong>${f.title}</strong>
-            <span class="badge" style="font-size:10px;text-transform:uppercase">${f.severity} · ${f.category}</span>
+            <span class="badge" style="font-size:11px;text-transform:uppercase">${f.severity} · ${f.category}</span>
           </div>
           <p style="margin:0 0 6px;font-size:13px;line-height:1.45">${f.detail}</p>
           <small>→ ${f.action}</small>

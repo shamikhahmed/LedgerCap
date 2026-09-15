@@ -25,8 +25,8 @@ const Signals = (() => {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${s.symbol}</span>
-          <span class="badge" style="font-size:10px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
-          <span class="badge ${_actionClass(s.action)}" style="font-size:10px;font-weight:700">${s.action}</span>
+          <span class="badge" style="font-size:11px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
+          <span class="badge ${_actionClass(s.action)}" style="font-size:11px;font-weight:700">${s.action}</span>
         </div>
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px;line-height:1.45">${s.rationale}</div>
       </div>
@@ -43,8 +43,8 @@ const Signals = (() => {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${s.symbol}</span>
-          <span class="badge" style="font-size:10px">${s.kind}</span>
-          <span class="badge" style="font-size:10px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
+          <span class="badge" style="font-size:11px">${s.kind}</span>
+          <span class="badge" style="font-size:11px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
         </div>
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px">${s.label}</div>
       </div>
@@ -58,8 +58,8 @@ const Signals = (() => {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${r.symbol}</span>
-          <span class="badge t-gain" style="font-size:10px;font-weight:700">${r.action}</span>
-          <span class="badge" style="font-size:10px;opacity:.75">${src}</span>
+          <span class="badge t-gain" style="font-size:11px;font-weight:700">${r.action}</span>
+          <span class="badge" style="font-size:11px;opacity:.75">${src}</span>
         </div>
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px;line-height:1.45">${r.rationale}</div>
       </div>

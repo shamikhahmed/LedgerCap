@@ -48,9 +48,9 @@ const StatementExport = (() => {
     const fmt = (n) => PlatformUI.fmt(n);
     const yearTxs = txs.filter((t) => String(t.date || '').startsWith(String(year)));
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap ${year}</title>
-<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:${LCBrand.h_111};max-width:800px;margin:0 auto}
 h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
-th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:${LCBrand.h_f4f4f5}}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
 .summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
 @media print{body{padding:12px}}</style></head><body>
@@ -65,7 +65,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f
 <table><thead><tr><th>Date</th><th>Type</th><th>Symbol</th><th>Broker</th><th>Qty</th><th>Amount</th></tr></thead><tbody>
 ${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || ''}</td><td>${t.broker || ''}</td><td>${t.shares ?? t.units ?? ''}</td><td>${t.amount ?? ''}</td></tr>`).join('')}
 </tbody></table>
-<p style="font-size:11px;color:#666;margin-top:24px">Not tax advice. For Zakat use in-app Zakat module.</p>
+<p style="font-size:11px;color:${LCBrand.h_666};margin-top:24px">Not tax advice. For Zakat use in-app Zakat module.</p>
 <script>window.onload=function(){window.print()}</script></body></html>`;
     const w = window.open('', '_blank');
     if (!w) return false;
@@ -80,9 +80,9 @@ ${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || 
     const r = PilotEngine.buildCgtReport(State.get());
     const fmt = (n) => PlatformUI.fmt(n);
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap CGT ${year}</title>
-<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:${LCBrand.h_111};max-width:800px;margin:0 auto}
 h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
-th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:${LCBrand.h_f4f4f5}}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
 .summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
 @media print{body{padding:12px}}</style></head><body>
@@ -98,7 +98,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f
 <table><thead><tr><th>Symbol</th><th>Qty</th><th>P&amp;L</th><th>Tier</th><th>Days</th><th>Est. tax</th></tr></thead><tbody>
 ${r.lots.filter(l => l.pl > 0).map(l => `<tr><td>${l.symbol}</td><td>${l.quantity}</td><td>${fmt(l.pl)}</td><td>${l.tier}</td><td>${l.days_held ?? '—'}</td><td>${l.estimated_tax ? fmt(l.estimated_tax) : '—'}</td></tr>`).join('')}
 </tbody></table>
-<p style="font-size:11px;color:#666;margin-top:24px">Print or Save as PDF from browser. Not tax advice.</p>
+<p style="font-size:11px;color:${LCBrand.h_666};margin-top:24px">Print or Save as PDF from browser. Not tax advice.</p>
 <script>window.onload=function(){window.print()}</script></body></html>`;
     const w = window.open('', '_blank');
     if (!w) return false;

@@ -425,7 +425,7 @@ const Settings = (() => {
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <p style="font-size:12px;color:var(--os-text-secondary);margin-bottom:12px;line-height:1.5">Rule-based signals, CGT estimates, and rebalance tools — ported from Portfolio Pilot. Not AI advice.</p>
       <div class="field">
-        <label class="field-label">Concentration alert (%)</label>
+        <label class="field-label">Concentration threshold (%)</label>
         <input class="field-input" id="p-conc" type="number" value="${pilot.concentrationThresholdPct ?? 20}" min="5" max="50">
       </div>
       <div class="field">

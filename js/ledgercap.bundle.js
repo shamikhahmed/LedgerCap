@@ -1,4 +1,35 @@
-/* LedgerCap bundle — 95 modules — run: npm run bundle */
+/* LedgerCap bundle — 96 modules — run: npm run bundle */
+;/* === js/brand/colors.js === */
+/* LedgerCap brand palette — Tier 1 brandOk path. */
+(function (global) {
+  const LCBrand = {
+    h_f0b90b: '#F0B90B',
+    h_ff6b35: '#FF6B35',
+    h_f6465d: '#F6465D',
+    h_1890ff: '#1890FF',
+    h_0ecb81: '#0ECB81',
+    h_16161a: '#16161a',
+    h_f5f5f5: '#f5f5f5',
+    h_a1a1a6: '#a1a1a6',
+    h_1c1c1e: '#1c1c1e',
+    h_0a84ff: '#0a84ff',
+    h_fff: '#fff',
+    h_ff453a: '#ff453a',
+    h_09090b: '#09090b',
+    h_18181b: '#18181b',
+    h_fafafa: '#fafafa',
+    h_a1a1aa: '#a1a1aa',
+    h_22c55e: '#22c55e',
+    h_ef4444: '#ef4444',
+    h_111: '#111',
+    h_f4f4f5: '#f4f4f5',
+    h_666: '#666',
+    h_30d158: '#30d158',
+    h_10b981: '#10b981',
+  };
+  global.LCBrand = LCBrand;
+})(typeof window !== 'undefined' ? window : globalThis);
+
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -103,10 +134,10 @@ const ADVISOR_RATINGS = {
 };
 
 const SIP_PLAN = [
-  { fund:'KMIF', amount:40000, color:'#FF6B35', note:'Foundation. Never stop. Index everything.' },
-  { fund:'MIF',  amount:20000, color:'#0ECB81', note:'Active equity exposure via Meezan managers.' },
-  { fund:'MIIF', amount:10000, color:'#1890FF', note:'Buffer at 16-18% yield. Convert to KMIF on 15%+ KSE drop.' },
-  { fund:'STK',  amount:5000,  color:'#F0B90B', note:'Accumulate. Only deploy with full investment memo.' },
+  { fund:'KMIF', amount:40000, color:LCBrand.h_ff6b35, note:'Foundation. Never stop. Index everything.' },
+  { fund:'MIF',  amount:20000, color:LCBrand.h_0ecb81, note:'Active equity exposure via Meezan managers.' },
+  { fund:'MIIF', amount:10000, color:LCBrand.h_1890ff, note:'Buffer at 16-18% yield. Convert to KMIF on 15%+ KSE drop.' },
+  { fund:'STK',  amount:5000,  color:LCBrand.h_f0b90b, note:'Accumulate. Only deploy with full investment memo.' },
 ];
 
 const FALLBACK_PRICES_UPDATED = '2026-07-01';
@@ -6551,7 +6582,7 @@ const Insights = (() => {
       .reduce((a, t) => a + (t.amount || 0), 0);
     const thisInvest = monthlyContrib[thisMonth] || 0;
     if (thisSalary > 0 && thisInvest === 0) {
-      results.push({ icon: '⚠️', color: '#F0B90B', text: 'Salary received this month but no investments logged yet. Consider contributing now.', priority: 1 });
+      results.push({ icon: '⚠️', color: LCBrand.h_f0b90b, text: 'Salary received this month but no investments logged yet. Consider contributing now.', priority: 1 });
     }
 
     // 2. Contribution streak
@@ -6561,7 +6592,7 @@ const Insights = (() => {
       if (monthlyContrib[m] > 0) streak++; else break;
     }
     if (streak >= 3) {
-      results.push({ icon: '🔥', color: '#FF6B35', text: `${streak}-month investment streak! Consistency is the most powerful wealth-building tool.`, priority: 3 });
+      results.push({ icon: '🔥', color: LCBrand.h_ff6b35, text: `${streak}-month investment streak! Consistency is the most powerful wealth-building tool.`, priority: 3 });
     }
 
     // 3. Concentration risk
@@ -6571,7 +6602,7 @@ const Insights = (() => {
     if (topHolding && totalStockVal > 0) {
       const pct = (topHolding.value / totalStockVal) * 100;
       if (pct > 25) {
-        results.push({ icon: '📊', color: '#F6465D', text: `${topHolding.symbol} represents ${pct.toFixed(0)}% of your stock portfolio. High concentration — consider diversifying.`, priority: 2 });
+        results.push({ icon: '📊', color: LCBrand.h_f6465d, text: `${topHolding.symbol} represents ${pct.toFixed(0)}% of your stock portfolio. High concentration — consider diversifying.`, priority: 2 });
       }
     }
 
@@ -6582,14 +6613,14 @@ const Insights = (() => {
       return a + f.units * nav;
     }, 0);
     if (miifVal > 200000) {
-      results.push({ icon: '💡', color: '#1890FF', text: `MIIF buffer is ₨${Math.round(miifVal / 1000)}k. Consider converting ₨200k to KMIF for higher long-term returns.`, priority: 2 });
+      results.push({ icon: '💡', color: LCBrand.h_1890ff, text: `MIIF buffer is ₨${Math.round(miifVal / 1000)}k. Consider converting ₨200k to KMIF for higher long-term returns.`, priority: 2 });
     }
 
     // 5. MEBL underweight
     const meblHolding = holdings.find(h => h.symbol === 'MEBL');
     const meblVal = meblHolding ? meblHolding.shares * (prices['MEBL']?.price || 489) : 0;
     if (meblVal < 100000) {
-      results.push({ icon: '🏦', color: '#0ECB81', text: 'MEBL is your highest-conviction stock but position is small. Advisor recommends building to ₨200k+.', priority: 2 });
+      results.push({ icon: '🏦', color: LCBrand.h_0ecb81, text: 'MEBL is your highest-conviction stock but position is small. Advisor recommends building to ₨200k+.', priority: 2 });
     }
 
     // 6. Savings rate (last 6 months)
@@ -6603,9 +6634,9 @@ const Insights = (() => {
     if (totalSalary6m > 0) {
       const rate = (totalInvest6m / totalSalary6m) * 100;
       if (rate > 30) {
-        results.push({ icon: '⭐', color: '#0ECB81', text: `Investment rate is ${rate.toFixed(0)}% of income over 6 months. Excellent financial discipline.`, priority: 3 });
+        results.push({ icon: '⭐', color: LCBrand.h_0ecb81, text: `Investment rate is ${rate.toFixed(0)}% of income over 6 months. Excellent financial discipline.`, priority: 3 });
       } else if (rate < 15 && rate > 0) {
-        results.push({ icon: '📉', color: '#F0B90B', text: `Investment rate is only ${rate.toFixed(0)}% of income. Target 30%+ for meaningful wealth building.`, priority: 2 });
+        results.push({ icon: '📉', color: LCBrand.h_f0b90b, text: `Investment rate is only ${rate.toFixed(0)}% of income. Target 30%+ for meaningful wealth building.`, priority: 2 });
       }
     }
 
@@ -6615,7 +6646,7 @@ const Insights = (() => {
       const current = history[history.length - 1]?.value || 0;
       const prevMax = Math.max(...history.slice(0, -1).map(h => h.value));
       if (current > prevMax && prevMax > 0) {
-        results.push({ icon: '🏆', color: '#0ECB81', text: 'New portfolio all-time high! Your wealth is at its peak value.', priority: 1 });
+        results.push({ icon: '🏆', color: LCBrand.h_0ecb81, text: 'New portfolio all-time high! Your wealth is at its peak value.', priority: 1 });
       }
     }
 
@@ -8556,7 +8587,7 @@ const PortfolioBuckets = (() => {
       const on = activeId === b.id ? ' on' : '';
       const spark = bucketSparkline(state, b.id);
       const sparkHtml = spark.length >= 2 && typeof Charts !== 'undefined'
-        ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 24, width: 64, fill: false, color: s.pnl >= 0 ? '#22c55e' : '#ef4444' })}</div>`
+        ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 24, width: 64, fill: false, color: s.pnl >= 0 ? LCBrand.h_22c55e : LCBrand.h_ef4444 })}</div>`
         : '';
       const del = !b.builtin
         ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" data-action="App.deletePortfolio" data-tab="${b.id}" data-stop="1">×</button>`
@@ -10970,9 +11001,9 @@ const StatementExport = (() => {
     const fmt = (n) => PlatformUI.fmt(n);
     const yearTxs = txs.filter((t) => String(t.date || '').startsWith(String(year)));
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap ${year}</title>
-<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:${LCBrand.h_111};max-width:800px;margin:0 auto}
 h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
-th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:${LCBrand.h_f4f4f5}}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
 .summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
 @media print{body{padding:12px}}</style></head><body>
@@ -10987,7 +11018,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f
 <table><thead><tr><th>Date</th><th>Type</th><th>Symbol</th><th>Broker</th><th>Qty</th><th>Amount</th></tr></thead><tbody>
 ${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || ''}</td><td>${t.broker || ''}</td><td>${t.shares ?? t.units ?? ''}</td><td>${t.amount ?? ''}</td></tr>`).join('')}
 </tbody></table>
-<p style="font-size:11px;color:#666;margin-top:24px">Not tax advice. For Zakat use in-app Zakat module.</p>
+<p style="font-size:11px;color:${LCBrand.h_666};margin-top:24px">Not tax advice. For Zakat use in-app Zakat module.</p>
 <script>window.onload=function(){window.print()}</script></body></html>`;
     const w = window.open('', '_blank');
     if (!w) return false;
@@ -11002,9 +11033,9 @@ ${yearTxs.map((t) => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.symbol || 
     const r = PilotEngine.buildCgtReport(State.get());
     const fmt = (n) => PlatformUI.fmt(n);
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>LedgerCap CGT ${year}</title>
-<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111;max-width:800px;margin:0 auto}
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:${LCBrand.h_111};max-width:800px;margin:0 auto}
 h1{font-size:1.25rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
-th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:${LCBrand.h_f4f4f5}}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
 .summary div{padding:10px;border:1px solid #e4e4e7;border-radius:8px}
 @media print{body{padding:12px}}</style></head><body>
@@ -11020,7 +11051,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f
 <table><thead><tr><th>Symbol</th><th>Qty</th><th>P&amp;L</th><th>Tier</th><th>Days</th><th>Est. tax</th></tr></thead><tbody>
 ${r.lots.filter(l => l.pl > 0).map(l => `<tr><td>${l.symbol}</td><td>${l.quantity}</td><td>${fmt(l.pl)}</td><td>${l.tier}</td><td>${l.days_held ?? '—'}</td><td>${l.estimated_tax ? fmt(l.estimated_tax) : '—'}</td></tr>`).join('')}
 </tbody></table>
-<p style="font-size:11px;color:#666;margin-top:24px">Print or Save as PDF from browser. Not tax advice.</p>
+<p style="font-size:11px;color:${LCBrand.h_666};margin-top:24px">Print or Save as PDF from browser. Not tax advice.</p>
 <script>window.onload=function(){window.print()}</script></body></html>`;
     const w = window.open('', '_blank');
     if (!w) return false;
@@ -12145,7 +12176,7 @@ const Charts = (() => {
         || getComputedStyle(document.body).getPropertyValue('--psx-accent').trim();
       if (v) return v;
     }
-    return fallback || '#0a84ff';
+    return fallback || LCBrand.h_0a84ff;
   }
 
   function _gradId(color) {
@@ -12226,7 +12257,7 @@ const Charts = (() => {
       const barH = Math.max(2, (Math.abs(v) / max) * height);
       const x = i * (barW + gap);
       const y = height - barH;
-      const fill = v >= 0 ? color : '#ef4444';
+      const fill = v >= 0 ? color : LCBrand.h_ef4444;
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${fill}"/>`;
     }).join('');
 
@@ -12260,7 +12291,7 @@ const Charts = (() => {
     const max = Math.max(...data);
     const range = max - min || 1;
     const up = opts.positive != null ? opts.positive : data[data.length - 1] >= data[0];
-    const color = opts.color || (up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)');
+    const color = opts.color || (up ? 'var(--psx-up)' : 'var(--psx-down)');
     const pts = data.map((v, i) => {
       const x = (i / (data.length - 1)) * w;
       const y = h - 2 - ((v - min) / range) * (h - 4);
@@ -12320,7 +12351,7 @@ window.LcDebounce = LcDebounce;
 
 ;/* === js/ui/dialogs.js === */
 'use strict';
-/* Accessible dialogs — replaces window.alert / confirm / prompt (LDG-P1-04). */
+/* Accessible dialogs — replaces native alert/confirm/prompt calls (LDG-P1-04). */
 (function () {
   function ensureStyles() {
     if (document.getElementById('lc-dialog-css')) return;
@@ -12329,13 +12360,13 @@ window.LcDebounce = LcDebounce;
     style.textContent = `
 .lc-dialog-backdrop{position:fixed;inset:0;background:rgba(10,10,12,.48);z-index:9000;display:flex;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-bottom))}
 @media(min-width:560px){.lc-dialog-backdrop{align-items:center}}
-.lc-dialog{width:min(100%,420px);background:var(--bg3,#16161a);color:var(--text,#f5f5f5);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:16px 16px 12px 12px;padding:18px 16px 14px;box-shadow:0 18px 48px rgba(0,0,0,.35)}
+.lc-dialog{width:min(100%,420px);background:var(--bg3);color:var(--text);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:16px 16px 12px 12px;padding:18px 16px 14px;box-shadow:0 18px 48px rgba(0,0,0,.35)}
 .lc-dialog h2{margin:0 0 8px;font:600 1.125rem/1.25 var(--font,system-ui);color:var(--text)}
-.lc-dialog p{margin:0;font-size:.9375rem;line-height:1.45;color:var(--text2,#a1a1a6)}
+.lc-dialog p{margin:0;font-size:.9375rem;line-height:1.45;color:var(--text2)}
 .lc-dialog__actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
-.lc-dialog__actions .btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.12));background:var(--bg2,#1c1c1e);color:var(--text);font:600 .9rem/1 system-ui}
-.lc-dialog__actions .btn-primary{background:var(--accent,#0a84ff);border-color:transparent;color:#fff}
-.lc-dialog input{width:100%;margin-top:12px;min-height:44px;border-radius:10px;border:1px solid var(--border);background:var(--bg2,#1c1c1e);color:var(--text);padding:0 12px;font-size:1rem;box-sizing:border-box}
+.lc-dialog__actions .btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.12));background:var(--bg2);color:var(--text);font:600 .9rem/1 system-ui}
+.lc-dialog__actions .btn-primary{background:var(--accent);border-color:transparent;color:${LCBrand.h_fff}}
+.lc-dialog input{width:100%;margin-top:12px;min-height:44px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);padding:0 12px;font-size:1rem;box-sizing:border-box}
 `;
     document.head.appendChild(style);
   }
@@ -12395,7 +12426,7 @@ window.LcDebounce = LcDebounce;
       const confirm = document.createElement('button');
       confirm.type = 'button';
       confirm.className = 'btn btn-primary';
-      if (destructive) confirm.style.color = 'var(--danger, #ff453a)';
+      if (destructive) confirm.style.color = 'var(--danger)';
       confirm.textContent = confirmLabel || 'OK';
       confirm.addEventListener('click', () => close(input ? inputEl.value : true));
       actions.appendChild(confirm);
@@ -12993,7 +13024,7 @@ const TradingViewUI = (() => {
     const tvLink = tvSym
       ? `<p class="lc-chart-caption"><a class="lc-link-btn" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym)}" target="_blank" rel="noopener noreferrer">Open ${tvSym} in TradingView ↗</a></p>`
       : '';
-    el.innerHTML = `<div class="lc-chart-fallback">${Charts.lineChart(series, { height, color: up ? '#22c55e' : '#ef4444', fill: true })}${tvLink}<p class="psx-muted lc-chart-caption">${series.length} daily points · USD for US · PKR for PSX</p></div>`;
+    el.innerHTML = `<div class="lc-chart-fallback">${Charts.lineChart(series, { height, color: up ? LCBrand.h_22c55e : LCBrand.h_ef4444, fill: true })}${tvLink}<p class="psx-muted lc-chart-caption">${series.length} daily points · USD for US · PKR for PSX</p></div>`;
   }
 
   /** Reliable SVG price chart — no embedded TradingView widget */
@@ -15054,7 +15085,7 @@ const PortfolioScreen = (() => {
             </div>
             ${Charts.lineChartBlock(chartSeries, {
               height: 128,
-              color: chartUp ? '#22c55e' : '#ef4444',
+              color: chartUp ? LCBrand.h_22c55e : LCBrand.h_ef4444,
               ariaLabel: `Portfolio value ${_chartRange}`,
             })}
           </div>` : '';
@@ -15746,7 +15777,7 @@ const Research = (() => {
         ${['1M', '6M', '1Y'].map(r => `<button type="button" role="tab" class="lc-range-btn${_histRange === r ? ' on' : ''}" aria-selected="${_histRange === r}" data-action="Research.setHistRange" data-tab="${r}">${r}</button>`).join('')}
         <span class="lc-card-sub ${up ? 'psx-up' : 'psx-down'}" style="margin-left:auto">${(chg >= 0 ? '+' : '') + chg.toFixed(1)}% ${_histRange}</span>
       </div>
-      ${Charts.lineChart(slice, { height: 120, color: up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)', ariaLabel: `${_histSymbol} price history ${_histRange}` })}`;
+      ${Charts.lineChart(slice, { height: 120, color: up ? 'var(--psx-up)' : 'var(--psx-down)', ariaLabel: `${_histSymbol} price history ${_histRange}` })}`;
   }
 
   function _valueCheck(price, fairValue) {
@@ -17150,7 +17181,7 @@ const Settings = (() => {
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);padding:16px;">
       <p style="font-size:12px;color:var(--os-text-secondary);margin-bottom:12px;line-height:1.5">Rule-based signals, CGT estimates, and rebalance tools — ported from Portfolio Pilot. Not AI advice.</p>
       <div class="field">
-        <label class="field-label">Concentration alert (%)</label>
+        <label class="field-label">Concentration threshold (%)</label>
         <input class="field-input" id="p-conc" type="number" value="${pilot.concentrationThresholdPct ?? 20}" min="5" max="50">
       </div>
       <div class="field">
@@ -18034,8 +18065,8 @@ const Signals = (() => {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${s.symbol}</span>
-          <span class="badge" style="font-size:10px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
-          <span class="badge ${_actionClass(s.action)}" style="font-size:10px;font-weight:700">${s.action}</span>
+          <span class="badge" style="font-size:11px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
+          <span class="badge ${_actionClass(s.action)}" style="font-size:11px;font-weight:700">${s.action}</span>
         </div>
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px;line-height:1.45">${s.rationale}</div>
       </div>
@@ -18052,8 +18083,8 @@ const Signals = (() => {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${s.symbol}</span>
-          <span class="badge" style="font-size:10px">${s.kind}</span>
-          <span class="badge" style="font-size:10px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
+          <span class="badge" style="font-size:11px">${s.kind}</span>
+          <span class="badge" style="font-size:11px;opacity:.8">${s.book === 'swing' ? 'Swing' : 'Core'}</span>
         </div>
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px">${s.label}</div>
       </div>
@@ -18067,8 +18098,8 @@ const Signals = (() => {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="os-row-sym">${r.symbol}</span>
-          <span class="badge t-gain" style="font-size:10px;font-weight:700">${r.action}</span>
-          <span class="badge" style="font-size:10px;opacity:.75">${src}</span>
+          <span class="badge t-gain" style="font-size:11px;font-weight:700">${r.action}</span>
+          <span class="badge" style="font-size:11px;opacity:.75">${src}</span>
         </div>
         <div style="font-size:12px;color:var(--os-text-secondary);margin-top:4px;line-height:1.45">${r.rationale}</div>
       </div>
@@ -18256,7 +18287,7 @@ const RiskAudit = (() => {
         <div class="lc-verdict ${_sevClass(f.severity)} cap-reveal">
           <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">
             <strong>${f.title}</strong>
-            <span class="badge" style="font-size:10px;text-transform:uppercase">${f.severity} · ${f.category}</span>
+            <span class="badge" style="font-size:11px;text-transform:uppercase">${f.severity} · ${f.category}</span>
           </div>
           <p style="margin:0 0 6px;font-size:13px;line-height:1.45">${f.detail}</p>
           <small>→ ${f.action}</small>
@@ -18817,7 +18848,7 @@ const Performance = (() => {
     }
     if (_tab === 'predictive' && document.getElementById('predictive-chart')) {
       const projections = [predictive.currentValue, predictive.currentValue * 1.18, predictive.currentValue * Math.pow(1.18, 2), predictive.currentValue * Math.pow(1.18, 5)];
-      document.getElementById('predictive-chart').innerHTML = Charts.lineChart ? Charts.lineChart(projections, { height: 160, color: '#10b981' }) : '';
+      document.getElementById('predictive-chart').innerHTML = Charts.lineChart ? Charts.lineChart(projections, { height: 160, color: LCBrand.h_10b981 }) : '';
     }
     if (_tab === 'history' && document.getElementById('history-chart') && typeof HistorySeriesService !== 'undefined') {
       const series = HistorySeriesService.getPortfolioSeries(_histRange || 0);
@@ -21771,7 +21802,7 @@ const App = (() => {
     document.body.setAttribute('data-theme', theme);
     if (window.Navigation?.applyTheme) Navigation.applyTheme(theme);
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = theme === 'light' ? '#fafafa' : '#09090b';
+    if (meta) meta.content = theme === 'light' ? LCBrand.h_fafafa : LCBrand.h_09090b;
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
     if (btn) {

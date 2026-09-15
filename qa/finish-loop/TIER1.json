@@ -1,0 +1,119 @@
+{
+  "app": "LedgerCap",
+  "version": "3.57.2",
+  "swCache": "ledgercap-v140",
+  "generatedAt": "2026-09-15T12:10:46.017Z",
+  "status": "FAIL",
+  "pass": [
+    {
+      "id": "version:field",
+      "detail": "3.57.2"
+    },
+    {
+      "id": "version:sw-cache-match",
+      "detail": "sw.js contains ledgercap-v140"
+    },
+    {
+      "id": "records:BASELINE.md",
+      "detail": "present"
+    },
+    {
+      "id": "records:LOG.md",
+      "detail": "present"
+    },
+    {
+      "id": "records:STATES.md",
+      "detail": "present"
+    },
+    {
+      "id": "records:APP-REPORT.md",
+      "detail": "present"
+    },
+    {
+      "id": "records:DOCS-INVENTORY.md",
+      "detail": "present"
+    },
+    {
+      "id": "suppressions",
+      "detail": "none"
+    },
+    {
+      "id": "app-ready",
+      "detail": "window.__APP_READY__ referenced"
+    },
+    {
+      "id": "ci:main",
+      "detail": "Merge branch 'finish/tier1-wire': C-10 npm run tier1 → success https://github.com/shamikhahmed/LedgerCap/actions/runs/34958755423"
+    },
+    {
+      "id": "matrix:spec",
+      "detail": "tests/finish-matrix.spec.mjs"
+    },
+    {
+      "id": "lighthouse:files",
+      "detail": "1 JSON"
+    },
+    {
+      "id": "sinks:SINKS.md",
+      "detail": "present"
+    },
+    {
+      "id": "kill:raw-hex",
+      "detail": "0"
+    },
+    {
+      "id": "kill:sub-11px",
+      "detail": "0"
+    },
+    {
+      "id": "kill:important",
+      "detail": "0"
+    },
+    {
+      "id": "kill:native-dialogs",
+      "detail": "0"
+    },
+    {
+      "id": "kill:outline-none",
+      "detail": "0"
+    },
+    {
+      "id": "kill:console.log",
+      "detail": "0"
+    },
+    {
+      "id": "kill:google-fonts",
+      "detail": "0"
+    },
+    {
+      "id": "kill:innerHTML-classified",
+      "detail": "106 sinks; SINKS.md ok"
+    }
+  ],
+  "fail": [
+    {
+      "id": "records:APP-REPORT-size",
+      "detail": "917 bytes (need ≥1024)"
+    },
+    {
+      "id": "tag",
+      "detail": "missing tag v3.57.2 (have: ledgercap-v138, v3.56.4, v3.57.0, v3.57.1)"
+    }
+  ],
+  "warn": [
+    {
+      "id": "matrix:shots",
+      "detail": "qa/finish-loop/shots missing (run matrix)"
+    }
+  ],
+  "killList": {
+    "rawHex": 0,
+    "sub11": 0,
+    "important": 0,
+    "nativeDialog": 0,
+    "outlineNone": 0,
+    "consoleLog": 0,
+    "googleFonts": 0,
+    "innerHTML": 106
+  }
+}

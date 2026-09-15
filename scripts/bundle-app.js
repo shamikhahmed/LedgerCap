@@ -6,6 +6,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const files = [
+  'js/brand/colors.js',
   'js/data/holdings.js',
   'js/data/us-stocks.js',
   'js/data/global-assets.js',

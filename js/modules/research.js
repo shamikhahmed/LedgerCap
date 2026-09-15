@@ -346,7 +346,7 @@ const Research = (() => {
         ${['1M', '6M', '1Y'].map(r => `<button type="button" role="tab" class="lc-range-btn${_histRange === r ? ' on' : ''}" aria-selected="${_histRange === r}" data-action="Research.setHistRange" data-tab="${r}">${r}</button>`).join('')}
         <span class="lc-card-sub ${up ? 'psx-up' : 'psx-down'}" style="margin-left:auto">${(chg >= 0 ? '+' : '') + chg.toFixed(1)}% ${_histRange}</span>
       </div>
-      ${Charts.lineChart(slice, { height: 120, color: up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)', ariaLabel: `${_histSymbol} price history ${_histRange}` })}`;
+      ${Charts.lineChart(slice, { height: 120, color: up ? 'var(--psx-up)' : 'var(--psx-down)', ariaLabel: `${_histSymbol} price history ${_histRange}` })}`;
   }
 
   function _valueCheck(price, fairValue) {

@@ -1257,7 +1257,7 @@ const App = (() => {
     document.body.setAttribute('data-theme', theme);
     if (window.Navigation?.applyTheme) Navigation.applyTheme(theme);
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = theme === 'light' ? '#fafafa' : '#09090b';
+    if (meta) meta.content = theme === 'light' ? LCBrand.h_fafafa : LCBrand.h_09090b;
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
     if (btn) {
