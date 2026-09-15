@@ -262,7 +262,7 @@ const PortfolioScreen = (() => {
             </div>
             ${Charts.lineChartBlock(chartSeries, {
               height: 128,
-              color: chartUp ? '#22c55e' : '#ef4444',
+              color: chartUp ? LCBrand.h_22c55e : LCBrand.h_ef4444,
               ariaLabel: `Portfolio value ${_chartRange}`,
             })}
           </div>` : '';

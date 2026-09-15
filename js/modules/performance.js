@@ -233,7 +233,7 @@ const Performance = (() => {
     }
     if (_tab === 'predictive' && document.getElementById('predictive-chart')) {
       const projections = [predictive.currentValue, predictive.currentValue * 1.18, predictive.currentValue * Math.pow(1.18, 2), predictive.currentValue * Math.pow(1.18, 5)];
-      document.getElementById('predictive-chart').innerHTML = Charts.lineChart ? Charts.lineChart(projections, { height: 160, color: '#10b981' }) : '';
+      document.getElementById('predictive-chart').innerHTML = Charts.lineChart ? Charts.lineChart(projections, { height: 160, color: LCBrand.h_10b981 }) : '';
     }
     if (_tab === 'history' && document.getElementById('history-chart') && typeof HistorySeriesService !== 'undefined') {
       const series = HistorySeriesService.getPortfolioSeries(_histRange || 0);

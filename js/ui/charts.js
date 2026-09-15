@@ -7,7 +7,7 @@ const Charts = (() => {
         || getComputedStyle(document.body).getPropertyValue('--psx-accent').trim();
       if (v) return v;
     }
-    return fallback || '#0a84ff';
+    return fallback || LCBrand.h_0a84ff;
   }
 
   function _gradId(color) {
@@ -88,7 +88,7 @@ const Charts = (() => {
       const barH = Math.max(2, (Math.abs(v) / max) * height);
       const x = i * (barW + gap);
       const y = height - barH;
-      const fill = v >= 0 ? color : '#ef4444';
+      const fill = v >= 0 ? color : LCBrand.h_ef4444;
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${fill}"/>`;
     }).join('');
 
@@ -122,7 +122,7 @@ const Charts = (() => {
     const max = Math.max(...data);
     const range = max - min || 1;
     const up = opts.positive != null ? opts.positive : data[data.length - 1] >= data[0];
-    const color = opts.color || (up ? 'var(--psx-up, #30d158)' : 'var(--psx-down, #ff453a)');
+    const color = opts.color || (up ? 'var(--psx-up)' : 'var(--psx-down)');
     const pts = data.map((v, i) => {
       const x = (i / (data.length - 1)) * w;
       const y = h - 2 - ((v - min) / range) * (h - 4);

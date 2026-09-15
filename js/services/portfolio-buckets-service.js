@@ -192,7 +192,7 @@ const PortfolioBuckets = (() => {
       const on = activeId === b.id ? ' on' : '';
       const spark = bucketSparkline(state, b.id);
       const sparkHtml = spark.length >= 2 && typeof Charts !== 'undefined'
-        ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 24, width: 64, fill: false, color: s.pnl >= 0 ? '#22c55e' : '#ef4444' })}</div>`
+        ? `<div class="lc-portfolio-spark">${Charts.lineChart(spark, { height: 24, width: 64, fill: false, color: s.pnl >= 0 ? LCBrand.h_22c55e : LCBrand.h_ef4444 })}</div>`
         : '';
       const del = !b.builtin
         ? `<button type="button" class="lc-portfolio-del" aria-label="Delete ${b.name}" data-action="App.deletePortfolio" data-tab="${b.id}" data-stop="1">×</button>`

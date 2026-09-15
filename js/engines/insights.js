@@ -16,7 +16,7 @@ const Insights = (() => {
       .reduce((a, t) => a + (t.amount || 0), 0);
     const thisInvest = monthlyContrib[thisMonth] || 0;
     if (thisSalary > 0 && thisInvest === 0) {
-      results.push({ icon: '⚠️', color: '#F0B90B', text: 'Salary received this month but no investments logged yet. Consider contributing now.', priority: 1 });
+      results.push({ icon: '⚠️', color: LCBrand.h_f0b90b, text: 'Salary received this month but no investments logged yet. Consider contributing now.', priority: 1 });
     }
 
     // 2. Contribution streak
@@ -26,7 +26,7 @@ const Insights = (() => {
       if (monthlyContrib[m] > 0) streak++; else break;
     }
     if (streak >= 3) {
-      results.push({ icon: '🔥', color: '#FF6B35', text: `${streak}-month investment streak! Consistency is the most powerful wealth-building tool.`, priority: 3 });
+      results.push({ icon: '🔥', color: LCBrand.h_ff6b35, text: `${streak}-month investment streak! Consistency is the most powerful wealth-building tool.`, priority: 3 });
     }
 
     // 3. Concentration risk
@@ -36,7 +36,7 @@ const Insights = (() => {
     if (topHolding && totalStockVal > 0) {
       const pct = (topHolding.value / totalStockVal) * 100;
       if (pct > 25) {
-        results.push({ icon: '📊', color: '#F6465D', text: `${topHolding.symbol} represents ${pct.toFixed(0)}% of your stock portfolio. High concentration — consider diversifying.`, priority: 2 });
+        results.push({ icon: '📊', color: LCBrand.h_f6465d, text: `${topHolding.symbol} represents ${pct.toFixed(0)}% of your stock portfolio. High concentration — consider diversifying.`, priority: 2 });
       }
     }
 
@@ -47,14 +47,14 @@ const Insights = (() => {
       return a + f.units * nav;
     }, 0);
     if (miifVal > 200000) {
-      results.push({ icon: '💡', color: '#1890FF', text: `MIIF buffer is ₨${Math.round(miifVal / 1000)}k. Consider converting ₨200k to KMIF for higher long-term returns.`, priority: 2 });
+      results.push({ icon: '💡', color: LCBrand.h_1890ff, text: `MIIF buffer is ₨${Math.round(miifVal / 1000)}k. Consider converting ₨200k to KMIF for higher long-term returns.`, priority: 2 });
     }
 
     // 5. MEBL underweight
     const meblHolding = holdings.find(h => h.symbol === 'MEBL');
     const meblVal = meblHolding ? meblHolding.shares * (prices['MEBL']?.price || 489) : 0;
     if (meblVal < 100000) {
-      results.push({ icon: '🏦', color: '#0ECB81', text: 'MEBL is your highest-conviction stock but position is small. Advisor recommends building to ₨200k+.', priority: 2 });
+      results.push({ icon: '🏦', color: LCBrand.h_0ecb81, text: 'MEBL is your highest-conviction stock but position is small. Advisor recommends building to ₨200k+.', priority: 2 });
     }
 
     // 6. Savings rate (last 6 months)
@@ -68,9 +68,9 @@ const Insights = (() => {
     if (totalSalary6m > 0) {
       const rate = (totalInvest6m / totalSalary6m) * 100;
       if (rate > 30) {
-        results.push({ icon: '⭐', color: '#0ECB81', text: `Investment rate is ${rate.toFixed(0)}% of income over 6 months. Excellent financial discipline.`, priority: 3 });
+        results.push({ icon: '⭐', color: LCBrand.h_0ecb81, text: `Investment rate is ${rate.toFixed(0)}% of income over 6 months. Excellent financial discipline.`, priority: 3 });
       } else if (rate < 15 && rate > 0) {
-        results.push({ icon: '📉', color: '#F0B90B', text: `Investment rate is only ${rate.toFixed(0)}% of income. Target 30%+ for meaningful wealth building.`, priority: 2 });
+        results.push({ icon: '📉', color: LCBrand.h_f0b90b, text: `Investment rate is only ${rate.toFixed(0)}% of income. Target 30%+ for meaningful wealth building.`, priority: 2 });
       }
     }
 
@@ -80,7 +80,7 @@ const Insights = (() => {
       const current = history[history.length - 1]?.value || 0;
       const prevMax = Math.max(...history.slice(0, -1).map(h => h.value));
       if (current > prevMax && prevMax > 0) {
-        results.push({ icon: '🏆', color: '#0ECB81', text: 'New portfolio all-time high! Your wealth is at its peak value.', priority: 1 });
+        results.push({ icon: '🏆', color: LCBrand.h_0ecb81, text: 'New portfolio all-time high! Your wealth is at its peak value.', priority: 1 });
       }
     }
 

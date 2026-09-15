@@ -1,3 +1,7 @@
+## 3.57.2 — 2026-09-15
+- Tier 1: LCBrand palette; glance CSS; tooling brandOk for ledger CSS.
+- SW `ledgercap-v140`.
+
 ## 3.57.1 — 2026-09-15
 - C-16: Self-host Cinzel, Source Sans 3, Noto Nastaliq Urdu (and Inter on pitch); remove Google Fonts + CSP font CDN entries.
 - C-20: Set `window.__APP_READY__` after splash dismiss.
