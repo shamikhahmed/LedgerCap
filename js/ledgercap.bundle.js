@@ -4984,7 +4984,7 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.57.1',
+  app: '3.57.2',
   sw: 139,
   cache: 'ledgercap-v139',
 };
