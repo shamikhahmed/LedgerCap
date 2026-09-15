@@ -5,12 +5,9 @@ const path = require('path');
 const vm = require('vm');
 
 function loadLedger() {
-  const root = path.join(__dirname, '..');
-  const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280, getUsdRate: () => 280 } } };
-  vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/data/holdings.js'), 'utf8'), ctx);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/engines/ledger.js'), 'utf8'), ctx);
-  return { Ledger: ctx.window.Ledger, txs: ctx.window.INITIAL_TRANSACTIONS };
+  const { loadHoldingsAndLedger } = require('./helpers/vm-ledger');
+  const ctx = loadHoldingsAndLedger();
+  return { Ledger: ctx.window.Ledger, txs: ctx.window.INITIAL_TRANSACTIONS, ctx };
 }
 
 test.describe('Ledger math (seed)', () => {
@@ -112,11 +109,8 @@ test.describe('Ledger math (seed)', () => {
   });
 
   test('PSX txs split by broker bucket', () => {
-    const root = path.join(__dirname, '..');
-    const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280, getUsdRate: () => 280 } } };
-    vm.createContext(ctx);
-    vm.runInContext(fs.readFileSync(path.join(root, 'js/data/holdings.js'), 'utf8'), ctx);
-    vm.runInContext(fs.readFileSync(path.join(root, 'js/engines/ledger.js'), 'utf8'), ctx);
+    const { loadHoldingsAndLedger, vm, fs, path, root } = require('./helpers/vm-ledger');
+    const ctx = loadHoldingsAndLedger();
     vm.runInContext(fs.readFileSync(path.join(root, 'js/services/portfolio-buckets-service.js'), 'utf8'), ctx);
     const PB = ctx.window.PortfolioBuckets;
     const state = { transactions: [
@@ -130,11 +124,8 @@ test.describe('Ledger math (seed)', () => {
   });
 
   test('AKD bucket equity includes user broker cash and PnL vs deposits', () => {
-    const root = path.join(__dirname, '..');
-    const ctx = { window: { FxService: { usdToPkr: usd => usd * 280, pkrToUsd: pkr => pkr / 280, getUsdRate: () => 280 } } };
-    vm.createContext(ctx);
-    vm.runInContext(fs.readFileSync(path.join(root, 'js/data/holdings.js'), 'utf8'), ctx);
-    vm.runInContext(fs.readFileSync(path.join(root, 'js/engines/ledger.js'), 'utf8'), ctx);
+    const { loadHoldingsAndLedger, vm, fs, path, root } = require('./helpers/vm-ledger');
+    const ctx = loadHoldingsAndLedger();
     ctx.window.State = {
       getPrice: (sym) => (ctx.window.FALLBACK_PRICES || {})[sym] || null,
     };
