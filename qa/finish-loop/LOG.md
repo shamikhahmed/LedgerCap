@@ -6,3 +6,7 @@
 
 ### 2026-09-15 LedgerCap 3.57.2 Tier1 drive
 - LCBrand · tooling brandOk · finish-loop records · VM test helper
+
+### 2026-09-15 LedgerCap gallery regen
+- `npm run gallery` PASS (1 test, ~16.5m)
+- Regenerated assets/screenshots/* + embedded screen-gallery.html (83 screens)
