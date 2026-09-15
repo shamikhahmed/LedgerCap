@@ -279,9 +279,19 @@ const App = (() => {
     document.querySelectorAll('.lc-intl-pick').forEach(b => b.classList.toggle('on', b.querySelector('strong')?.textContent === sym));
   }
 
+  function _markAppReady() {
+    try {
+      window.__APP_READY__ = true;
+      document.documentElement.dataset.appReady = 'true';
+    } catch (_) { /* ignore */ }
+  }
+
   function _hideSplash() {
     const el = document.getElementById('splash');
-    setTimeout(() => { if (el) el.classList.add('hide'); }, 480);
+    setTimeout(() => {
+      if (el) el.classList.add('hide');
+      _markAppReady();
+    }, 480);
   }
 
   function dismissInstall() {

@@ -21,3 +21,8 @@ LedgerCap is an offline-first Progressive Web App. **Your data stays on your dev
 
 ## Contact
 Built by Capricorn Systems — issues via the LedgerCap GitHub repository.
+
+
+## Fonts
+
+Typography is self-hosted (woff2 in-repo). No Google Fonts requests.

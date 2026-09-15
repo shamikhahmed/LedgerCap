@@ -452,7 +452,7 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || window.LEDGERCAP_VERSION?.app || '3.57.0'}</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || window.LEDGERCAP_VERSION?.app || '3.57.1'}</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first · PWA</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
       <div class="setting-row" style="align-items:flex-start"><div class="setting-label">Prices</div><span class="setting-value" style="text-align:right;max-width:62%;line-height:1.35">PSX and Yahoo Finance via LedgerCap's server. May be delayed.</span></div>
