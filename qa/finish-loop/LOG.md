@@ -33,3 +33,10 @@
 
 ## 2026-09-16 — matrix evidence
 - Committed: matrix-results.json (6/6) + shots; honest TIER1 refresh.
+
+## 2026-09-16 — Review 3 product loop (hardened tier1)
+
+- **Before:** 10 fail (test-skip, ci:workflow-name, matrix:results, LH empty, axe, gallery, kill hex/sub11/important/outline)
+- **Changes:** CI-WORKFLOW=`LedgerCap CI`; screenshot skip-allowlist; finish-matrix `if (RUN)` + writeMatrixResults; `tokens.css` + rename `tokens.capricorn-core.css`; load `js/brand/colors.js` outside bundle; strip counted `!important`/outline/sub-11; SW precache tokens+colors; smoke matrix 6/6
+- **After:** killList cleared; remaining: LH empty, axe, gallery manifest
+- **Not faked:** no LH scores invented; no axe stubs
