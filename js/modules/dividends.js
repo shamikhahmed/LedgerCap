@@ -61,7 +61,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${dash.upcoming.filter(u => u.isHeld).slice(0, 8).map(u => `
         <tr data-action="Research.open" data-symbol="${u.symbol}">
-          <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
+          <td><strong>${u.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate || '—'}</td>
           <td>${u.recordDate || '—'}</td>
@@ -76,7 +76,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${dash.byStock.map(h => `
         <tr data-action="Research.open" data-symbol="${h.symbol}">
-          <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
+          <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${U.fmt(h.totalReceived)}</td>
           <td>${h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—'}</td>
@@ -98,7 +98,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${all.map(u => `
         <tr data-action="Research.open" data-symbol="${u.symbol}">
-          <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
+          <td><strong>${u.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate}</td>
           <td>${u.recordDate}</td>
@@ -115,7 +115,7 @@ const Dividends = (() => {
         <div class="div-cal-month-title">${new Date(m.month + '-01').toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}</div>
         ${m.paymentEvents.length ? `<div class="div-cal-section-label">Payment dates</div>` + m.paymentEvents.map(e => `
           <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
-            <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size:0.68rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
+            <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
             <div class="t-gain">${e.isHeld ? U.fmt(e.expectedIncome) : '—'}</div>
           </div>`).join('') : ''}
         ${m.exEvents.length ? `<div class="div-cal-section-label">Ex-dividend dates</div>` + m.exEvents.map(e => `
@@ -137,7 +137,7 @@ const Dividends = (() => {
         const on = !!drip[h.symbol]?.reinvest;
         return `
         <tr data-action="Research.open" data-symbol="${h.symbol}" style="cursor:pointer">
-          <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
+          <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
           <td>${h.shares}</td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${yoc != null ? yoc.toFixed(1) + '%' : (h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—')}</td>

@@ -243,34 +243,34 @@ const Settings = (() => {
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Nisab (87.48g gold)</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(nisabValue).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">At ₨${goldPpg.toLocaleString()}/g</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">At ₨${goldPpg.toLocaleString()}/g</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Zakatable Assets</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableTotal).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">Shariah holdings</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">Shariah holdings</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Shariah Stocks</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableStocks).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">Marked ☪ in portfolio</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">Marked ☪ in portfolio</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Meezan Funds</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableFunds).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">All funds (Shariah)</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">All funds (Shariah)</div>
         </div>
       </div>
       ${zakatableTotal >= nisabValue ? `
       <div style="padding:12px 14px;background:rgba(14,203,129,0.08);border:1px solid rgba(14,203,129,0.2);border-radius:var(--r-sm);margin-bottom:8px;">
         <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Zakat Due (2.5%)</div>
         <div style="font-size:1.4rem;font-weight:800;color:var(--green);">₨${Math.round(zakatDue).toLocaleString()}</div>
-        <div style="font-size:0.68rem;color:var(--text3);margin-top:2px;">Above nisab threshold ✓</div>
+        <div style="font-size: 0.6875rem;color:var(--text3);margin-top:2px;">Above nisab threshold ✓</div>
       </div>` : `
       <div style="padding:12px 14px;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:8px;">
         <div style="font-size:0.78rem;color:var(--text3);">Below nisab threshold (₨${Math.round(nisabValue).toLocaleString()}) — no Zakat due on these assets yet.</div>
       </div>`}
-      <div style="font-size:0.65rem;color:var(--text3);line-height:1.4;">Consult a scholar for your specific situation. Non-Shariah stocks excluded from calculation.</div>
+      <div style="font-size: 0.6875rem;color:var(--text3);line-height:1.4;">Consult a scholar for your specific situation. Non-Shariah stocks excluded from calculation.</div>
     </div>
 
     <div class="sec-head"><span class="sec-title">Live Prices</span></div>

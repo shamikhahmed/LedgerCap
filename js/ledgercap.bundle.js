@@ -1,36 +1,4 @@
-/* LedgerCap bundle — 96 modules — run: npm run bundle */
-;/* === js/brand/colors.js === */
-/* LedgerCap brand palette — Tier 1 brandOk path. */
-(function (global) {
-  const LCBrand = {
-    h_09090b: '#09090b',
-    h_0ecb81: '#0ECB81',
-    h_0a84ff: '#0a84ff',
-    h_10b981: '#10b981',
-    h_111: '#111',
-    h_16161a: '#16161a',
-    h_18181b: '#18181b',
-    h_1890ff: '#1890FF',
-    h_1c1c1e: '#1c1c1e',
-    h_22c55e: '#22c55e',
-    h_30d158: '#30d158',
-    h_666: '#666',
-    h_f0b90b: '#F0B90B',
-    h_f6465d: '#F6465D',
-    h_ff6b35: '#FF6B35',
-    h_a1a1a6: '#a1a1a6',
-    h_a1a1aa: '#a1a1aa',
-    h_ef4444: '#ef4444',
-    h_f4f4f5: '#f4f4f5',
-    h_f5f5f5: '#f5f5f5',
-    h_fafafa: '#fafafa',
-    h_ff453a: '#ff453a',
-    h_fff: '#fff',
-  };
-  global.LCBrand = LCBrand;
-  if (typeof window !== 'undefined') window.LCBrand = LCBrand;
-})(typeof globalThis !== 'undefined' ? globalThis : this);
-
+/* LedgerCap bundle — 95 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -16127,7 +16095,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${dash.upcoming.filter(u => u.isHeld).slice(0, 8).map(u => `
         <tr data-action="Research.open" data-symbol="${u.symbol}">
-          <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
+          <td><strong>${u.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate || '—'}</td>
           <td>${u.recordDate || '—'}</td>
@@ -16142,7 +16110,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${dash.byStock.map(h => `
         <tr data-action="Research.open" data-symbol="${h.symbol}">
-          <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
+          <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${U.fmt(h.totalReceived)}</td>
           <td>${h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—'}</td>
@@ -16164,7 +16132,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${all.map(u => `
         <tr data-action="Research.open" data-symbol="${u.symbol}">
-          <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
+          <td><strong>${u.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate}</td>
           <td>${u.recordDate}</td>
@@ -16181,7 +16149,7 @@ const Dividends = (() => {
         <div class="div-cal-month-title">${new Date(m.month + '-01').toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}</div>
         ${m.paymentEvents.length ? `<div class="div-cal-section-label">Payment dates</div>` + m.paymentEvents.map(e => `
           <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
-            <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size:0.68rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
+            <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
             <div class="t-gain">${e.isHeld ? U.fmt(e.expectedIncome) : '—'}</div>
           </div>`).join('') : ''}
         ${m.exEvents.length ? `<div class="div-cal-section-label">Ex-dividend dates</div>` + m.exEvents.map(e => `
@@ -16203,7 +16171,7 @@ const Dividends = (() => {
         const on = !!drip[h.symbol]?.reinvest;
         return `
         <tr data-action="Research.open" data-symbol="${h.symbol}" style="cursor:pointer">
-          <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
+          <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
           <td>${h.shares}</td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${yoc != null ? yoc.toFixed(1) + '%' : (h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—')}</td>
@@ -16614,8 +16582,8 @@ const Transactions = (() => {
     if (tx.type !== 'IPO_SUBSCRIBE') return '';
     const listed = tx.status === 'listed';
     return listed
-      ? '<span class="badge badge-cdc" style="font-size:0.58rem;margin-left:4px;">LISTED · CDC</span>'
-      : '<span class="badge" style="font-size:0.58rem;margin-left:4px;background:rgba(240,185,11,0.12);color:var(--gold);">PENDING</span>';
+      ? '<span class="badge badge-cdc" style="font-size: 0.6875rem;margin-left:4px;">LISTED · CDC</span>'
+      : '<span class="badge" style="font-size: 0.6875rem;margin-left:4px;background:rgba(240,185,11,0.12);color:var(--gold);">PENDING</span>';
   }
 
   function _txRowHTML(tx, all) {
@@ -16995,34 +16963,34 @@ const Settings = (() => {
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Nisab (87.48g gold)</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(nisabValue).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">At ₨${goldPpg.toLocaleString()}/g</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">At ₨${goldPpg.toLocaleString()}/g</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Zakatable Assets</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableTotal).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">Shariah holdings</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">Shariah holdings</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Shariah Stocks</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableStocks).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">Marked ☪ in portfolio</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">Marked ☪ in portfolio</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Meezan Funds</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableFunds).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">All funds (Shariah)</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">All funds (Shariah)</div>
         </div>
       </div>
       ${zakatableTotal >= nisabValue ? `
       <div style="padding:12px 14px;background:rgba(14,203,129,0.08);border:1px solid rgba(14,203,129,0.2);border-radius:var(--r-sm);margin-bottom:8px;">
         <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Zakat Due (2.5%)</div>
         <div style="font-size:1.4rem;font-weight:800;color:var(--green);">₨${Math.round(zakatDue).toLocaleString()}</div>
-        <div style="font-size:0.68rem;color:var(--text3);margin-top:2px;">Above nisab threshold ✓</div>
+        <div style="font-size: 0.6875rem;color:var(--text3);margin-top:2px;">Above nisab threshold ✓</div>
       </div>` : `
       <div style="padding:12px 14px;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:8px;">
         <div style="font-size:0.78rem;color:var(--text3);">Below nisab threshold (₨${Math.round(nisabValue).toLocaleString()}) — no Zakat due on these assets yet.</div>
       </div>`}
-      <div style="font-size:0.65rem;color:var(--text3);line-height:1.4;">Consult a scholar for your specific situation. Non-Shariah stocks excluded from calculation.</div>
+      <div style="font-size: 0.6875rem;color:var(--text3);line-height:1.4;">Consult a scholar for your specific situation. Non-Shariah stocks excluded from calculation.</div>
     </div>
 
     <div class="sec-head"><span class="sec-title">Live Prices</span></div>
@@ -18685,7 +18653,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(dailyData.days || []).slice(0, 30).map(d => `
           <div class="perf-item">
-            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
+            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size: 0.6875rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${d.pnl >= 0 ? 't-gain' : 't-loss'}">${d.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(d.pnl)}</div>
           </div>
         `).join('')}
@@ -18715,7 +18683,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(monthlyData.months || []).map(m => `
           <div class="perf-item">
-            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
+            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size: 0.6875rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${m.pnl >= 0 ? 't-gain' : 't-loss'}">${m.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(m.pnl)}</div>
           </div>
         `).join('')}

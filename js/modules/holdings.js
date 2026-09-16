@@ -22,7 +22,7 @@ const Holdings = (() => {
         <tbody>
         ${rows.map(r => `
           <tr data-nav="research">
-            <td><strong>${r.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${r.name}<br>${r.broker}</div></td>
+            <td><strong>${r.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${r.name}<br>${r.broker}</div></td>
             <td>${r.kind === 'fund' ? r.quantity.toFixed(2) : r.quantity}</td>
             <td>${U.fmt(r.price)}</td>
             <td>${U.fmt(r.value)}</td>

@@ -1,0 +1,8 @@
+{
+  "entries": [
+    {
+      "pattern": "screenshots.spec",
+      "reason": "Screenshot regeneration gated behind CAPTURE_SCREENSHOTS=1 — gallery-class capture skip (C-32)"
+    }
+  ]
+}

@@ -48,7 +48,7 @@ const Income = (() => {
           <div style="width:100%;height:${maxH}px;display:flex;align-items:flex-end;">
             <div style="width:100%;height:${h}px;background:var(--gold);border-radius:2px 2px 0 0;min-height:${val > 0 ? 4 : 0}px;"></div>
           </div>
-          <div style="font-size:0.55rem;color:var(--text3);">${label}</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">${label}</div>
         </div>`;
       }).join('')}
     </div>`;
@@ -131,7 +131,7 @@ const Income = (() => {
         ].map(([l, v, sub]) => `<div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">${l}</div>
           <div style="font-size:1rem;font-weight:800;">${v}</div>
-          <div style="font-size:0.65rem;color:var(--text3);margin-top:2px;">${sub}</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);margin-top:2px;">${sub}</div>
         </div>`).join('')}
       </div>
     </div>
@@ -152,7 +152,7 @@ const Income = (() => {
         <span style="font-size:0.78rem;color:var(--orange);font-weight:700;">Target: ${fmt(targetSIP)}</span>
       </div>
       <div class="sip-bar"><div class="sip-fill" style="width:${contribPct}%;"></div></div>
-      <div style="margin-top:6px;font-size:0.68rem;color:var(--text3);">${contribPct >= 100 ? '✓ Target reached!' : `${fmt(targetSIP - thisInvest)} remaining`}</div>
+      <div style="margin-top:6px;font-size: 0.6875rem;color:var(--text3);">${contribPct >= 100 ? '✓ Target reached!' : `${fmt(targetSIP - thisInvest)} remaining`}</div>
     </div>
 
     <div class="sec-head"><span class="sec-title">6-Month Overview</span></div>
@@ -160,8 +160,8 @@ const Income = (() => {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <span style="font-size:0.75rem;color:var(--text3);">Avg investment rate: <strong style="color:var(--text)">${avgInvestRate6.toFixed(0)}%</strong></span>
         <div style="display:flex;gap:12px;">
-          <div style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:2px;background:var(--orange);"></div>Invested</div>
-          <div style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:2px;background:var(--bg4);"></div>Salary</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size: 0.6875rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:2px;background:var(--orange);"></div>Invested</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size: 0.6875rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:2px;background:var(--bg4);"></div>Salary</div>
         </div>
       </div>
       <div class="income-bar">
@@ -195,7 +195,7 @@ const Income = (() => {
         </div>
         <div style="text-align:right;">
           <div class="income-sum-value">${fmt(sal)}</div>
-          <div style="font-size:0.65rem;color:var(--text3);">salary</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">salary</div>
         </div>
       </div>`;
     }).join('')}
@@ -223,7 +223,7 @@ const Income = (() => {
     ${Object.keys(divByStock).length > 0 ? `
     <div class="sec-head"><span class="sec-title">By Stock</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:8px 16px;font-size:0.65rem;color:var(--text3);border-bottom:1px solid var(--bg4);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:8px 16px;font-size: 0.6875rem;color:var(--text3);border-bottom:1px solid var(--bg4);">
         <div>STOCK</div><div style="text-align:right;">RECEIVED</div><div style="text-align:right;">YIELD ON COST</div>
       </div>
       ${Object.entries(divByStock).sort((a, b) => b[1] - a[1]).map(([sym, amt]) => {
@@ -239,17 +239,17 @@ const Income = (() => {
     </div>` : ''}
 
     ${expectedDivRows.length > 0 ? `
-    <div class="sec-head"><span class="sec-title">Expected Dividends</span><span class="sec-action" style="color:var(--gold);font-size:0.68rem;">Estimates only</span></div>
+    <div class="sec-head"><span class="sec-title">Expected Dividends</span><span class="sec-action" style="color:var(--gold);font-size: 0.6875rem;">Estimates only</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
       ${expectedDivRows.map(r => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--bg4);">
         <div>
           <div style="font-size:0.82rem;font-weight:700;">${r.symbol}</div>
-          <div style="font-size:0.65rem;color:var(--text3);">${r.schedule} · ${r.yieldPct}% yield (est.)</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">${r.schedule} · ${r.yieldPct}% yield (est.)</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:0.82rem;font-weight:700;color:var(--gold);">~${fmt(r.annualDiv)}</div>
-          <div style="font-size:0.65rem;color:var(--text3);">annual est.</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">annual est.</div>
         </div>
       </div>`).join('')}
     </div>` : ''}

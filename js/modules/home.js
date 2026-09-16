@@ -113,7 +113,7 @@ const Home = (() => {
         <tbody>${sorted.map(h => {
           const day = MarketUI.dailyChgPct(h.symbol, h.price);
           return `<tr data-nav="research">
-            <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.name || h.sector || h.broker}</div></td>
+            <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.name || h.sector || h.broker}</div></td>
             <td>${U.fmt(h.price)}</td>
             <td>${h.kind === 'fund' ? h.quantity.toFixed(2) : h.quantity}</td>
             <td>${U.fmt(h.value)}</td>

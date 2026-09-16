@@ -25,3 +25,8 @@
 - Change: KSE ticker (+ pull-to-refresh) is the one refresh; pie Funds icon; ≥11px tabs; demo → inline banner only; wrap stale banner; hide freshness ≤360px.
 - Risks: users must discover ticker tap for refresh.
 - Verification: npm run bundle; node --check; npm test (unit+e2e subset); tier1 honest FAIL.
+
+## 2026-09-16 — Finish Review 3 follow-up (finish/ledgercap-stepR)
+- Committed: C-29 tokens.css + CSS var migration; SW/index link tokens+brand; C-31 matrix env-gate + playwright .mjs match; CI-WORKFLOW; screenshots skip-allowlist; honest TIER1 FAIL.
+- Left uncommitted: none.
+- Not merging (Tier1 FAIL: matrix-results / axe / gallery).

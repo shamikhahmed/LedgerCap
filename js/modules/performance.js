@@ -74,7 +74,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(dailyData.days || []).slice(0, 30).map(d => `
           <div class="perf-item">
-            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
+            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size: 0.6875rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${d.pnl >= 0 ? 't-gain' : 't-loss'}">${d.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(d.pnl)}</div>
           </div>
         `).join('')}
@@ -104,7 +104,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(monthlyData.months || []).map(m => `
           <div class="perf-item">
-            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
+            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size: 0.6875rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${m.pnl >= 0 ? 't-gain' : 't-loss'}">${m.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(m.pnl)}</div>
           </div>
         `).join('')}
