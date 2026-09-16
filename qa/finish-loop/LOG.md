@@ -15,3 +15,9 @@
 - One refresh (KSE ticker); remove hub Refresh + health Refresh + stale chip button
 - Funds tab pie icon; tab labels ≥11px; inline demo banner (no toast)
 - Stale banner wraps; sentence-case greet; ticker freshness hides ≤360px
+
+### 2026-09-16 C-57 Pages allowlist
+- **Problem:** Pages published repo-root internals (HANDOVER/CLAUDE/qa/worker/package.json).
+- **Root cause:** deploy copied (nearly) the whole tree.
+- **Change:** `scripts/stage-pages-site.sh` + `verify-pages-artifact.cjs`; workflow stages allowlisted paths only.
+- **Verification:** local stage dry-run + SW precache check; live curl after deploy.
