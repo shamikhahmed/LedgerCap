@@ -145,11 +145,11 @@ const Market = (() => {
           <p>${I18n.t('market.sub')}</p>
         </div>
         <div class="lc-dash-market" style="margin-bottom:var(--lc-space-4)">
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.refreshPrices" aria-label="Refresh KSE-100">
+          <div class="lc-dash-market-card" role="status">
             <span>KSE-100</span>
             <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
             <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : '—'}</em>
-          </button>
+          </div>
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
@@ -165,9 +165,6 @@ const Market = (() => {
         ${filterHint}
         <div id="market-list">${rows.length ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length)) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
-        <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
-        </div>
       </div>`;
 
     const inp = document.getElementById('market-search');

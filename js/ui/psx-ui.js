@@ -33,13 +33,13 @@ const PsxUI = (() => {
     return String(expr || 'App.refreshPrices').replace(/\(\)$/, '').replace(/\(\)/g, '');
   }
 
-  function strip(onRefresh) {
+  function strip(_onRefresh) {
+    // C-43 / LDG-P1-01: status only — single refresh is the header KSE ticker.
     const k = kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     return `<div class="psx-strip">
       <div><span class="psx-live"><span class="psx-live-dot"></span>${I18n.t('liveMarket')}</span></div>
       <div><strong>KSE-100</strong> ${k.value ? fmtIndex(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
-      <button type="button" class="psx-strip-refresh" data-action="${_act(onRefresh)}">${I18n.t('refresh')}</button>
     </div>`;
   }
 

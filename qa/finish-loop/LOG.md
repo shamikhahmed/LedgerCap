@@ -16,3 +16,12 @@
 - **Root cause:** deploy copied (nearly) the whole tree.
 - **Change:** allowlisted stage script + SW verify; workflow stages public paths only.
 - **Verification:** local stage dry-run; live curl after deploy.
+
+## 2026-09-16 — C-43 Step R
+### §15 mini-plan
+- Problem: multiple refresh controls; Funds $ icon; tab labels <11px; demo toast overlays cards; stale banner truncates; ticker overflows at 320.
+- Root cause: strip/compact/section/market/funds each exposed App.refreshPrices; demo toasts still fired on refresh; freshness span unbounded.
+- Files: market-ui.js, psx-ui.js, funds.js, market.js, app.js, icons/navigation, lc-pro*.css, price-health.js, bundle
+- Change: KSE ticker (+ pull-to-refresh) is the one refresh; pie Funds icon; ≥11px tabs; demo → inline banner only; wrap stale banner; hide freshness ≤360px.
+- Risks: users must discover ticker tap for refresh.
+- Verification: npm run bundle; node --check; npm test (unit+e2e subset); tier1 honest FAIL.

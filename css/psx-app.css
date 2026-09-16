@@ -162,7 +162,7 @@ body.psx-app {
 .psx-nav-btn {
   flex: 1; border: none; background: transparent;
   padding: 8px 4px 6px; cursor: pointer; font-family: inherit;
-  color: var(--psx-text-3); font-size: 10px; font-weight: 700;
+  color: var(--psx-text-3); font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.04em;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   min-height: 48px; min-width: 0; overflow: hidden;
@@ -419,7 +419,7 @@ body.psx-app {
   padding: 10px 14px; background: var(--psx-accent-soft);
   border-bottom: 1px solid var(--psx-border); font-size: 13px;
 }
-.psx-demo button { margin-left: auto; border: none; background: none; cursor: pointer; font-size: 16px; }
+.psx-demo button { margin-left: auto; border: none; background: none; cursor: pointer; font-size: 16px; min-width: 24px; min-height: 24px; display: inline-flex; align-items: center; justify-content: center; }
 
 .toast-wrap { position: fixed; bottom: calc(var(--psx-nav) + 20px); left: 50%; transform: translateX(-50%); z-index: 200; }
 .bottom-sheet { display: none; }

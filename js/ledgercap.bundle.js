@@ -11380,9 +11380,9 @@ const PriceHealth = (() => {
     const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
     const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
     if (snap && snapStale) {
+      // C-43 / LDG-P1-01: no second refresh control — ticker is the one refresh.
       return `<div class="lc-price-health" role="status">
-        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap refresh.</span>
-        <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh snapshot</button>
+        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap the KSE ticker to refresh.</span>
         <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
       </div>`;
     }
@@ -11391,10 +11391,9 @@ const PriceHealth = (() => {
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
       ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — refresh or accept EOD`;
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — tap the KSE ticker to refresh or accept EOD`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
-      <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
@@ -11404,8 +11403,9 @@ const PriceHealth = (() => {
     const host = document.getElementById('lc-price-health-host');
     if (!host) return;
     const rep = audit();
-    host.innerHTML = bannerHtml(rep);
-    host.classList.toggle('hidden', !rep.showBanner);
+    const html = bannerHtml(rep);
+    host.innerHTML = html;
+    host.classList.toggle('hidden', !html);
   }
 
   function dismiss() {
@@ -12660,6 +12660,7 @@ const LcIcons = (() => {
     journal: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z', 'M8 7h8', 'M8 11h8'],
     zap: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z',
     coins: ['M8 6h8', 'M6 10h12', 'M8 14h8', 'M12 18v4', 'M8 2h8a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8Z'],
+    pie: ['M21.21 15.89A10 10 0 1 1 8 2.83', 'M22 12A10 10 0 0 0 12 2v10z'],
     fullscreen: ['M8 3H5a2 2 0 0 0-2 2v3', 'M21 8V5a2 2 0 0 0-2-2h-3', 'M3 16v3a2 2 0 0 0 2 2h3', 'M16 21h3a2 2 0 0 0 2-2v-3'],
     x: ['M18 6 6 18', 'M6 6l12 12'],
     ledger: ['M4 4h16v4H4z', 'M4 12h10', 'M4 20h16', 'M18 12h2'],
@@ -12677,7 +12678,7 @@ const LcIcons = (() => {
     home: 'home',
     market: 'chart',
     portfolio: 'briefcase',
-    funds: 'wallet',
+    funds: 'pie',
     research: 'search',
     global: 'globe',
     commodities: 'coins',
@@ -12849,13 +12850,13 @@ const PsxUI = (() => {
     return String(expr || 'App.refreshPrices').replace(/\(\)$/, '').replace(/\(\)/g, '');
   }
 
-  function strip(onRefresh) {
+  function strip(_onRefresh) {
+    // C-43 / LDG-P1-01: status only — single refresh is the header KSE ticker.
     const k = kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     return `<div class="psx-strip">
       <div><span class="psx-live"><span class="psx-live-dot"></span>${I18n.t('liveMarket')}</span></div>
       <div><strong>KSE-100</strong> ${k.value ? fmtIndex(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
-      <button type="button" class="psx-strip-refresh" data-action="${_act(onRefresh)}">${I18n.t('refresh')}</button>
     </div>`;
   }
 
@@ -13100,7 +13101,6 @@ const MarketUI = (() => {
       <span class="lc-compact-chg ${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : '…'}</span>
       <span class="lc-compact-sep" aria-hidden="true">·</span>
       <span class="lc-compact-live"><span class="lc-live-dot lc-live-dot--sm" aria-hidden="true"></span>${ago ? ago : 'Live'}</span>
-      <button type="button" class="lc-compact-refresh" data-action="App.refreshPrices" title="Refresh prices">↻</button>
     </div>`;
   }
 
@@ -13155,7 +13155,6 @@ const MarketUI = (() => {
     return `
     <div class="lc-home-top cap-reveal">
       ${liveBadge(k.ts)}
-      <button type="button" class="lc-section-action" data-action="App.refreshPrices">Refresh prices</button>
     </div>
     <div class="lc-market-strip cap-reveal">
       <div class="lc-index-card lc-index-card--hero">
@@ -13328,7 +13327,7 @@ const Navigation = (() => {
   const TABS = [
     { id: 'home', labelKey: 'nav.hub', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/></svg>` },
     { id: 'market', labelKey: 'nav.watch', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>` },
-    { id: 'funds', labelKey: 'nav.funds', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
+    { id: 'funds', labelKey: 'nav.funds', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>` },
     { id: 'portfolio', labelKey: 'nav.pnl', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>` },
     { id: 'research', labelKey: 'nav.analyze', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` },
   ];
@@ -14266,7 +14265,8 @@ const Hub = (() => {
     let stale = 0;
     syms.forEach(s => { if (State.isPriceStale(s, 24)) stale++; });
     if (!stale) return '';
-    return `<button type="button" class="lc-stale-chip" data-action="App.refreshPrices">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
+    // LDG-P1-01 / C-43: status only — single refresh is the header ticker.
+    return `<span class="lc-stale-chip" role="status">${stale} stale price${stale > 1 ? 's' : ''} · tap KSE ticker to refresh</span>`;
   }
 
   function _investmentSummary(state) {
@@ -14588,7 +14588,6 @@ const Hub = (() => {
           </div>
         </div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
           <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
@@ -14773,11 +14772,11 @@ const Market = (() => {
           <p>${I18n.t('market.sub')}</p>
         </div>
         <div class="lc-dash-market" style="margin-bottom:var(--lc-space-4)">
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.refreshPrices" aria-label="Refresh KSE-100">
+          <div class="lc-dash-market-card" role="status">
             <span>KSE-100</span>
             <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
             <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : '—'}</em>
-          </button>
+          </div>
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
@@ -14793,9 +14792,6 @@ const Market = (() => {
         ${filterHint}
         <div id="market-list">${rows.length ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length)) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
-        <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
-        </div>
       </div>`;
 
     const inp = document.getElementById('market-search');
@@ -15242,7 +15238,6 @@ const Funds = (() => {
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-ghost" data-action="Navigation.go" data-screen="settings" data-hash="fund-nav-section">Update NAVs</button>
-        <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
       </div>
     `);
 
@@ -20981,7 +20976,7 @@ const App = (() => {
     else if (!demo && (State.get().transactions || []).length) {
       setTimeout(() => refreshPrices(), 1200);
     }
-    else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
+    else if (demo) { /* inline #demo-banner covers this — no floating toast (C-43) */ }
     _maybeDemoBanner();
     _maybeInstallHint();
     if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
@@ -21082,7 +21077,7 @@ const App = (() => {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
     if (isDemo) {
-      showToast('Demo mode — live refresh disabled', 'info');
+      // C-43: inline #demo-banner — no floating toast
       return;
     }
     document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
@@ -21139,7 +21134,7 @@ const App = (() => {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
     if (isDemo) {
-      showToast('Demo mode — showing seed NAVs. Remove ?demo=1 for live PSX refresh.', 'info');
+      // C-43: inline #demo-banner — no floating toast
       return;
     }
     if (_refreshBusy) return;
