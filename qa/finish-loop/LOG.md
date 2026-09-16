@@ -30,3 +30,6 @@
 - Committed: C-29 tokens.css + CSS var migration; SW/index link tokens+brand; C-31 matrix env-gate + playwright .mjs match; CI-WORKFLOW; screenshots skip-allowlist; honest TIER1 FAIL.
 - Left uncommitted: none.
 - Not merging (Tier1 FAIL: matrix-results / axe / gallery).
+
+## 2026-09-16 — matrix evidence
+- Committed: matrix-results.json (6/6) + shots; honest TIER1 refresh.

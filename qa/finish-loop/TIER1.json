@@ -2,7 +2,7 @@
   "app": "LedgerCap",
   "version": "3.57.2",
   "swCache": "ledgercap-v140",
-  "generatedAt": "2026-09-16T10:43:44.430Z",
+  "generatedAt": "2026-09-16T10:51:16.709Z",
   "status": "FAIL",
   "pass": [
     {
@@ -62,6 +62,18 @@
       "detail": "tests/finish-matrix.spec.mjs"
     },
     {
+      "id": "matrix:failures",
+      "detail": "0"
+    },
+    {
+      "id": "matrix:shot-count",
+      "detail": "6 shots (need routes×viewports×themes = 6)"
+    },
+    {
+      "id": "matrix:freshness",
+      "detail": "2026-09-16T10:49:13.547Z"
+    },
+    {
       "id": "live:VERSION.json",
       "detail": "https://shamikhahmed.github.io/LedgerCap/VERSION.json → 200"
     },
@@ -103,10 +115,6 @@
     }
   ],
   "fail": [
-    {
-      "id": "matrix:results",
-      "detail": "missing qa/finish-loop/matrix-results.json (CI must set FINISH_MATRIX=1)"
-    },
     {
       "id": "lighthouse:files",
       "detail": "empty"
