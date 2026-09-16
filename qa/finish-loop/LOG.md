@@ -10,3 +10,9 @@
 ### 2026-09-15 LedgerCap gallery regen
 - `npm run gallery` PASS (1 test, ~16.5m)
 - Regenerated assets/screenshots/* + embedded screen-gallery.html (83 screens)
+
+### 2026-09-16 C-57 Pages allowlist
+- **Problem:** Pages published repo-root internals.
+- **Root cause:** deploy copied (nearly) the whole tree.
+- **Change:** allowlisted stage script + SW verify; workflow stages public paths only.
+- **Verification:** local stage dry-run; live curl after deploy.
