@@ -10,3 +10,8 @@
 ### 2026-09-15 LedgerCap gallery regen
 - `npm run gallery` PASS (1 test, ~16.5m)
 - Regenerated assets/screenshots/* + embedded screen-gallery.html (83 screens)
+
+## 2026-09-16 — C-43 finish/ledgercap-r3
+- One refresh (KSE ticker); remove hub Refresh + health Refresh + stale chip button
+- Funds tab pie icon; tab labels ≥11px; inline demo banner (no toast)
+- Stale banner wraps; sentence-case greet; ticker freshness hides ≤360px

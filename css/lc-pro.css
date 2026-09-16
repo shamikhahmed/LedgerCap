@@ -147,7 +147,7 @@ body.lc-pro .psx-bottom-nav {
 
 body.lc-pro .psx-nav-btn {
   min-height: 48px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -345,6 +345,7 @@ body.lc-pro .toast {
   letter-spacing: -0.03em;
   color: var(--psx-text);
   font-family: var(--psx-display, inherit);
+  text-transform: none; /* C-43: sentence case, not all-caps */
 }
 
 .lc-dash-hero {
@@ -745,12 +746,21 @@ body.lc-pro .psx-ticker {
   border: 1px solid var(--psx-border);
   font-size: 11px;
   color: var(--psx-text-2);
-  max-width: 100%;
+  max-width: min(100%, 100vw - 8rem);
   cursor: pointer;
   font-family: inherit;
   min-height: 28px;
 }
-.lc-ticker-fresh { color: var(--psx-text-3); font-weight: 600; }
+.lc-ticker-fresh {
+  color: var(--psx-text-3);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 360px) {
+  .lc-ticker-fresh { display: none; }
+}
 .lc-ticker-pill--warn { border-color: rgba(245, 158, 11, 0.45); }
 .lc-ticker-pill--warn .lc-ticker-fresh { color: #f59e0b; }
 .lc-ticker-pill--live { border-color: rgba(34, 197, 94, 0.45); }

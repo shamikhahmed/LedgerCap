@@ -435,7 +435,7 @@ const App = (() => {
     else if (!demo && (State.get().transactions || []).length) {
       setTimeout(() => refreshPrices(), 1200);
     }
-    else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
+    else if (demo) { /* inline #demo-banner covers this — no floating toast (C-43) */ }
     _maybeDemoBanner();
     _maybeInstallHint();
     if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
