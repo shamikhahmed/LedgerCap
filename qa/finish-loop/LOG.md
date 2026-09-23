@@ -43,3 +43,6 @@
 
 ## 2026-09-23 — axe harness
 - capture-axe.mjs + home/trips themes JSON (still has serious findings — not clean).
+
+## 2026-09-23 — LH attempt
+- Mobile/desktop helper FAILed (Protocol Session closed). Desktop JSON partial P22 committed for honesty only.
