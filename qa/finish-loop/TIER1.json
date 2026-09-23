@@ -2,7 +2,7 @@
   "app": "LedgerCap",
   "version": "3.57.2",
   "swCache": "ledgercap-v140",
-  "generatedAt": "2026-09-23T05:59:44.291Z",
+  "generatedAt": "2026-09-23T06:08:42.404Z",
   "status": "FAIL",
   "pass": [
     {
@@ -117,15 +117,15 @@
   "fail": [
     {
       "id": "matrix:freshness",
-      "detail": "matrix 2026-09-23T05:51:52.949Z before last UI commit 2026-09-23T10:54:29+05:00"
+      "detail": "matrix 2026-09-23T06:00:14.314Z before last UI commit 2026-09-23T11:02:49+05:00"
     },
     {
       "id": "lighthouse:home-demo-desktop.json",
-      "detail": "perf 22 a11y 96 bp 96 LCP 15100.3855 TBT 2218 CLS 0.1105200945626477"
+      "detail": "null category scores — not claimed"
     },
     {
       "id": "lighthouse:home-demo-mobile.json",
-      "detail": "perf 33 a11y 100 bp 96 LCP 10548.473999999998 TBT 2419.7532500000007 CLS 0.1227217496962333"
+      "detail": "perf 33 a11y 100 bp 96 LCP 10774.692920520018 TBT 2967 CLS 0.1227217496962333"
     },
     {
       "id": "lighthouse:passing",
@@ -133,7 +133,7 @@
     },
     {
       "id": "gallery:freshness",
-      "detail": "assets/screenshots/gallery-manifest.json not in git history"
+      "detail": "gallery 2026-09-23T10:59:44+05:00 before last UI commit 2026-09-23T11:02:49+05:00"
     }
   ],
   "warn": [],
