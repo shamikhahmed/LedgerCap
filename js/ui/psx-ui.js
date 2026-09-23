@@ -124,7 +124,7 @@ const PsxUI = (() => {
   }
 
   function skeletonNews() {
-    return `<div class="psx-skel-news" aria-busy="true" aria-label="Loading news">
+    return `<div class="psx-skel-news" role="status" aria-busy="true" aria-label="Loading news">
       ${[1, 2, 3].map(() => `<div class="psx-skel-row"><div class="psx-skel psx-skel-text lg"></div><div class="psx-skel psx-skel-text sm"></div></div>`).join('')}
     </div>`;
   }

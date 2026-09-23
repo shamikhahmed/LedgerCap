@@ -12909,7 +12909,7 @@ const PsxUI = (() => {
   }
 
   function skeletonNews() {
-    return `<div class="psx-skel-news" aria-busy="true" aria-label="Loading news">
+    return `<div class="psx-skel-news" role="status" aria-busy="true" aria-label="Loading news">
       ${[1, 2, 3].map(() => `<div class="psx-skel-row"><div class="psx-skel psx-skel-text lg"></div><div class="psx-skel psx-skel-text sm"></div></div>`).join('')}
     </div>`;
   }
@@ -13327,9 +13327,9 @@ const Navigation = (() => {
   function _t(k) { return typeof I18n !== 'undefined' ? I18n.t(k) : k; }
 
   function _navBtn(t) {
-    const on = t.id === _current ? ' active' : '';
-    return `<button type="button" class="psx-nav-btn${on}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
-      <span class="psx-nav-icon-wrap">${t.icon}</span>
+    const on = t.id === _current;
+    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
+      <span class="psx-nav-icon-wrap" aria-hidden="true">${t.icon}</span>
       <span>${_t(t.labelKey)}</span>
     </button>`;
   }
@@ -13409,14 +13409,20 @@ const Navigation = (() => {
     if (!VALID.has(tabId)) tabId = 'home';
     _current = tabId;
     document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
+      b.classList.remove('active');
+      if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
+    });
     const el = document.getElementById('screen-' + tabId);
     if (el) {
       el.classList.add('active', 'lc-screen-enter');
       el.scrollTop = 0;
       requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
     }
-    document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
+    document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
+      b.classList.add('active');
+      if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
+    });
     if (!silent) {
       sessionStorage.setItem('ledgercap_tab', tabId);
       const bucket = opts.portfolioId || (typeof PortfolioScreen !== 'undefined' ? PortfolioScreen.currentFilter?.() : null);
