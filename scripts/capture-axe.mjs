@@ -71,15 +71,28 @@ async function waitReady(page) {
 }
 
 async function analyze(page, base) {
-  if (AxeBuilder) {
+  // LedgerCap CSP blocks axe injection — strip CSP for this capture only.
+  await page.route('**/*', async (route) => {
     try {
-      return await new AxeBuilder({ page }).analyze();
-    } catch (e) {
-      console.warn('AxeBuilder failed, falling back to same-origin axe:', e.message);
+      const response = await route.fetch();
+      const headers = { ...response.headers() };
+      delete headers['content-security-policy'];
+      delete headers['Content-Security-Policy'];
+      await route.fulfill({ response, headers });
+    } catch {
+      await route.continue();
     }
+  });
+
+  if (AxeBuilder) {
+    return new AxeBuilder({ page }).analyze();
   }
-  // CSP on LedgerCap blocks inline injection — load vendored axe from same origin
-  await page.addScriptTag({ url: `${base}/assets/vendor/axe.min.js` });
+  const axePath = [
+    path.join(ROOT, '../CookCap/node_modules/axe-core/axe.min.js'),
+    path.join(ROOT, '../PrismCap/node_modules/axe-core/axe.min.js'),
+  ].find((c) => fs.existsSync(c));
+  if (!axePath) throw new Error('axe-core not found');
+  await page.addScriptTag({ path: axePath });
   return page.evaluate(async () => {
     // eslint-disable-next-line no-undef
     return axe.run(document, { resultTypes: ['violations', 'passes', 'incomplete', 'inapplicable'] });
