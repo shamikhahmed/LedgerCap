@@ -46,3 +46,6 @@
 
 ## 2026-09-23 — LH attempt
 - Mobile/desktop helper FAILed (Protocol Session closed). Desktop JSON partial P22 committed for honesty only.
+
+## 2026-09-23 — puppeteer LH (system Chrome)
+- mobile P29 / desktop P22 — honest local scores; thresholds unmet.
