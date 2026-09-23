@@ -40,3 +40,6 @@
 - **Changes:** CI-WORKFLOW=`LedgerCap CI`; screenshot skip-allowlist; finish-matrix `if (RUN)` + writeMatrixResults; `tokens.css` + rename `tokens.capricorn-core.css`; load `js/brand/colors.js` outside bundle; strip counted `!important`/outline/sub-11; SW precache tokens+colors; smoke matrix 6/6
 - **After:** killList cleared; remaining: LH empty, axe, gallery manifest
 - **Not faked:** no LH scores invented; no axe stubs
+
+## 2026-09-23 — axe harness
+- capture-axe.mjs + home/trips themes JSON (still has serious findings — not clean).

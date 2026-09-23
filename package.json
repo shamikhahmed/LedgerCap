@@ -19,7 +19,8 @@
     "icons:generate": "node scripts/generate-icons.mjs",
     "icons:ios": "node scripts/generate-ios-icons.mjs",
     "verify": "npm test",
-    "tier1": "node ../capricorn-tooling/shared/testing/tier1.mjs"
+    "tier1": "node ../capricorn-tooling/shared/testing/tier1.mjs",
+    "axe": "node scripts/capture-axe.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
