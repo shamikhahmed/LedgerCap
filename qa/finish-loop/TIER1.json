@@ -2,7 +2,7 @@
   "app": "LedgerCap",
   "version": "3.57.2",
   "swCache": "ledgercap-v140",
-  "generatedAt": "2026-09-16T11:23:09.969Z",
+  "generatedAt": "2026-09-23T05:59:44.291Z",
   "status": "FAIL",
   "pass": [
     {
@@ -70,8 +70,8 @@
       "detail": "6 shots (need routes×viewports×themes = 6)"
     },
     {
-      "id": "matrix:freshness",
-      "detail": "2026-09-16T10:49:13.547Z"
+      "id": "axe:serious-critical",
+      "detail": "2 JSON clean"
     },
     {
       "id": "live:VERSION.json",
@@ -116,16 +116,24 @@
   ],
   "fail": [
     {
-      "id": "lighthouse:files",
-      "detail": "empty"
+      "id": "matrix:freshness",
+      "detail": "matrix 2026-09-23T05:51:52.949Z before last UI commit 2026-09-23T10:54:29+05:00"
     },
     {
-      "id": "axe:dir",
-      "detail": "missing qa/finish-loop/axe/ (JSON per route×theme)"
+      "id": "lighthouse:home-demo-desktop.json",
+      "detail": "perf 22 a11y 96 bp 96 LCP 15100.3855 TBT 2218 CLS 0.1105200945626477"
     },
     {
-      "id": "gallery:manifest",
-      "detail": "gallery-manifest.json not found"
+      "id": "lighthouse:home-demo-mobile.json",
+      "detail": "perf 33 a11y 100 bp 96 LCP 10548.473999999998 TBT 2419.7532500000007 CLS 0.1227217496962333"
+    },
+    {
+      "id": "lighthouse:passing",
+      "detail": "0/2 files meet thresholds"
+    },
+    {
+      "id": "gallery:freshness",
+      "detail": "assets/screenshots/gallery-manifest.json not in git history"
     }
   ],
   "warn": [],

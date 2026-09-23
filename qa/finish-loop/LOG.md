@@ -49,3 +49,8 @@
 
 ## 2026-09-23 — puppeteer LH (system Chrome)
 - mobile P29 / desktop P22 — honest local scores; thresholds unmet.
+
+## 2026-09-23 — Review 3 evidence loop (finish/ledgercap-stepR)
+- Product: nav role=tab + skeletonNews role=status; axe 0 serious/critical.
+- LH (puppeteer): mobile P33 / desktop P22 — thresholds unmet (TBT/LCP/CLS).
+- gallery-manifest.json alias for Tier1 path; matrix refreshed. Tier1 FAIL. Not claiming PASS.
