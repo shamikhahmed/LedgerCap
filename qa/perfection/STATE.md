@@ -7,7 +7,7 @@ App version: 3.57.2 (no release bump yet — Phase I)
 Base: `main` @ `ce92c06` (finish/ledgercap-stepR merged — LDG-V3-4)
 
 ## Last commits
-- Tip: (pending commit) on `perfection/ledgercap-v3`
+- Tip: `f15224d2d8defb83503d391b6fbd81fd0320c8ba` on `perfection/ledgercap-v3`
 - Fix: LDG-V3-1 tab/KSE type ≥ 12px; LDG-V3-2 Dismiss / Txs / KSE chip ≥ 44px; LDG-V3-3 stop Worker KSE100 404 on load
 - Worker: `worker/src/index.js` returns 200 `{ data: [] }` on PSX HTML (deploy separately)
 
