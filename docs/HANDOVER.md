@@ -335,7 +335,7 @@ Push to main → auto-deploy to shamikhahmed.github.io/LedgerCap/
 
 ## 11. Key Contacts & Constraints
 
-- **User:** Shamikh Ahmed — shamikh73@gmail.com
+- **User:** Shamikh Ahmed — owner contact via Brain; public support: https://shamikhahmed.github.io/support.html (G-4)
 - **Currency:** PKR
 - **Salary assumption in seed:** ₨150,000/month (Jan–Jun 2026 rows)
 - **Do not** commit friend’s capital as Shamikh’s
