@@ -22,7 +22,9 @@ const VIEWPORTS = {
 const SCREENS = [
   { nav: 'home', group: 'Wealth', screen: 'Home', caption: 'Net worth and morning brief (demo).' },
   { nav: 'market', group: 'Markets', screen: 'Market', caption: 'KSE watch and pulse.' },
+  { nav: 'funds', group: 'Markets', screen: 'Funds', caption: 'Islamic and mutual funds.' },
   { nav: 'portfolio', group: 'Wealth', screen: 'Portfolio', caption: 'Holdings and performance.' },
+  { nav: 'research', group: 'Research', screen: 'Research', caption: 'Stock analyzer and insights.' },
   { nav: 'settings', group: 'System', screen: 'Settings', caption: 'Theme, language, currency.' },
 ];
 

@@ -32,6 +32,19 @@
       "h": 2532
     },
     {
+      "id": "markets--funds--demo",
+      "group": "Markets",
+      "screen": "Funds",
+      "state": "demo",
+      "theme": "light",
+      "device": "iphone",
+      "file": "light/iphone/markets--funds--demo.webp",
+      "route": "#funds",
+      "caption": "Islamic and mutual funds.",
+      "w": 1170,
+      "h": 2532
+    },
+    {
       "id": "wealth--portfolio--demo",
       "group": "Wealth",
       "screen": "Portfolio",
@@ -41,6 +54,19 @@
       "file": "light/iphone/wealth--portfolio--demo.webp",
       "route": "#portfolio",
       "caption": "Holdings and performance.",
+      "w": 1170,
+      "h": 2532
+    },
+    {
+      "id": "research--research--demo",
+      "group": "Research",
+      "screen": "Research",
+      "state": "demo",
+      "theme": "light",
+      "device": "iphone",
+      "file": "light/iphone/research--research--demo.webp",
+      "route": "#research",
+      "caption": "Stock analyzer and insights.",
       "w": 1170,
       "h": 2532
     },
@@ -84,6 +110,19 @@
       "h": 2532
     },
     {
+      "id": "markets--funds--demo",
+      "group": "Markets",
+      "screen": "Funds",
+      "state": "demo",
+      "theme": "dark",
+      "device": "iphone",
+      "file": "dark/iphone/markets--funds--demo.webp",
+      "route": "#funds",
+      "caption": "Islamic and mutual funds.",
+      "w": 1170,
+      "h": 2532
+    },
+    {
       "id": "wealth--portfolio--demo",
       "group": "Wealth",
       "screen": "Portfolio",
@@ -93,6 +132,19 @@
       "file": "dark/iphone/wealth--portfolio--demo.webp",
       "route": "#portfolio",
       "caption": "Holdings and performance.",
+      "w": 1170,
+      "h": 2532
+    },
+    {
+      "id": "research--research--demo",
+      "group": "Research",
+      "screen": "Research",
+      "state": "demo",
+      "theme": "dark",
+      "device": "iphone",
+      "file": "dark/iphone/research--research--demo.webp",
+      "route": "#research",
+      "caption": "Stock analyzer and insights.",
       "w": 1170,
       "h": 2532
     },
@@ -136,6 +188,19 @@
       "h": 1640
     },
     {
+      "id": "markets--funds--demo",
+      "group": "Markets",
+      "screen": "Funds",
+      "state": "demo",
+      "theme": "light",
+      "device": "ipad",
+      "file": "light/ipad/markets--funds--demo.webp",
+      "route": "#funds",
+      "caption": "Islamic and mutual funds.",
+      "w": 2360,
+      "h": 1640
+    },
+    {
       "id": "wealth--portfolio--demo",
       "group": "Wealth",
       "screen": "Portfolio",
@@ -145,6 +210,19 @@
       "file": "light/ipad/wealth--portfolio--demo.webp",
       "route": "#portfolio",
       "caption": "Holdings and performance.",
+      "w": 2360,
+      "h": 1640
+    },
+    {
+      "id": "research--research--demo",
+      "group": "Research",
+      "screen": "Research",
+      "state": "demo",
+      "theme": "light",
+      "device": "ipad",
+      "file": "light/ipad/research--research--demo.webp",
+      "route": "#research",
+      "caption": "Stock analyzer and insights.",
       "w": 2360,
       "h": 1640
     },
@@ -188,6 +266,19 @@
       "h": 1640
     },
     {
+      "id": "markets--funds--demo",
+      "group": "Markets",
+      "screen": "Funds",
+      "state": "demo",
+      "theme": "dark",
+      "device": "ipad",
+      "file": "dark/ipad/markets--funds--demo.webp",
+      "route": "#funds",
+      "caption": "Islamic and mutual funds.",
+      "w": 2360,
+      "h": 1640
+    },
+    {
       "id": "wealth--portfolio--demo",
       "group": "Wealth",
       "screen": "Portfolio",
@@ -197,6 +288,19 @@
       "file": "dark/ipad/wealth--portfolio--demo.webp",
       "route": "#portfolio",
       "caption": "Holdings and performance.",
+      "w": 2360,
+      "h": 1640
+    },
+    {
+      "id": "research--research--demo",
+      "group": "Research",
+      "screen": "Research",
+      "state": "demo",
+      "theme": "dark",
+      "device": "ipad",
+      "file": "dark/ipad/research--research--demo.webp",
+      "route": "#research",
+      "caption": "Stock analyzer and insights.",
       "w": 2360,
       "h": 1640
     },
@@ -240,6 +344,19 @@
       "h": 1800
     },
     {
+      "id": "markets--funds--demo",
+      "group": "Markets",
+      "screen": "Funds",
+      "state": "demo",
+      "theme": "light",
+      "device": "mac",
+      "file": "light/mac/markets--funds--demo.webp",
+      "route": "#funds",
+      "caption": "Islamic and mutual funds.",
+      "w": 2880,
+      "h": 1800
+    },
+    {
       "id": "wealth--portfolio--demo",
       "group": "Wealth",
       "screen": "Portfolio",
@@ -249,6 +366,19 @@
       "file": "light/mac/wealth--portfolio--demo.webp",
       "route": "#portfolio",
       "caption": "Holdings and performance.",
+      "w": 2880,
+      "h": 1800
+    },
+    {
+      "id": "research--research--demo",
+      "group": "Research",
+      "screen": "Research",
+      "state": "demo",
+      "theme": "light",
+      "device": "mac",
+      "file": "light/mac/research--research--demo.webp",
+      "route": "#research",
+      "caption": "Stock analyzer and insights.",
       "w": 2880,
       "h": 1800
     },
@@ -292,6 +422,19 @@
       "h": 1800
     },
     {
+      "id": "markets--funds--demo",
+      "group": "Markets",
+      "screen": "Funds",
+      "state": "demo",
+      "theme": "dark",
+      "device": "mac",
+      "file": "dark/mac/markets--funds--demo.webp",
+      "route": "#funds",
+      "caption": "Islamic and mutual funds.",
+      "w": 2880,
+      "h": 1800
+    },
+    {
       "id": "wealth--portfolio--demo",
       "group": "Wealth",
       "screen": "Portfolio",
@@ -301,6 +444,19 @@
       "file": "dark/mac/wealth--portfolio--demo.webp",
       "route": "#portfolio",
       "caption": "Holdings and performance.",
+      "w": 2880,
+      "h": 1800
+    },
+    {
+      "id": "research--research--demo",
+      "group": "Research",
+      "screen": "Research",
+      "state": "demo",
+      "theme": "dark",
+      "device": "mac",
+      "file": "dark/mac/research--research--demo.webp",
+      "route": "#research",
+      "caption": "Stock analyzer and insights.",
       "w": 2880,
       "h": 1800
     },

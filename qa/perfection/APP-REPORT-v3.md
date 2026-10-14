@@ -16,7 +16,7 @@
 | Deploy Pages | PASS | run `38558125137` |
 | LedgerCap CI (e2e) | FAIL (pre-existing) | `viewport.spec.js` 1280px `.psx-sidebar` hidden — also failed on prior `ce92c06` main; 25 passed / 1 failed |
 | SW / G-8 | PASS | live VERSION.json **3.58.0** · SW `ledgercap-v141` · register `sw.js?v=141` |
-| Gallery G17 | PARTIAL | existing gallery; full v3 capture later |
+| Gallery G17 | PARTIAL | 36 primary v3 shots in `docs/screenshots/gallery/` (full INVENTORY later) |
 | Docs truth | PASS (manual) | README §4.1 · CHANGELOG 3.58.0 · privacy Worker honesty |
 | Lighthouse §7.11 | OPEN / L | LDG-V3-5 |
 | Urdu/RTL §7.16 | OPEN / L | LDG-V3-6 |
