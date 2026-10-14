@@ -127,8 +127,8 @@ const Transactions = (() => {
     if (tx.type !== 'IPO_SUBSCRIBE') return '';
     const listed = tx.status === 'listed';
     return listed
-      ? '<span class="badge badge-cdc" style="font-size:0.58rem;margin-left:4px;">LISTED · CDC</span>'
-      : '<span class="badge" style="font-size:0.58rem;margin-left:4px;background:rgba(240,185,11,0.12);color:var(--gold);">PENDING</span>';
+      ? '<span class="badge badge-cdc" style="font-size: 0.6875rem;margin-left:4px;">LISTED · CDC</span>'
+      : '<span class="badge" style="font-size: 0.6875rem;margin-left:4px;background:rgba(240,185,11,0.12);color:var(--gold);">PENDING</span>';
   }
 
   function _txRowHTML(tx, all) {

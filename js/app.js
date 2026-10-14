@@ -435,7 +435,7 @@ const App = (() => {
     else if (!demo && (State.get().transactions || []).length) {
       setTimeout(() => refreshPrices(), 1200);
     }
-    else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
+    else if (demo) { /* inline #demo-banner covers this — no floating toast (C-43) */ }
     _maybeDemoBanner();
     _maybeInstallHint();
     if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
@@ -536,7 +536,7 @@ const App = (() => {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
     if (isDemo) {
-      showToast('Demo mode — live refresh disabled', 'info');
+      // C-43: inline #demo-banner — no floating toast
       return;
     }
     document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
@@ -593,7 +593,7 @@ const App = (() => {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
     if (isDemo) {
-      showToast('Demo mode — showing seed NAVs. Remove ?demo=1 for live PSX refresh.', 'info');
+      // C-43: inline #demo-banner — no floating toast
       return;
     }
     if (_refreshBusy) return;

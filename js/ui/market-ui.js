@@ -50,7 +50,6 @@ const MarketUI = (() => {
       <span class="lc-compact-chg ${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : '…'}</span>
       <span class="lc-compact-sep" aria-hidden="true">·</span>
       <span class="lc-compact-live"><span class="lc-live-dot lc-live-dot--sm" aria-hidden="true"></span>${ago ? ago : 'Live'}</span>
-      <button type="button" class="lc-compact-refresh" data-action="App.refreshPrices" title="Refresh prices">↻</button>
     </div>`;
   }
 
@@ -105,7 +104,6 @@ const MarketUI = (() => {
     return `
     <div class="lc-home-top cap-reveal">
       ${liveBadge(k.ts)}
-      <button type="button" class="lc-section-action" data-action="App.refreshPrices">Refresh prices</button>
     </div>
     <div class="lc-market-strip cap-reveal">
       <div class="lc-index-card lc-index-card--hero">

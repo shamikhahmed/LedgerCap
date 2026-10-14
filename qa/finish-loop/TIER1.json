@@ -2,8 +2,8 @@
   "app": "LedgerCap",
   "version": "3.57.2",
   "swCache": "ledgercap-v140",
-  "generatedAt": "2026-09-15T12:18:42.984Z",
-  "status": "PASS",
+  "generatedAt": "2026-09-23T06:12:17.329Z",
+  "status": "FAIL",
   "pass": [
     {
       "id": "version:field",
@@ -42,12 +42,16 @@
       "detail": "none"
     },
     {
+      "id": "test-skip",
+      "detail": "none"
+    },
+    {
       "id": "app-ready",
-      "detail": "window.__APP_READY__ referenced"
+      "detail": "window.__APP_READY__ assigned in product code"
     },
     {
       "id": "ci:main",
-      "detail": "Merge finish/ledgercap-test-vm-brand — LCBrand in ledger.spec → success https://github.com/shamikhahmed/LedgerCap/actions/runs/34967963640"
+      "detail": "LedgerCap CI @ 355e660 → success https://github.com/shamikhahmed/LedgerCap/actions/runs/35084628286"
     },
     {
       "id": "tag",
@@ -58,8 +62,28 @@
       "detail": "tests/finish-matrix.spec.mjs"
     },
     {
-      "id": "lighthouse:files",
-      "detail": "1 JSON"
+      "id": "matrix:failures",
+      "detail": "0"
+    },
+    {
+      "id": "matrix:shot-count",
+      "detail": "6 shots (need routes×viewports×themes = 6)"
+    },
+    {
+      "id": "matrix:freshness",
+      "detail": "2026-09-23T06:09:10.972Z"
+    },
+    {
+      "id": "axe:serious-critical",
+      "detail": "2 JSON clean"
+    },
+    {
+      "id": "gallery:freshness",
+      "detail": "assets/screenshots/gallery-manifest.json @ 2026-09-23T11:12:14+05:00"
+    },
+    {
+      "id": "live:VERSION.json",
+      "detail": "https://shamikhahmed.github.io/LedgerCap/VERSION.json → 200"
     },
     {
       "id": "sinks:SINKS.md",
@@ -98,13 +122,17 @@
       "detail": "106 sinks; SINKS.md ok"
     }
   ],
-  "fail": [],
-  "warn": [
+  "fail": [
     {
-      "id": "matrix:shots",
-      "detail": "qa/finish-loop/shots missing (run matrix)"
+      "id": "lighthouse:home-demo-mobile.json",
+      "detail": "perf 33 a11y 100 bp 96 LCP 10774.692920520018 TBT 2967 CLS 0.1227217496962333"
+    },
+    {
+      "id": "lighthouse:passing",
+      "detail": "0/1 files meet thresholds"
     }
   ],
+  "warn": [],
   "killList": {
     "rawHex": 0,
     "sub11": 0,

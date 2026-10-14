@@ -43,9 +43,9 @@ const PriceHealth = (() => {
     const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
     const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
     if (snap && snapStale) {
+      // C-43 / LDG-P1-01: no second refresh control — ticker is the one refresh.
       return `<div class="lc-price-health" role="status">
-        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap refresh.</span>
-        <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh snapshot</button>
+        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap the KSE ticker to refresh.</span>
         <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
       </div>`;
     }
@@ -54,10 +54,9 @@ const PriceHealth = (() => {
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
       ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — refresh or accept EOD`;
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — tap the KSE ticker to refresh or accept EOD`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
-      <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
@@ -67,8 +66,9 @@ const PriceHealth = (() => {
     const host = document.getElementById('lc-price-health-host');
     if (!host) return;
     const rep = audit();
-    host.innerHTML = bannerHtml(rep);
-    host.classList.toggle('hidden', !rep.showBanner);
+    const html = bannerHtml(rep);
+    host.innerHTML = html;
+    host.classList.toggle('hidden', !html);
   }
 
   function dismiss() {

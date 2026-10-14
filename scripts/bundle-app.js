@@ -6,7 +6,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const files = [
-  'js/brand/colors.js',
+  // C-29: keep hex in exempt js/brand/colors.js (loaded separately in index.html)
   'js/data/holdings.js',
   'js/data/us-stocks.js',
   'js/data/global-assets.js',

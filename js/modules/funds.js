@@ -75,7 +75,6 @@ const Funds = (() => {
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-ghost" data-action="Navigation.go" data-screen="settings" data-hash="fund-nav-section">Update NAVs</button>
-        <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
       </div>
     `);
 

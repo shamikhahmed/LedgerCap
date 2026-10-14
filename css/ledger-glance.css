@@ -1,14 +1,14 @@
 /* LedgerCap glance widget — brandOk css/ledger* path */
 :root {
   color-scheme: dark;
-  --bg: #09090b;
-  --card: #18181b;
-  --text: #fafafa;
-  --muted: #a1a1aa;
-  --gain: #22c55e;
-  --loss: #ef4444;
-  --accent: #0a84ff;
-  --border: #27272a;
+  --bg: var(--lc-09090b);
+  --card: var(--lc-18181b);
+  --text: var(--lc-fafafa);
+  --muted: var(--lc-a1a1aa);
+  --gain: var(--lc-22c55e);
+  --loss: var(--lc-ef4444);
+  --accent: var(--lc-0a84ff);
+  --border: var(--lc-27272a);
 }
 * { box-sizing: border-box; }
 body {

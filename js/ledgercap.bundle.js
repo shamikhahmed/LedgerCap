@@ -1,36 +1,4 @@
-/* LedgerCap bundle — 96 modules — run: npm run bundle */
-;/* === js/brand/colors.js === */
-/* LedgerCap brand palette — Tier 1 brandOk path. */
-(function (global) {
-  const LCBrand = {
-    h_09090b: '#09090b',
-    h_0ecb81: '#0ECB81',
-    h_0a84ff: '#0a84ff',
-    h_10b981: '#10b981',
-    h_111: '#111',
-    h_16161a: '#16161a',
-    h_18181b: '#18181b',
-    h_1890ff: '#1890FF',
-    h_1c1c1e: '#1c1c1e',
-    h_22c55e: '#22c55e',
-    h_30d158: '#30d158',
-    h_666: '#666',
-    h_f0b90b: '#F0B90B',
-    h_f6465d: '#F6465D',
-    h_ff6b35: '#FF6B35',
-    h_a1a1a6: '#a1a1a6',
-    h_a1a1aa: '#a1a1aa',
-    h_ef4444: '#ef4444',
-    h_f4f4f5: '#f4f4f5',
-    h_f5f5f5: '#f5f5f5',
-    h_fafafa: '#fafafa',
-    h_ff453a: '#ff453a',
-    h_fff: '#fff',
-  };
-  global.LCBrand = LCBrand;
-  if (typeof window !== 'undefined') window.LCBrand = LCBrand;
-})(typeof globalThis !== 'undefined' ? globalThis : this);
-
+/* LedgerCap bundle — 95 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -11380,9 +11348,9 @@ const PriceHealth = (() => {
     const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
     const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
     if (snap && snapStale) {
+      // C-43 / LDG-P1-01: no second refresh control — ticker is the one refresh.
       return `<div class="lc-price-health" role="status">
-        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap refresh.</span>
-        <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh snapshot</button>
+        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap the KSE ticker to refresh.</span>
         <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
       </div>`;
     }
@@ -11391,10 +11359,9 @@ const PriceHealth = (() => {
     const pct = Math.round((rep.pctSeeded || 0) * 100);
     const msg = rep.pctSeeded >= 0.4
       ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — refresh or accept EOD`;
+      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — tap the KSE ticker to refresh or accept EOD`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
-      <button type="button" class="lc-price-health-btn" data-action="App.refreshPrices">Refresh</button>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
     </div>`;
   }
@@ -11404,8 +11371,9 @@ const PriceHealth = (() => {
     const host = document.getElementById('lc-price-health-host');
     if (!host) return;
     const rep = audit();
-    host.innerHTML = bannerHtml(rep);
-    host.classList.toggle('hidden', !rep.showBanner);
+    const html = bannerHtml(rep);
+    host.innerHTML = html;
+    host.classList.toggle('hidden', !html);
   }
 
   function dismiss() {
@@ -12660,6 +12628,7 @@ const LcIcons = (() => {
     journal: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z', 'M8 7h8', 'M8 11h8'],
     zap: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z',
     coins: ['M8 6h8', 'M6 10h12', 'M8 14h8', 'M12 18v4', 'M8 2h8a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8Z'],
+    pie: ['M21.21 15.89A10 10 0 1 1 8 2.83', 'M22 12A10 10 0 0 0 12 2v10z'],
     fullscreen: ['M8 3H5a2 2 0 0 0-2 2v3', 'M21 8V5a2 2 0 0 0-2-2h-3', 'M3 16v3a2 2 0 0 0 2 2h3', 'M16 21h3a2 2 0 0 0 2-2v-3'],
     x: ['M18 6 6 18', 'M6 6l12 12'],
     ledger: ['M4 4h16v4H4z', 'M4 12h10', 'M4 20h16', 'M18 12h2'],
@@ -12677,7 +12646,7 @@ const LcIcons = (() => {
     home: 'home',
     market: 'chart',
     portfolio: 'briefcase',
-    funds: 'wallet',
+    funds: 'pie',
     research: 'search',
     global: 'globe',
     commodities: 'coins',
@@ -12849,13 +12818,13 @@ const PsxUI = (() => {
     return String(expr || 'App.refreshPrices').replace(/\(\)$/, '').replace(/\(\)/g, '');
   }
 
-  function strip(onRefresh) {
+  function strip(_onRefresh) {
+    // C-43 / LDG-P1-01: status only — single refresh is the header KSE ticker.
     const k = kse();
     const sign = k.changeP != null && k.changeP >= 0 ? '+' : '';
     return `<div class="psx-strip">
       <div><span class="psx-live"><span class="psx-live-dot"></span>${I18n.t('liveMarket')}</span></div>
       <div><strong>KSE-100</strong> ${k.value ? fmtIndex(k.value) : '—'} <span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : ''}</span></div>
-      <button type="button" class="psx-strip-refresh" data-action="${_act(onRefresh)}">${I18n.t('refresh')}</button>
     </div>`;
   }
 
@@ -12940,7 +12909,7 @@ const PsxUI = (() => {
   }
 
   function skeletonNews() {
-    return `<div class="psx-skel-news" aria-busy="true" aria-label="Loading news">
+    return `<div class="psx-skel-news" role="status" aria-busy="true" aria-label="Loading news">
       ${[1, 2, 3].map(() => `<div class="psx-skel-row"><div class="psx-skel psx-skel-text lg"></div><div class="psx-skel psx-skel-text sm"></div></div>`).join('')}
     </div>`;
   }
@@ -13100,7 +13069,6 @@ const MarketUI = (() => {
       <span class="lc-compact-chg ${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : '…'}</span>
       <span class="lc-compact-sep" aria-hidden="true">·</span>
       <span class="lc-compact-live"><span class="lc-live-dot lc-live-dot--sm" aria-hidden="true"></span>${ago ? ago : 'Live'}</span>
-      <button type="button" class="lc-compact-refresh" data-action="App.refreshPrices" title="Refresh prices">↻</button>
     </div>`;
   }
 
@@ -13155,7 +13123,6 @@ const MarketUI = (() => {
     return `
     <div class="lc-home-top cap-reveal">
       ${liveBadge(k.ts)}
-      <button type="button" class="lc-section-action" data-action="App.refreshPrices">Refresh prices</button>
     </div>
     <div class="lc-market-strip cap-reveal">
       <div class="lc-index-card lc-index-card--hero">
@@ -13328,7 +13295,7 @@ const Navigation = (() => {
   const TABS = [
     { id: 'home', labelKey: 'nav.hub', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/></svg>` },
     { id: 'market', labelKey: 'nav.watch', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>` },
-    { id: 'funds', labelKey: 'nav.funds', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
+    { id: 'funds', labelKey: 'nav.funds', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>` },
     { id: 'portfolio', labelKey: 'nav.pnl', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>` },
     { id: 'research', labelKey: 'nav.analyze', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` },
   ];
@@ -13360,9 +13327,9 @@ const Navigation = (() => {
   function _t(k) { return typeof I18n !== 'undefined' ? I18n.t(k) : k; }
 
   function _navBtn(t) {
-    const on = t.id === _current ? ' active' : '';
-    return `<button type="button" class="psx-nav-btn${on}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
-      <span class="psx-nav-icon-wrap">${t.icon}</span>
+    const on = t.id === _current;
+    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
+      <span class="psx-nav-icon-wrap" aria-hidden="true">${t.icon}</span>
       <span>${_t(t.labelKey)}</span>
     </button>`;
   }
@@ -13442,14 +13409,20 @@ const Navigation = (() => {
     if (!VALID.has(tabId)) tabId = 'home';
     _current = tabId;
     document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
+      b.classList.remove('active');
+      if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
+    });
     const el = document.getElementById('screen-' + tabId);
     if (el) {
       el.classList.add('active', 'lc-screen-enter');
       el.scrollTop = 0;
       requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
     }
-    document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
+    document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
+      b.classList.add('active');
+      if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
+    });
     if (!silent) {
       sessionStorage.setItem('ledgercap_tab', tabId);
       const bucket = opts.portfolioId || (typeof PortfolioScreen !== 'undefined' ? PortfolioScreen.currentFilter?.() : null);
@@ -14266,7 +14239,8 @@ const Hub = (() => {
     let stale = 0;
     syms.forEach(s => { if (State.isPriceStale(s, 24)) stale++; });
     if (!stale) return '';
-    return `<button type="button" class="lc-stale-chip" data-action="App.refreshPrices">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
+    // LDG-P1-01 / C-43: status only — single refresh is the header ticker.
+    return `<span class="lc-stale-chip" role="status">${stale} stale price${stale > 1 ? 's' : ''} · tap KSE ticker to refresh</span>`;
   }
 
   function _investmentSummary(state) {
@@ -14588,7 +14562,6 @@ const Hub = (() => {
           </div>
         </div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
           <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
@@ -14773,11 +14746,11 @@ const Market = (() => {
           <p>${I18n.t('market.sub')}</p>
         </div>
         <div class="lc-dash-market" style="margin-bottom:var(--lc-space-4)">
-          <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="App.refreshPrices" aria-label="Refresh KSE-100">
+          <div class="lc-dash-market-card" role="status">
             <span>KSE-100</span>
             <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
             <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : '—'}</em>
-          </button>
+          </div>
           <button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-action="Market.setMoveFilter" data-tab="all" aria-label="Show all listed stocks">
             <span>Listed</span>
             <strong>${baseRows.length}</strong>
@@ -14793,9 +14766,6 @@ const Market = (() => {
         ${filterHint}
         <div id="market-list">${rows.length ? (_query.trim() ? _sectorBlocks(bySector) : _pagedSectorBlocks(bySector, rows.length)) : `
           <div class="lc-empty-state"><h2>No matches</h2><p>Try another symbol, filter, or clear movers filter.</p></div>`}</div>
-        <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
-        </div>
       </div>`;
 
     const inp = document.getElementById('market-search');
@@ -15242,7 +15212,6 @@ const Funds = (() => {
       <div class="lc-sector-card" style="margin-top:0" id="funds-list">${_listHtml(funds)}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-ghost" data-action="Navigation.go" data-screen="settings" data-hash="fund-nav-section">Update NAVs</button>
-        <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
       </div>
     `);
 
@@ -16132,7 +16101,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${dash.upcoming.filter(u => u.isHeld).slice(0, 8).map(u => `
         <tr data-action="Research.open" data-symbol="${u.symbol}">
-          <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
+          <td><strong>${u.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate || '—'}</td>
           <td>${u.recordDate || '—'}</td>
@@ -16147,7 +16116,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${dash.byStock.map(h => `
         <tr data-action="Research.open" data-symbol="${h.symbol}">
-          <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
+          <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.sector}</div></td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${U.fmt(h.totalReceived)}</td>
           <td>${h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—'}</td>
@@ -16169,7 +16138,7 @@ const Dividends = (() => {
       </tr></thead><tbody>
       ${all.map(u => `
         <tr data-action="Research.open" data-symbol="${u.symbol}">
-          <td><strong>${u.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
+          <td><strong>${u.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${u.companyName || ''}</div></td>
           <td>₨${u.amountPerShare}</td>
           <td>${u.exDate}</td>
           <td>${u.recordDate}</td>
@@ -16186,7 +16155,7 @@ const Dividends = (() => {
         <div class="div-cal-month-title">${new Date(m.month + '-01').toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}</div>
         ${m.paymentEvents.length ? `<div class="div-cal-section-label">Payment dates</div>` + m.paymentEvents.map(e => `
           <div class="rt-div-event" data-action="Research.open" data-symbol="${e.symbol}">
-            <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size:0.68rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
+            <div><strong>${e.symbol}</strong> · ${e.paymentDate}<div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">₨${e.amountPerShare}/sh${e.isHeld ? ' · ' + e.shares + ' shares' : ''}</div></div>
             <div class="t-gain">${e.isHeld ? U.fmt(e.expectedIncome) : '—'}</div>
           </div>`).join('') : ''}
         ${m.exEvents.length ? `<div class="div-cal-section-label">Ex-dividend dates</div>` + m.exEvents.map(e => `
@@ -16208,7 +16177,7 @@ const Dividends = (() => {
         const on = !!drip[h.symbol]?.reinvest;
         return `
         <tr data-action="Research.open" data-symbol="${h.symbol}" style="cursor:pointer">
-          <td><strong>${h.symbol}</strong><div style="font-size:0.68rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
+          <td><strong>${h.symbol}</strong><div style="font-size: 0.6875rem;color:var(--os-text-tertiary)">${h.companyName}</div></td>
           <td>${h.shares}</td>
           <td class="t-gain">${U.fmt(h.annualIncome)}</td>
           <td>${yoc != null ? yoc.toFixed(1) + '%' : (h.yieldOnCost != null ? h.yieldOnCost.toFixed(1) + '%' : '—')}</td>
@@ -16619,8 +16588,8 @@ const Transactions = (() => {
     if (tx.type !== 'IPO_SUBSCRIBE') return '';
     const listed = tx.status === 'listed';
     return listed
-      ? '<span class="badge badge-cdc" style="font-size:0.58rem;margin-left:4px;">LISTED · CDC</span>'
-      : '<span class="badge" style="font-size:0.58rem;margin-left:4px;background:rgba(240,185,11,0.12);color:var(--gold);">PENDING</span>';
+      ? '<span class="badge badge-cdc" style="font-size: 0.6875rem;margin-left:4px;">LISTED · CDC</span>'
+      : '<span class="badge" style="font-size: 0.6875rem;margin-left:4px;background:rgba(240,185,11,0.12);color:var(--gold);">PENDING</span>';
   }
 
   function _txRowHTML(tx, all) {
@@ -17000,34 +16969,34 @@ const Settings = (() => {
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Nisab (87.48g gold)</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(nisabValue).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">At ₨${goldPpg.toLocaleString()}/g</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">At ₨${goldPpg.toLocaleString()}/g</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Zakatable Assets</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableTotal).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">Shariah holdings</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">Shariah holdings</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Shariah Stocks</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableStocks).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">Marked ☪ in portfolio</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">Marked ☪ in portfolio</div>
         </div>
         <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;">
           <div class="metric-label">Meezan Funds</div>
           <div style="font-size:0.92rem;font-weight:700;">₨${Math.round(zakatableFunds).toLocaleString()}</div>
-          <div style="font-size:0.62rem;color:var(--text3);">All funds (Shariah)</div>
+          <div style="font-size: 0.6875rem;color:var(--text3);">All funds (Shariah)</div>
         </div>
       </div>
       ${zakatableTotal >= nisabValue ? `
       <div style="padding:12px 14px;background:rgba(14,203,129,0.08);border:1px solid rgba(14,203,129,0.2);border-radius:var(--r-sm);margin-bottom:8px;">
         <div style="font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Zakat Due (2.5%)</div>
         <div style="font-size:1.4rem;font-weight:800;color:var(--green);">₨${Math.round(zakatDue).toLocaleString()}</div>
-        <div style="font-size:0.68rem;color:var(--text3);margin-top:2px;">Above nisab threshold ✓</div>
+        <div style="font-size: 0.6875rem;color:var(--text3);margin-top:2px;">Above nisab threshold ✓</div>
       </div>` : `
       <div style="padding:12px 14px;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:8px;">
         <div style="font-size:0.78rem;color:var(--text3);">Below nisab threshold (₨${Math.round(nisabValue).toLocaleString()}) — no Zakat due on these assets yet.</div>
       </div>`}
-      <div style="font-size:0.65rem;color:var(--text3);line-height:1.4;">Consult a scholar for your specific situation. Non-Shariah stocks excluded from calculation.</div>
+      <div style="font-size: 0.6875rem;color:var(--text3);line-height:1.4;">Consult a scholar for your specific situation. Non-Shariah stocks excluded from calculation.</div>
     </div>
 
     <div class="sec-head"><span class="sec-title">Live Prices</span></div>
@@ -18690,7 +18659,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(dailyData.days || []).slice(0, 30).map(d => `
           <div class="perf-item">
-            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
+            <div class="perf-item-date">${d.date}${d.realised ? `<div style="font-size: 0.6875rem;color:var(--text3);">Realised ${d.realised >= 0 ? '+' : ''}${PlatformUI.fmt(d.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${d.pnl >= 0 ? 't-gain' : 't-loss'}">${d.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(d.pnl)}</div>
           </div>
         `).join('')}
@@ -18720,7 +18689,7 @@ const Performance = (() => {
       <div class="perf-list">
         ${(monthlyData.months || []).map(m => `
           <div class="perf-item">
-            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size:0.62rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
+            <div class="perf-item-date">${m.month}${m.realised ? `<div style="font-size: 0.6875rem;color:var(--text3);">Realised ${m.realised >= 0 ? '+' : ''}${PlatformUI.fmt(m.realised)}</div>` : ''}</div>
             <div class="perf-item-value ${m.pnl >= 0 ? 't-gain' : 't-loss'}">${m.pnl >= 0 ? '+' : ''}${PlatformUI.fmt(m.pnl)}</div>
           </div>
         `).join('')}
@@ -20981,7 +20950,7 @@ const App = (() => {
     else if (!demo && (State.get().transactions || []).length) {
       setTimeout(() => refreshPrices(), 1200);
     }
-    else if (demo) setTimeout(() => showToast('Demo portfolio — sample NAVs; live PSX refresh skipped', 'info'), 800);
+    else if (demo) { /* inline #demo-banner covers this — no floating toast (C-43) */ }
     _maybeDemoBanner();
     _maybeInstallHint();
     if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
@@ -21082,7 +21051,7 @@ const App = (() => {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
     if (isDemo) {
-      showToast('Demo mode — live refresh disabled', 'info');
+      // C-43: inline #demo-banner — no floating toast
       return;
     }
     document.querySelectorAll(`[data-refresh-symbol="${symbol}"]`).forEach((b) => {
@@ -21139,7 +21108,7 @@ const App = (() => {
     const isDemo = new URLSearchParams(location.search).get('demo') === '1'
       || sessionStorage.getItem('ledgercap_demo_mode') === '1';
     if (isDemo) {
-      showToast('Demo mode — showing seed NAVs. Remove ?demo=1 for live PSX refresh.', 'info');
+      // C-43: inline #demo-banner — no floating toast
       return;
     }
     if (_refreshBusy) return;

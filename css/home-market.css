@@ -74,7 +74,7 @@
   color: var(--os-text-tertiary);
 }
 .lc-index-tag {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -118,7 +118,7 @@
   min-width: 0;
 }
 .lc-pulse-item-label {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -205,7 +205,7 @@
   min-width: 0;
 }
 .lc-stat-card .stat-label {
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -262,9 +262,9 @@
 .lc-view-pill.active {
   background: var(--os-accent);
   border-color: var(--os-accent);
-  color: #fff;
+  color: var(--lc-ffffff);
 }
-body.light .lc-view-pill.active { color: #fff; }
+body.light .lc-view-pill.active { color: var(--lc-ffffff); }
 
 .lc-holdings-wrap {
   padding: 0 20px 16px;
@@ -276,7 +276,7 @@ body.light .lc-view-pill.active { color: #fff; }
   overflow: hidden;
 }
 .lc-holdings-wrap .rt-table th {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--os-text-tertiary);
@@ -408,7 +408,7 @@ body.light .lc-view-pill.active { color: #fff; }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--os-text-secondary);
   font-variant-numeric: tabular-nums;
@@ -449,7 +449,7 @@ body.light .lc-view-pill.active { color: #fff; }
 .lc-brief-pill {
   padding: 4px 10px;
   border-radius: 100px;
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   background: var(--os-bg-hover);
   border: 1px solid var(--os-border);
@@ -462,7 +462,7 @@ body.light .lc-view-pill.active { color: #fff; }
   line-height: 1.55;
 }
 .lc-brief-disclaimer {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   color: var(--os-text-tertiary);
   margin-top: 10px;
   line-height: 1.4;

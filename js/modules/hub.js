@@ -88,7 +88,8 @@ const Hub = (() => {
     let stale = 0;
     syms.forEach(s => { if (State.isPriceStale(s, 24)) stale++; });
     if (!stale) return '';
-    return `<button type="button" class="lc-stale-chip" data-action="App.refreshPrices">${stale} stale price${stale > 1 ? 's' : ''} · refresh</button>`;
+    // LDG-P1-01 / C-43: status only — single refresh is the header ticker.
+    return `<span class="lc-stale-chip" role="status">${stale} stale price${stale > 1 ? 's' : ''} · tap KSE ticker to refresh</span>`;
   }
 
   function _investmentSummary(state) {
@@ -410,7 +411,6 @@ const Hub = (() => {
           </div>
         </div>
         <div class="lc-dash-actions">
-          <button type="button" class="psx-btn psx-btn-primary" data-action="App.refreshPrices">${I18n.t('refresh')}</button>
           <button type="button" class="psx-btn psx-btn-ghost" data-action="App.openAddTransaction">${I18n.t('addHoldings')}</button>
           ${_stalePriceChip(state)}
         </div>
