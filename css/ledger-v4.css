@@ -137,7 +137,8 @@ body.lc-v4 #nav {
 }
 body.lc-v4 .nav-tab {
   color: var(--lc-text-3);
-  font-size: 11px;
+  /* LDG-V3-1: tab labels ≥ 11px */
+  font-size: 12px;
   font-weight: 600;
   padding: 8px 4px 4px;
   min-height: 54px;

@@ -408,7 +408,8 @@ body.light .lc-view-pill.active { color: var(--lc-ffffff); }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.6875rem;
+  /* LDG-V3-1: KSE chip text ≥ 11px */
+  font-size: 12px;
   font-weight: 600;
   color: var(--os-text-secondary);
   font-variant-numeric: tabular-nums;

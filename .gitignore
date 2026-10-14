@@ -7,3 +7,5 @@ test-results/
 .agents/
 .claude/
 skills-lock.json
+# Perfection v3: keep device-qa JSON; PNGs local-only (§6 baseline)
+qa/perfection/**/*.png

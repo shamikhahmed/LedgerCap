@@ -259,7 +259,8 @@ body {
   border: none;
   background: transparent;
   color: var(--os-text-tertiary);
-  font-size: 0.6875rem;
+  /* LDG-V3-1: tab labels ≥ 11px */
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: color var(--os-transition);

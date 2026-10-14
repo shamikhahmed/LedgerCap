@@ -162,7 +162,10 @@ body.psx-app {
 .psx-nav-btn {
   flex: 1; border: none; background: transparent;
   padding: 8px 4px 6px; cursor: pointer; font-family: inherit;
-  color: var(--psx-text-3); font-size: 11px; font-weight: 700;
+  color: var(--psx-text-3);
+  /* LDG-V3-1: tab labels ≥ 11px (use 12px for subpixel safety) */
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.04em;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   min-height: 48px; min-width: 0; overflow: hidden;
@@ -419,7 +422,19 @@ body.psx-app {
   padding: 10px 14px; background: var(--psx-accent-soft);
   border-bottom: 1px solid var(--psx-border); font-size: 13px;
 }
-.psx-demo button { margin-left: auto; border: none; background: none; cursor: pointer; font-size: 16px; min-width: 24px; min-height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+.psx-demo button {
+  margin-left: auto;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  /* LDG-V3-2: Dismiss ≥ 44×44 */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .toast-wrap { position: fixed; bottom: calc(var(--psx-nav) + 20px); left: 50%; transform: translateX(-50%); z-index: 200; }
 .bottom-sheet { display: none; }
@@ -1549,7 +1564,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .lc-pulse-item-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--psx-text-3); }
 .lc-pulse-item-value { font-size: 1rem; font-weight: 800; margin-top: 4px; }
-.lc-ticker-label { font-size: 0.72rem; font-weight: 600; color: var(--psx-text-3); }
+.lc-ticker-label { font-size: 12px; font-weight: 600; color: var(--psx-text-3); }
 
 /* ── Tool card (Pilot-tools) ── */
 .lc-tool-card {
