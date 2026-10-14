@@ -20,12 +20,30 @@ const VIEWPORTS = {
 };
 
 const SCREENS = [
-  { nav: 'home', group: 'Wealth', screen: 'Home', caption: 'Net worth and morning brief (demo).' },
-  { nav: 'market', group: 'Markets', screen: 'Market', caption: 'KSE watch and pulse.' },
-  { nav: 'funds', group: 'Markets', screen: 'Funds', caption: 'Islamic and mutual funds.' },
-  { nav: 'portfolio', group: 'Wealth', screen: 'Portfolio', caption: 'Holdings and performance.' },
-  { nav: 'research', group: 'Research', screen: 'Research', caption: 'Stock analyzer and insights.' },
-  { nav: 'settings', group: 'System', screen: 'Settings', caption: 'Theme, language, currency.' },
+  { nav: 'home', group: 'Wealth', screen: 'Home', caption: 'Net worth in PKR and the morning brief.' },
+  { nav: 'portfolio', group: 'Wealth', screen: 'Portfolio', caption: 'Holdings, cost basis and gains.' },
+  { nav: 'performance', group: 'Wealth', screen: 'Performance', caption: 'Returns over time.' },
+  { nav: 'transactions', group: 'Wealth', screen: 'Transactions', caption: 'Every buy, sell, dividend and deposit.' },
+  { nav: 'dividends', group: 'Wealth', screen: 'Dividends', caption: 'Dividend income and history.' },
+  { nav: 'calendar', group: 'Wealth', screen: 'Calendar', caption: 'Upcoming dividends and events.' },
+  { nav: 'zakat', group: 'Wealth', screen: 'Zakat', caption: 'Zakat on your investments.' },
+  { nav: 'market', group: 'Markets', screen: 'Market', caption: 'KSE-100 and market movers (indicative, may be delayed).' },
+  { nav: 'watchlist', group: 'Markets', screen: 'Watchlist', caption: 'Symbols you follow.' },
+  { nav: 'funds', group: 'Markets', screen: 'Funds', caption: 'Mutual funds, including Islamic funds.' },
+  { nav: 'global', group: 'Markets', screen: 'Global', caption: 'Global markets snapshot (indicative).' },
+  // commodities omitted: needs the live price Worker; renders empty in offline capture
+  { nav: 'announcements', group: 'Markets', screen: 'Announcements', caption: 'Company announcements.' },
+  { nav: 'research', group: 'Research', screen: 'Research', caption: 'Research tools — for education, not investment advice.' },
+  { nav: 'screener', group: 'Research', screen: 'Screener', caption: 'Filter PSX stocks by your criteria.' },
+  { nav: 'signals', group: 'Research', screen: 'Signals', caption: 'Rule-based signals — not investment advice.' },
+  { nav: 'insights', group: 'Research', screen: 'Insights', caption: 'Patterns in your own portfolio.' },
+  { nav: 'comparison', group: 'Research', screen: 'Compare', caption: 'Compare stocks side by side.' },
+  { nav: 'risk-audit', group: 'Research', screen: 'Risk audit', caption: 'Concentration and risk in your holdings.' },
+  { nav: 'paper-trade', group: 'Research', screen: 'Paper trading', caption: 'Practise trades without real money.' },
+  { nav: 'journal', group: 'Research', screen: 'Journal', caption: 'Your trading notes.' },
+  { nav: 'import', group: 'Tools', screen: 'Import', caption: 'Import trades from a CSV.' },
+  { nav: 'more', group: 'Tools', screen: 'More', caption: 'Everything else in LedgerCap.' },
+  { nav: 'settings', group: 'Tools', screen: 'Settings', caption: 'Language (English · اردو · Roman Urdu), currency and theme.' },
 ];
 
 function slug(s) {
@@ -123,7 +141,12 @@ async function main() {
         await setTheme(page, theme);
 
         for (const scr of SCREENS) {
-          await goNav(page, scr.nav);
+          try {
+            await goNav(page, scr.nav);
+          } catch (err) {
+            process.stdout.write(`skip ${theme}/${device} ${scr.nav || scr.path}: unreachable — skipped\n`);
+            continue;
+          }
           await setTheme(page, theme);
           const rel = shotPath(theme, device, scr.group, scr.screen);
           const webpPath = join(GALLERY_DIR, rel);
