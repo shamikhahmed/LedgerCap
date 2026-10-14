@@ -1,7 +1,8 @@
-## Unreleased — perfection/ledgercap-v3
-- LDG-V3-1/2/3 FIXED (tap/text/device-qa hard=0) — see `qa/perfection/ITEMS.md`
-- Docs (§11): README §4.1 first line; HANDOVER branch; privacy network honesty (Worker + optional Telegram)
-- L later: LDG-V3-5 Lighthouse · LDG-V3-6 Urdu
+## 3.58.0 — 2026-10-14
+- Perfection Loop v3 Phase I: LDG-V3-1/2/3/4 ✅ VERIFIED (tab/KSE type ≥12px, 44px targets, no KSE100 Worker 404 on load).
+- Docs (§11): README §4.1; HANDOVER; privacy network honesty (Worker + optional Telegram).
+- SW `ledgercap-v141` · register `sw.js?v=141`.
+- L later: LDG-V3-5 Lighthouse · LDG-V3-6 Urdu/RTL.
 
 ## 3.57.2 — 2026-09-15
 - Tier 1: LCBrand palette; glance CSS; tooling brandOk for ledger CSS.

@@ -1,9 +1,9 @@
 # LedgerCap — Perfection Loop v3 · STATE
 
-Updated: 2026-10-14T11:16:00Z  
-Phase: **E → F** (P0/P1 Wave B fixed; hand to Auditor)  
+Updated: 2026-10-14T11:38:00Z  
+Phase: **I** (released 3.58.0; LDG-V3-1..4 VERIFIED; V3-5/6 L)  
 Branch: `perfection/ledgercap-v3`  
-App version: 3.57.2 (no release bump yet — Phase I)  
+App version: **3.58.0** · SW `ledgercap-v141` · Phase **I** release  
 Base: `main` @ `ce92c06` (finish/ledgercap-stepR merged — LDG-V3-4)
 
 ## Last commits
