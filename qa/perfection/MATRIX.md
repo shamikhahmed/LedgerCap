@@ -16,7 +16,10 @@ Evidence root: `qa/perfection/` (PNG local-only; JSON committed).
 | dark×MacBook 1440×webkit | ✅ | `post-fix/LedgerCap-webkit-macbook.png` |
 | dark×MacBook 1440×chromium | ✅ | `post-fix/LedgerCap-chromium-macbook.png` |
 | dark×Android 412×chromium | ✅ | `post-fix/LedgerCap-chromium-android.png` |
-| light×*×* | ⏳ | Phase C — force light + capture |
+| light×iPhone 390×* | ✅ | `docs/screenshots/gallery/light/iphone/*` (v3 Wave G) |
+| light×iPad 1180×* | ✅ | `docs/screenshots/gallery/light/ipad/*` |
+| light×MacBook 1440×* | ✅ | `docs/screenshots/gallery/light/mac/*` |
+| dark×gallery v3 primary | ✅ | `docs/screenshots/gallery/gallery-manifest.json` (24 shots) |
 | wide 1920×* | ⏳ | Phase C |
 
 ## Other inventory × states
