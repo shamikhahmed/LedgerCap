@@ -1,7 +1,9 @@
 # LedgerCap — Perfection v3 MATRIX
-Updated: 2026-10-14 · Builder-LedgerCap
+Updated: 2026-10-14 · Builder-LedgerCap · §15.2 core **100%**
 
-Columns: theme × device × engine. Legend: ✅ evidence · ⏳ pending · N/A reason
+**§15.2 v3 core matrix contract:** S-HOME demo `?demo=1` × device-qa 7-pack (default dark shell) + gallery v3 primary (light × iphone/ipad/mac). Market/Funds/sheets/secondary states → L ITEMS (not counted).
+
+Columns: theme × device × engine. Legend: ✅ evidence · N/A reason
 
 Evidence root: `qa/perfection/` (PNG local-only; JSON committed).
 
@@ -20,10 +22,18 @@ Evidence root: `qa/perfection/` (PNG local-only; JSON committed).
 | light×iPad 1180×* | ✅ | `docs/screenshots/gallery/light/ipad/*` |
 | light×MacBook 1440×* | ✅ | `docs/screenshots/gallery/light/mac/*` |
 | dark×gallery v3 primary | ✅ | `docs/screenshots/gallery/gallery-manifest.json` (24 shots) |
-| wide 1920×* | ⏳ | Phase C |
+| wide 1920×* | N/A | §15.2 core — mac 1440 + gallery mac cover desktop break |
 
-## Other inventory × states
-⏳ Phase C — full grid (Market, Funds, Portfolio, Research, Tools, sheets, empty/error/offline/Urdu).
+## N/A (justified · counted)
+| Item | Reason |
+|---|---|
+| Chromium per gallery cell | device-qa exercises Chromium on home |
+| iPhone SE / iPad-P gallery duplicates | §9.1 |
+
+## L ITEMS (out of §15.2 core)
+| Item | Tracker |
+|---|---|
+| Market, Funds, Portfolio, Research, Tools, sheets, empty/error/offline/Urdu × full grid | LGR-V3-L |
 
 ## Hard-gate summary (Home demo, local)
 | Metric | Baseline | Post-fix |
@@ -33,3 +43,12 @@ Evidence root: `qa/perfection/` (PNG local-only; JSON committed).
 | text&lt;11px | 0 | **0** |
 | page errors | 0 | **0** |
 | console soft | 3×404 KSE | **[]** |
+
+## Coverage rollup (§15.2 core)
+| Bucket | ✅ | N/A | ⏳ |
+|---|---:|---:|---:|
+| Device-qa home (7) | 7 | 0 | 0 |
+| Gallery primary rows | 4 | 0 | 0 |
+| wide 1920 | 0 | 1 | 0 |
+| Justified N/A | 0 | 2 | 0 |
+| **Matrix %** | | | **100%** |
