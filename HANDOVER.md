@@ -1,58 +1,44 @@
 # LedgerCap — Handover
 
-> Read this + `ROADMAP.md` + `~/Capricorn-Brain/01 Projects/LedgerCap.md` before working here.
-> Last updated: 2026-07-11 · Fleet-wide standard: `capricorn-tooling/shared/CAP-STANDARD.md`
+> Read this + `ROADMAP.md` + `~/Capricorn-Brain/01 Projects/LedgerCap.md` before working here.  
+> Last updated: 2026-10-14 · Fleet: `capricorn-tooling/docs/perfection-2026-10/CURSOR-PERFECTION-LOOP.md`
 
 ## What this is
-Personal wealth OS — PSX stocks, Meezan funds, portfolio, analyzer, screener.
+Track your PSX stocks and mutual funds in one place. (Never “wealth OS” / “operating system” — G-3.)
 
 ## Facts
-**Version:** 3.56.0
-**Live:** https://shamikhahmed.github.io/LedgerCap/
-**Repo:** https://github.com/shamikhahmed/LedgerCap
-**Stack:** Vanilla JS PWA + Cloudflare Worker price cron (KV market snapshot). Yahoo live quotes. Playwright tests.
-**Data:** Local browser storage for portfolio; Cloudflare KV for market snapshot cache.
+**Version:** 3.57.2 / SW `ledgercap-v140`  
+**Live:** https://shamikhahmed.github.io/LedgerCap/  
+**Repo:** https://github.com/shamikhahmed/LedgerCap  
+**Branch (active):** `perfection/ledgercap-v3`  
+**Stack:** Vanilla JS PWA + Cloudflare Worker price proxy (KV market snapshot). Playwright tests.  
+**Data:** Local browser storage for portfolio; Worker for indicative market prices (D-09). Prices may be delayed — not investment advice (§4.2).
 
 ## Run & verify
 ```bash
-# check package.json scripts — has test suite + ci.yml
 npm install
-npm test   # or see ci.yml for the real entrypoints
+npm test
+npm run verify   # if present — see package.json / ci.yml
+# Device QA (fleet):
+# PW_CORE=…/MasteryCap/node_modules/playwright-core \
+# PLAYWRIGHT_BROWSERS_PATH=$HOME/Library/Caches/ms-playwright \
+# node ../capricorn-tooling/scripts/device-qa.mjs qa/perfection/check \
+#   --apps=LedgerCap --url=LedgerCap=http://127.0.0.1:8769/LedgerCap/
 ```
+
+Perfection state: `qa/perfection/STATE.md`.
 
 ## Architecture
 - App: vanilla JS modules, bottom-nav shell
-- Worker: price cron -> KV full-market snapshot (v3.55.0); Yahoo live unblock path (v3.53.0)
-- `tests/` — calc regression + nav clearance guard tests
-- `.github/workflows/ci.yml` — CI exists (check what it runs before extending)
+- Worker: `ledgercap-psx-proxy.shamikhahmed.workers.dev` — PSX / Yahoo / crypto / FX / news / snapshot (client never hits Yahoo/PSX directly)
+- Optional Telegram alerts if the user configures a bot token (stays client-side until send)
+- TradingView chart frames where allowed by CSP
 
-## Cap Standard status (2026-07-11)
-| Cap Standard item | Status |
-|---|---|
-| Docs pack | ✅ |
-| Screen gallery | ❌ |
-| Version discipline | ✅ |
-| QA / e2e | ✅ |
-| CI gate | ✅ |
-| PWA polish | ✅ |
-| Demo mode | ✅ |
-
-Gaps are tracked as tasks in `ROADMAP.md`.
-
-## Cloudflare Worker (worker/)
-
-- **Name:** `ledgercap-psx-proxy` · deploy: `cd worker && npx wrangler deploy`
-- **KV:** binding `PRICE_CACHE` (id `908974ca90de4219bbd0f95417228e0b`) — full-market snapshot cache
-- **Crons (UTC, = PKT weekday market hours):** `0 4`, `30 4`, `0 5,6,8,9`, `30 7`, `30 10` Mon–Fri — telegram + price snapshot share triggers (cron quota)
-- **Secrets** via `wrangler secret put`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_SYNC_KEY`
-- **Kill switches** (vars): `SKIP_US_CRON=1` (Yahoo 429 storm), `SKIP_PRICE_CRON=1` (emergency)
-- Worker unit tests run in `npm test` (karat-math, psx-universe, snapshot-shape)
-
-## Gotchas — read before coding
-- Price data path has fallbacks (live Yahoo -> KV snapshot -> stale) — test all three before touching fetch code.
-- 128 commits of rapid v3.4x-v3.5x iteration — read recent CHANGELOG before assuming behavior.
+## Gotchas
+- “0 servers” is false — price Worker is required for live/indicative quotes.
+- LDG-V3-5 Lighthouse and LDG-V3-6 Urdu are Later (L), not blocking Auditor on V3-1/2/3.
 
 ## Where decisions live
-- Dated decisions: Capricorn-Brain project note (path above)
-- Release history: `CHANGELOG.md`
-- Fleet-level events: `Cap-Apps/docs/CHANGELOG.md` (master)
+- Binding: `capricorn-tooling/docs/audit-2026-09-14/DECISIONS.md` (D-09, §4.1, §4.2)
+- Perfection items: `qa/perfection/ITEMS.md`
+- Changelog: `CHANGELOG.md`

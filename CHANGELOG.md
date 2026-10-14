@@ -1,3 +1,8 @@
+## Unreleased — perfection/ledgercap-v3
+- LDG-V3-1/2/3 FIXED (tap/text/device-qa hard=0) — see `qa/perfection/ITEMS.md`
+- Docs (§11): README §4.1 first line; HANDOVER branch; privacy network honesty (Worker + optional Telegram)
+- L later: LDG-V3-5 Lighthouse · LDG-V3-6 Urdu
+
 ## 3.57.2 — 2026-09-15
 - Tier 1: LCBrand palette; glance CSS; tooling brandOk for ledger CSS.
 - SW `ledgercap-v140`.
