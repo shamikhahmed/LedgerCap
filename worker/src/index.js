@@ -99,8 +99,10 @@ export default {
 
     return proxyFetch(fetchUrl, { headers: PSX_HEADERS, cf: { cacheTtl: 90 } }, (text) => {
       const trimmed = text.trim();
+      // LDG-V3-3: return 200 empty series (not HTTP 404) so browsers don't log
+      // "Failed to load resource" on every cold load when PSX serves HTML.
       if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
-        return json({ error: 'PSX returned HTML', url: fetchUrl }, 404);
+        return json({ error: 'PSX returned HTML', url: fetchUrl, data: [] }, 200);
       }
       if (/^error code:\s*\d+/i.test(trimmed)) {
         throw new Error(trimmed.slice(0, 60));

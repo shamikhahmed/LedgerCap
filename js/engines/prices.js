@@ -132,7 +132,8 @@ const Prices = (() => {
         if (!res.ok) {
           // Saturation/upstream-down statuses: retrying amplifies the problem
           // (Yahoo 429, PSX origin 520). Back off immediately, don't retry.
-          const noRetry = [429, 502, 503, 520, 522, 524].includes(res.status);
+          // LDG-V3-3: also skip retry on 404 (worker maps PSX HTML → 404 for KSE100).
+          const noRetry = [404, 429, 502, 503, 520, 522, 524].includes(res.status);
           if (!noRetry && attempt < WORKER_RETRIES) {
             await _sleep(WORKER_RETRY_MS * (attempt + 1));
             return _fetchAppProxy(url, attempt + 1);
@@ -368,23 +369,34 @@ const Prices = (() => {
   }
 
   async function fetchKSE100() {
-    const psxIdx = await _fetchRaw('https://dps.psx.com.pk/timeseries/eod/KSE100');
-    const parsed = _parseTimeseries(psxIdx, 'psx_eod');
-    if (parsed) {
-      const change = parsed.price - parsed.prevClose;
-      const changeP = parsed.prevClose ? (change / parsed.prevClose) * 100 : 0;
-      return { value: parsed.price, change, changeP, prevClose: parsed.prevClose, ts: Date.now() };
+    // LDG-V3-3: never hit Worker `/timeseries/eod/KSE100` — PSX often serves HTML
+    // and the Worker used to mirror that as HTTP 404 (browser console noise).
+    // Prefer Yahoo → dedicated /kse100 (200 + data[] after worker fix) → cache.
+    const yahooSyms = ['%5EKSE100', 'KSE100.KA'];
+    for (const ySym of yahooSyms) {
+      const yahoo = await _fetchWorkerPath(`yahoo/chart/${ySym}`);
+      const meta = yahoo?.chart?.result?.[0]?.meta;
+      if (meta?.regularMarketPrice) {
+        return {
+          value: meta.regularMarketPrice,
+          change: meta.regularMarketChange || 0,
+          changeP: meta.regularMarketChangePercent || 0,
+          prevClose: meta.previousClose || meta.chartPreviousClose,
+          ts: Date.now(),
+          source: 'yahoo',
+          indicative: true,
+        };
+      }
     }
-    const yahoo = await _fetchWorkerPath('yahoo/chart/%5EKSE100');
-    const meta = yahoo?.chart?.result?.[0]?.meta;
-    if (meta?.regularMarketPrice) {
-      return {
-        value: meta.regularMarketPrice,
-        change: meta.regularMarketChange || 0,
-        changeP: meta.regularMarketChangePercent || 0,
-        prevClose: meta.previousClose || meta.chartPreviousClose,
-        ts: Date.now()
-      };
+
+    // Do not call Worker `/timeseries/eod/KSE100` or `/kse100` until the
+    // deployed Worker returns HTTP 200 for empty PSX series (see worker fix).
+    // Hitting today's 404 pollutes the console on every cold load (LDG-V3-3).
+    if (typeof State !== 'undefined') {
+      const cached = State.get('kseIndex');
+      if (cached && cached.value > 0) {
+        return { ...cached, source: cached.source || 'cache', indicative: true, ts: cached.ts || Date.now() };
+      }
     }
     return null;
   }

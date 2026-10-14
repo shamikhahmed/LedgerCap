@@ -70,8 +70,9 @@
   color: var(--psx-text-3);
   cursor: pointer;
   font-size: 0.85rem;
-  min-width: 24px;
-  min-height: 24px;
+  /* LDG-V3-2: Dismiss ≥ 44×44 */
+  min-width: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

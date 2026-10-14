@@ -13,54 +13,80 @@ nav{margin-bottom:28px;font-size:14px}
 nav a{margin-right:12px;color:#848E9C}
 h1{font-size:1.75rem;margin:24px 0 12px;letter-spacing:-.02em}
 h2{font-size:1.15rem;margin:20px 0 8px;color:#c9a227}
-h3{font-size:1rem;margin:16px 0 6px}
 p,li{font-size:15px;color:#848E9C;margin-bottom:10px}
 ul{margin:8px 0 16px 20px}
+table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:14px}
+th,td{border:1px solid rgba(255,255,255,.12);padding:8px;text-align:left;color:#848E9C}
+th{color:#EAECEF}
 code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:.9em}
 footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#848E9C}
 </style>
-
-  <link rel="stylesheet" href="css/tokens.capricorn-core.css">
+<link rel="stylesheet" href="css/tokens.capricorn-core.css">
 </head>
 <body>
-<div class="cap-scroll-progress" aria-hidden="true"></div>
 <nav>
   <a href="landing.html">← LedgerCap</a>
   <a href="index.html">App</a>
-  <a href="presentation.html">Presentation</a>
-  <a href="pitch.html">Pitch</a>
 </nav>
-<article><h1>LedgerCap — Privacy Policy</h1>
-<p><strong>Last updated:</strong> September 15, 2026</p>
-<p>LedgerCap is an offline-first Progressive Web App. <strong>Your data stays on your device</strong> unless you explicitly export it.</p>
-<h2>What we collect</h2>
-<ul><li><strong>Nothing by default.</strong> No accounts, analytics SDKs, or third-party trackers ship in this app.</li>
-<li>Optional features (e.g. VaultCap LLM import) send data only when you enable them and supply your own API key at runtime.</li>
-<p></ul></p>
-<h2>Storage</h2>
-<ul><li>App state is stored in <strong>localStorage</strong> and/or <strong>IndexedDB</strong> in your browser.</li>
-<li>Uninstalling or clearing site data removes local copies.</li>
-<p></ul></p>
-<h2>Network</h2>
-<ul><li><strong>Fonts:</strong> Self-hosted woff2 in this app — no Google Fonts or other font CDNs.</li>
-<li>Live price or proxy features may call endpoints you configure (e.g. LedgerCap PSX proxy).</li>
-<li>GitHub Pages serves static files only — no server-side access to your vault.</li>
-<p></ul></p>
-<h2>Children</h2>
-<ul><li>DeePonyCap is child-friendly; still, parents should supervise device sharing and exports.</li>
-<p></ul></p>
-<h2>Contact</h2>
-<p>Built by Capricorn Systems — issues via the LedgerCap GitHub repository.</p>
+<article>
+  <h1>LedgerCap privacy</h1>
+  <p><strong>Effective:</strong> 14 October 2026 · Published by Capricorn Systems, Karachi, Pakistan</p>
+  <p>LedgerCap works on your device. We don't have accounts, analytics, ads or tracking, and we don't sell data. Portfolio holdings stay on your device.</p>
+
+  <h2>What stays on your device</h2>
+  <ul>
+    <li>Holdings, watchlists, journals, preferences, and optional Telegram bot token in <strong>localStorage</strong> / <strong>IndexedDB</strong>.</li>
+    <li>Cached market snapshots for offline display.</li>
+  </ul>
+
+  <h2>What leaves your device</h2>
+  <p>Live and indicative prices use a Capricorn Cloudflare Worker (D-09). The browser does <strong>not</strong> call Yahoo or PSX directly. Prices may be delayed or indicative — nothing here is investment advice.</p>
+  <table>
+    <thead><tr><th>Service</th><th>What is sent</th><th>Why</th><th>When</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>ledgercap-psx-proxy.shamikhahmed.workers.dev</code></td>
+        <td>Ticker / market query parameters; normal request metadata</td>
+        <td>Indicative PSX, funds, FX, crypto, news, and snapshot data</td>
+        <td>When you open market screens or refresh prices</td>
+      </tr>
+      <tr>
+        <td>GitHub Pages</td>
+        <td>Normal browser request metadata for static app files</td>
+        <td>Host the PWA</td>
+        <td>First visit / SW asset refresh</td>
+      </tr>
+      <tr>
+        <td><code>api.telegram.org</code> (optional)</td>
+        <td>Alert text via your own bot token</td>
+        <td>User-configured notifications</td>
+        <td>Only if you enable Telegram and save a token in Settings</td>
+      </tr>
+      <tr>
+        <td>TradingView (embedded charts)</td>
+        <td>Chart frame requests per TradingView’s terms</td>
+        <td>Display charts where shown</td>
+        <td>When you open a chart view</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Upstream PSX (<code>dps.psx.com.pk</code>) and Yahoo feeds are reached <strong>via the Worker only</strong>, not from your browser.</p>
+
+  <h2>Your controls</h2>
+  <p>Export / erase portfolio data from Settings. Remove or mask any Telegram token in Settings. Clearing site data deletes local holdings.</p>
+
+  <h2>Children</h2>
+  <p>LedgerCap is intended for a general audience aged 13 and over.</p>
+
+  <h2>Disclaimer</h2>
+  <p>LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</p>
+
+  <h2>Changes</h2>
+  <p>We'll update this page and its effective date if anything changes.</p>
+
+  <h2>Contact</h2>
+  <p><a href="https://shamikhahmed.github.io/support.html">Support</a> · No personal support email is published (G-4).</p>
 </article>
-<footer>© 2026 Shamikh Ahmed · <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a></footer>
-
-  <canvas id="cap-scene" class="cap-scene-canvas cap-scene-canvas--subtle" aria-hidden="true"></canvas>
-
-  <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/vendor/ScrollTrigger.min.js"></script>
-  <script src="js/capricorn-scene.js"></script>
-  <script src="js/capricorn-motion.js"></script>
-  <script src="js/capricorn-cinematic.js"></script>
-  <script>document.addEventListener('DOMContentLoaded',function(){if(window.CapCinematic)CapCinematic.init({canvas:'#cap-scene'});});</script>
+<footer>© 2026 Capricorn Systems · <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a></footer>
 </body>
 </html>

@@ -567,10 +567,16 @@ body.lc-pro .toast {
   color: var(--psx-accent);
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 8px;
+  /* LDG-V3-2: Txs target ≥ 44×44 */
+  padding: 10px 12px;
+  min-height: 44px;
+  min-width: 44px;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lc-deploy-txs:hover { background: var(--psx-accent-soft); }
@@ -740,16 +746,17 @@ body.lc-pro .psx-ticker {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 5px 12px;
+  padding: 8px 14px;
   border-radius: 999px;
   background: var(--psx-bg-muted);
   border: 1px solid var(--psx-border);
-  font-size: 11px;
+  /* LDG-V3-1 / LDG-V3-2: KSE chip text ≥ 11px, target ≥ 44 */
+  font-size: 12px;
   color: var(--psx-text-2);
   max-width: min(100%, 100vw - 8rem);
   cursor: pointer;
   font-family: inherit;
-  min-height: 28px;
+  min-height: 44px;
 }
 .lc-ticker-fresh {
   color: var(--psx-text-3);
@@ -780,7 +787,7 @@ body.lc-pro .psx-ticker {
   color: var(--psx-text-3);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .lc-ticker-chg {
@@ -860,12 +867,18 @@ body.lc-pro .psx-ticker {
 .lc-link-btn {
   border: none;
   background: none;
-  padding: 0;
+  /* LDG-V3-2: inline Txs / symbol links need ≥ 32px hit area */
+  padding: 10px 8px;
+  min-height: 44px;
+  min-width: 44px;
   font: inherit;
   font-weight: 600;
   color: var(--psx-accent);
   cursor: pointer;
   text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lc-screen-head {

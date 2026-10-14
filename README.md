@@ -1,8 +1,10 @@
+Track your PSX stocks and mutual funds in one place.
+
 # LedgerCap
 
-**Personal Wealth Operating System — by Capricorn Systems.** PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections.
+PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections — by Capricorn Systems. (Never “wealth OS” — G-3.)
 
-**Version:** 3.56.0 · **SW:** `ledgercap-v133`
+**Version:** 3.58.0 · **SW:** `ledgercap-v141` · **Live:** https://shamikhahmed.github.io/LedgerCap/?demo=1
 
 🔗 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 📁 **Repo:** https://github.com/shamikhahmed/LedgerCap

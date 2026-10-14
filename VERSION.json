@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.57.2",
-  "swCache": "ledgercap-v140",
-  "updated": "2026-09-15",
-  "notes": "Tier1 LCBrand + tooling brandOk ledger CSS"
+  "version": "3.58.0",
+  "swCache": "ledgercap-v141",
+  "updated": "2026-10-14",
+  "notes": "Perfection v3 Phase I — LDG-V3-1/2/3 verified; tap/text/404 gates clean"
 }
