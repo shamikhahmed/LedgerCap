@@ -1,3 +1,8 @@
+## 3.58.1 — 2026-10-15
+- Commodities: honest empty/offline when the price Worker is unreachable (no $0 placeholders); last-known quotes shown with a status banner when available.
+- Gallery v3: Commodities restored to SCREENS (light/dark × iphone/ipad/mac).
+- SW `ledgercap-v142` · register `sw.js?v=142`.
+
 ## 3.58.0 — 2026-10-14
 - Perfection Loop v3 Phase I: LDG-V3-1/2/3/4 ✅ VERIFIED (tab/KSE type ≥12px, 44px targets, no KSE100 Worker 404 on load).
 - Docs (§11): README §4.1; HANDOVER; privacy network honesty (Worker + optional Telegram).

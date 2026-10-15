@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.0",
-  "capturedAt": "2026-10-14T09:41:00Z",
+  "version": "3.58.1",
+  "capturedAt": "2026-10-15T10:00:00Z",
   "accent": "#34c759",
   "schema": 2,
   "shots": [
@@ -149,6 +149,19 @@
       "h": 2532
     },
     {
+      "id": "markets--commodities--demo",
+      "group": "Markets",
+      "screen": "Commodities",
+      "state": "demo",
+      "theme": "light",
+      "device": "iphone",
+      "file": "light/iphone/markets--commodities--demo.webp",
+      "route": "#commodities",
+      "caption": "Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.",
+      "w": 1170,
+      "h": 2532
+    },
+    {
       "id": "markets--announcements--demo",
       "group": "Markets",
       "screen": "Announcements",
@@ -170,7 +183,7 @@
       "device": "iphone",
       "file": "light/iphone/research--research--demo.webp",
       "route": "#research",
-      "caption": "Research tools \u2014 for education, not investment advice.",
+      "caption": "Research tools — for education, not investment advice.",
       "w": 1170,
       "h": 2532
     },
@@ -196,7 +209,7 @@
       "device": "iphone",
       "file": "light/iphone/research--signals--demo.webp",
       "route": "#signals",
-      "caption": "Rule-based signals \u2014 not investment advice.",
+      "caption": "Rule-based signals — not investment advice.",
       "w": 1170,
       "h": 2532
     },
@@ -300,7 +313,7 @@
       "device": "iphone",
       "file": "light/iphone/tools--settings--demo.webp",
       "route": "#settings",
-      "caption": "Language (English \u00b7 \u0627\u0631\u062f\u0648 \u00b7 Roman Urdu), currency and theme.",
+      "caption": "Language (English · اردو · Roman Urdu), currency and theme.",
       "w": 1170,
       "h": 2532
     },
@@ -448,6 +461,19 @@
       "h": 2532
     },
     {
+      "id": "markets--commodities--demo",
+      "group": "Markets",
+      "screen": "Commodities",
+      "state": "demo",
+      "theme": "dark",
+      "device": "iphone",
+      "file": "dark/iphone/markets--commodities--demo.webp",
+      "route": "#commodities",
+      "caption": "Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.",
+      "w": 1170,
+      "h": 2532
+    },
+    {
       "id": "markets--announcements--demo",
       "group": "Markets",
       "screen": "Announcements",
@@ -469,7 +495,7 @@
       "device": "iphone",
       "file": "dark/iphone/research--research--demo.webp",
       "route": "#research",
-      "caption": "Research tools \u2014 for education, not investment advice.",
+      "caption": "Research tools — for education, not investment advice.",
       "w": 1170,
       "h": 2532
     },
@@ -495,7 +521,7 @@
       "device": "iphone",
       "file": "dark/iphone/research--signals--demo.webp",
       "route": "#signals",
-      "caption": "Rule-based signals \u2014 not investment advice.",
+      "caption": "Rule-based signals — not investment advice.",
       "w": 1170,
       "h": 2532
     },
@@ -599,7 +625,7 @@
       "device": "iphone",
       "file": "dark/iphone/tools--settings--demo.webp",
       "route": "#settings",
-      "caption": "Language (English \u00b7 \u0627\u0631\u062f\u0648 \u00b7 Roman Urdu), currency and theme.",
+      "caption": "Language (English · اردو · Roman Urdu), currency and theme.",
       "w": 1170,
       "h": 2532
     },
@@ -747,6 +773,19 @@
       "h": 1640
     },
     {
+      "id": "markets--commodities--demo",
+      "group": "Markets",
+      "screen": "Commodities",
+      "state": "demo",
+      "theme": "light",
+      "device": "ipad",
+      "file": "light/ipad/markets--commodities--demo.webp",
+      "route": "#commodities",
+      "caption": "Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.",
+      "w": 2360,
+      "h": 1640
+    },
+    {
       "id": "markets--announcements--demo",
       "group": "Markets",
       "screen": "Announcements",
@@ -768,7 +807,7 @@
       "device": "ipad",
       "file": "light/ipad/research--research--demo.webp",
       "route": "#research",
-      "caption": "Research tools \u2014 for education, not investment advice.",
+      "caption": "Research tools — for education, not investment advice.",
       "w": 2360,
       "h": 1640
     },
@@ -794,7 +833,7 @@
       "device": "ipad",
       "file": "light/ipad/research--signals--demo.webp",
       "route": "#signals",
-      "caption": "Rule-based signals \u2014 not investment advice.",
+      "caption": "Rule-based signals — not investment advice.",
       "w": 2360,
       "h": 1640
     },
@@ -898,7 +937,7 @@
       "device": "ipad",
       "file": "light/ipad/tools--settings--demo.webp",
       "route": "#settings",
-      "caption": "Language (English \u00b7 \u0627\u0631\u062f\u0648 \u00b7 Roman Urdu), currency and theme.",
+      "caption": "Language (English · اردو · Roman Urdu), currency and theme.",
       "w": 2360,
       "h": 1640
     },
@@ -1046,6 +1085,19 @@
       "h": 1640
     },
     {
+      "id": "markets--commodities--demo",
+      "group": "Markets",
+      "screen": "Commodities",
+      "state": "demo",
+      "theme": "dark",
+      "device": "ipad",
+      "file": "dark/ipad/markets--commodities--demo.webp",
+      "route": "#commodities",
+      "caption": "Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.",
+      "w": 2360,
+      "h": 1640
+    },
+    {
       "id": "markets--announcements--demo",
       "group": "Markets",
       "screen": "Announcements",
@@ -1067,7 +1119,7 @@
       "device": "ipad",
       "file": "dark/ipad/research--research--demo.webp",
       "route": "#research",
-      "caption": "Research tools \u2014 for education, not investment advice.",
+      "caption": "Research tools — for education, not investment advice.",
       "w": 2360,
       "h": 1640
     },
@@ -1093,7 +1145,7 @@
       "device": "ipad",
       "file": "dark/ipad/research--signals--demo.webp",
       "route": "#signals",
-      "caption": "Rule-based signals \u2014 not investment advice.",
+      "caption": "Rule-based signals — not investment advice.",
       "w": 2360,
       "h": 1640
     },
@@ -1197,7 +1249,7 @@
       "device": "ipad",
       "file": "dark/ipad/tools--settings--demo.webp",
       "route": "#settings",
-      "caption": "Language (English \u00b7 \u0627\u0631\u062f\u0648 \u00b7 Roman Urdu), currency and theme.",
+      "caption": "Language (English · اردو · Roman Urdu), currency and theme.",
       "w": 2360,
       "h": 1640
     },
@@ -1345,6 +1397,19 @@
       "h": 1800
     },
     {
+      "id": "markets--commodities--demo",
+      "group": "Markets",
+      "screen": "Commodities",
+      "state": "demo",
+      "theme": "light",
+      "device": "mac",
+      "file": "light/mac/markets--commodities--demo.webp",
+      "route": "#commodities",
+      "caption": "Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.",
+      "w": 2880,
+      "h": 1800
+    },
+    {
       "id": "markets--announcements--demo",
       "group": "Markets",
       "screen": "Announcements",
@@ -1366,7 +1431,7 @@
       "device": "mac",
       "file": "light/mac/research--research--demo.webp",
       "route": "#research",
-      "caption": "Research tools \u2014 for education, not investment advice.",
+      "caption": "Research tools — for education, not investment advice.",
       "w": 2880,
       "h": 1800
     },
@@ -1392,7 +1457,7 @@
       "device": "mac",
       "file": "light/mac/research--signals--demo.webp",
       "route": "#signals",
-      "caption": "Rule-based signals \u2014 not investment advice.",
+      "caption": "Rule-based signals — not investment advice.",
       "w": 2880,
       "h": 1800
     },
@@ -1496,7 +1561,7 @@
       "device": "mac",
       "file": "light/mac/tools--settings--demo.webp",
       "route": "#settings",
-      "caption": "Language (English \u00b7 \u0627\u0631\u062f\u0648 \u00b7 Roman Urdu), currency and theme.",
+      "caption": "Language (English · اردو · Roman Urdu), currency and theme.",
       "w": 2880,
       "h": 1800
     },
@@ -1644,6 +1709,19 @@
       "h": 1800
     },
     {
+      "id": "markets--commodities--demo",
+      "group": "Markets",
+      "screen": "Commodities",
+      "state": "demo",
+      "theme": "dark",
+      "device": "mac",
+      "file": "dark/mac/markets--commodities--demo.webp",
+      "route": "#commodities",
+      "caption": "Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.",
+      "w": 2880,
+      "h": 1800
+    },
+    {
       "id": "markets--announcements--demo",
       "group": "Markets",
       "screen": "Announcements",
@@ -1665,7 +1743,7 @@
       "device": "mac",
       "file": "dark/mac/research--research--demo.webp",
       "route": "#research",
-      "caption": "Research tools \u2014 for education, not investment advice.",
+      "caption": "Research tools — for education, not investment advice.",
       "w": 2880,
       "h": 1800
     },
@@ -1691,7 +1769,7 @@
       "device": "mac",
       "file": "dark/mac/research--signals--demo.webp",
       "route": "#signals",
-      "caption": "Rule-based signals \u2014 not investment advice.",
+      "caption": "Rule-based signals — not investment advice.",
       "w": 2880,
       "h": 1800
     },
@@ -1795,7 +1873,7 @@
       "device": "mac",
       "file": "dark/mac/tools--settings--demo.webp",
       "route": "#settings",
-      "caption": "Language (English \u00b7 \u0627\u0631\u062f\u0648 \u00b7 Roman Urdu), currency and theme.",
+      "caption": "Language (English · اردو · Roman Urdu), currency and theme.",
       "w": 2880,
       "h": 1800
     }

@@ -3,6 +3,11 @@ const CommoditiesService = (() => {
   const CACHE_MS = 300000;
   const TROY_OZ_GRAMS = 31.1034768;
   let _cache = { ts: 0, rows: [] };
+  let _meta = { source: 'empty', asOf: null };
+
+  function getMeta() {
+    return { source: _meta.source, asOf: _meta.asOf, count: _cache.rows.length };
+  }
 
   function _fromSnapshot(snapId) {
     const snap = window._LC_CMD_SNAPSHOT || {};
@@ -65,8 +70,14 @@ const CommoditiesService = (() => {
     return { price: pkrPerGram, changePct: q.changePct || 0, pkr: pkrPerGram, label: 'Yahoo GC=F · auto' };
   }
 
+  function _hasPricedQuote(row) {
+    return row && Number(row.price) > 0;
+  }
+
   async function fetchAll() {
-    if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS) return _cache.rows;
+    if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS && _meta.source === 'live') {
+      return _cache.rows;
+    }
     if (typeof PriceSnapshotService !== 'undefined' && PriceSnapshotService.enabled()) {
       await PriceSnapshotService.refresh('commodities').catch(() => {});
     }
@@ -78,19 +89,30 @@ const CommoditiesService = (() => {
 
     for (const c of window.COMMODITY_ASSETS || []) {
       if (c.id === 'pkr_gold') {
-        const g = goldAuto || { price: settings.goldPricePerGram || 18000, changePct: 0 };
-        rows.push({
-          ...c,
-          price: g.price,
-          changePct: g.changePct || 0,
-          pkr: g.price,
-          label: g.label || 'Settings · manual fallback',
-          manual: !goldAuto,
-        });
+        // Honest: only show PKR gold when we have a live/derived quote or an explicit source — never invent ₨18000 as spot.
+        if (goldAuto) {
+          rows.push({
+            ...c,
+            price: goldAuto.price,
+            changePct: goldAuto.changePct || 0,
+            pkr: goldAuto.price,
+            label: goldAuto.label || 'Spot-derived',
+            manual: false,
+          });
+        } else if (settings.goldPriceSource && settings.goldPricePerGram > 0) {
+          rows.push({
+            ...c,
+            price: settings.goldPricePerGram,
+            changePct: 0,
+            pkr: settings.goldPricePerGram,
+            label: settings.goldPriceSource === 'Yahoo GC=F' ? 'Settings · last auto' : 'Settings · manual',
+            manual: true,
+          });
+        }
         continue;
       }
       const snap = c.snapId ? _fromSnapshot(c.snapId) : null;
-      if (snap) {
+      if (snap && _hasPricedQuote(snap)) {
         rows.push({
           ...c,
           price: snap.price,
@@ -103,21 +125,32 @@ const CommoditiesService = (() => {
         continue;
       }
       const q = c.yahoo ? await _yahooQuote(c.yahoo) : null;
-      const pkr = q?.price ? q.price * usd : 0;
-      rows.push({
-        ...c,
-        price: q?.price || 0,
-        change: q?.change || 0,
-        changePct: q?.changePct || 0,
-        pkr,
-        label: q ? 'Yahoo spot' : 'Unavailable',
-      });
+      if (q && _hasPricedQuote(q)) {
+        rows.push({
+          ...c,
+          price: q.price,
+          change: q.change || 0,
+          changePct: q.changePct || 0,
+          pkr: q.price * usd,
+          label: 'Yahoo spot',
+        });
+      }
+      // No zero-price placeholders — unavailable symbols stay out of the list.
     }
 
-    _cache = { ts: Date.now(), rows };
-    return rows;
+    if (rows.length) {
+      _cache = { ts: Date.now(), rows };
+      _meta = { source: 'live', asOf: _cache.ts };
+      return rows;
+    }
+    if (_cache.rows.length) {
+      _meta = { source: 'last-known', asOf: _cache.ts };
+      return _cache.rows;
+    }
+    _meta = { source: 'empty', asOf: null };
+    return [];
   }
 
-  return { fetchAll };
+  return { fetchAll, getMeta };
 })();
 window.CommoditiesService = CommoditiesService;

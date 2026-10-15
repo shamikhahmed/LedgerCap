@@ -1136,6 +1136,20 @@ body.lc-pro[data-theme="dark"] {
 .lc-empty-state h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
 .lc-empty-state p { font-size: 0.85rem; color: var(--psx-text-2); line-height: 1.5; margin-bottom: var(--lc-space-4); }
 
+.lc-cmd-stale {
+  margin: 0 0 var(--lc-space-3);
+  padding: 10px 12px;
+  border-radius: var(--lc-radius-md, 8px);
+  border: 1px solid color-mix(in srgb, #c9a227 35%, var(--psx-border));
+  background: color-mix(in srgb, #c9a227 10%, var(--psx-bg-card));
+}
+.lc-cmd-stale-msg {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--psx-text-2);
+}
+
 .lc-error-state {
   text-align: center;
   padding: var(--lc-space-6) var(--lc-space-4);

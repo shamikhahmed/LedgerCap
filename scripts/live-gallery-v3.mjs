@@ -1,17 +1,20 @@
 #!/usr/bin/env node
-import { chromium } from 'playwright-core';
+import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const pwRoot =
+  process.env.PW_CORE || join(ROOT, '..', 'MasteryCap', 'node_modules', 'playwright-core');
+const { chromium } = createRequire(import.meta.url)(pwRoot);
 const GALLERY_DIR = join(ROOT, 'docs', 'screenshots', 'gallery');
 const MANIFEST = join(GALLERY_DIR, 'gallery-manifest.json');
 const BASE = process.env.GALLERY_BASE_URL || 'https://shamikhahmed.github.io/LedgerCap/?demo=1';
 const ACCENT = '#34c759';
-const CAPTURED_AT = '2026-10-14T09:41:00Z';
-const CLOCK_MS = Date.parse('2026-10-14T09:41:00.000Z');
+const CAPTURED_AT = '2026-10-15T10:00:00Z';
+const CLOCK_MS = Date.parse('2026-10-15T10:00:00.000Z');
 
 const VIEWPORTS = {
   iphone: { width: 390, height: 844, deviceScaleFactor: 3 },
@@ -31,7 +34,7 @@ const SCREENS = [
   { nav: 'watchlist', group: 'Markets', screen: 'Watchlist', caption: 'Symbols you follow.' },
   { nav: 'funds', group: 'Markets', screen: 'Funds', caption: 'Mutual funds, including Islamic funds.' },
   { nav: 'global', group: 'Markets', screen: 'Global', caption: 'Global markets snapshot (indicative).' },
-  // commodities omitted: needs the live price Worker; renders empty in offline capture
+  { nav: 'commodities', group: 'Markets', screen: 'Commodities', caption: 'Gold, silver, oil — live via Worker, or honest empty/offline when unavailable.' },
   { nav: 'announcements', group: 'Markets', screen: 'Announcements', caption: 'Company announcements.' },
   { nav: 'research', group: 'Research', screen: 'Research', caption: 'Research tools — for education, not investment advice.' },
   { nav: 'screener', group: 'Research', screen: 'Screener', caption: 'Filter PSX stocks by your criteria.' },
@@ -105,6 +108,16 @@ async function setTheme(page, theme) {
 async function goNav(page, navId) {
   await page.evaluate((id) => Navigation.go(id), navId);
   await page.waitForSelector(`#screen-${navId}.active`, { timeout: 20000 });
+  // Commodities: wait for offline empty state or price rows after Worker attempt
+  if (navId === 'commodities') {
+    await page.waitForFunction(() => {
+      const list = document.getElementById('commodities-list');
+      if (!list) return false;
+      return !!list.querySelector('.lc-empty-state, .lc-market-row, .lc-cmd-stale');
+    }, null, { timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(400);
+    return;
+  }
   await page.waitForTimeout(300);
 }
 

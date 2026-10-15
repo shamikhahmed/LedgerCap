@@ -138,7 +138,7 @@ const PsxUI = (() => {
 
   function emptyState(title, sub, cta) {
     cta = cta || '';
-    return `<div class="lc-empty-state">
+    return `<div class="lc-empty-state" role="status" aria-live="polite">
       <div class="lc-empty-icon" aria-hidden="true">◇</div>
       <h2>${title}</h2>
       <p>${sub || ''}</p>
