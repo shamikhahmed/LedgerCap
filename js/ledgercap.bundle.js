@@ -4952,9 +4952,9 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.58.0',
-  sw: 141,
-  cache: 'ledgercap-v141',
+  app: '3.58.1',
+  sw: 142,
+  cache: 'ledgercap-v142',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -7625,6 +7625,11 @@ const CommoditiesService = (() => {
   const CACHE_MS = 300000;
   const TROY_OZ_GRAMS = 31.1034768;
   let _cache = { ts: 0, rows: [] };
+  let _meta = { source: 'empty', asOf: null };
+
+  function getMeta() {
+    return { source: _meta.source, asOf: _meta.asOf, count: _cache.rows.length };
+  }
 
   function _fromSnapshot(snapId) {
     const snap = window._LC_CMD_SNAPSHOT || {};
@@ -7687,8 +7692,14 @@ const CommoditiesService = (() => {
     return { price: pkrPerGram, changePct: q.changePct || 0, pkr: pkrPerGram, label: 'Yahoo GC=F · auto' };
   }
 
+  function _hasPricedQuote(row) {
+    return row && Number(row.price) > 0;
+  }
+
   async function fetchAll() {
-    if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS) return _cache.rows;
+    if (_cache.rows.length && Date.now() - _cache.ts < CACHE_MS && _meta.source === 'live') {
+      return _cache.rows;
+    }
     if (typeof PriceSnapshotService !== 'undefined' && PriceSnapshotService.enabled()) {
       await PriceSnapshotService.refresh('commodities').catch(() => {});
     }
@@ -7700,19 +7711,30 @@ const CommoditiesService = (() => {
 
     for (const c of window.COMMODITY_ASSETS || []) {
       if (c.id === 'pkr_gold') {
-        const g = goldAuto || { price: settings.goldPricePerGram || 18000, changePct: 0 };
-        rows.push({
-          ...c,
-          price: g.price,
-          changePct: g.changePct || 0,
-          pkr: g.price,
-          label: g.label || 'Settings · manual fallback',
-          manual: !goldAuto,
-        });
+        // Honest: only show PKR gold when we have a live/derived quote or an explicit source — never invent ₨18000 as spot.
+        if (goldAuto) {
+          rows.push({
+            ...c,
+            price: goldAuto.price,
+            changePct: goldAuto.changePct || 0,
+            pkr: goldAuto.price,
+            label: goldAuto.label || 'Spot-derived',
+            manual: false,
+          });
+        } else if (settings.goldPriceSource && settings.goldPricePerGram > 0) {
+          rows.push({
+            ...c,
+            price: settings.goldPricePerGram,
+            changePct: 0,
+            pkr: settings.goldPricePerGram,
+            label: settings.goldPriceSource === 'Yahoo GC=F' ? 'Settings · last auto' : 'Settings · manual',
+            manual: true,
+          });
+        }
         continue;
       }
       const snap = c.snapId ? _fromSnapshot(c.snapId) : null;
-      if (snap) {
+      if (snap && _hasPricedQuote(snap)) {
         rows.push({
           ...c,
           price: snap.price,
@@ -7725,22 +7747,33 @@ const CommoditiesService = (() => {
         continue;
       }
       const q = c.yahoo ? await _yahooQuote(c.yahoo) : null;
-      const pkr = q?.price ? q.price * usd : 0;
-      rows.push({
-        ...c,
-        price: q?.price || 0,
-        change: q?.change || 0,
-        changePct: q?.changePct || 0,
-        pkr,
-        label: q ? 'Yahoo spot' : 'Unavailable',
-      });
+      if (q && _hasPricedQuote(q)) {
+        rows.push({
+          ...c,
+          price: q.price,
+          change: q.change || 0,
+          changePct: q.changePct || 0,
+          pkr: q.price * usd,
+          label: 'Yahoo spot',
+        });
+      }
+      // No zero-price placeholders — unavailable symbols stay out of the list.
     }
 
-    _cache = { ts: Date.now(), rows };
-    return rows;
+    if (rows.length) {
+      _cache = { ts: Date.now(), rows };
+      _meta = { source: 'live', asOf: _cache.ts };
+      return rows;
+    }
+    if (_cache.rows.length) {
+      _meta = { source: 'last-known', asOf: _cache.ts };
+      return _cache.rows;
+    }
+    _meta = { source: 'empty', asOf: null };
+    return [];
   }
 
-  return { fetchAll };
+  return { fetchAll, getMeta };
 })();
 window.CommoditiesService = CommoditiesService;
 
@@ -12935,7 +12968,7 @@ const PsxUI = (() => {
 
   function emptyState(title, sub, cta) {
     cta = cta || '';
-    return `<div class="lc-empty-state">
+    return `<div class="lc-empty-state" role="status" aria-live="polite">
       <div class="lc-empty-icon" aria-hidden="true">◇</div>
       <h2>${title}</h2>
       <p>${sub || ''}</p>
@@ -16439,9 +16472,9 @@ const WealthCalendar = (() => {
         <p>Dividends · IPO · corporate actions in your portfolio</p>
       </div>
       <div class="lc-filter-bar cap-reveal" style="justify-content:space-between;align-items:center">
-        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${prevKey}">←</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${prevKey}" aria-label="Previous month">←</button>
         <strong>${label}</strong>
-        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${nextKey}">→</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${nextKey}" aria-label="Next month">→</button>
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
@@ -17190,7 +17223,7 @@ const Settings = (() => {
 
     <div class="sec-head"><span class="sec-title">About</span></div>
     <div style="background:var(--bg2);border-bottom:1px solid var(--bg4);">
-      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || window.LEDGERCAP_VERSION?.app || '3.58.0'}</span></div>
+      <div class="setting-row"><div class="setting-label">LedgerCap</div><span class="setting-value">v${window.APP_VERSION || window.LEDGERCAP_VERSION?.app || '3.58.1'}</span></div>
       <div class="setting-row"><div class="setting-label">Architecture</div><span class="setting-value">Ledger-first · PWA</span></div>
       <div class="setting-row"><div class="setting-label">Storage</div><span class="setting-value">Local (offline-first)</span></div>
       <div class="setting-row" style="align-items:flex-start"><div class="setting-label">Prices</div><span class="setting-value" style="text-align:right;max-width:62%;line-height:1.35">PSX and Yahoo Finance via LedgerCap's server. May be delayed.</span></div>
@@ -19683,6 +19716,7 @@ window.Global = Global;
 const Commodities = (() => {
   let _rows = [];
   let _loading = false;
+  let _attempted = false;
 
   function _rowHtml(r) {
     const chgCls = (r.id === 'pkr_gold' && !r.manual) ? PsxUI.chgCls(r.changePct || 0) : (r.manual ? '' : PsxUI.chgCls(r.changePct || 0));
@@ -19702,11 +19736,62 @@ const Commodities = (() => {
     </button>`;
   }
 
+  function _offlineEmptyHtml() {
+    const online = typeof navigator === 'undefined' || navigator.onLine !== false;
+    const body = online
+      ? 'Commodity spot prices need a network connection to the price Worker. The Worker is unavailable right now — no last-known quotes on this device.'
+      : 'You appear offline. Commodity prices need network access to the price Worker — no last-known quotes on this device.';
+    return `<div class="lc-empty-state" role="status" aria-live="polite">
+      <div class="lc-empty-icon" aria-hidden="true">◇</div>
+      <h2>Spot prices unavailable</h2>
+      <p>${body}</p>
+    </div>`;
+  }
+
+  function _staleBannerHtml() {
+    const meta = typeof CommoditiesService !== 'undefined' && CommoditiesService.getMeta
+      ? CommoditiesService.getMeta()
+      : {};
+    const when = meta.asOf
+      ? new Date(meta.asOf).toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' })
+      : '';
+    return `<div class="lc-cmd-stale" role="status" aria-live="polite">
+      <p class="lc-cmd-stale-msg">Showing last-known prices${when ? ` · as of ${when}` : ''}. Live quotes need the price Worker — tap Refresh when network is available.</p>
+    </div>`;
+  }
+
+  function _listInner() {
+    if (_loading && !_rows.length) {
+      return `<div role="status" aria-busy="true" aria-label="Loading commodities"><p class="psx-muted">Loading commodities…</p></div>`;
+    }
+    if (!_rows.length) {
+      return _offlineEmptyHtml();
+    }
+    const meta = typeof CommoditiesService !== 'undefined' && CommoditiesService.getMeta
+      ? CommoditiesService.getMeta()
+      : { source: 'live' };
+    const banner = meta.source === 'last-known' ? _staleBannerHtml() : '';
+    return `${banner}${_rows.map(_rowHtml).join('')}`;
+  }
+
+  function _goldPillLabel() {
+    const settings = (typeof State !== 'undefined' ? State.get('settings') : null) || {};
+    const pkrRow = _rows.find((r) => r.id === 'pkr_gold' || r.id === 'gold_24k');
+    if (pkrRow?.price > 0) return `${PsxUI.fmt(pkrRow.price)}/g`;
+    if (settings.goldPriceSource && settings.goldPricePerGram > 0) {
+      return `${PsxUI.fmt(settings.goldPricePerGram)}/g`;
+    }
+    return '—';
+  }
+
   async function refresh() {
     if (_loading) return;
     _loading = true;
+    _attempted = true;
     const list = document.getElementById('commodities-list');
-    if (list) list.innerHTML = '<p class="psx-muted">Refreshing spot prices…</p>';
+    if (list && !_rows.length) {
+      list.innerHTML = `<div role="status" aria-busy="true" aria-label="Refreshing spot prices"><p class="psx-muted">Refreshing spot prices…</p></div>`;
+    }
     _rows = await CommoditiesService.fetchAll();
     _loading = false;
     render();
@@ -19716,17 +19801,22 @@ const Commodities = (() => {
     const screen = document.getElementById('screen-commodities');
     if (!screen) return;
     const usd = FxService.getUsdRate();
-    const listInner = _rows.length
-      ? _rows.map(_rowHtml).join('')
-      : '<p class="psx-muted">Loading commodities…</p>';
+    const meta = typeof CommoditiesService !== 'undefined' && CommoditiesService.getMeta
+      ? CommoditiesService.getMeta()
+      : { source: _rows.length ? 'live' : 'empty' };
+    const sub = meta.source === 'last-known'
+      ? 'Last-known quotes · Worker unavailable'
+      : meta.source === 'empty' && _attempted
+        ? 'Prices need network · Worker unavailable'
+        : `Gold · silver · oil · USD/PKR ₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}`;
 
-    screen.innerHTML = PsxUI.lcDash('Commodities', `Gold · silver · oil · USD/PKR ₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}`, `
+    screen.innerHTML = PsxUI.lcDash('Commodities', sub, `
       <div class="lc-pulse-row">
         <div class="lc-pulse-pill"><label>USD/PKR</label><b>₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</b></div>
-        <div class="lc-pulse-pill"><label>PKR gold</label><b>${PsxUI.fmt((State.get('settings') || {}).goldPricePerGram || 18000)}/g</b></div>
+        <div class="lc-pulse-pill"><label>PKR gold</label><b>${_goldPillLabel()}</b></div>
       </div>
       <p class="lc-card-sub">Spot via worker snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
-      <div class="lc-sector-card" id="commodities-list">${listInner}</div>
+      <div class="lc-sector-card" id="commodities-list">${_listInner()}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>
         <button type="button" class="psx-btn psx-btn-ghost" data-nav="zakat">Zakat calculator →</button>
@@ -19734,7 +19824,7 @@ const Commodities = (() => {
       <div class="lc-disclaimer">Illustrative spot prices — not a trading feed. Verify before zakat or hedging decisions.</div>
     `);
 
-    if (!_rows.length && !_loading) refresh();
+    if (!_attempted && !_loading) refresh();
     CapMotion.refresh();
   }
 

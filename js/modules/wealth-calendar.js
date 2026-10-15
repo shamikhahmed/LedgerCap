@@ -84,9 +84,9 @@ const WealthCalendar = (() => {
         <p>Dividends · IPO · corporate actions in your portfolio</p>
       </div>
       <div class="lc-filter-bar cap-reveal" style="justify-content:space-between;align-items:center">
-        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${prevKey}">←</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${prevKey}" aria-label="Previous month">←</button>
         <strong>${label}</strong>
-        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${nextKey}">→</button>
+        <button type="button" class="btn-ghost btn-sm" data-action="WealthCalendar.setMonth" data-tab="${nextKey}" aria-label="Next month">→</button>
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
