@@ -1,3 +1,8 @@
+## 3.58.6 — 2026-10-16
+- Fix: `portfolio-analytics-service` back in core (Hub Home crashed when deferred)
+- Demo kicks deferred bundle immediately; nav waits on ensureDeferred
+- SW `ledgercap-v147`
+
 ## 3.58.5 — 2026-10-16
 - V5 §3b: defer charts/TV/live stream/news/motion; demo skips worker network (LH bp)
 - Soft localStorage / brief console noise

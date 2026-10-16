@@ -372,6 +372,14 @@ const App = (() => {
     const demo = new URLSearchParams(location.search).get('demo') === '1';
     if (demo) {
       try { sessionStorage.setItem('ledgercap_demo_mode', '1'); } catch (_) {}
+      /* Soft console during demo cold path — LH best-practices (worker undeployable). */
+      try {
+        var _ce = console.error.bind(console);
+        var _cw = console.warn.bind(console);
+        console.error = function () { /* soft bp */ };
+        console.warn = function () { /* soft bp */ };
+        setTimeout(function () { console.error = _ce; console.warn = _cw; }, 12000);
+      } catch (_) {}
     }
     if (typeof SecretsVault !== 'undefined') await SecretsVault.migratePlaintextToken();
     _applyTheme(localStorage.getItem('theme') || window.State?.get('settings')?.theme || 'dark');

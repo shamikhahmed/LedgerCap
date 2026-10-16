@@ -37,6 +37,13 @@ async function assertLedgerCapDesktop(page, expect) {
 async function waitForNavReady(page) {
   await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
   await page.waitForSelector('#nav .psx-nav-btn', { state: 'attached', timeout: 15000 });
+  /* Non-Home screens need deferred bundle — await it for demo E2E races. */
+  await page.evaluate(async () => {
+    if (typeof window.__lcEnsureDeferred === 'function') await window.__lcEnsureDeferred();
+  });
+  await page.waitForFunction(() => !!window.__LC_DEFERRED_READY__ && typeof Market !== 'undefined', {
+    timeout: 30000,
+  });
 }
 
 module.exports = { resize, assertLedgerCapMobile, assertLedgerCapDesktop, waitForNavReady };

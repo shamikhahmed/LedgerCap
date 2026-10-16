@@ -20,7 +20,9 @@ const PortfolioAnalyticsService = (() => {
     const invested = m.totalCost;
     const unrealized = m.totalReturn.abs;
     const realized = _realizedFromLedger(txs);
-    const divs = DividendService.getPortfolioDividends();
+    const divs = (typeof DividendService !== 'undefined' && DividendService.getPortfolioDividends)
+      ? DividendService.getPortfolioDividends()
+      : { annual: 0, totalReceived: 0, ytd: 0, count: 0 };
 
     const holdings = Ledger.calcHoldings(txs);
     const funds = Ledger.calcFundHoldings(txs);
@@ -120,7 +122,8 @@ const PortfolioAnalyticsService = (() => {
         kind: 'stock', quantity: h.shares, avgCost: h.avgCost, price, value: val, costBasis: cost,
         pnl, pnlPct, dailyPnl, dailyPnlPct, allocPct: alloc,
         divYield: f?.divYield || 0,
-        yieldOnCost: DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares),
+        yieldOnCost: (typeof DividendService !== 'undefined' && DividendService.getYieldOnCost)
+          ? DividendService.getYieldOnCost(h.symbol, h.avgCost, h.shares) : 0,
         aiRating: ai.action, aiConfidence: ai.confidence, sector: meta?.sector,
       };
     });
@@ -202,7 +205,8 @@ const PortfolioAnalyticsService = (() => {
     }
 
     holdings.filter(h => h.divYield > 0).forEach(h => {
-      const growth = DividendService.getDividendGrowth(h.symbol);
+      const growth = (typeof DividendService !== 'undefined' && DividendService.getDividendGrowth)
+        ? DividendService.getDividendGrowth(h.symbol) : null;
       if (growth != null && growth < 2) {
         insights.push({ type: 'dividend', severity: 'medium', text: `${h.symbol} dividend growth slowing (${growth.toFixed(1)}% CAGR).`, action: 'Review payout sustainability in Research.' });
       }

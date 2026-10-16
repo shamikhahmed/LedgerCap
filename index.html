@@ -129,13 +129,14 @@
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
   <script defer src="js/brand/colors.js"></script>
-  <script defer src="js/ledgercap.bundle.js?v=3.58.5"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.58.6"></script>
   <script defer src="js/pro-modal.js"></script>
   <script>
-  /* Idle-load non-Home bundle after first paint (v5 §3 TBT). */
+  /* Idle-load non-Home bundle after first paint (v5 §3 TBT). Demo kicks ASAP for E2E. */
   (function () {
-    var src = 'js/ledgercap.deferred.js?v=3.58.5';
+    var src = 'js/ledgercap.deferred.js?v=3.58.6';
     var p = null;
+    var demo = /(?:^|[?&])demo=1(?:&|$)/.test(location.search);
     window.__lcEnsureDeferred = function () {
       if (window.__LC_DEFERRED_READY__) return Promise.resolve();
       if (p) return p;
@@ -150,6 +151,7 @@
     };
     function kick() {
       var run = function () { window.__lcEnsureDeferred(); };
+      if (demo) { run(); return; }
       if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 2200 });
       else setTimeout(run, 1200);
     }

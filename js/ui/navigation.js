@@ -149,10 +149,10 @@ const Navigation = (() => {
     };
     /* Non-Home screens live in ledgercap.deferred.js — ensure loaded before render. */
     if (tabId !== 'home' && typeof window.__lcEnsureDeferred === 'function') {
-      Promise.resolve(window.__lcEnsureDeferred()).then(finish).catch(finish);
-      return;
+      return Promise.resolve(window.__lcEnsureDeferred()).then(finish).catch(finish);
     }
     finish();
+    return Promise.resolve();
   }
 
   function _render(id, opts) {
