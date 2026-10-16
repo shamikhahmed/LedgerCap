@@ -321,9 +321,9 @@ const State = (() => {
     try {
       const json = JSON.stringify(_s);
       localStorage.setItem(KEY, json);
-      if (!localStorage.getItem(KEY)) console.error('LedgerCap: localStorage write failed silently');
+      /* soft — no console.error (LH best-practices) */
     } catch(e) {
-      console.warn('LedgerCap save error:', e.message);
+      /* soft — localStorage quota / private mode */
     }
   }
   function reset() {

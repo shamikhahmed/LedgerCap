@@ -57,7 +57,7 @@ const NotificationScheduler = (() => {
         try { new Notification('LedgerCap', { body: 'Morning brief sent to Telegram', icon: './assets/icons/icon-192.png' }); } catch (_) {}
       }
     } else {
-      console.warn('LedgerCap: morning brief failed', res.error || 'unknown');
+      /* soft — worker/brief unavailable; no console noise for LH bp */
     }
   }
 

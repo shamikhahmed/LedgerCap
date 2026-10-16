@@ -1,4 +1,1523 @@
-/* LedgerCap DEFERRED — 50 modules — idle-loaded after Home */
+/* LedgerCap DEFERRED — 61 modules — idle-loaded after Home */
+;/* === js/ui/charts.js === */
+'use strict';
+const Charts = (() => {
+
+  function _chartColor(fallback) {
+    if (typeof document !== 'undefined' && document.body) {
+      const v = getComputedStyle(document.body).getPropertyValue('--lc-chart-stroke').trim()
+        || getComputedStyle(document.body).getPropertyValue('--psx-accent').trim();
+      if (v) return v;
+    }
+    return fallback || LCBrand.h_0a84ff;
+  }
+
+  function _gradId(color) {
+    return 'lg_' + String(color || _chartColor()).replace(/[^a-zA-Z0-9]/g, '');
+  }
+
+  function lineChart(data, opts) {
+    opts = opts || {};
+    const color = opts.color || _chartColor();
+    const height = opts.height || 100;
+    const fill = opts.fill !== false;
+    const width = 400;
+    const label = opts.ariaLabel || 'Line chart';
+
+    if (!data || data.length < 2) {
+      return `<div class="lc-chart-empty" style="height:${height}px">Not enough data for chart</div>`;
+    }
+
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const padY = height * 0.08;
+    const usableH = height - padY * 2;
+    const gid = _gradId(color);
+
+    const pts = data.map((v, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = padY + usableH - ((v - min) / range) * usableH;
+      return [x, y];
+    });
+
+    const linePath = pts.map((p, i) => (i === 0 ? `M${p[0].toFixed(1)},${p[1].toFixed(1)}` : `L${p[0].toFixed(1)},${p[1].toFixed(1)}`)).join(' ');
+    const fillPath = fill ? `${linePath} L${width},${height} L0,${height} Z` : '';
+
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:${opts.width ? opts.width + 'px' : '100%'};height:${height}px;display:block;" role="img" aria-label="${label}">
+      <defs>
+        <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      ${fill ? `<path d="${fillPath}" fill="url(#${gid})" />` : ''}
+      <path d="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
+  function lineChartBlock(data, opts) {
+    opts = opts || {};
+    const caption = opts.caption || '';
+    const sub = opts.subcaption || '';
+    const subCls = opts.subcaptionCls || '';
+    const chart = lineChart(data, opts);
+    if (!caption && !sub) return chart;
+    return `<div class="lc-chart-inner">${chart}
+      <div class="lc-chart-caption">
+        <span>${caption}</span>
+        ${sub ? `<span class="lc-chart-caption-sub ${subCls}">${sub}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function barChart(data, opts) {
+    opts = opts || {};
+    const color = opts.color || _chartColor();
+    const height = opts.height || 80;
+    const width = 400;
+    const gap = 3;
+    const label = opts.ariaLabel || 'Bar chart';
+
+    if (!data || data.length === 0) {
+      return `<div class="lc-chart-empty" style="height:${height}px">No data to chart</div>`;
+    }
+
+    const max = Math.max(...data.map(v => Math.abs(v)), 1);
+    const barW = (width - gap * (data.length - 1)) / data.length;
+
+    const bars = data.map((v, i) => {
+      const barH = Math.max(2, (Math.abs(v) / max) * height);
+      const x = i * (barW + gap);
+      const y = height - barH;
+      const fill = v >= 0 ? color : LCBrand.h_ef4444;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${fill}"/>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lc-chart-svg" style="width:${opts.width ? opts.width + 'px' : '100%'};height:${height}px;display:block;" role="img" aria-label="${label}">${bars}</svg>`;
+  }
+
+  function ringProgress(pct, color, size, strokeWidth) {
+    pct = Math.min(100, Math.max(0, pct || 0));
+    color = color || _chartColor();
+    size = size || 56;
+    strokeWidth = strokeWidth || 5;
+    const r = (size - strokeWidth) / 2;
+    const circ = 2 * Math.PI * r;
+    const offset = circ * (1 - pct / 100);
+    const cx = size / 2;
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="var(--psx-border)" stroke-width="${strokeWidth}"/>
+      <circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}"
+        stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"
+        stroke-linecap="round" transform="rotate(-90 ${cx} ${cx})"/>
+    </svg>`;
+  }
+
+  function sparkline(data, opts) {
+    opts = opts || {};
+    const h = opts.height || 20;
+    const w = opts.width || 56;
+    if (!data || data.length < 2) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const up = opts.positive != null ? opts.positive : data[data.length - 1] >= data[0];
+    const color = opts.color || (up ? 'var(--psx-up)' : 'var(--psx-down)');
+    const pts = data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - 2 - ((v - min) / range) * (h - 4);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="lc-sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  function holdingSpark(h) {
+    const px = h.price || 0;
+    if (px <= 0) return '';
+    const prev = (typeof State !== 'undefined' ? State.getPrevClose(h.symbol) : null) || px;
+    const avg = h.quantity > 0 ? h.costBasis / h.quantity : px;
+    const data = [avg, (avg + prev) / 2, prev, px].filter((v) => v > 0);
+    if (data.length < 2) return sparkline([px, px], { positive: (h.pnlPct || 0) >= 0 });
+    return sparkline(data, { positive: (h.pnlPct || 0) >= 0 });
+  }
+
+  /**
+   * Horizontal range bar with current-value marker (52-week range,
+   * fair-value gauge). Gradient low→high, dot at current position.
+   */
+  function rangeBar(low, high, current, opts) {
+    opts = opts || {};
+    if (!(high > low) || current == null) return '';
+    const pct = Math.max(0, Math.min(100, ((current - low) / (high - low)) * 100));
+    const lowLabel = opts.lowLabel || '';
+    const highLabel = opts.highLabel || '';
+    const markerLabel = opts.markerLabel || '';
+    return `<div class="lc-range-bar" role="img" aria-label="${opts.ariaLabel || `Range ${low} to ${high}, current ${current}`}">
+      <div class="lc-range-bar-track"><span class="lc-range-bar-marker" style="left:${pct.toFixed(1)}%"></span></div>
+      <div class="lc-range-bar-labels">
+        <span>${lowLabel}</span>
+        ${markerLabel ? `<span class="lc-range-bar-mid">${markerLabel}</span>` : ''}
+        <span>${highLabel}</span>
+      </div>
+    </div>`;
+  }
+
+  return { lineChart, lineChartBlock, barChart, ringProgress, sparkline, holdingSpark, rangeBar, _chartColor };
+})();
+window.Charts = Charts;
+
+;/* === js/ui/tradingview.js === */
+'use strict';
+const TradingViewUI = (() => {
+  let _chartReq = 0;
+
+  function resolveTvSymbol(symbol, assetClass) {
+    const intl = (window.INTL_STOCKS || []).find(x => x.symbol === symbol);
+    if (intl?.tv) return intl.tv;
+    const cry = (window.CRYPTO_ASSETS || []).find(x => x.symbol === symbol);
+    if (cry?.tv) return cry.tv;
+    if (assetClass === 'crypto') return `BINANCE:${symbol}USDT`;
+    if (assetClass === 'intl') return `NASDAQ:${symbol}`;
+    const psx = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === symbol);
+    if (psx) return `PSX:${symbol}`;
+    return null;
+  }
+
+  async function _svgChart(el, symbol, height, reqId) {
+    height = height || 360;
+    el.innerHTML = `<div class="lc-chart-loading">Loading chart…</div>`;
+    let series = [];
+    if (typeof Prices !== 'undefined' && Prices.fetchPriceSeries) {
+      try { series = await Prices.fetchPriceSeries(symbol, 40); } catch (_) {}
+    }
+    if (reqId != null && reqId !== _chartReq) return;
+    if (series.length < 2) {
+      el.innerHTML = `<p class="psx-muted">No history available for <strong>${symbol}</strong> right now.</p>`;
+      return;
+    }
+    const up = series[series.length - 1] >= series[0];
+    const tvSym = resolveTvSymbol(symbol);
+    const tvLink = tvSym
+      ? `<p class="lc-chart-caption"><a class="lc-link-btn" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym)}" target="_blank" rel="noopener noreferrer">Open ${tvSym} in TradingView ↗</a></p>`
+      : '';
+    el.innerHTML = `<div class="lc-chart-fallback">${Charts.lineChart(series, { height, color: up ? LCBrand.h_22c55e : LCBrand.h_ef4444, fill: true })}${tvLink}<p class="psx-muted lc-chart-caption">${series.length} daily points · USD for US · PKR for PSX</p></div>`;
+  }
+
+  /** Reliable SVG price chart — no embedded TradingView widget */
+  async function mount(containerId, symbol, assetClass, opts) {
+    opts = opts || {};
+    const el = document.getElementById(containerId);
+    if (!el || !symbol) return;
+    const reqId = ++_chartReq;
+    await _svgChart(el, symbol, opts.height || 360, reqId);
+  }
+
+  function destroy(containerId) {
+    _chartReq++;
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = '';
+  }
+
+  return { mount, destroy, resolveTvSymbol };
+})();
+window.TradingViewUI = TradingViewUI;
+
+;/* === js/services/fund-nav-service.js === */
+'use strict';
+/** Meezan / AMC fund NAV — manual overrides in settings (no public API). */
+const FundNavService = (() => {
+  function overrides() {
+    const s = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    return s.fundNavOverrides || {};
+  }
+
+  function navFor(symbol) {
+    const sym = String(symbol || '').toUpperCase();
+    const o = overrides()[sym];
+    if (o?.nav > 0) return { nav: o.nav, source: 'manual_nav', asOf: o.asOf || null };
+    const seed = (window.MEEZAN_FUNDS || []).find((f) => f.symbol === sym);
+    const fromState = typeof State !== 'undefined' ? State.getPrice(sym) : 0;
+    if (fromState > 0) return { nav: fromState, source: State.getPriceSource?.(sym) || 'seed', asOf: null };
+    if (seed?.currentNav > 0) return { nav: seed.currentNav, source: 'meezan_seed', asOf: seed.navAsOf || null };
+    return { nav: 0, source: 'none', asOf: null };
+  }
+
+  function applyAll() {
+    if (typeof State === 'undefined') return 0;
+    let n = 0;
+    Object.entries(overrides()).forEach(([sym, row]) => {
+      if (!(row?.nav > 0)) return;
+      State.updatePrice(sym, {
+        price: row.nav,
+        prevClose: row.nav,
+        source: 'manual_nav',
+        ts: row.updatedAt ? Date.parse(row.updatedAt) || Date.now() : Date.now(),
+      });
+      n++;
+    });
+    return n;
+  }
+
+  function saveNav(symbol, nav, asOf) {
+    const sym = String(symbol || '').toUpperCase();
+    const val = parseFloat(nav);
+    if (!(val > 0)) return false;
+    State.update((s) => {
+      s.settings = s.settings || {};
+      s.settings.fundNavOverrides = s.settings.fundNavOverrides || {};
+      s.settings.fundNavOverrides[sym] = {
+        nav: val,
+        asOf: asOf || new Date().toISOString().slice(0, 10),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    State.updatePrice(sym, { price: val, prevClose: val, source: 'manual_nav', ts: Date.now() });
+    return true;
+  }
+
+  function label(symbol) {
+    const { source, asOf } = navFor(symbol);
+    if (source === 'manual_nav') return asOf ? `Manual NAV · ${asOf}` : 'Manual NAV';
+    if (source === 'meezan_seed') return 'Statement seed';
+    return '';
+  }
+
+  return { overrides, navFor, applyAll, saveNav, label };
+})();
+window.FundNavService = FundNavService;
+
+;/* === js/services/news-service.js === */
+'use strict';
+/**
+ * Portfolio news — Yahoo, Google News RSS, BBC Business (via worker proxy), optional GNews key.
+ * Rule-based impact tags for decision support (not AI advice).
+ */
+const NewsService = (() => {
+  const CACHE_MS = 900000;
+  const _cache = new Map();
+
+  const IMPACT_RULES = [
+    { id: 'earnings', re: /earnings|profit|revenue|eps|quarterly results/i, label: 'Earnings', severity: 'high', bias: 'neutral' },
+    { id: 'dividend', re: /dividend|payout|yield|interim|final cash/i, label: 'Dividend', severity: 'medium', bias: 'positive' },
+    { id: 'upgrade', re: /upgrade|outperform|buy rating|raised target/i, label: 'Upgrade', severity: 'medium', bias: 'positive' },
+    { id: 'downgrade', re: /downgrade|underperform|sell rating|cut target/i, label: 'Downgrade', severity: 'high', bias: 'negative' },
+    { id: 'macro', re: /fed |interest rate|inflation|imf|sbp|rupee|dollar|oil price|kse-100/i, label: 'Macro', severity: 'medium', bias: 'neutral' },
+    { id: 'regulatory', re: /sec |secp|fine|investigation|lawsuit|regulator/i, label: 'Regulatory', severity: 'high', bias: 'negative' },
+    { id: 'merger', re: /merger|acquisition|takeover|buyout|m&a/i, label: 'M&A', severity: 'high', bias: 'neutral' },
+  ];
+
+  function _proxyBase() {
+    const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    const raw = typeof resolvePsxProxyUrl === 'function'
+      ? resolvePsxProxyUrl(settings.psxProxyUrl)
+      : (window.LEDGERCAP_CONFIG?.psxProxyUrl || '').trim();
+    return raw.replace(/\/$/, '');
+  }
+
+  function _yahooSymbol(sym, kind) {
+    if (kind === 'intl' || kind === 'crypto') return sym;
+    return `${sym}.KA`;
+  }
+
+  function _tagImpact(title, summary) {
+    const text = `${title || ''} ${summary || ''}`;
+    const hits = IMPACT_RULES.filter(r => r.re.test(text));
+    if (!hits.length) return { tags: ['General'], severity: 'low', bias: 'neutral', hint: '' };
+    const top = hits.sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.severity] - { high: 0, medium: 1, low: 2 }[b.severity]))[0];
+    const bias = hits.some(h => h.bias === 'negative') ? 'negative' : hits.some(h => h.bias === 'positive') ? 'positive' : 'neutral';
+    const hint = bias === 'positive'
+      ? 'Potentially supportive for holders — verify against your thesis.'
+      : bias === 'negative'
+        ? 'Headline risk — review position size and stop-loss discipline.'
+        : 'Material event — read full story before trading.';
+    return { tags: hits.map(h => h.label), severity: top.severity, bias, hint };
+  }
+
+  function _normalizeItem(it, symbol) {
+    return {
+      id: it.id || it.url || `${it.source}:${it.title}`,
+      title: it.title,
+      url: it.url,
+      publisher: it.publisher || it.source,
+      publishedAt: it.publishedAt,
+      symbol: it.symbol || symbol,
+      portfolioSymbol: it.portfolioSymbol || symbol,
+      source: it.source || 'News',
+      impact: it.impact || _tagImpact(it.title),
+    };
+  }
+
+  async function _fetchWorkerNews(path) {
+    const base = _proxyBase();
+    if (!base) return [];
+    try {
+      const res = await fetch(`${base}/${path}`, { headers: { Accept: 'application/json' } });
+      if (!res.ok) return [];
+      const j = await res.json();
+      return j.articles || [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  async function _fetchYahooNews(symbol, kind) {
+    const viaWorker = await _fetchWorkerNews(`news/yahoo/${encodeURIComponent(symbol)}?kind=${encodeURIComponent(kind || 'stock')}`);
+    if (viaWorker.length) return viaWorker;
+    const ysym = _yahooSymbol(symbol, kind);
+    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ysym)}&newsCount=6`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Yahoo ${res.status}`);
+    const j = await res.json();
+    return (j.news || []).map(n => ({
+      id: n.uuid || n.link,
+      title: n.title,
+      url: n.link,
+      publisher: n.publisher,
+      publishedAt: n.providerPublishTime ? new Date(n.providerPublishTime * 1000).toISOString() : null,
+      symbol,
+      source: 'Yahoo Finance',
+    }));
+  }
+
+  async function _fetchGoogleNewsRss(query, symbol) {
+    const q = encodeURIComponent(query);
+    const sym = encodeURIComponent(symbol || '—');
+    const viaWorker = await _fetchWorkerNews(`news/google?q=${q}&symbol=${sym}`);
+    if (viaWorker.length) return viaWorker;
+    return [];
+  }
+
+  async function _fetchBbcBusiness() {
+    return _fetchWorkerNews('news/bbc');
+  }
+
+  async function _fetchGNews(query, apiKey) {
+    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=6&apikey=${encodeURIComponent(apiKey)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`GNews ${res.status}`);
+    const j = await res.json();
+    return (j.articles || []).map(a => ({
+      id: a.url,
+      title: a.title,
+      url: a.url,
+      publisher: a.source?.name,
+      publishedAt: a.publishedAt,
+      symbol: query,
+      source: 'GNews',
+    }));
+  }
+
+  function _dedupe(items) {
+    const seen = new Set();
+    return items.filter(a => {
+      const key = (a.title || '').toLowerCase().replace(/\W+/g, '').slice(0, 80);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  async function fetchForSymbol(symbol, opts) {
+    opts = opts || {};
+    const kind = opts.kind || 'stock';
+    const key = `${symbol}:${kind}`;
+    const hit = _cache.get(key);
+    if (hit && Date.now() - hit.ts < CACHE_MS) return hit.items;
+
+    const q = kind === 'stock' ? `${symbol} Pakistan PSX stock` : symbol;
+    const batches = await Promise.all([
+      _fetchYahooNews(symbol, kind).catch(() => []),
+      _fetchGoogleNewsRss(q, symbol).catch(() => []),
+    ]);
+    let items = batches.flat();
+
+    const gKey = typeof State !== 'undefined' ? State.get('settings')?.gnewsApiKey : '';
+    if (gKey) {
+      try {
+        const gq = kind === 'stock' ? `${symbol} Pakistan stock PSX` : symbol;
+        items = items.concat(await _fetchGNews(gq, gKey));
+      } catch (_) {}
+    }
+
+    items = _dedupe(items).map(it => _normalizeItem(it, symbol));
+    _cache.set(key, { ts: Date.now(), items });
+    return items;
+  }
+
+  function portfolioSymbols(state) {
+    state = state || (typeof State !== 'undefined' ? State.get() : {});
+    const txs = state.transactions || [];
+    const syms = [];
+    // Funds (Meezan NAVs) have no per-security news — querying their ticker
+    // returns unrelated global headlines. They are covered by macro PSX news.
+    Ledger.calcHoldings(txs).forEach(h => syms.push({ symbol: h.symbol, kind: 'stock', weight: h.shares * (State.getPrice(h.symbol) || h.avgCost) }));
+    (Ledger.calcGlobalHoldings ? Ledger.calcGlobalHoldings(txs) : []).forEach(h => syms.push({ symbol: h.symbol, kind: h.assetClass === 'crypto' ? 'crypto' : 'intl', weight: h.qty }));
+    return syms.sort((a, b) => (b.weight || 0) - (a.weight || 0)).slice(0, 8);
+  }
+
+  async function fetchMacroNews() {
+    const key = '__macro__';
+    const hit = _cache.get(key);
+    if (hit && Date.now() - hit.ts < CACHE_MS) return hit.items;
+    // Pakistan-specific only — generic BBC business was drowning out
+    // relevant PSX/economy headlines.
+    const batches = await Promise.all([
+      _fetchGoogleNewsRss('KSE-100 Pakistan stock market PSX', 'PSX'),
+      _fetchGoogleNewsRss('Pakistan rupee economy SBP inflation', 'Macro'),
+      _fetchGoogleNewsRss('Pakistan Stock Exchange listed companies', 'PSX'),
+    ]);
+    const items = _dedupe(batches.flat()).map(it => _normalizeItem(it, it.symbol || 'PSX'));
+    _cache.set(key, { ts: Date.now(), items });
+    return items;
+  }
+
+  async function fetchPortfolioNews(state) {
+    state = state || (typeof State !== 'undefined' ? State.get() : {});
+    const picks = portfolioSymbols(state);
+    const base = _proxyBase();
+
+    // PSX macro news (KSE-100, rupee, SBP) is always relevant — it leads.
+    const macro = (await fetchMacroNews().catch(() => [])) || [];
+
+    // Per-symbol items are only kept when the headline actually names the
+    // company/ticker — PSX tickers aren't in global news indexes, so raw
+    // per-ticker feeds return unrelated noise otherwise.
+    const kindOf = {};
+    picks.forEach(p => { kindOf[p.symbol] = p.kind; });
+
+    let perSymbol = [];
+    if (picks.length && base) {
+      const syms = picks.slice(0, 6).map(p => p.symbol).join(',');
+      const viaAgg = await _fetchWorkerNews(`news/aggregate?symbols=${encodeURIComponent(syms)}&limit=14`).catch(() => []);
+      perSymbol = viaAgg.map(it => _normalizeItem(it, it.portfolioSymbol || it.symbol));
+    }
+    const nameFor = (sym) => {
+      const s = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === sym);
+      return (s?.name || '').split(/\s+/).filter(w => w.length > 3).slice(0, 2);
+    };
+    const relevant = perSymbol.filter(n => {
+      const sym = n.portfolioSymbol || n.symbol || '';
+      // Yahoo indexes US/crypto tickers — their per-symbol news is genuine.
+      if (kindOf[sym] === 'intl' || kindOf[sym] === 'crypto') return true;
+      // PSX tickers aren't indexed — require the headline to name the company.
+      const title = (n.title || '').toUpperCase();
+      if (sym && title.includes(sym.toUpperCase())) return true;
+      return nameFor(sym).some(w => title.includes(w.toUpperCase()));
+    });
+
+    const merged = _dedupe(macro.concat(relevant))
+      .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))
+      .slice(0, 12);
+    return merged;
+  }
+
+  function newsFingerprint(items) {
+    return (items || []).slice(0, 6).map(n => (n.title || '').slice(0, 40)).join('|');
+  }
+
+  function toTelegramRows(items) {
+    return (items || []).slice(0, 6).map(n => ({
+      symbol: n.portfolioSymbol || n.symbol || '—',
+      title: (n.title || '').slice(0, 72),
+      tag: (n.impact?.tags || [])[0] || 'News',
+      source: n.source || n.publisher || 'News',
+    }));
+  }
+
+  function impactBadge(impact) {
+    if (!impact) return '';
+    const cls = impact.bias === 'positive' ? 'psx-up' : impact.bias === 'negative' ? 'psx-down' : '';
+    const tags = (impact.tags || []).slice(0, 2).join(' · ');
+    return `<span class="lc-news-impact ${cls}">${tags}</span>`;
+  }
+
+  return {
+    fetchForSymbol,
+    fetchPortfolioNews,
+    fetchMacroNews,
+    portfolioSymbols,
+    newsFingerprint,
+    toTelegramRows,
+    impactBadge,
+    _tagImpact,
+    IMPACT_RULES,
+  };
+})();
+window.NewsService = NewsService;
+
+;/* === js/services/notification-scheduler.js === */
+'use strict';
+/** PWA-open scheduler — weekday alerts (PKT). Scheduled digests use worker cron when cloud sync on. */
+const NotificationScheduler = (() => {
+  const INTERVAL_MS = 15 * 60 * 1000;
+  const LS_PREFIX = 'ledgercap_dedupe_';
+  let _timer = null;
+
+  function pktParts() {
+    return typeof PsxSession !== 'undefined'
+      ? PsxSession.pktParts()
+      : { weekday: '', hour: 0, minute: 0, dateKey: '', mins: 0 };
+  }
+
+  function _isWeekday(pkt) {
+    return typeof PsxSession !== 'undefined' ? PsxSession.isWeekday(pkt) : false;
+  }
+
+  function _isPsxSession(pkt) {
+    return typeof PsxSession !== 'undefined' ? PsxSession.isOpen(pkt) : false;
+  }
+
+  function _settings() {
+    return window.State?.get('settings') || {};
+  }
+
+  function _syncKey() {
+    return String(_settings().telegramSyncKey || '').trim();
+  }
+
+  function _cloudCronActive() {
+    return _syncKey() && !!_settings().telegramCloudSyncEnabled;
+  }
+
+  async function _claimOnce(key, ttlSec) {
+    if (_syncKey() && window.TelegramService?.claimDedupeKey) {
+      const r = await TelegramService.claimDedupeKey(key, ttlSec);
+      if (r.via === 'kv') return r.claimed;
+    }
+    const lsKey = LS_PREFIX + key;
+    if (localStorage.getItem(lsKey)) return false;
+    localStorage.setItem(lsKey, String(Date.now()));
+    return true;
+  }
+
+  async function _maybeMorningBrief(pkt) {
+    const s = _settings();
+    if (!s.telegramMorningEnabled) return;
+    if (!window.TelegramService?.isConfigured()) return;
+    if (_cloudCronActive()) return;
+    if (!_isWeekday(pkt)) return;
+    if (pkt.hour !== 9 || pkt.minute >= 15) return;
+    const claimKey = `brief:${pkt.dateKey}`;
+    if (!(await _claimOnce(claimKey, 90000))) return;
+    const res = await TelegramService.sendMorningBriefNow();
+    if (res.ok) {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try { new Notification('LedgerCap', { body: 'Morning brief sent to Telegram', icon: './assets/icons/icon-192.png' }); } catch (_) {}
+      }
+    } else {
+      /* soft — worker/brief unavailable; no console noise for LH bp */
+    }
+  }
+
+  async function _maybeDividendReminders(pkt) {
+    const s = _settings();
+    if (!s.telegramDividendEnabled || !TelegramService?.isConfigured()) return;
+    if (!_isWeekday(pkt)) return;
+    if (pkt.hour !== 9 || pkt.minute >= 30) return;
+    const claimKey = `dividend:${pkt.dateKey}`;
+    if (!(await _claimOnce(claimKey, 90000))) return;
+    if (typeof DividendService === 'undefined') return;
+    const upcoming = DividendService.getUpcoming() || [];
+    const soon = upcoming
+      .map((u) => {
+        const ex = u.exDate || u.ex_date;
+        if (!ex) return null;
+        const days = Math.ceil((new Date(ex + 'T12:00:00') - new Date()) / 86400000);
+        if (days < 0 || days > 7) return null;
+        const amountPkr = u.amountPerShare ?? u.dps ?? u.amount ?? 0;
+        if (!(amountPkr > 0)) return null;
+        return { symbol: u.symbol, days, amountPkr };
+      })
+      .filter(Boolean);
+    if (!soon.length) return;
+    const text = TelegramService.formatDividendReminder(soon);
+    if (!text) return;
+    await TelegramService.sendMessage(text);
+  }
+
+  async function _maybePriceAlerts(pkt) {
+    const s = _settings();
+    if (!s.telegramPriceAlertsEnabled) return;
+    if (!_isWeekday(pkt) || !_isPsxSession(pkt)) return;
+    if (typeof PriceAlertsService !== 'undefined') {
+      PriceAlertsService.checkAll({ telegramOnly: true });
+    }
+  }
+
+  async function _maybeIntradayNews(pkt) {
+    const s = _settings();
+    if (!s.telegramIntradayNewsEnabled || !TelegramService?.isConfigured()) return;
+    if (!_isWeekday(pkt) || !_isPsxSession(pkt)) return;
+    const claimKey = `news:${pkt.dateKey}-${pkt.hour}`;
+    if (!(await _claimOnce(claimKey, 7200))) return;
+    if (typeof NewsService === 'undefined') return;
+    const items = await NewsService.fetchPortfolioNews();
+    if (!items.length) return;
+    const fp = NewsService.newsFingerprint(items);
+    const lastFp = localStorage.getItem('ledgercap_last_news_fp');
+    if (fp && fp === lastFp) return;
+    const rows = NewsService.toTelegramRows(items);
+    const text = TelegramBriefFormat.formatNewsDigest(rows, 'Din ki khabrain / Intraday news');
+    if (!text) return;
+    const res = await TelegramService.sendMessage(text);
+    if (res.ok && fp) localStorage.setItem('ledgercap_last_news_fp', fp);
+  }
+
+  async function tick() {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    if (!window.TelegramService?.isConfigured()) return;
+    const pkt = pktParts();
+    await _maybeMorningBrief(pkt);
+    await _maybeDividendReminders(pkt);
+    if (_settings().telegramIntradayEnabled && _isPsxSession(pkt)) {
+      const claimKey = `intraday:${pkt.dateKey}-${pkt.hour}`;
+      if (await _claimOnce(claimKey, 7200) && typeof IntradaySignals !== 'undefined') {
+        const signals = IntradaySignals.scan?.() || [];
+        if (signals.length) {
+          await TelegramService.sendMessage(TelegramService.formatIntradayDigest(signals));
+        }
+      }
+    }
+    await _maybePriceAlerts(pkt);
+    await _maybeIntradayNews(pkt);
+    if (_settings().telegramCloudSyncEnabled && window.TelegramService?.syncBriefToCloud) {
+      await TelegramService.syncBriefToCloud().catch(() => {});
+    }
+  }
+
+  function init() {
+    if (_timer) return;
+    tick();
+    _timer = setInterval(tick, INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) tick();
+    });
+  }
+
+  function stop() {
+    if (_timer) {
+      clearInterval(_timer);
+      _timer = null;
+    }
+  }
+
+  return { init, stop, tick, pktParts };
+})();
+window.NotificationScheduler = NotificationScheduler;
+
+;/* === js/services/glance-bridge.js === */
+'use strict';
+/** Home-screen / lock-screen glance snapshot (localStorage + BroadcastChannel). */
+const GlanceBridge = (() => {
+  const KEY = 'ledgercap_glance';
+  const CH = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('ledgercap_glance') : null;
+
+  function publish() {
+    if (typeof State === 'undefined' || typeof PortfolioAnalyticsService === 'undefined') return;
+    const s = PortfolioAnalyticsService.getSummary(State.get());
+    const daily = State.calcDailyPnl();
+    const settings = State.get('settings') || {};
+    const payload = {
+      netWorth: s.totalValue,
+      dailyPnl: daily,
+      dailyPct: s.totalValue > 0 ? (daily / s.totalValue) * 100 : 0,
+      currency: settings.displayCurrency || 'PKR',
+      usdRate: settings.usdRate || FxService?.getUsdRate?.() || 280,
+      ts: Date.now(),
+      live: typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {},
+    };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(payload));
+      CH?.postMessage(payload);
+    } catch (_) {}
+    return payload;
+  }
+
+  function read() {
+    try {
+      return JSON.parse(localStorage.getItem(KEY) || 'null');
+    } catch { return null; }
+  }
+
+  return { publish, read, KEY };
+})();
+window.GlanceBridge = GlanceBridge;
+
+;/* === js/services/price-alerts-service.js === */
+'use strict';
+/** Price triggers — crossover during PSX session; toast + Telegram */
+const PriceAlertsService = (() => {
+  const ARM_PREFIX = 'ledgercap_alert_arm:';
+  const FIRED_PREFIX = 'ledgercap_alert_fired:';
+  const SEED_SOURCES = new Set(['fallback', 'seed', 'meezan_seed']);
+
+  function _armKey(id) { return ARM_PREFIX + id; }
+  function _firedKey(id) { return FIRED_PREFIX + id; }
+
+  function list() {
+    const state = State.get();
+    const holdingAlerts = (state.priceAlerts || []).filter((a) => a.enabled !== false);
+    const watch = (state.watchlist || [])
+      .filter((w) => w.alertEnabled !== false && w.targetPrice > 0)
+      .map((w) => ({
+        id: `wl:${w.id}`,
+        symbol: w.symbol,
+        direction: 'below',
+        price: w.targetPrice,
+        source: 'watchlist',
+      }));
+    return [...holdingAlerts, ...watch];
+  }
+
+  function _quoteReliable(q) {
+    if (!q?.price) return false;
+    if (q.seeded) return false;
+    if (SEED_SOURCES.has(q.source) && !(q.ts > 0)) return false;
+    return true;
+  }
+
+  /** Arm/re-arm — fire only on crossover into hit zone */
+  function _crossed(a, price) {
+    const key = _armKey(a.id);
+    let armed = localStorage.getItem(key);
+    if (armed === null) {
+      if (a.direction === 'above') armed = price < a.price ? '1' : '0';
+      else armed = price > a.price ? '1' : '0';
+      localStorage.setItem(key, armed);
+      return false;
+    }
+    armed = armed === '1';
+    if (a.direction === 'below') {
+      if (price > a.price) {
+        localStorage.setItem(key, '1');
+        return false;
+      }
+      if (armed && price <= a.price) {
+        localStorage.setItem(key, '0');
+        return true;
+      }
+      return false;
+    }
+    if (price < a.price) {
+      localStorage.setItem(key, '1');
+      return false;
+    }
+    if (armed && price >= a.price) {
+      localStorage.setItem(key, '0');
+      return true;
+    }
+    return false;
+  }
+
+  function checkAll(opts) {
+    opts = opts || {};
+    const pkt = typeof PsxSession !== 'undefined' ? PsxSession.pktParts() : null;
+    const sessionOpen = opts.forceSession || (pkt && PsxSession.isOpen(pkt));
+    if (!opts.skipSession && !sessionOpen) return { skipped: 'market closed' };
+
+    const alerts = list();
+    if (!alerts.length) return { checked: 0 };
+
+    const now = Date.now();
+    const fired = JSON.parse(localStorage.getItem('ledgercap_alerts_fired') || '{}');
+    let n = 0;
+
+    alerts.forEach((a) => {
+      const q = MarketDataService.getQuote(a.symbol);
+      if (!_quoteReliable(q)) return;
+      if (!_crossed(a, q.price)) return;
+
+      const key = _firedKey(a.id);
+      if (fired[key] && now - fired[key] < 3600000) return;
+      fired[key] = now;
+      n++;
+
+      const dir = a.direction === 'above' ? 'above' : 'below';
+      const stale = q.quoteLabel === 'Last close' ? ' (last close)' : '';
+      const msg = `${a.symbol} ${PlatformUI.fmt(q.price)}${stale} — crossed ${dir} ${PlatformUI.fmt(a.price)}`;
+
+      if (!opts.telegramOnly) {
+        if (typeof App !== 'undefined') App.showToast(msg, 'success');
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try { new Notification('LedgerCap alert', { body: msg, icon: './assets/icons/icon-192.png' }); } catch (_) {}
+        }
+        if (typeof LcPolish !== 'undefined') LcPolish.hapticConfirm();
+      }
+
+      const sendTg = opts.telegram !== false
+        && typeof TelegramService !== 'undefined'
+        && TelegramService.isConfigured()
+        && State.get('settings')?.telegramPriceAlertsEnabled;
+
+      if (sendTg) {
+        TelegramService.sendMessage(TelegramService.formatPriceAlert({
+          symbol: a.symbol,
+          price: q.price,
+          target: a.price,
+          direction: dir,
+          quoteLabel: q.quoteLabel,
+        })).catch(() => {});
+      }
+    });
+
+    localStorage.setItem('ledgercap_alerts_fired', JSON.stringify(fired));
+    return { checked: alerts.length, fired: n };
+  }
+
+  function upsert(alert) {
+    State.update((s) => {
+      if (!s.priceAlerts) s.priceAlerts = [];
+      const i = s.priceAlerts.findIndex((x) => x.id === alert.id);
+      if (i >= 0) s.priceAlerts[i] = { ...s.priceAlerts[i], ...alert };
+      else s.priceAlerts.push(alert);
+    });
+    try { localStorage.removeItem(_armKey(alert.id)); } catch (_) {}
+  }
+
+  function remove(id) {
+    State.update((s) => {
+      s.priceAlerts = (s.priceAlerts || []).filter((a) => a.id !== id);
+    });
+    try {
+      localStorage.removeItem(_armKey(id));
+      localStorage.removeItem(_firedKey(id));
+    } catch (_) {}
+  }
+
+  return { list, checkAll, upsert, remove, _crossed };
+})();
+window.PriceAlertsService = PriceAlertsService;
+
+;/* === js/services/live-price-stream.js === */
+'use strict';
+/** Live price SSE — worker push during PSX session (replaces blind poll when connected). */
+const LivePriceStream = (() => {
+  let _es = null;
+  let _connected = false;
+  let _lastTick = 0;
+
+  function _proxyBase() {
+    const settings = typeof State !== 'undefined' ? State.get('settings') || {} : {};
+    const raw = typeof resolvePsxProxyUrl === 'function'
+      ? resolvePsxProxyUrl(settings.psxProxyUrl)
+      : (window.LEDGERCAP_CONFIG?.psxProxyUrl || '').trim();
+    return raw.replace(/\/$/, '');
+  }
+
+  function _symbols() {
+    const state = State.get();
+    const txs = state.transactions || [];
+    const holdings = Ledger.calcHoldings(txs);
+    const funds = Ledger.calcFundHoldings(txs);
+    const wl = (state.watchlist || []).map((w) => w.symbol);
+    return [...new Set([
+      ...holdings.map((h) => h.symbol),
+      ...funds.map((f) => f.symbol),
+      ...wl,
+    ])].slice(0, 24);
+  }
+
+  function _enabled() {
+    const s = State.get('settings') || {};
+    if (s.liveStreamEnabled === false) return false;
+    return !!_proxyBase();
+  }
+
+  function _applyQuotes(quotes) {
+    if (!quotes || typeof quotes !== 'object') return 0;
+    let n = 0;
+    Object.entries(quotes).forEach(([sym, q]) => {
+      if (!q?.price) return;
+      State.updatePrice(sym, {
+        price: q.price,
+        prevClose: q.prevClose || q.price,
+        source: q.source || 'live-sse',
+        ts: q.ts || Date.now(),
+      });
+      n++;
+    });
+    if (n > 0) {
+      State.recordIntradaySnapshot?.();
+      State.logPortfolioSnapshot?.();
+      if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+      window.dispatchEvent(new CustomEvent('ledgercap:live-prices', { detail: { count: n, ts: Date.now() } }));
+    }
+    return n;
+  }
+
+  function stop() {
+    if (_es) {
+      _es.close();
+      _es = null;
+    }
+    _connected = false;
+  }
+
+  function start() {
+    stop();
+    if (!_enabled() || typeof document !== 'undefined' && document.hidden) return { ok: false, reason: 'disabled or hidden' };
+    const syms = _symbols();
+    if (!syms.length) return { ok: false, reason: 'no symbols' };
+    const base = _proxyBase();
+    const url = `${base}/sse/prices?symbols=${encodeURIComponent(syms.join(','))}&interval=20`;
+    try {
+      _es = new EventSource(url);
+      _es.onopen = () => { _connected = true; };
+      _es.onmessage = (ev) => {
+        _lastTick = Date.now();
+        try {
+          const data = JSON.parse(ev.data);
+          _applyQuotes(data.quotes);
+        } catch (_) {}
+      };
+      _es.onerror = () => {
+        _connected = false;
+        stop();
+        setTimeout(() => { if (!document.hidden) start(); }, 45000);
+      };
+      return { ok: true, symbols: syms.length };
+    } catch (e) {
+      return { ok: false, reason: e.message };
+    }
+  }
+
+  function status() {
+    return { connected: _connected, lastTick: _lastTick, enabled: _enabled() };
+  }
+
+  function init() {
+    if (typeof document === 'undefined') return;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else start();
+    });
+    window.addEventListener('ledgercap:live-prices', () => {
+      if (typeof App !== 'undefined') {
+        App._renderTicker?.();
+        if (Navigation?.current?.() === 'portfolio' && typeof PortfolioScreen !== 'undefined') {
+          PortfolioScreen.render();
+        }
+        if (Navigation?.current?.() === 'home' && typeof Hub !== 'undefined') Hub.render();
+      }
+      if (typeof PriceAlertsService !== 'undefined') PriceAlertsService.checkAll();
+    });
+    setTimeout(start, 2500);
+  }
+
+  return { init, start, stop, status };
+})();
+window.LivePriceStream = LivePriceStream;
+
+;/* === js/services/price-health.js === */
+'use strict';
+/** Calm last-close banner — market screens only, while live quotes are unavailable. */
+const PriceHealth = (() => {
+  const SEED_SOURCES = new Set(['fallback', 'seed', 'meezan_seed', 'none']);
+  const MARKET_SCREENS = new Set([
+    'home', 'market', 'research', 'screener', 'watchlist', 'signals', 'performance', 'comparison',
+  ]);
+
+  function _heldSymbols() {
+    if (typeof State === 'undefined' || typeof Ledger === 'undefined') return [];
+    const txs = State.get('transactions') || [];
+    const stocks = Ledger.calcHoldings(txs).map((h) => h.symbol);
+    const funds = Ledger.calcFundHoldings(txs).map((f) => f.symbol);
+    return [...new Set([...stocks, ...funds])];
+  }
+
+  function audit() {
+    const prices = State.get('prices') || {};
+    const symbols = _heldSymbols();
+    if (!symbols.length) return { total: 0, seeded: 0, stale: 0, live: 0, pctSeeded: 0, showBanner: false };
+
+    let seeded = 0;
+    let stale = 0;
+    let live = 0;
+    const now = Date.now();
+
+    symbols.forEach((sym) => {
+      const p = prices[sym];
+      const src = p?.source || 'none';
+      if (SEED_SOURCES.has(src) || !(p?.price > 0)) {
+        seeded++;
+        return;
+      }
+      if (p.ts && now - p.ts > 24 * 3600000) stale++;
+      else live++;
+    });
+
+    const total = symbols.length;
+    const pctSeeded = total ? seeded / total : 0;
+    // Live prices unavailable when most holdings are seed/fallback or long-stale.
+    const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3)
+      || !!(window._LC_SNAPSHOT_META?.stale?.psx);
+
+    return { total, seeded, stale, live, pctSeeded, showBanner };
+  }
+
+  function _asOfDate() {
+    const snapAt = window._LC_SNAPSHOT_META?.psxAt
+      || (typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.meta()?.psxAt : null);
+    if (snapAt) {
+      const d = new Date(snapAt);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+    const raw = window.FALLBACK_PRICES_UPDATED;
+    if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T12:00:00`);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+    return raw || 'the last session';
+  }
+
+  function _onMarketScreen() {
+    const tab = typeof Navigation !== 'undefined' && Navigation.current
+      ? Navigation.current()
+      : 'home';
+    return MARKET_SCREENS.has(tab);
+  }
+
+  function bannerHtml(rep) {
+    if (!_onMarketScreen()) return '';
+    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx) return '';
+    const date = _asOfDate();
+    const msg = `Prices are from the last close on ${date}. Live prices aren't available right now.`;
+    return `<div class="lc-price-health" role="status">
+      <span class="lc-price-health-msg">${msg}</span>
+      <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
+    </div>`;
+  }
+
+  function mount() {
+    if (localStorage.getItem('ledgercap_price_health_dismiss')) {
+      const host = document.getElementById('lc-price-health-host');
+      if (host) { host.innerHTML = ''; host.classList.add('hidden'); }
+      return;
+    }
+    const host = document.getElementById('lc-price-health-host');
+    if (!host) return;
+    const rep = audit();
+    const html = bannerHtml(rep);
+    host.innerHTML = html;
+    host.classList.toggle('hidden', !html);
+  }
+
+  function dismiss() {
+    try { localStorage.setItem('ledgercap_price_health_dismiss', String(Date.now())); } catch (_) {}
+    const host = document.getElementById('lc-price-health-host');
+    if (host) { host.innerHTML = ''; host.classList.add('hidden'); }
+  }
+
+  function clearDismiss() {
+    localStorage.removeItem('ledgercap_price_health_dismiss');
+  }
+
+  return { audit, mount, dismiss, clearDismiss, bannerHtml };
+})();
+window.PriceHealth = PriceHealth;
+
+;/* === js/capricorn-motion.js === */
+/* GENERATED by scripts/sync-design-system.mjs — DO NOT EDIT.
+   Source: shared/design-system/{capricorn-motion.js} */
+
+/* ════════════════════════════════════════════════════════════════
+   Capricorn Design System — motion runtime (no deps)
+   App shells (data-cap-app): instant reveals only — no RAF / tilt / parallax.
+   Marketing surfaces: full motion when not in app-fast mode.
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  function isAppShell() {
+    return document.body && document.body.getAttribute('data-cap-app') === '1';
+  }
+
+  function revealInstant(selector) {
+    document.querySelectorAll(selector).forEach(function (el) {
+      el.classList.add('is-visible');
+    });
+  }
+
+  function observeVisible(selector, visibleClass) {
+    var nodes = document.querySelectorAll(selector);
+    if (!nodes.length) return;
+    if (isAppShell() || reduced || !('IntersectionObserver' in window)) {
+      nodes.forEach(function (el) { el.classList.add(visibleClass); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add(visibleClass);
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -4% 0px' });
+    nodes.forEach(function (el, i) {
+      if (!el.style.getPropertyValue('--cap-stagger-i')) {
+        var sib = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : i;
+        el.style.setProperty('--cap-stagger-i', String(sib % 8));
+      }
+      io.observe(el);
+    });
+  }
+
+  function bindRipples() {
+    if (isAppShell()) return;
+    document.querySelectorAll('[data-cap-ripple], .cap-ripple-host').forEach(function (host) {
+      if (host.dataset.capRippleBound) return;
+      host.dataset.capRippleBound = '1';
+      host.addEventListener('pointerdown', function (ev) {
+        if (reduced) return;
+        var r = host.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        ripple.className = 'cap-ripple';
+        var size = Math.max(r.width, r.height) * 1.2;
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (ev.clientX - r.left - size / 2) + 'px';
+        ripple.style.top = (ev.clientY - r.top - size / 2) + 'px';
+        host.appendChild(ripple);
+        ripple.addEventListener('animationend', function () { ripple.remove(); });
+      });
+    });
+  }
+
+  function bindMagnetic() {
+    if (isAppShell() || reduced || !finePointer) return;
+    document.querySelectorAll('.cap-magnetic').forEach(function (el) {
+      if (el.dataset.capMagneticBound) return;
+      el.dataset.capMagneticBound = '1';
+      var strength = parseFloat(el.dataset.capStrength || '0.25');
+      el.addEventListener('pointermove', function (ev) {
+        var r = el.getBoundingClientRect();
+        el.style.setProperty('--cap-mx', ((ev.clientX - r.left - r.width / 2) * strength).toFixed(1));
+        el.style.setProperty('--cap-my', ((ev.clientY - r.top - r.height / 2) * strength).toFixed(1));
+      });
+      el.addEventListener('pointerleave', function () {
+        el.style.setProperty('--cap-mx', '0');
+        el.style.setProperty('--cap-my', '0');
+      });
+    });
+  }
+
+  function bindTilt() {
+    if (isAppShell() || reduced || !finePointer) return;
+    document.querySelectorAll('[data-cap-tilt]').forEach(function (el) {
+      if (el.dataset.capTiltBound) return;
+      el.dataset.capTiltBound = '1';
+      var max = parseFloat(el.dataset.capTilt || '6');
+      el.classList.add('cap-depth');
+      el.addEventListener('pointermove', function (ev) {
+        var r = el.getBoundingClientRect();
+        var rx = ((ev.clientY - r.top) / r.height - 0.5) * -2 * max;
+        var ry = ((ev.clientX - r.left) / r.width - 0.5) * 2 * max;
+        el.style.transform = 'perspective(800px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
+      });
+      el.addEventListener('pointerleave', function () { el.style.transform = ''; });
+    });
+  }
+
+  function bindHero3d() {
+    if (isAppShell() || reduced || !finePointer) return;
+    document.querySelectorAll('.cap-hero-3d').forEach(function (wrap) {
+      if (wrap.dataset.capHero3dBound) return;
+      wrap.dataset.capHero3dBound = '1';
+      var inner = wrap.querySelector('.cap-hero-3d-inner') || wrap;
+      wrap.addEventListener('pointermove', function (ev) {
+        var r = wrap.getBoundingClientRect();
+        var ry = ((ev.clientX - r.left) / r.width - 0.5) * 14;
+        var rx = ((ev.clientY - r.top) / r.height - 0.5) * -10;
+        inner.style.setProperty('--cap-ry', ry.toFixed(2) + 'deg');
+        inner.style.setProperty('--cap-rx', rx.toFixed(2) + 'deg');
+      });
+      wrap.addEventListener('pointerleave', function () {
+        inner.style.setProperty('--cap-ry', '0deg');
+        inner.style.setProperty('--cap-rx', '0deg');
+      });
+    });
+  }
+
+  function initScrollProgress() {
+    if (isAppShell()) return;
+    var progress = document.querySelector('.cap-scroll-progress');
+    if (!progress || reduced) return;
+    function updateScroll() {
+      var max = Math.max(document.documentElement.scrollHeight - innerHeight, 1);
+      progress.style.setProperty('--cap-scroll-progress', String(window.scrollY / max));
+    }
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    updateScroll();
+  }
+
+  function initParallax() {
+    if (isAppShell() || reduced) return;
+    var parallax = document.querySelectorAll('[data-cap-parallax]');
+    if (!parallax.length) return;
+    var ticking = false;
+    function updateParallax() {
+      parallax.forEach(function (el) {
+        var factor = parseFloat(el.dataset.capParallaxDepth || el.getAttribute('data-cap-parallax-depth') || '1') * 0.12;
+        var rect = el.getBoundingClientRect();
+        var center = rect.top + rect.height * 0.5 - innerHeight * 0.5;
+        el.style.setProperty('--cap-parallax-y', String(-center * factor * 0.08));
+      });
+      ticking = false;
+    }
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateParallax);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    updateParallax();
+  }
+
+  function init() {
+    if (isAppShell()) {
+      revealInstant('.cap-reveal, .cap-reveal-scale, .cap-reveal-lines, .cap-kinetic, .cap-stagger, .cap-stagger > *');
+      return;
+    }
+    observeVisible('.cap-reveal, .cap-reveal-scale, .cap-reveal-lines', 'is-visible');
+    observeVisible('.cap-kinetic', 'is-visible');
+    observeVisible('.cap-stagger', 'is-visible');
+    bindRipples();
+    bindMagnetic();
+    bindTilt();
+    bindHero3d();
+    initScrollProgress();
+    initParallax();
+  }
+
+  window.CapricornMotion = {
+    init: init,
+    refresh: function () {
+      if (isAppShell()) {
+        revealInstant('.cap-reveal:not(.is-visible), .cap-reveal-scale:not(.is-visible), .cap-kinetic:not(.is-visible)');
+        return;
+      }
+      init();
+    },
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+// Alias for modules that use CapMotion
+window.CapMotion = window.CapricornMotion;
+
+;/* === js/ui/motion-polish.js === */
+'use strict';
+/** Count-up, haptics, tap feedback, Cmd-K palette, post-render polish */
+const LcPolish = (() => {
+  const _countStore = new Map();
+  let _cmdkOpen = false;
+
+  const CMD_ACTIONS = () => [
+    { q: 'hub home', label: 'Hub', run: () => Navigation.go('home') },
+    { q: 'portfolio pnl', label: 'P&L / Portfolio', run: () => Navigation.go('portfolio') },
+    { q: 'market watch stocks', label: 'Stock watch', run: () => Navigation.go('market') },
+    { q: 'funds meezan nav', label: 'Fund NAVs', run: () => Navigation.go('funds') },
+    { q: 'research analyze', label: 'Research', run: () => Navigation.go('research') },
+    { q: 'transactions ledger', label: 'Transactions', run: () => Navigation.go('transactions') },
+    { q: 'settings', label: 'Settings', run: () => Navigation.go('settings') },
+    { q: 'refresh prices', label: 'Refresh all prices', run: () => App.refreshPrices() },
+    { q: 'add holding buy', label: 'Add holding', run: () => App.openAddTransaction() },
+    { q: 'import csv', label: 'Import CSV', run: () => Navigation.go('import') },
+    { q: 'telegram', label: 'Telegram settings', run: () => Navigation.go('settings') },
+    { q: 'zakat', label: 'Zakat calculator', run: () => Navigation.go('zakat') },
+    { q: 'dividends', label: 'Dividends', run: () => Navigation.go('dividends') },
+    { q: 'signals pilot', label: 'Market strategy', run: () => Navigation.go('signals') },
+  ];
+
+  function hapticsOn() {
+    return !!(typeof State !== 'undefined' && State.get('settings')?.hapticsEnabled);
+  }
+
+  function haptic(ms) {
+    if (!hapticsOn()) return;
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(ms || 10); } catch (_) {}
+    }
+  }
+
+  function hapticConfirm() { haptic([8, 40, 12]); }
+  function hapticDelete() { haptic([12, 30, 18]); }
+
+  function bindTapFeedback(root) {
+    root = root || document;
+    root.querySelectorAll('.psx-btn, .psx-nav-btn, .psx-side-btn, .lc-tool-card, .lc-link-btn, .lc-pulse-pill--btn, .lc-dash-market-card--btn, .lc-market-row, .lc-segment-btn, .rt-wl-card').forEach((el) => {
+      if (el.dataset.lcTapBound) return;
+      el.dataset.lcTapBound = '1';
+      el.addEventListener('pointerdown', () => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        el.classList.add('lc-tap-active');
+      }, { passive: true });
+      el.addEventListener('pointerup', () => el.classList.remove('lc-tap-active'), { passive: true });
+      el.addEventListener('pointerleave', () => el.classList.remove('lc-tap-active'), { passive: true });
+      el.addEventListener('click', () => haptic(8), { passive: true });
+    });
+  }
+
+  function animateCounts(root) {
+    root = root || document;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    root.querySelectorAll('[data-lc-count]').forEach((el) => {
+      const target = parseFloat(el.getAttribute('data-lc-count'));
+      if (!Number.isFinite(target)) return;
+      const key = el.getAttribute('data-lc-count-key') || el.id || 'c';
+      const firstPaint = !_countStore.has(key);
+      const prev = firstPaint ? target : _countStore.get(key);
+      _countStore.set(key, target);
+      const isPct = el.getAttribute('data-lc-count-pct') === '1';
+      const signed = el.getAttribute('data-lc-count-signed') === '1';
+      const isHero = el.classList.contains('lc-dash-hero-val');
+      const fmt = (v) => {
+        if (isPct) return `${v >= 0 && signed ? '+' : ''}${v.toFixed(2)}%`;
+        if (typeof PsxUI !== 'undefined') return PsxUI.fmt(v, { signed: signed && v !== 0 });
+        return Math.round(v).toLocaleString('en-PK');
+      };
+      /* Never count-up from 0 on load (hero LCP/TBT) — only tween when both ends are real. */
+      if (
+        reduced ||
+        firstPaint ||
+        isHero && (prev === 0 || target === 0) ||
+        prev === 0 ||
+        Math.abs(target - prev) < 0.005
+      ) {
+        el.textContent = fmt(target);
+        return;
+      }
+      const start = performance.now();
+      const dur = parseInt(el.getAttribute('data-lc-count-ms') || '520', 10);
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(prev + (target - prev) * ease);
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = fmt(target);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  function _ensureCmdk() {
+    if (document.getElementById('lc-cmdk')) return;
+    const el = document.createElement('div');
+    el.id = 'lc-cmdk';
+    el.className = 'lc-cmdk hidden';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'Quick actions');
+    el.innerHTML = `
+      <div class="lc-cmdk-backdrop" data-cmdk-close></div>
+      <div class="lc-cmdk-panel">
+        <input type="search" class="lc-cmdk-input" id="lc-cmdk-input" placeholder="Go to… or refresh prices" autocomplete="off" aria-label="Search actions">
+        <ul class="lc-cmdk-list" id="lc-cmdk-list" role="listbox"></ul>
+        <p class="lc-cmdk-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> run · <kbd>esc</kbd> close</p>
+      </div>`;
+    document.body.appendChild(el);
+    el.querySelector('[data-cmdk-close]').addEventListener('click', closeCmdk);
+    const inp = el.querySelector('#lc-cmdk-input');
+    inp.addEventListener('input', () => _paintCmdk(inp.value));
+    inp.addEventListener('keydown', (e) => {
+      const items = [...el.querySelectorAll('.lc-cmdk-item')];
+      const idx = items.findIndex((n) => n.classList.contains('on'));
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = items[Math.min(items.length - 1, idx + 1)] || items[0];
+        items.forEach((n) => n.classList.remove('on'));
+        if (next) next.classList.add('on');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = items[Math.max(0, idx - 1)] || items[items.length - 1];
+        items.forEach((n) => n.classList.remove('on'));
+        if (prev) prev.classList.add('on');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const on = items.find((n) => n.classList.contains('on')) || items[0];
+        if (on) on.click();
+      }
+    });
+  }
+
+  function _paintCmdk(q) {
+    const list = document.getElementById('lc-cmdk-list');
+    if (!list) return;
+    const qq = (q || '').trim().toLowerCase();
+    const rows = CMD_ACTIONS().filter((a) => !qq || a.label.toLowerCase().includes(qq) || a.q.includes(qq));
+    list.innerHTML = rows.map((a, i) =>
+      `<li><button type="button" class="lc-cmdk-item${i === 0 ? ' on' : ''}" role="option">${a.label}</button></li>`
+    ).join('');
+    list.querySelectorAll('.lc-cmdk-item').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        closeCmdk();
+        hapticConfirm();
+        rows[i].run();
+      });
+    });
+  }
+
+  function openCmdk() {
+    if (window.innerWidth < 900) return;
+    _ensureCmdk();
+    const el = document.getElementById('lc-cmdk');
+    if (!el) return;
+    el.classList.remove('hidden');
+    _cmdkOpen = true;
+    const inp = document.getElementById('lc-cmdk-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+    _paintCmdk('');
+  }
+
+  function closeCmdk() {
+    const el = document.getElementById('lc-cmdk');
+    if (el) el.classList.add('hidden');
+    _cmdkOpen = false;
+  }
+
+  function init() {
+    _ensureCmdk();
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (_cmdkOpen) closeCmdk();
+        else openCmdk();
+      } else if (e.key === 'Escape' && _cmdkOpen) {
+        closeCmdk();
+      }
+    });
+    bindTapFeedback();
+  }
+
+  function afterRender() {
+    bindTapFeedback();
+    animateCounts();
+  }
+
+  function announcePrices(netWorth, daily) {
+    const el = document.getElementById('lc-price-announcer');
+    if (!el || typeof PsxUI === 'undefined') return;
+    const dSign = daily >= 0 ? '+' : '';
+    el.textContent = `Net worth updated: ${PsxUI.fmt(netWorth)}. Today ${dSign}${PsxUI.fmt(Math.abs(daily))}.`;
+  }
+
+  return {
+    init, afterRender, haptic, hapticConfirm, hapticDelete, announcePrices, openCmdk, closeCmdk,
+  };
+})();
+window.LcPolish = LcPolish;
+
 ;/* === js/data/us-stocks.js === */
 'use strict';
 /** S&P 500 + major US ETFs — 511 symbols */

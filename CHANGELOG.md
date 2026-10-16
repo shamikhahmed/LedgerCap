@@ -1,3 +1,8 @@
+## 3.58.5 — 2026-10-16
+- V5 §3b: defer charts/TV/live stream/news/motion; demo skips worker network (LH bp)
+- Soft localStorage / brief console noise
+- SW `ledgercap-v146`
+
 ## 3.58.4 — 2026-10-16
 - V5 §3 Performance: never count-up `.lc-dash-hero-val` from 0 on load; split `ledgercap.deferred.js` (non-Home + bulky catalogs) idle-loaded after first paint.
 - SW `ledgercap-v145`.

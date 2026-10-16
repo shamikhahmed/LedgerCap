@@ -1,6 +1,6 @@
 'use strict';
 (function () {
-  window.APP_VERSION = window.LEDGERCAP_VERSION?.app || '3.58.4';
+  window.APP_VERSION = window.LEDGERCAP_VERSION?.app || '3.58.5';
   window.openProUpgrade = function () {
     const m = document.getElementById('proUpgradeModal');
     if (m) m.classList.add('open');

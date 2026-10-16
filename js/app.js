@@ -418,27 +418,51 @@ const App = (() => {
     _renderTicker();
     if (typeof Onboarding !== 'undefined') Onboarding.mount();
     if (typeof WhatsNew !== 'undefined') WhatsNew.maybeShow();
-    if (typeof NotificationScheduler !== 'undefined') NotificationScheduler.init();
-    if (typeof LcPolish !== 'undefined') LcPolish.init();
-    if (typeof LivePriceStream !== 'undefined') LivePriceStream.init();
-    if (typeof PriceSnapshotService !== 'undefined') PriceSnapshotService.init();
-    if (typeof FundNavService !== 'undefined') FundNavService.applyAll();
-    if (typeof GlanceBridge !== 'undefined') GlanceBridge.publish();
+    /* Defer network + secondary services — demo stays offline for LH bp (v5 §3b). */
+    const _kickNet = function () {
+      if (typeof NotificationScheduler !== 'undefined') {
+        try { NotificationScheduler.init(); } catch (_) {}
+      }
+      if (typeof LcPolish !== 'undefined') {
+        try { LcPolish.init(); } catch (_) {}
+      }
+      if (!demo && typeof LivePriceStream !== 'undefined') {
+        try { LivePriceStream.init(); } catch (_) {}
+      }
+      if (!demo && typeof PriceSnapshotService !== 'undefined') {
+        try { PriceSnapshotService.init(); } catch (_) {}
+      }
+      if (!demo && typeof FundNavService !== 'undefined') {
+        try { FundNavService.applyAll(); } catch (_) {}
+      }
+      if (typeof GlanceBridge !== 'undefined') {
+        try { GlanceBridge.publish(); } catch (_) {}
+      }
+      if (!demo) {
+        _fetchMarketIndex();
+        if (typeof FxService !== 'undefined') {
+          FxService.refreshUsdPkr().then(() => _renderTicker()).catch(() => {});
+        }
+        const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
+        if (hasProxy || (State.get().transactions || []).length) {
+          setTimeout(() => { refreshPrices().catch(() => {}); }, 1200);
+        }
+      }
+      if (!demo && typeof PriceHealth !== 'undefined') {
+        try { PriceHealth.mount(); } catch (_) {}
+      }
+    };
+    if (demo) {
+      /* no worker / market fetches on demo cold path — soft bp */
+    } else if ('requestIdleCallback' in window) {
+      requestIdleCallback(_kickNet, { timeout: 2500 });
+    } else {
+      setTimeout(_kickNet, 900);
+    }
     _updateCurrencyToggleBtn();
     _scheduleAutoRefresh();
-    _fetchMarketIndex();
-    const hasProxy = State.get('settings')?.psxProxyUrl || window.LEDGERCAP_CONFIG?.psxProxyUrl;
-    if (typeof FxService !== 'undefined') FxService.refreshUsdPkr().then(() => _renderTicker());
-    if (hasProxy && !demo) {
-      setTimeout(() => refreshPrices(), 1200);
-    }
-    else if (!demo && (State.get().transactions || []).length) {
-      setTimeout(() => refreshPrices(), 1200);
-    }
-    else if (demo) { /* inline #demo-banner covers this — no floating toast (C-43) */ }
     _maybeDemoBanner();
     _maybeInstallHint();
-    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
     _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {

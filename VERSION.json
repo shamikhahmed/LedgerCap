@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.4",
-  "swCache": "ledgercap-v145",
+  "version": "3.58.5",
+  "swCache": "ledgercap-v146",
   "updated": "2026-10-16",
-  "notes": "V5 §3: no hero count-up from 0; split deferred non-Home bundle for TBT"
+  "notes": "V5 §3b: further defer charts/TV/live stream; demo skips worker net for LH bp"
 }
