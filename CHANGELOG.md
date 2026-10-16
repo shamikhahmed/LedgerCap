@@ -1,4 +1,5 @@
 ## 3.58.6 — 2026-10-16
+- Soft console.error/warn on demo cold path (LH bp; worker undeployable)
 - Fix: `portfolio-analytics-service` back in core (Hub Home crashed when deferred)
 - Demo kicks deferred bundle immediately; nav waits on ensureDeferred
 - SW `ledgercap-v147`
