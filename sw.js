@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ledgercap-v144';
+const CACHE = 'ledgercap-v145';
 const ASSETS = [
   './css/psx-app.css',
   './css/lc-pro.css',
@@ -18,6 +18,7 @@ const ASSETS = [
   './assets/fonts/inter.woff2',
   './js/brand/colors.js',
   './js/ledgercap.bundle.js',
+  './js/ledgercap.deferred.js',
   './shared/telegram-brief.mjs',
   './assets/qr-ledgercap.png',
 ];

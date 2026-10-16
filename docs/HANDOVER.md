@@ -1,7 +1,7 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.58.3  
-**Service worker:** `ledgercap-v144`  
+**Version:** 3.58.4  
+**Service worker:** `ledgercap-v145`  
 **Last updated:** 14 Oct 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  

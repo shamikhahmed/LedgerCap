@@ -115,36 +115,44 @@ const Navigation = (() => {
     opts = opts || {};
     tabId = LEGACY[tabId] || tabId;
     if (!VALID.has(tabId)) tabId = 'home';
-    _current = tabId;
-    document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
-      b.classList.remove('active');
-      if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
-    });
-    const el = document.getElementById('screen-' + tabId);
-    if (el) {
-      el.classList.add('active', 'lc-screen-enter');
-      el.scrollTop = 0;
-      requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
+    const finish = () => {
+      _current = tabId;
+      document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
+        b.classList.remove('active');
+        if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
+      });
+      const el = document.getElementById('screen-' + tabId);
+      if (el) {
+        el.classList.add('active', 'lc-screen-enter');
+        el.scrollTop = 0;
+        requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
+      }
+      document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
+        b.classList.add('active');
+        if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
+      });
+      if (!silent) {
+        sessionStorage.setItem('ledgercap_tab', tabId);
+        const bucket = opts.portfolioId || (typeof PortfolioScreen !== 'undefined' ? PortfolioScreen.currentFilter?.() : null);
+        const hash = bucket && tabId === 'portfolio' ? `#portfolio/${bucket}` : `#${tabId}`;
+        if (location.hash !== hash) history.pushState({ tab: tabId, portfolioId: bucket || null }, '', hash);
+        _trackRecent(tabId);
+      }
+      const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
+      document.title = tabLabel + ' — LedgerCap';
+      _render(tabId, opts || {});
+      if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
+      if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
+      if (typeof CapMotion !== 'undefined') CapMotion.refresh();
+      if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
+    };
+    /* Non-Home screens live in ledgercap.deferred.js — ensure loaded before render. */
+    if (tabId !== 'home' && typeof window.__lcEnsureDeferred === 'function') {
+      Promise.resolve(window.__lcEnsureDeferred()).then(finish).catch(finish);
+      return;
     }
-    document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
-      b.classList.add('active');
-      if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
-    });
-    if (!silent) {
-      sessionStorage.setItem('ledgercap_tab', tabId);
-      const bucket = opts.portfolioId || (typeof PortfolioScreen !== 'undefined' ? PortfolioScreen.currentFilter?.() : null);
-      const hash = bucket && tabId === 'portfolio' ? `#portfolio/${bucket}` : `#${tabId}`;
-      if (location.hash !== hash) history.pushState({ tab: tabId, portfolioId: bucket || null }, '', hash);
-      _trackRecent(tabId);
-    }
-    const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
-    document.title = tabLabel + ' — LedgerCap';
-    _render(tabId, opts || {});
-    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
-    if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
-    if (typeof CapMotion !== 'undefined') CapMotion.refresh();
-    if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
+    finish();
   }
 
   function _render(id, opts) {

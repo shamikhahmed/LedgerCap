@@ -57,16 +57,25 @@ const LcPolish = (() => {
       const target = parseFloat(el.getAttribute('data-lc-count'));
       if (!Number.isFinite(target)) return;
       const key = el.getAttribute('data-lc-count-key') || el.id || 'c';
-      const prev = _countStore.has(key) ? _countStore.get(key) : target;
+      const firstPaint = !_countStore.has(key);
+      const prev = firstPaint ? target : _countStore.get(key);
       _countStore.set(key, target);
       const isPct = el.getAttribute('data-lc-count-pct') === '1';
       const signed = el.getAttribute('data-lc-count-signed') === '1';
+      const isHero = el.classList.contains('lc-dash-hero-val');
       const fmt = (v) => {
         if (isPct) return `${v >= 0 && signed ? '+' : ''}${v.toFixed(2)}%`;
         if (typeof PsxUI !== 'undefined') return PsxUI.fmt(v, { signed: signed && v !== 0 });
         return Math.round(v).toLocaleString('en-PK');
       };
-      if (reduced || Math.abs(target - prev) < 0.005) {
+      /* Never count-up from 0 on load (hero LCP/TBT) — only tween when both ends are real. */
+      if (
+        reduced ||
+        firstPaint ||
+        isHero && (prev === 0 || target === 0) ||
+        prev === 0 ||
+        Math.abs(target - prev) < 0.005
+      ) {
         el.textContent = fmt(target);
         return;
       }

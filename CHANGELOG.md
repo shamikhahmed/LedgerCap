@@ -1,3 +1,7 @@
+## 3.58.4 — 2026-10-16
+- V5 §3 Performance: never count-up `.lc-dash-hero-val` from 0 on load; split `ledgercap.deferred.js` (non-Home + bulky catalogs) idle-loaded after first paint.
+- SW `ledgercap-v145`.
+
 ## 3.58.3 — 2026-10-16
 - V5-5: calm dismissible last-close banner on market screens only (“Prices are from the last close on {date}. Live prices aren't available right now.”).
 - Home KSE-100 tile never endless-spins — shows last close + date, or Unavailable.

@@ -129,8 +129,34 @@
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
   <script defer src="js/brand/colors.js"></script>
-  <script defer src="js/ledgercap.bundle.js?v=3.58.3"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.58.4"></script>
   <script defer src="js/pro-modal.js"></script>
+  <script>
+  /* Idle-load non-Home bundle after first paint (v5 §3 TBT). */
+  (function () {
+    var src = 'js/ledgercap.deferred.js?v=3.58.4';
+    var p = null;
+    window.__lcEnsureDeferred = function () {
+      if (window.__LC_DEFERRED_READY__) return Promise.resolve();
+      if (p) return p;
+      p = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = function () { window.__LC_DEFERRED_READY__ = true; resolve(); };
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      return p;
+    };
+    function kick() {
+      var run = function () { window.__lcEnsureDeferred(); };
+      if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 2200 });
+      else setTimeout(run, 1200);
+    }
+    if (document.readyState === 'complete') kick();
+    else window.addEventListener('load', kick);
+  })();
+  </script>
 
 <!-- Support modal (no paywall until Stripe) -->
 <div id="proUpgradeModal" class="lc-pro-modal" role="dialog" aria-modal="true" aria-label="Support LedgerCap">

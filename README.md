@@ -4,7 +4,7 @@ Track your PSX stocks and mutual funds in one place.
 
 PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom projections — by Capricorn Systems. (Never “wealth OS” — G-3.)
 
-**Version:** 3.58.3 · **SW:** `ledgercap-v144` · **Live:** https://shamikhahmed.github.io/LedgerCap/?demo=1
+**Version:** 3.58.4 · **SW:** `ledgercap-v145` · **Live:** https://shamikhahmed.github.io/LedgerCap/?demo=1
 
 🔗 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 📁 **Repo:** https://github.com/shamikhahmed/LedgerCap
