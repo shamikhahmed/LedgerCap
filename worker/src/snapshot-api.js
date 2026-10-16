@@ -26,7 +26,7 @@ function isStale(updatedAt, thresholdMs, sessionOpen) {
   return Date.now() - new Date(updatedAt).getTime() > thresholdMs;
 }
 
-export async function handleSnapshot(request, env, url) {
+export async function handleSnapshot(request, env, url, ctx) {
   const path = url.pathname.replace(/^\//, '');
   if (path !== 'prices/snapshot') return null;
 
@@ -53,6 +53,18 @@ export async function handleSnapshot(request, env, url) {
       await kv.put('meta:last_run:cmd', new Date().toISOString());
     } catch (_) {}
   }
+
+  // Opportunistic refresh when cron missed — keeps snapshot from going multi-day stale.
+  try {
+    const psxAtEarly = await kv.get('meta:last_run:psx');
+    const age = psxAtEarly ? Date.now() - new Date(psxAtEarly).getTime() : Infinity;
+    if (age > 18 * 60 * 60 * 1000 && ctx?.waitUntil) {
+      ctx.waitUntil(
+        runPriceCron(env, {}, { forceMode: 'psx_eod', batchSize: 800 })
+          .catch((e) => console.error('snapshot stale refresh', e)),
+      );
+    }
+  } catch (_) {}
 
   const bucket = (url.searchParams.get('bucket') || 'all').toLowerCase();
   const valid = new Set(['all', 'psx', 'us', 'commodities', 'fx', 'meta']);

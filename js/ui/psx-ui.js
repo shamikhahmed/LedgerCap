@@ -26,7 +26,25 @@ const PsxUI = (() => {
   function kse() {
     const k = (typeof State !== 'undefined' ? State.get() : {}).kseIndex || {};
     const chg = k.changeP ?? k.change ?? null;
-    return { value: k.value, changeP: chg, ts: k.ts, cls: chg == null ? '' : (chg >= 0 ? 'psx-up' : 'psx-down') };
+    return {
+      value: k.value,
+      changeP: chg,
+      ts: k.ts,
+      unavailable: !!k.unavailable || k.source === 'unavailable',
+      resolved: !!k.resolved || !!k.unavailable || k.source === 'unavailable' || k.value > 0,
+      source: k.source,
+      cls: chg == null ? '' : (chg >= 0 ? 'psx-up' : 'psx-down'),
+    };
+  }
+
+  function kseMeta(k, sign) {
+    sign = sign || (k.changeP != null && k.changeP >= 0 ? '+' : '');
+    if (k.changeP != null) return `${sign}${Number(k.changeP).toFixed(2)}%`;
+    if (k.value > 0) {
+      const when = k.ts && typeof Prices !== 'undefined' ? Prices.formatTs(k.ts) : '';
+      return when ? `Last close · ${when}` : 'Last close';
+    }
+    return 'Unavailable';
   }
 
   function _act(expr) {
@@ -50,7 +68,7 @@ const PsxUI = (() => {
       <div class="psx-index-card">
         <div class="psx-index-label">KSE-100 · Index · live</div>
         <div class="psx-index-val">${k.value ? fmtIndex(k.value) : '—'}</div>
-        <div class="psx-index-meta"><span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</span></div>
+        <div class="psx-index-meta"><span class="${k.cls}">${kseMeta(k, sign)}</span></div>
       </div>
       <div class="psx-index-card">
         <div class="psx-index-label">${I18n.t('portfolio.value')}</div>
@@ -171,6 +189,6 @@ const PsxUI = (() => {
     if (sub) sub.textContent = `${I18n.t('portfolio.allTime')} ${fmt(s.totalReturn.pct, { pct: true, signed: true })}`;
   }
 
-  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, skeletonNews, skeletonHoldings, emptyState, errorState, num, refreshPortfolioMini };
+  return { fmt, fmtIndex, fmtNum, chgCls, kse, kseMeta, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, skeletonNews, skeletonHoldings, emptyState, errorState, num, refreshPortfolioMini };
 })();
 window.PsxUI = PsxUI;

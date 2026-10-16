@@ -571,13 +571,15 @@ const App = (() => {
   async function _fetchMarketIndex() {
     try {
       const kse = await Prices.fetchKSE100();
-      if (kse) {
-        State.set('kseIndex', kse);
-        State.recordKseSnapshot?.(kse);
-        _renderTicker();
-        if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
-      }
-    } catch (_) { /* offline / blocked */ }
+      State.set('kseIndex', kse || { value: null, changeP: null, unavailable: true, source: 'unavailable', resolved: true, ts: Date.now() });
+      if (kse?.value > 0) State.recordKseSnapshot?.(kse);
+      _renderTicker();
+      if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
+    } catch (_) {
+      State.set('kseIndex', { value: null, changeP: null, unavailable: true, source: 'unavailable', resolved: true, ts: Date.now() });
+      _renderTicker();
+      if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
+    }
   }
 
   function _scheduleAutoRefresh() {

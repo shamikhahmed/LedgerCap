@@ -1,7 +1,10 @@
 'use strict';
-/** Fallback / stale price audit + topbar banner */
+/** Calm last-close banner — market screens only, while live quotes are unavailable. */
 const PriceHealth = (() => {
   const SEED_SOURCES = new Set(['fallback', 'seed', 'meezan_seed', 'none']);
+  const MARKET_SCREENS = new Set([
+    'home', 'market', 'research', 'screener', 'watchlist', 'signals', 'performance', 'comparison',
+  ]);
 
   function _heldSymbols() {
     if (typeof State === 'undefined' || typeof Ledger === 'undefined') return [];
@@ -34,27 +37,44 @@ const PriceHealth = (() => {
 
     const total = symbols.length;
     const pctSeeded = total ? seeded / total : 0;
-    const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3);
+    // Live prices unavailable when most holdings are seed/fallback or long-stale.
+    const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3)
+      || !!(window._LC_SNAPSHOT_META?.stale?.psx);
 
     return { total, seeded, stale, live, pctSeeded, showBanner };
   }
 
-  function bannerHtml(rep) {
-    const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
-    const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
-    if (snap && snapStale) {
-      // C-43 / LDG-P1-01: no second refresh control — ticker is the one refresh.
-      return `<div class="lc-price-health" role="status">
-        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap the KSE ticker to refresh.</span>
-        <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
-      </div>`;
+  function _asOfDate() {
+    const snapAt = window._LC_SNAPSHOT_META?.psxAt
+      || (typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.meta()?.psxAt : null);
+    if (snapAt) {
+      const d = new Date(snapAt);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
     }
-    if (!rep?.showBanner) return '';
-    const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
-    const pct = Math.round((rep.pctSeeded || 0) * 100);
-    const msg = rep.pctSeeded >= 0.4
-      ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — tap the KSE ticker to refresh or accept EOD`;
+    const raw = window.FALLBACK_PRICES_UPDATED;
+    if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T12:00:00`);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+    return raw || 'the last session';
+  }
+
+  function _onMarketScreen() {
+    const tab = typeof Navigation !== 'undefined' && Navigation.current
+      ? Navigation.current()
+      : 'home';
+    return MARKET_SCREENS.has(tab);
+  }
+
+  function bannerHtml(rep) {
+    if (!_onMarketScreen()) return '';
+    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx) return '';
+    const date = _asOfDate();
+    const msg = `Prices are from the last close on ${date}. Live prices aren't available right now.`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
@@ -62,7 +82,11 @@ const PriceHealth = (() => {
   }
 
   function mount() {
-    if (localStorage.getItem('ledgercap_price_health_dismiss')) return;
+    if (localStorage.getItem('ledgercap_price_health_dismiss')) {
+      const host = document.getElementById('lc-price-health-host');
+      if (host) { host.innerHTML = ''; host.classList.add('hidden'); }
+      return;
+    }
     const host = document.getElementById('lc-price-health-host');
     if (!host) return;
     const rep = audit();

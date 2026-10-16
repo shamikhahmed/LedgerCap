@@ -1,3 +1,10 @@
+## 3.58.3 — 2026-10-16
+- V5-5: calm dismissible last-close banner on market screens only (“Prices are from the last close on {date}. Live prices aren't available right now.”).
+- Home KSE-100 tile never endless-spins — shows last close + date, or Unavailable.
+- Hub news is on-demand (no `/news/google` on first paint); missing series → “No history” without console noise.
+- Worker: Google news soft-fails to BBC/empty 200; PSX timeseries HTML → Yahoo `.KA` series (HTTP 200); stale snapshot opportunistic EOD refresh; tick cron refreshes when PSX KV >18h old.
+- SW `ledgercap-v144`.
+
 ## 3.58.2 — 2026-10-16
 - Desktop (≥900px): the sidebar is back and the tab bar is hidden again. The 2026-10 `!important` cleanup left `.psx-sidebar { display: none }` and `.psx-bottom-nav { display: flex }` winning over the desktop media query, so Mac and iPad-landscape lost the full sidebar (Global markets, Commodities, Zakat, Screener, Dividends…). Fixed with specificity, no `!important`. `tests/viewport.spec.js` green again.
 - SW `ledgercap-v143`.

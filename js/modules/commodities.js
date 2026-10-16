@@ -101,7 +101,7 @@ const Commodities = (() => {
         <div class="lc-pulse-pill"><label>USD/PKR</label><b>₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</b></div>
         <div class="lc-pulse-pill"><label>PKR gold</label><b>${_goldPillLabel()}</b></div>
       </div>
-      <p class="lc-card-sub">Spot via worker snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
+      <p class="lc-card-sub">Spot from market snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
       <div class="lc-sector-card" id="commodities-list">${_listInner()}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>

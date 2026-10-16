@@ -34,10 +34,9 @@ const Prices = (() => {
     // One flaky 520 should not ban worker for 5 minutes — that forces public CORS proxies.
     if (_proxyFailStreak >= 4) _proxyDownUntil = Date.now() + 60000;
     if (!_proxyWarned && _proxyFailStreak >= 2) {
-      console.warn('LedgerCap: PSX proxy flaky — retrying; public fallbacks disabled for PSX.');
       _proxyWarned = true;
       if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Live PSX feed slow — using cached prices where needed', 'warning');
+        App.showToast('Live prices slow — using last close where needed', 'warning');
       }
     }
   }
@@ -52,7 +51,14 @@ const Prices = (() => {
     if (!t) return true;
     if (_isHtml(t)) return true;
     if (/^error code:\s*\d+/i.test(t)) return true;
-    if (t.startsWith('{') && t.includes('"error"')) return true;
+    // Soft empty series from Worker (`{ error, data: [] }`) is OK — not a hard fail.
+    if (t.startsWith('{') && t.includes('"error"')) {
+      try {
+        const j = JSON.parse(t);
+        if (Array.isArray(j?.data)) return false;
+      } catch (_) { /* fall through */ }
+      return true;
+    }
     return false;
   }
 
@@ -88,14 +94,24 @@ const Prices = (() => {
       const yahoo = intl?.yahoo || sym;
       let data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
       let closes = _yahooCloses(data);
-      // Public CORS proxies removed (LDG-P0-01) — Worker only.
       if (closes.length >= 2) return closes.slice(-points);
+      return [];
     }
     const raw = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
     const rows = Array.isArray(raw) ? raw : (raw?.data || []);
-    if (!Array.isArray(rows) || rows.length < 2) return [];
-    const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
-    return sorted.slice(-points).map(r => parseFloat(r[1])).filter(n => n > 0);
+    if (Array.isArray(rows) && rows.length >= 2) {
+      const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+      const closes = sorted.map(r => parseFloat(r[1])).filter(n => n > 0);
+      if (closes.length >= 2) return closes.slice(-points);
+    }
+    // Yahoo .KA when PSX series is empty — silent, no console noise.
+    const ySym = YAHOO_SYMBOL_MAP[sym] === null ? null : (YAHOO_SYMBOL_MAP[sym] || `${sym}.KA`);
+    if (ySym) {
+      const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(ySym)}?range=1y`);
+      const closes = _yahooCloses(data);
+      if (closes.length >= 2) return closes.slice(-points);
+    }
+    return [];
   }
 
   function _yahooCloses(data) {
@@ -369,9 +385,7 @@ const Prices = (() => {
   }
 
   async function fetchKSE100() {
-    // LDG-V3-3: never hit Worker `/timeseries/eod/KSE100` — PSX often serves HTML
-    // and the Worker used to mirror that as HTTP 404 (browser console noise).
-    // Prefer Yahoo → dedicated /kse100 (200 + data[] after worker fix) → cache.
+    // Prefer Yahoo → dedicated /kse100 (200 + data[]) → cache. Never leave Home spinning.
     const yahooSyms = ['%5EKSE100', 'KSE100.KA'];
     for (const ySym of yahooSyms) {
       const yahoo = await _fetchWorkerPath(`yahoo/chart/${ySym}`);
@@ -385,20 +399,41 @@ const Prices = (() => {
           ts: Date.now(),
           source: 'yahoo',
           indicative: true,
+          resolved: true,
         };
       }
     }
 
-    // Do not call Worker `/timeseries/eod/KSE100` or `/kse100` until the
-    // deployed Worker returns HTTP 200 for empty PSX series (see worker fix).
-    // Hitting today's 404 pollutes the console on every cold load (LDG-V3-3).
+    const ksePath = await _fetchWorkerPath('kse100');
+    const rows = Array.isArray(ksePath) ? ksePath : (ksePath?.data || []);
+    if (Array.isArray(rows) && rows.length) {
+      const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+      const last = sorted[sorted.length - 1];
+      const prev = sorted.length > 1 ? sorted[sorted.length - 2] : last;
+      const value = parseFloat(last?.[1]);
+      const prevClose = parseFloat(prev?.[1]);
+      if (value > 0) {
+        const changeP = prevClose > 0 ? ((value - prevClose) / prevClose) * 100 : 0;
+        return {
+          value,
+          change: value - (prevClose || value),
+          changeP,
+          prevClose,
+          ts: Date.now(),
+          source: 'psx_eod',
+          indicative: true,
+          resolved: true,
+        };
+      }
+    }
+
     if (typeof State !== 'undefined') {
       const cached = State.get('kseIndex');
       if (cached && cached.value > 0) {
-        return { ...cached, source: cached.source || 'cache', indicative: true, ts: cached.ts || Date.now() };
+        return { ...cached, source: cached.source || 'cache', indicative: true, resolved: true, ts: cached.ts || Date.now() };
       }
     }
-    return null;
+    return { value: null, changeP: null, unavailable: true, source: 'unavailable', resolved: true, ts: Date.now() };
   }
 
   async function fetchAll(symbols, onProgress) {

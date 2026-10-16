@@ -23,7 +23,7 @@ const TradingViewUI = (() => {
     }
     if (reqId != null && reqId !== _chartReq) return;
     if (series.length < 2) {
-      el.innerHTML = `<p class="psx-muted">Could not load price history for <strong>${symbol}</strong>. Tap Refresh in Settings or check proxy.</p>`;
+      el.innerHTML = `<p class="psx-muted">No history available for <strong>${symbol}</strong> right now.</p>`;
       return;
     }
     const up = series[series.length - 1] >= series[0];

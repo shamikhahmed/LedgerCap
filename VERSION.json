@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.2",
-  "swCache": "ledgercap-v143",
+  "version": "3.58.3",
+  "swCache": "ledgercap-v144",
   "updated": "2026-10-16",
-  "notes": "Desktop sidebar restored at ≥900px (tab bar hidden); SW v143"
+  "notes": "V5-5 calm last-close banner; KSE tile never spins; news on demand; worker news/timeseries soft-fail + Yahoo series fallback"
 }

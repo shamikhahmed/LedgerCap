@@ -141,6 +141,7 @@ const Navigation = (() => {
     const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
     document.title = tabLabel + ' — LedgerCap';
     _render(tabId, opts || {});
+    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
     if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
     if (typeof CapMotion !== 'undefined') CapMotion.refresh();
     if (typeof LcPolish !== 'undefined') LcPolish.afterRender();

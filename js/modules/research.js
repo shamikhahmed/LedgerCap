@@ -308,7 +308,7 @@ const Research = (() => {
     } catch (_) {}
     if (_symbol !== sym) return; // user moved on while we were fetching
     if (series.length < 5) {
-      const msg = '<p class="psx-muted lc-card-sub">PSX end-of-day feed unreachable right now — history returns when the feed recovers.</p>';
+      const msg = '<p class="psx-muted lc-card-sub">No history available for this symbol right now.</p>';
       host.innerHTML = msg;
       const hist = document.getElementById('research-history');
       if (hist) hist.innerHTML = msg;

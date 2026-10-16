@@ -144,14 +144,15 @@ const Hub = (() => {
     </div>`;
   }
 
-  let _newsHtml = typeof PsxUI !== 'undefined' ? PsxUI.skeletonNews() : '<p class="lc-empty-note">Loading…</p>';
+  // Idle until the user taps Refresh — avoids /news/google on first paint (best-practices).
+  let _newsHtml = '<p class="lc-empty-note">Tap Refresh news when you want headlines.</p>';
 
   async function _loadNews(state) {
     if (typeof NewsService === 'undefined') return;
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = PsxUI.emptyState('Thin free feeds', 'No Bloomberg desk here — Yahoo + BBC via worker when reachable. Google RSS often blocks worker IP. Headlines are rule-tagged, not advice.', '');
+        _newsHtml = PsxUI.emptyState('No headlines right now', 'Free news feeds are quiet or unreachable. Try again in a minute.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
@@ -161,19 +162,22 @@ const Hub = (() => {
           <p class="lc-news-hint">${esc(n.impact?.hint || '')}</p>
         </a>`).join('');
     } catch (e) {
-      _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? (e.message || 'Feed error — try again.') : 'You appear offline.', 'Hub.refreshNews()');
+      _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? 'Could not load headlines. Try again shortly.' : 'You appear offline.', 'Hub.refreshNews()');
     }
   }
 
   function _newsSection() {
     return `<div class="lc-dash-section" id="hub-news-section">
-      <div class="lc-dash-section-head"><h3>Market news</h3><span>Free feeds · not Bloomberg</span></div>
+      <div class="lc-dash-section-head"><h3>Market news</h3><span>On demand</span></div>
       <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
       <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Hub.refreshNews">Refresh news</button></div>
     </div>`;
   }
 
   async function refreshNews() {
+    _newsHtml = typeof PsxUI !== 'undefined' ? PsxUI.skeletonNews() : '<p class="lc-empty-note">Loading…</p>';
+    const el0 = document.getElementById('hub-news-list');
+    if (el0) el0.innerHTML = _newsHtml;
     await _loadNews(State.get());
     const el = document.getElementById('hub-news-list');
     if (el) el.innerHTML = _newsHtml;
@@ -207,11 +211,23 @@ const Hub = (() => {
     </div>`;
   }
 
+  function _kseMeta(k, sign) {
+    if (k.changeP != null) return `${sign}${Number(k.changeP).toFixed(2)}%`;
+    if (k.value > 0) {
+      const when = k.ts && typeof Prices !== 'undefined'
+        ? Prices.formatTs(k.ts)
+        : (window.FALLBACK_PRICES_UPDATED || '');
+      return when ? `Last close · ${when}` : 'Last close';
+    }
+    if (k.unavailable || k.source === 'unavailable' || k.resolved) return 'Unavailable';
+    return 'Unavailable';
+  }
+
   function _kseCard(k, sign) {
     return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="market" aria-label="Open stock watch">
       <span>KSE-100</span>
       <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
-      <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</em>
+      <em class="${k.cls}">${_kseMeta(k, sign)}</em>
     </button>`;
   }
 
@@ -437,9 +453,7 @@ const Hub = (() => {
         </div>
       </div>`;
     screen.innerHTML = _folioWrap(main);
-    _loadNews(state).then(() => {
-      if (Navigation?.current?.() === 'home') refreshNews();
-    });
+    // News is opt-in — do not fetch on first hub paint.
   }
 
   return { render, openMarketFilter, openPortfolio, refreshNews };

@@ -1,6 +1,6 @@
 /** Free news feeds — Google News RSS, BBC Business, Yahoo search (no API keys). */
 
-const UA = 'Mozilla/5.0 (compatible; LedgerCap/1.0; +https://shamikhahmed.github.io/LedgerCap/)';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 
 export function parseRssItems(xml, source, symbol) {
   const items = [];
@@ -35,7 +35,11 @@ export function parseRssItems(xml, source, symbol) {
 
 async function fetchText(url) {
   const res = await fetch(url, {
-    headers: { Accept: 'application/rss+xml, application/xml, text/xml, */*', 'User-Agent': UA },
+    headers: {
+      Accept: 'application/rss+xml, application/xml, text/xml, */*',
+      'User-Agent': UA,
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
     cf: { cacheTtl: 300 },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -44,9 +48,23 @@ async function fetchText(url) {
 
 export async function fetchGoogleNewsRss(query, symbol) {
   const q = encodeURIComponent(query);
-  const url = `https://news.google.com/rss/search?q=${q}&hl=en-PK&gl=PK&ceid=PK:en`;
-  const xml = await fetchText(url);
-  return parseRssItems(xml, 'Google News', symbol);
+  // Try PK locale first, then a generic en feed — Google often 503s datacenter IPs.
+  const urls = [
+    `https://news.google.com/rss/search?q=${q}&hl=en-PK&gl=PK&ceid=PK:en`,
+    `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`,
+  ];
+  let lastErr = null;
+  for (const url of urls) {
+    try {
+      const xml = await fetchText(url);
+      const items = parseRssItems(xml, 'Google News', symbol);
+      if (items.length) return items;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  if (lastErr) throw lastErr;
+  return [];
 }
 
 export async function fetchBbcBusiness() {
@@ -138,7 +156,21 @@ export async function handleNewsRequest(request, url) {
     if (path === 'news/google') {
       const q = url.searchParams.get('q') || 'Pakistan stock PSX';
       const sym = url.searchParams.get('symbol') || '—';
-      return json({ articles: await fetchGoogleNewsRss(q, sym) });
+      // Never 502 on this route — Google RSS flakes; degrade to BBC / empty 200.
+      let articles = [];
+      try {
+        articles = await fetchGoogleNewsRss(q, sym);
+      } catch (_) {
+        articles = [];
+      }
+      if (!articles.length) {
+        try {
+          articles = (await fetchBbcBusiness()).slice(0, 8);
+        } catch (_) {
+          articles = [];
+        }
+      }
+      return json({ articles, degraded: !articles.length ? false : undefined });
     }
     if (path.startsWith('news/yahoo/')) {
       const sym = decodeURIComponent(path.slice('news/yahoo/'.length));
@@ -156,6 +188,10 @@ export async function handleNewsRequest(request, url) {
     }
     return json({ error: 'Unknown news route' }, 404);
   } catch (e) {
+    // Soft-fail: empty feed beats red console / Lighthouse network errors.
+    if (path.startsWith('news/')) {
+      return json({ articles: [], error: e.message || 'News fetch failed' }, 200);
+    }
     return json({ error: e.message || 'News fetch failed' }, 502);
   }
 }

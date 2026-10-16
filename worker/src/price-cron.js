@@ -47,7 +47,14 @@ export async function runPriceCron(env, event, options = {}) {
     const sessionOpen = pktSessionOpen(now);
     const usOpen = usSessionOpen(now);
 
-    if (mode === 'psx_eod' || (mode === 'tick' && sessionOpen)) {
+    // If EOD cron missed a day, force a refresh on the next tick even after close.
+    const lastPsx = await kv.get('meta:last_run:psx');
+    const psxAgeMs = lastPsx ? Date.now() - new Date(lastPsx).getTime() : Infinity;
+    const staleNeedsRefresh = psxAgeMs > 18 * 60 * 60 * 1000;
+    const runPsx = mode === 'psx_eod' || (mode === 'tick' && sessionOpen) || (mode === 'tick' && staleNeedsRefresh)
+      || options.forceMode === 'psx_eod';
+
+    if (runPsx) {
       let catalog = await kv.get('meta:psx_catalog', 'json');
       if (!catalog?.length) {
         try {
@@ -66,14 +73,16 @@ export async function runPriceCron(env, event, options = {}) {
         let offset = Number(await kv.get('meta:psx_tick_offset')) || 0;
         if (offset >= symbols.length) offset = 0;
         const rotated = symbols.slice(offset).concat(symbols.slice(0, offset));
-        const slice = mode === 'psx_eod' ? symbols : rotated.slice(0, batchSize);
-        const quotes = await fetchAllPsxQuotes(slice, mode === 'psx_eod' ? false : sessionOpen);
+        const fullEod = mode === 'psx_eod' || staleNeedsRefresh;
+        const slice = fullEod ? symbols : rotated.slice(0, batchSize);
+        const quotes = await fetchAllPsxQuotes(slice, fullEod ? false : sessionOpen);
         const merged = { ...prev, ...quotes };
         await kvPut(kv, 'psx:quotes', merged);
         await kvPut(kv, 'meta:last_run:psx', now.toISOString());
-        if (mode === 'tick') await kv.put('meta:psx_tick_offset', String(offset + batchSize));
+        if (!fullEod) await kv.put('meta:psx_tick_offset', String(offset + batchSize));
         else await kv.put('meta:psx_tick_offset', '0');
         results.psx = Object.keys(merged).length;
+        if (staleNeedsRefresh) results.staleRefresh = true;
       }
     }
 

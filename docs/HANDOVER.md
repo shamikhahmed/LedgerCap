@@ -1,7 +1,7 @@
 # LedgerCap — Engineering Handover
 
-**Version:** 3.58.2  
-**Service worker:** `ledgercap-v143`  
+**Version:** 3.58.3  
+**Service worker:** `ledgercap-v144`  
 **Last updated:** 14 Oct 2026  
 **Owner:** Shamikh Ahmed  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
@@ -45,7 +45,11 @@ Durable plan: **`docs/REDESIGN_ROADMAP.md`**. Session state memory: `ledgercap-r
 | **Chart pills / neutral-at-zero** | `chgCls` returns neutral for values rounding to 0.00% |
 | **Dead files** | css/app.css, identity.css, platform.css, js/modules/portfolio.js deleted (kept resurrecting — delete on sight) |
 
-**Worker deploy:** `cd worker && npx wrangler deploy`. Current version `9cd4fd10` (Yahoo headers).
+**Worker deploy:** `cd worker && npx wrangler deploy`.  
+**Owner action (2026-10-16):** `npx wrangler whoami` showed **not logged in** (token expired / non-interactive). After `wrangler login` (or `CLOUDFLARE_API_TOKEN`), deploy from `worker/` then verify:
+- `GET /news/google?q=Pakistan` → **200** (articles or empty, never 502)
+- `GET /timeseries/eod/LUCK` → **200** with `data[]` (Yahoo fallback if PSX HTML)
+- `GET /prices/snapshot` → `psx.updatedAt` refreshes within ~1 day (stale>18h triggers opportunistic EOD)
 
 ---
 

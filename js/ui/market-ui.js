@@ -113,7 +113,11 @@ const MarketUI = (() => {
         </div>
         <div class="lc-index-value">${k.value ? fmtNum(k.value) : '—'}</div>
         <div class="lc-index-meta">
-          <span class="${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : 'Loading…'}</span>
+          <span class="${k.cls}">${k.changeP != null
+            ? `${k.sign}${Number(k.changeP).toFixed(2)}%`
+            : (k.value > 0
+              ? `Last close${k.ts ? ` · ${timeAgo(k.ts) || ''}` : ''}`
+              : (k.unavailable || k.source === 'unavailable' ? 'Unavailable' : 'Unavailable'))}</span>
           <span>${holdings?.length ? `${holdings.length} tracked positions` : 'PSX market index'}</span>
         </div>
       </div>

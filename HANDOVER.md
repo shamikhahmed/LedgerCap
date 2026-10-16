@@ -7,7 +7,7 @@
 Track your PSX stocks and mutual funds in one place. (Never “wealth OS” / “operating system” — G-3.)
 
 ## Facts
-**Version:** 3.58.2 / SW `ledgercap-v143`  
+**Version:** 3.58.3 / SW `ledgercap-v144`  
 **Live:** https://shamikhahmed.github.io/LedgerCap/  
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
 **Branch (active):** `perfection/ledgercap-v3`  

@@ -4952,9 +4952,9 @@ window.PsxStocksCatalog = (() => {
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.58.2',
-  sw: 142,
-  cache: 'ledgercap-v143',
+  app: '3.58.3',
+  sw: 143,
+  cache: 'ledgercap-v144',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -6023,10 +6023,9 @@ const Prices = (() => {
     // One flaky 520 should not ban worker for 5 minutes — that forces public CORS proxies.
     if (_proxyFailStreak >= 4) _proxyDownUntil = Date.now() + 60000;
     if (!_proxyWarned && _proxyFailStreak >= 2) {
-      console.warn('LedgerCap: PSX proxy flaky — retrying; public fallbacks disabled for PSX.');
       _proxyWarned = true;
       if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Live PSX feed slow — using cached prices where needed', 'warning');
+        App.showToast('Live prices slow — using last close where needed', 'warning');
       }
     }
   }
@@ -6041,7 +6040,14 @@ const Prices = (() => {
     if (!t) return true;
     if (_isHtml(t)) return true;
     if (/^error code:\s*\d+/i.test(t)) return true;
-    if (t.startsWith('{') && t.includes('"error"')) return true;
+    // Soft empty series from Worker (`{ error, data: [] }`) is OK — not a hard fail.
+    if (t.startsWith('{') && t.includes('"error"')) {
+      try {
+        const j = JSON.parse(t);
+        if (Array.isArray(j?.data)) return false;
+      } catch (_) { /* fall through */ }
+      return true;
+    }
     return false;
   }
 
@@ -6077,14 +6083,24 @@ const Prices = (() => {
       const yahoo = intl?.yahoo || sym;
       let data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(yahoo)}`);
       let closes = _yahooCloses(data);
-      // Public CORS proxies removed (LDG-P0-01) — Worker only.
       if (closes.length >= 2) return closes.slice(-points);
+      return [];
     }
     const raw = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
     const rows = Array.isArray(raw) ? raw : (raw?.data || []);
-    if (!Array.isArray(rows) || rows.length < 2) return [];
-    const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
-    return sorted.slice(-points).map(r => parseFloat(r[1])).filter(n => n > 0);
+    if (Array.isArray(rows) && rows.length >= 2) {
+      const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+      const closes = sorted.map(r => parseFloat(r[1])).filter(n => n > 0);
+      if (closes.length >= 2) return closes.slice(-points);
+    }
+    // Yahoo .KA when PSX series is empty — silent, no console noise.
+    const ySym = YAHOO_SYMBOL_MAP[sym] === null ? null : (YAHOO_SYMBOL_MAP[sym] || `${sym}.KA`);
+    if (ySym) {
+      const data = await _fetchWorkerPath(`yahoo/chart/${encodeURIComponent(ySym)}?range=1y`);
+      const closes = _yahooCloses(data);
+      if (closes.length >= 2) return closes.slice(-points);
+    }
+    return [];
   }
 
   function _yahooCloses(data) {
@@ -6358,9 +6374,7 @@ const Prices = (() => {
   }
 
   async function fetchKSE100() {
-    // LDG-V3-3: never hit Worker `/timeseries/eod/KSE100` — PSX often serves HTML
-    // and the Worker used to mirror that as HTTP 404 (browser console noise).
-    // Prefer Yahoo → dedicated /kse100 (200 + data[] after worker fix) → cache.
+    // Prefer Yahoo → dedicated /kse100 (200 + data[]) → cache. Never leave Home spinning.
     const yahooSyms = ['%5EKSE100', 'KSE100.KA'];
     for (const ySym of yahooSyms) {
       const yahoo = await _fetchWorkerPath(`yahoo/chart/${ySym}`);
@@ -6374,20 +6388,41 @@ const Prices = (() => {
           ts: Date.now(),
           source: 'yahoo',
           indicative: true,
+          resolved: true,
         };
       }
     }
 
-    // Do not call Worker `/timeseries/eod/KSE100` or `/kse100` until the
-    // deployed Worker returns HTTP 200 for empty PSX series (see worker fix).
-    // Hitting today's 404 pollutes the console on every cold load (LDG-V3-3).
+    const ksePath = await _fetchWorkerPath('kse100');
+    const rows = Array.isArray(ksePath) ? ksePath : (ksePath?.data || []);
+    if (Array.isArray(rows) && rows.length) {
+      const sorted = [...rows].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+      const last = sorted[sorted.length - 1];
+      const prev = sorted.length > 1 ? sorted[sorted.length - 2] : last;
+      const value = parseFloat(last?.[1]);
+      const prevClose = parseFloat(prev?.[1]);
+      if (value > 0) {
+        const changeP = prevClose > 0 ? ((value - prevClose) / prevClose) * 100 : 0;
+        return {
+          value,
+          change: value - (prevClose || value),
+          changeP,
+          prevClose,
+          ts: Date.now(),
+          source: 'psx_eod',
+          indicative: true,
+          resolved: true,
+        };
+      }
+    }
+
     if (typeof State !== 'undefined') {
       const cached = State.get('kseIndex');
       if (cached && cached.value > 0) {
-        return { ...cached, source: cached.source || 'cache', indicative: true, ts: cached.ts || Date.now() };
+        return { ...cached, source: cached.source || 'cache', indicative: true, resolved: true, ts: cached.ts || Date.now() };
       }
     }
-    return null;
+    return { value: null, changeP: null, unavailable: true, source: 'unavailable', resolved: true, ts: Date.now() };
   }
 
   async function fetchAll(symbols, onProgress) {
@@ -11349,9 +11384,12 @@ window.LivePriceStream = LivePriceStream;
 
 ;/* === js/services/price-health.js === */
 'use strict';
-/** Fallback / stale price audit + topbar banner */
+/** Calm last-close banner — market screens only, while live quotes are unavailable. */
 const PriceHealth = (() => {
   const SEED_SOURCES = new Set(['fallback', 'seed', 'meezan_seed', 'none']);
+  const MARKET_SCREENS = new Set([
+    'home', 'market', 'research', 'screener', 'watchlist', 'signals', 'performance', 'comparison',
+  ]);
 
   function _heldSymbols() {
     if (typeof State === 'undefined' || typeof Ledger === 'undefined') return [];
@@ -11384,27 +11422,44 @@ const PriceHealth = (() => {
 
     const total = symbols.length;
     const pctSeeded = total ? seeded / total : 0;
-    const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3);
+    // Live prices unavailable when most holdings are seed/fallback or long-stale.
+    const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3)
+      || !!(window._LC_SNAPSHOT_META?.stale?.psx);
 
     return { total, seeded, stale, live, pctSeeded, showBanner };
   }
 
-  function bannerHtml(rep) {
-    const snap = typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.freshnessLabel() : '';
-    const snapStale = window._LC_SNAPSHOT_META?.stale?.psx;
-    if (snap && snapStale) {
-      // C-43 / LDG-P1-01: no second refresh control — ticker is the one refresh.
-      return `<div class="lc-price-health" role="status">
-        <span class="lc-price-health-msg">Market snapshot stale — ${snap}. PSX origin may be slow; tap the KSE ticker to refresh.</span>
-        <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
-      </div>`;
+  function _asOfDate() {
+    const snapAt = window._LC_SNAPSHOT_META?.psxAt
+      || (typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.meta()?.psxAt : null);
+    if (snapAt) {
+      const d = new Date(snapAt);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
     }
-    if (!rep?.showBanner) return '';
-    const updated = window.FALLBACK_PRICES_UPDATED || 'unknown date';
-    const pct = Math.round((rep.pctSeeded || 0) * 100);
-    const msg = rep.pctSeeded >= 0.4
-      ? `PSX origin (dps.psx.com.pk) flakes — ${pct}% on EOD snapshot (${updated}). Paid feed needed for terminal-grade live.`
-      : `${rep.stale} price${rep.stale > 1 ? 's' : ''} older than 24h — tap the KSE ticker to refresh or accept EOD`;
+    const raw = window.FALLBACK_PRICES_UPDATED;
+    if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T12:00:00`);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+    return raw || 'the last session';
+  }
+
+  function _onMarketScreen() {
+    const tab = typeof Navigation !== 'undefined' && Navigation.current
+      ? Navigation.current()
+      : 'home';
+    return MARKET_SCREENS.has(tab);
+  }
+
+  function bannerHtml(rep) {
+    if (!_onMarketScreen()) return '';
+    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx) return '';
+    const date = _asOfDate();
+    const msg = `Prices are from the last close on ${date}. Live prices aren't available right now.`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
@@ -11412,7 +11467,11 @@ const PriceHealth = (() => {
   }
 
   function mount() {
-    if (localStorage.getItem('ledgercap_price_health_dismiss')) return;
+    if (localStorage.getItem('ledgercap_price_health_dismiss')) {
+      const host = document.getElementById('lc-price-health-host');
+      if (host) { host.innerHTML = ''; host.classList.add('hidden'); }
+      return;
+    }
     const host = document.getElementById('lc-price-health-host');
     if (!host) return;
     const rep = audit();
@@ -12856,7 +12915,25 @@ const PsxUI = (() => {
   function kse() {
     const k = (typeof State !== 'undefined' ? State.get() : {}).kseIndex || {};
     const chg = k.changeP ?? k.change ?? null;
-    return { value: k.value, changeP: chg, ts: k.ts, cls: chg == null ? '' : (chg >= 0 ? 'psx-up' : 'psx-down') };
+    return {
+      value: k.value,
+      changeP: chg,
+      ts: k.ts,
+      unavailable: !!k.unavailable || k.source === 'unavailable',
+      resolved: !!k.resolved || !!k.unavailable || k.source === 'unavailable' || k.value > 0,
+      source: k.source,
+      cls: chg == null ? '' : (chg >= 0 ? 'psx-up' : 'psx-down'),
+    };
+  }
+
+  function kseMeta(k, sign) {
+    sign = sign || (k.changeP != null && k.changeP >= 0 ? '+' : '');
+    if (k.changeP != null) return `${sign}${Number(k.changeP).toFixed(2)}%`;
+    if (k.value > 0) {
+      const when = k.ts && typeof Prices !== 'undefined' ? Prices.formatTs(k.ts) : '';
+      return when ? `Last close · ${when}` : 'Last close';
+    }
+    return 'Unavailable';
   }
 
   function _act(expr) {
@@ -12880,7 +12957,7 @@ const PsxUI = (() => {
       <div class="psx-index-card">
         <div class="psx-index-label">KSE-100 · Index · live</div>
         <div class="psx-index-val">${k.value ? fmtIndex(k.value) : '—'}</div>
-        <div class="psx-index-meta"><span class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</span></div>
+        <div class="psx-index-meta"><span class="${k.cls}">${kseMeta(k, sign)}</span></div>
       </div>
       <div class="psx-index-card">
         <div class="psx-index-label">${I18n.t('portfolio.value')}</div>
@@ -13001,7 +13078,7 @@ const PsxUI = (() => {
     if (sub) sub.textContent = `${I18n.t('portfolio.allTime')} ${fmt(s.totalReturn.pct, { pct: true, signed: true })}`;
   }
 
-  return { fmt, fmtIndex, fmtNum, chgCls, kse, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, skeletonNews, skeletonHoldings, emptyState, errorState, num, refreshPortfolioMini };
+  return { fmt, fmtIndex, fmtNum, chgCls, kse, kseMeta, strip, indexRow, statGrid, panel, sectorTable, filters, pageTitle, lcDash, segment, skeleton, skeletonNews, skeletonHoldings, emptyState, errorState, num, refreshPortfolioMini };
 })();
 window.PsxUI = PsxUI;
 
@@ -13031,7 +13108,7 @@ const TradingViewUI = (() => {
     }
     if (reqId != null && reqId !== _chartReq) return;
     if (series.length < 2) {
-      el.innerHTML = `<p class="psx-muted">Could not load price history for <strong>${symbol}</strong>. Tap Refresh in Settings or check proxy.</p>`;
+      el.innerHTML = `<p class="psx-muted">No history available for <strong>${symbol}</strong> right now.</p>`;
       return;
     }
     const up = series[series.length - 1] >= series[0];
@@ -13177,7 +13254,11 @@ const MarketUI = (() => {
         </div>
         <div class="lc-index-value">${k.value ? fmtNum(k.value) : '—'}</div>
         <div class="lc-index-meta">
-          <span class="${k.cls}">${k.changeP != null ? `${k.sign}${Number(k.changeP).toFixed(2)}%` : 'Loading…'}</span>
+          <span class="${k.cls}">${k.changeP != null
+            ? `${k.sign}${Number(k.changeP).toFixed(2)}%`
+            : (k.value > 0
+              ? `Last close${k.ts ? ` · ${timeAgo(k.ts) || ''}` : ''}`
+              : (k.unavailable || k.source === 'unavailable' ? 'Unavailable' : 'Unavailable'))}</span>
           <span>${holdings?.length ? `${holdings.length} tracked positions` : 'PSX market index'}</span>
         </div>
       </div>
@@ -13478,6 +13559,7 @@ const Navigation = (() => {
     const tabLabel = tabId.charAt(0).toUpperCase() + tabId.slice(1).replace(/-/g, ' ');
     document.title = tabLabel + ' — LedgerCap';
     _render(tabId, opts || {});
+    if (typeof PriceHealth !== 'undefined') PriceHealth.mount();
     if (typeof PsxUI !== 'undefined') PsxUI.refreshPortfolioMini?.();
     if (typeof CapMotion !== 'undefined') CapMotion.refresh();
     if (typeof LcPolish !== 'undefined') LcPolish.afterRender();
@@ -14340,14 +14422,15 @@ const Hub = (() => {
     </div>`;
   }
 
-  let _newsHtml = typeof PsxUI !== 'undefined' ? PsxUI.skeletonNews() : '<p class="lc-empty-note">Loading…</p>';
+  // Idle until the user taps Refresh — avoids /news/google on first paint (best-practices).
+  let _newsHtml = '<p class="lc-empty-note">Tap Refresh news when you want headlines.</p>';
 
   async function _loadNews(state) {
     if (typeof NewsService === 'undefined') return;
     try {
       const items = await NewsService.fetchPortfolioNews(state);
       if (!items.length) {
-        _newsHtml = PsxUI.emptyState('Thin free feeds', 'No Bloomberg desk here — Yahoo + BBC via worker when reachable. Google RSS often blocks worker IP. Headlines are rule-tagged, not advice.', '');
+        _newsHtml = PsxUI.emptyState('No headlines right now', 'Free news feeds are quiet or unreachable. Try again in a minute.', '');
         return;
       }
       _newsHtml = items.slice(0, 6).map(n => `
@@ -14357,19 +14440,22 @@ const Hub = (() => {
           <p class="lc-news-hint">${esc(n.impact?.hint || '')}</p>
         </a>`).join('');
     } catch (e) {
-      _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? (e.message || 'Feed error — try again.') : 'You appear offline.', 'Hub.refreshNews()');
+      _newsHtml = PsxUI.errorState('News unavailable', navigator.onLine ? 'Could not load headlines. Try again shortly.' : 'You appear offline.', 'Hub.refreshNews()');
     }
   }
 
   function _newsSection() {
     return `<div class="lc-dash-section" id="hub-news-section">
-      <div class="lc-dash-section-head"><h3>Market news</h3><span>Free feeds · not Bloomberg</span></div>
+      <div class="lc-dash-section-head"><h3>Market news</h3><span>On demand</span></div>
       <div class="lc-sector-card" id="hub-news-list">${_newsHtml}</div>
       <div class="lc-dash-actions"><button type="button" class="psx-btn psx-btn-ghost" data-action="Hub.refreshNews">Refresh news</button></div>
     </div>`;
   }
 
   async function refreshNews() {
+    _newsHtml = typeof PsxUI !== 'undefined' ? PsxUI.skeletonNews() : '<p class="lc-empty-note">Loading…</p>';
+    const el0 = document.getElementById('hub-news-list');
+    if (el0) el0.innerHTML = _newsHtml;
     await _loadNews(State.get());
     const el = document.getElementById('hub-news-list');
     if (el) el.innerHTML = _newsHtml;
@@ -14403,11 +14489,23 @@ const Hub = (() => {
     </div>`;
   }
 
+  function _kseMeta(k, sign) {
+    if (k.changeP != null) return `${sign}${Number(k.changeP).toFixed(2)}%`;
+    if (k.value > 0) {
+      const when = k.ts && typeof Prices !== 'undefined'
+        ? Prices.formatTs(k.ts)
+        : (window.FALLBACK_PRICES_UPDATED || '');
+      return when ? `Last close · ${when}` : 'Last close';
+    }
+    if (k.unavailable || k.source === 'unavailable' || k.resolved) return 'Unavailable';
+    return 'Unavailable';
+  }
+
   function _kseCard(k, sign) {
     return `<button type="button" class="lc-dash-market-card lc-dash-market-card--btn" data-nav="market" aria-label="Open stock watch">
       <span>KSE-100</span>
       <strong>${k.value ? PsxUI.fmtIndex(k.value) : '—'}</strong>
-      <em class="${k.cls}">${k.changeP != null ? sign + Number(k.changeP).toFixed(2) + '%' : I18n.t('loading')}</em>
+      <em class="${k.cls}">${_kseMeta(k, sign)}</em>
     </button>`;
   }
 
@@ -14633,9 +14731,7 @@ const Hub = (() => {
         </div>
       </div>`;
     screen.innerHTML = _folioWrap(main);
-    _loadNews(state).then(() => {
-      if (Navigation?.current?.() === 'home') refreshNews();
-    });
+    // News is opt-in — do not fetch on first hub paint.
   }
 
   return { render, openMarketFilter, openPortfolio, refreshNews };
@@ -15754,7 +15850,7 @@ const Research = (() => {
     } catch (_) {}
     if (_symbol !== sym) return; // user moved on while we were fetching
     if (series.length < 5) {
-      const msg = '<p class="psx-muted lc-card-sub">PSX end-of-day feed unreachable right now — history returns when the feed recovers.</p>';
+      const msg = '<p class="psx-muted lc-card-sub">No history available for this symbol right now.</p>';
       host.innerHTML = msg;
       const hist = document.getElementById('research-history');
       if (hist) hist.innerHTML = msg;
@@ -16904,7 +17000,7 @@ const Settings = (() => {
       </div>
       <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} data-action-change="Settings._setLiveStream"> Live price stream (SSE push)</label>
       <label class="lc-check-row"><input type="checkbox" id="s-snapshot" ${settings.snapshotEnabled !== false ? 'checked' : ''} data-action-change="Settings._setSnapshot"> Market snapshot (full PSX + US + commodities)</label>
-      <p class="field-hint" style="margin-top:8px">Snapshot: ${typeof PriceSnapshotService !== 'undefined' ? (PriceSnapshotService.freshnessLabel() || 'worker KV · 15m refresh') : 'worker KV'}</p>
+      <p class="field-hint" style="margin-top:8px">Snapshot: ${typeof PriceSnapshotService !== 'undefined' ? (PriceSnapshotService.freshnessLabel() || 'market cache · 15m refresh') : 'market cache'}</p>
       <p class="field-hint" style="margin-top:4px">Stream: ${(() => {
         const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
         const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
@@ -19815,7 +19911,7 @@ const Commodities = (() => {
         <div class="lc-pulse-pill"><label>USD/PKR</label><b>₨${usd.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</b></div>
         <div class="lc-pulse-pill"><label>PKR gold</label><b>${_goldPillLabel()}</b></div>
       </div>
-      <p class="lc-card-sub">Spot via worker snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
+      <p class="lc-card-sub">Spot from market snapshot (Yahoo futures + derived PKR karats + OGRA). Indicative — not jeweller or pump board prices.</p>
       <div class="lc-sector-card" id="commodities-list">${_listInner()}</div>
       <div class="lc-dash-actions">
         <button type="button" class="psx-btn psx-btn-primary" data-action="Commodities.refresh">Refresh</button>
@@ -21188,13 +21284,15 @@ const App = (() => {
   async function _fetchMarketIndex() {
     try {
       const kse = await Prices.fetchKSE100();
-      if (kse) {
-        State.set('kseIndex', kse);
-        State.recordKseSnapshot?.(kse);
-        _renderTicker();
-        if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
-      }
-    } catch (_) { /* offline / blocked */ }
+      State.set('kseIndex', kse || { value: null, changeP: null, unavailable: true, source: 'unavailable', resolved: true, ts: Date.now() });
+      if (kse?.value > 0) State.recordKseSnapshot?.(kse);
+      _renderTicker();
+      if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
+    } catch (_) {
+      State.set('kseIndex', { value: null, changeP: null, unavailable: true, source: 'unavailable', resolved: true, ts: Date.now() });
+      _renderTicker();
+      if (typeof Home !== 'undefined' && Navigation?.current?.() === 'home') Home.render();
+    }
   }
 
   function _scheduleAutoRefresh() {

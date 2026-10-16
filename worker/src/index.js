@@ -32,8 +32,36 @@ const YAHOO_HEADERS = {
   'Accept-Language': 'en-US,en;q=0.9',
 };
 
+function yahooSymFromPsxPath(path) {
+  const m = path.match(/^timeseries\/(?:eod|int)\/([A-Z0-9&.-]+)$/i);
+  if (!m) return null;
+  const sym = m[1].toUpperCase();
+  if (sym === 'KSE100' || sym === 'KSE-100') return '%5EKSE100';
+  return `${sym}.KA`;
+}
+
+async function yahooAsPsxSeries(ySym, range) {
+  const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=${encodeURIComponent(range || '1y')}`;
+  const res = await fetch(yUrl, { headers: YAHOO_HEADERS, cf: { cacheTtl: 120 } });
+  if (!res.ok) return null;
+  const j = await res.json();
+  const result = j?.chart?.result?.[0];
+  if (!result?.timestamp?.length) return null;
+  const closes = result.indicators?.quote?.[0]?.close || [];
+  const data = [];
+  for (let i = 0; i < result.timestamp.length; i++) {
+    const c = closes[i];
+    if (c == null || !(c > 0)) continue;
+    // PSX-shaped row: [unixSec, close, ?, prevClose]
+    const prev = i > 0 && closes[i - 1] > 0 ? closes[i - 1] : c;
+    data.push([result.timestamp[i], c, c, prev]);
+  }
+  if (data.length < 2) return null;
+  return { data, source: 'yahoo' };
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS });
     }
@@ -48,7 +76,7 @@ export default {
     const priceRun = await handlePriceRun(request, env, url);
     if (priceRun) return priceRun;
 
-    const snap = await handleSnapshot(request, env, url);
+    const snap = await handleSnapshot(request, env, url, ctx);
     if (snap) return snap;
 
     const tg = await handleTelegramRequest(request, env, url);
@@ -77,10 +105,12 @@ export default {
       return proxyFetch(cgUrl, { headers: { Accept: 'application/json' } }, (text) => okJson(text, 120));
     }
 
-    // Yahoo: /yahoo/chart/AAPL
+    // Yahoo: /yahoo/chart/AAPL — optional ?range=1y|5d|…
     if (path.startsWith('yahoo/chart/')) {
       const sym = decodeURIComponent(path.slice('yahoo/chart/'.length));
-      const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=5d`;
+      const range = url.searchParams.get('range') || '5d';
+      const interval = url.searchParams.get('interval') || '1d';
+      const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
       return proxyFetch(yUrl, { headers: YAHOO_HEADERS, cf: { cacheTtl: 60 } }, (text) => okJson(text, 90));
     }
 
@@ -97,14 +127,38 @@ export default {
       return json({ error: 'Unknown route', path }, 404);
     }
 
-    return proxyFetch(fetchUrl, { headers: PSX_HEADERS, cf: { cacheTtl: 90 } }, (text) => {
+    const psxPath = fetchUrl.slice(`${PSX_ORIGIN}/`.length);
+    const yFallbackSym = yahooSymFromPsxPath(psxPath);
+
+    return proxyFetch(fetchUrl, { headers: PSX_HEADERS, cf: { cacheTtl: 90 } }, async (text) => {
       const trimmed = text.trim();
-      // LDG-V3-3: return 200 empty series (not HTTP 404) so browsers don't log
-      // "Failed to load resource" on every cold load when PSX serves HTML.
-      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+      // Prefer Yahoo series when PSX serves HTML / empty — keep HTTP 200 so browsers stay quiet.
+      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || !trimmed) {
+        if (yFallbackSym) {
+          try {
+            const y = await yahooAsPsxSeries(yFallbackSym, path.includes('/int/') ? '5d' : '1y');
+            if (y?.data?.length) {
+              return new Response(JSON.stringify(y), {
+                status: 200,
+                headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120' },
+              });
+            }
+          } catch (_) { /* soft empty */ }
+        }
         return json({ error: 'PSX returned HTML', url: fetchUrl, data: [] }, 200);
       }
       if (/^error code:\s*\d+/i.test(trimmed)) {
+        if (yFallbackSym) {
+          try {
+            const y = await yahooAsPsxSeries(yFallbackSym, '1y');
+            if (y?.data?.length) {
+              return new Response(JSON.stringify(y), {
+                status: 200,
+                headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120' },
+              });
+            }
+          } catch (_) { /* soft empty */ }
+        }
         throw new Error(trimmed.slice(0, 60));
       }
       let out = trimmed;
@@ -113,6 +167,14 @@ export default {
         if (parsed?.data && Array.isArray(parsed.data) && parsed.data.length) {
           const sorted = [...parsed.data].sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
           out = JSON.stringify({ ...parsed, data: sorted });
+        } else if (yFallbackSym && (!parsed?.data || !parsed.data.length)) {
+          const y = await yahooAsPsxSeries(yFallbackSym, '1y');
+          if (y?.data?.length) {
+            return new Response(JSON.stringify(y), {
+              status: 200,
+              headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120' },
+            });
+          }
         }
       } catch { /* raw */ }
       return new Response(out, {
@@ -145,7 +207,7 @@ async function proxyFetch(fetchUrl, opts, handle) {
       if (!text?.trim()) {
         lastErr = 'Empty response';
         if (attempt < 2) { await sleep(200 * (attempt + 1)); continue; }
-        return json({ error: lastErr, url: fetchUrl }, 502);
+        return json({ error: lastErr, url: fetchUrl, data: [] }, 200);
       }
       return await handle(text);
     } catch (e) {
@@ -153,7 +215,7 @@ async function proxyFetch(fetchUrl, opts, handle) {
       if (attempt < 2) { await sleep(250 * (attempt + 1)); continue; }
     }
   }
-  return json({ error: lastErr || 'Proxy fetch failed', url: fetchUrl }, 502);
+  return json({ error: lastErr || 'Proxy fetch failed', url: fetchUrl, data: [] }, 200);
 }
 
 function okJson(text, maxAge) {

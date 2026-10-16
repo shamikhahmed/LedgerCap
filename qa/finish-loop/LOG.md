@@ -1,3 +1,10 @@
+## 2026-10-16 — Capricorn Perfection Loop v5 (V5-5 + §4 Worker) → 3.58.3
+- **Changed:** calm last-close banner (market screens); KSE tile last-close/Unavailable; hub news on-demand; research/TV “No history”; worker news soft-200 + Yahoo timeseries fallback; stale>18h EOD refresh on tick + snapshot.
+- **Root cause:** developer banner copy; fetchKSE100 null left Loading…; Google RSS 503→502; PSX HTML mirrored as 404; cron skipped PSX after close so KV aged; news fired on hub paint.
+- **Worker deploy:** blocked — `wrangler whoami` not logged in (owner: login + `cd worker && npx wrangler deploy`).
+- **Fleet sweep:** no clear user-facing worker/origin/EOD banner hits in other Caps (Aura/Car/Cook/Idea/Mastery/Prism/Pulse/Scent/Soul/Steady/Travel/Vault).
+- **Verification:** `npm run bundle`; unit tests below; live worker not redeployed.
+
 ### 2026-09-15 LedgerCap 3.57.2 TIER1 PASS
 - CI green: https://github.com/shamikhahmed/LedgerCap/actions/runs/34967963640
 - `npm run tier1` → PASS (23 pass, 0 fail, 1 warn matrix:shots)

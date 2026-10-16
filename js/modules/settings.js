@@ -133,7 +133,7 @@ const Settings = (() => {
       </div>
       <label class="lc-check-row"><input type="checkbox" id="s-live-stream" ${settings.liveStreamEnabled !== false ? 'checked' : ''} data-action-change="Settings._setLiveStream"> Live price stream (SSE push)</label>
       <label class="lc-check-row"><input type="checkbox" id="s-snapshot" ${settings.snapshotEnabled !== false ? 'checked' : ''} data-action-change="Settings._setSnapshot"> Market snapshot (full PSX + US + commodities)</label>
-      <p class="field-hint" style="margin-top:8px">Snapshot: ${typeof PriceSnapshotService !== 'undefined' ? (PriceSnapshotService.freshnessLabel() || 'worker KV · 15m refresh') : 'worker KV'}</p>
+      <p class="field-hint" style="margin-top:8px">Snapshot: ${typeof PriceSnapshotService !== 'undefined' ? (PriceSnapshotService.freshnessLabel() || 'market cache · 15m refresh') : 'market cache'}</p>
       <p class="field-hint" style="margin-top:4px">Stream: ${(() => {
         const st = typeof LivePriceStream !== 'undefined' ? LivePriceStream.status() : {};
         const open = typeof PsxSession !== 'undefined' && PsxSession.isOpen();
