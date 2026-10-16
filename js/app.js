@@ -412,10 +412,11 @@ const App = (() => {
     if (typeof LcEvents !== 'undefined') LcEvents.init();
     _wireChromeIcons();
     window.CapMotion = window.CapMotion || { refresh: () => {} };
-    if (demo && window.Settings && Settings.loadSeedData) {
+    if (demo) {
       const hasLedger = (State.get().transactions || []).length > 0;
-      if (!hasLedger) Settings.loadSeedData({ silent: true });
-      else showToast('Demo mode — your saved ledger was kept. Clear data in Settings to load sample portfolio.', 'info');
+      if (!hasLedger && window.DemoSeed) DemoSeed.load({ silent: true });
+      else if (!hasLedger && window.Settings && Settings.loadSeedData) Settings.loadSeedData({ silent: true });
+      else if (hasLedger) showToast('Demo mode — your saved ledger was kept. Clear data in Settings to load sample portfolio.', 'info');
     }
     if (demo && typeof CapDemo !== 'undefined') {
       CapDemo.markActive();
@@ -1334,7 +1335,7 @@ window.App = App;
 /* Fallback if inline loader was skipped (stale SW HTML) — v5 §3b. */
 (function () {
   if (typeof window.__lcEnsureDeferred === 'function') return;
-  var ver = (window.LEDGERCAP_VERSION && LEDGERCAP_VERSION.app) || '3.58.6';
+  var ver = (window.LEDGERCAP_VERSION && LEDGERCAP_VERSION.app) || '3.58.7';
   var src = 'js/ledgercap.deferred.js?v=' + ver;
   var p = null;
   window.__lcEnsureDeferred = function () {
@@ -1349,15 +1350,12 @@ window.App = App;
     });
     return p;
   };
-  var demo = /(?:^|[?&])demo=1(?:&|$)/.test(location.search);
+  /* Never parse deferred during first ~8s — demo ASAP kick caused LH TBT (v5 §3d). */
   function kick() { window.__lcEnsureDeferred(); }
-  if (demo) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', kick);
-    else kick();
-  } else if ('requestIdleCallback' in window) {
-    requestIdleCallback(kick, { timeout: 2200 });
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(kick, { timeout: 8000 });
   } else {
-    setTimeout(kick, 1200);
+    setTimeout(kick, 5000);
   }
 })();
 

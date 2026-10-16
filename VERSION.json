@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.6",
-  "swCache": "ledgercap-v147",
+  "version": "3.58.8",
   "updated": "2026-10-16",
-  "notes": "V5 \u00a73b: portfolio-analytics back in core; demo kicks deferred ASAP"
+  "swCache": "ledgercap-v3588",
+  "notes": "V5 \u00a73d: no auto deferred kick; settings/portfolio/onboarding deferred"
 }

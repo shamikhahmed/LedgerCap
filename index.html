@@ -129,14 +129,15 @@
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
   <script defer src="js/brand/colors.js"></script>
-  <script defer src="js/ledgercap.bundle.js?v=3.58.6"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.58.8"></script>
   <script defer src="js/pro-modal.js"></script>
   <script>
-  /* Idle-load non-Home bundle after first paint (v5 §3 TBT). Demo kicks ASAP for E2E. */
+  /* Idle-load non-Home bundle well after first paint (v5 §3d TBT).
+     Demo must NOT kick ASAP — that parsed ~460KB during LH (mobile 43).
+     E2E / nav still call __lcEnsureDeferred() on demand. */
   (function () {
-    var src = 'js/ledgercap.deferred.js?v=3.58.6';
+    var src = 'js/ledgercap.deferred.js?v=3.58.8';
     var p = null;
-    var demo = /(?:^|[?&])demo=1(?:&|$)/.test(location.search);
     window.__lcEnsureDeferred = function () {
       if (window.__LC_DEFERRED_READY__) return Promise.resolve();
       if (p) return p;
@@ -149,14 +150,7 @@
       });
       return p;
     };
-    function kick() {
-      var run = function () { window.__lcEnsureDeferred(); };
-      if (demo) { run(); return; }
-      if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 2200 });
-      else setTimeout(run, 1200);
-    }
-    if (document.readyState === 'complete') kick();
-    else window.addEventListener('load', kick);
+    /* No auto-kick — LH TBT includes idle timeout. Nav / E2E call __lcEnsureDeferred. */
   })();
   </script>
 

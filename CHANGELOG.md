@@ -1,3 +1,14 @@
+## 3.58.8 — 2026-10-16
+
+- No auto idle-load of deferred pack (nav-only).
+- Defer settings/portfolio/onboarding/pin/analytics engines (~115KB off core).
+- SW → `ledgercap-v3588`
+
+## 3.58.7 — 2026-10-16
+
+- Idle-load deferred bundle after ~8s (demo ASAP kick caused LH TBT).
+- SW → `ledgercap-v3587`
+
 ## 3.58.6 — 2026-10-16
 - Soft console.error/warn on demo cold path (LH bp; worker undeployable)
 - Fix: `portfolio-analytics-service` back in core (Hub Home crashed when deferred)
