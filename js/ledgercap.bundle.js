@@ -3021,7 +3021,9 @@ const PortfolioAnalyticsService = (() => {
       const { dailyPnl, dailyPnlPct } = _dayPnlForStock(h.shares, h.symbol, price);
       const alloc = (val / total) * 100;
       const f = (window.FUNDAMENTALS_DB || {})[h.symbol];
-      const ai = AIAnalysis.analyze(h.symbol);
+      const ai = (typeof AIAnalysis !== 'undefined' && AIAnalysis.analyze)
+        ? AIAnalysis.analyze(h.symbol)
+        : { action: null, confidence: 0 };
       const meta = [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(s => s.symbol === h.symbol && s.broker === h.broker);
       return {
         symbol: h.symbol, name: meta?.name || h.symbol, broker: h.broker,
@@ -3042,7 +3044,9 @@ const PortfolioAnalyticsService = (() => {
       const { dailyPnl, dailyPnlPct } = _dayPnlForStock(f.units, f.symbol, nav);
       const mf = (window.MEEZAN_FUNDS || []).find(m => m.symbol === f.symbol);
       const fa = (window.FUND_ANALYTICS_DB || {})[f.symbol];
-      const ai = AIAnalysis.analyze(f.symbol);
+      const ai = (typeof AIAnalysis !== 'undefined' && AIAnalysis.analyze)
+        ? AIAnalysis.analyze(f.symbol)
+        : { action: null, confidence: 0 };
       return {
         symbol: f.symbol, name: mf?.name || f.symbol, broker: 'Meezan',
         kind: 'fund', quantity: f.units, avgCost: f.avgNav, price: nav, value: val, costBasis: f.totalInvested,
@@ -9352,5 +9356,35 @@ const App = (() => {
     openHeaderMenu };
 })();
 window.App = App;
+
+/* Fallback if inline loader was skipped (stale SW HTML) — v5 §3b. */
+(function () {
+  if (typeof window.__lcEnsureDeferred === 'function') return;
+  var ver = (window.LEDGERCAP_VERSION && LEDGERCAP_VERSION.app) || '3.58.6';
+  var src = 'js/ledgercap.deferred.js?v=' + ver;
+  var p = null;
+  window.__lcEnsureDeferred = function () {
+    if (window.__LC_DEFERRED_READY__) return Promise.resolve();
+    if (p) return p;
+    p = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = function () { window.__LC_DEFERRED_READY__ = true; resolve(); };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return p;
+  };
+  var demo = /(?:^|[?&])demo=1(?:&|$)/.test(location.search);
+  function kick() { window.__lcEnsureDeferred(); }
+  if (demo) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', kick);
+    else kick();
+  } else if ('requestIdleCallback' in window) {
+    requestIdleCallback(kick, { timeout: 2200 });
+  } else {
+    setTimeout(kick, 1200);
+  }
+})();
 
 document.addEventListener('DOMContentLoaded', App.launch);

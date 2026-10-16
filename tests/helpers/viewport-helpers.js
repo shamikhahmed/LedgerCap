@@ -38,10 +38,11 @@ async function waitForNavReady(page) {
   await page.waitForFunction(() => typeof window.Navigation !== 'undefined');
   await page.waitForSelector('#nav .psx-nav-btn', { state: 'attached', timeout: 15000 });
   /* Non-Home screens need deferred bundle — await it for demo E2E races. */
+  await page.waitForFunction(() => typeof window.__lcEnsureDeferred === 'function', { timeout: 15000 });
   await page.evaluate(async () => {
-    if (typeof window.__lcEnsureDeferred === 'function') await window.__lcEnsureDeferred();
+    await window.__lcEnsureDeferred();
   });
-  await page.waitForFunction(() => !!window.__LC_DEFERRED_READY__ && typeof Market !== 'undefined', {
+  await page.waitForFunction(() => typeof Market !== 'undefined' && typeof Research !== 'undefined', {
     timeout: 30000,
   });
 }
