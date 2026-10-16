@@ -1,3 +1,7 @@
+## 3.58.2 — 2026-10-16
+- Desktop (≥900px): the sidebar is back and the tab bar is hidden again. The 2026-10 `!important` cleanup left `.psx-sidebar { display: none }` and `.psx-bottom-nav { display: flex }` winning over the desktop media query, so Mac and iPad-landscape lost the full sidebar (Global markets, Commodities, Zakat, Screener, Dividends…). Fixed with specificity, no `!important`. `tests/viewport.spec.js` green again.
+- SW `ledgercap-v143`.
+
 ## 3.58.1 — 2026-10-15
 - Commodities: honest empty/offline when the price Worker is unreachable (no $0 placeholders); last-known quotes shown with a status banner when available.
 - Gallery v3: Commodities restored to SCREENS (light/dark × iphone/ipad/mac).

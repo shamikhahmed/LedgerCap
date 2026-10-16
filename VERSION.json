@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.1",
-  "swCache": "ledgercap-v142",
-  "updated": "2026-10-15",
-  "notes": "Commodities honest empty/offline when Worker unavailable; gallery restored"
+  "version": "3.58.2",
+  "swCache": "ledgercap-v143",
+  "updated": "2026-10-16",
+  "notes": "Desktop sidebar restored at ≥900px (tab bar hidden); SW v143"
 }
