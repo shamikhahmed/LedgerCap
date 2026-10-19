@@ -15,6 +15,12 @@ const PortfolioAnalyticsService = (() => {
   function getSummary(state) {
     state = state || State.get();
     const txs = state.transactions || [];
+    if (typeof Analytics === 'undefined' || typeof Analytics.dashboardMetrics !== 'function') {
+      return {
+        totalValue: 0, invested: 0, unrealized: 0, realized: 0,
+        holdings: [], funds: [], portfolioDivYield: 0, brokers: {}, geoAllocation: []
+      };
+    }
     const m = Analytics.dashboardMetrics(state);
     const totalValue = m.totalValue;
     const invested = m.totalCost;
@@ -220,7 +226,7 @@ const PortfolioAnalyticsService = (() => {
       insights.push({ type: 'income', severity: 'low', text: `Portfolio yield ${summary.portfolioDivYield.toFixed(1)}% — income generation below target.`, action: 'Add high-yield names like MEBL, OGDC, or MIIF.' });
     }
 
-    const ruleInsights = Insights.generate(state) || [];
+    const ruleInsights = (typeof Insights !== 'undefined' && Insights.generate) ? (Insights.generate(state) || []) : [];
     const growthNames = holdings.filter(h => {
       const g = (window.FUNDAMENTALS_DB || {})[h.symbol]?.profitGrowth;
       return g != null && g > 10;

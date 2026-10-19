@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.8",
-  "updated": "2026-10-16",
-  "swCache": "ledgercap-v3588",
-  "notes": "V5 \u00a73d: no auto deferred kick; settings/portfolio/onboarding deferred"
+  "version": "3.58.9",
+  "updated": "2026-10-19",
+  "swCache": "ledgercap-v3589",
+  "notes": "V5 CI: Analytics engine back in core (PortfolioAnalyticsService cold-path)"
 }

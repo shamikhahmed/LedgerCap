@@ -21,6 +21,9 @@ const CORE = [
   'js/services/market-data.js',
   'js/services/stock-service.js',
   'js/services/portfolio-buckets-service.js',
+  /* Insights + Analytics before PortfolioAnalyticsService — hub cold path (v5 CI). */
+  'js/engines/insights.js',
+  'js/engines/analytics.js',
   'js/services/portfolio-analytics-service.js',
   'js/services/fx-service.js',
   'js/services/psx-session.js',
@@ -51,8 +54,6 @@ const DEFERRED = [
   'js/ui/market-ui.js',
   'js/services/pin-vault.js',
   'js/services/secrets-vault.js',
-  'js/engines/analytics.js',
-  'js/engines/insights.js',
   'js/ui/charts.js',
   'js/ui/tradingview.js',
   'js/services/fund-nav-service.js',

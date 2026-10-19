@@ -1,3 +1,9 @@
+## 3.58.9 — 2026-10-19
+
+- Restore `engines/analytics.js` on the cold path — Hub Home called `Analytics.dashboardMetrics` before deferred load (`Analytics is not defined` CI).
+- Soft-guard `PortfolioAnalyticsService.getSummary` if Analytics is missing.
+- SW → `ledgercap-v3589`
+
 ## 3.58.8 — 2026-10-16
 
 - No auto idle-load of deferred pack (nav-only).

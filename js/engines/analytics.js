@@ -282,7 +282,7 @@ const Analytics = (() => {
       sectorAllocation: sectorAllocation(state),
       brokerAllocation: brokerAllocation(state),
       aiSummary: aiSummary(state),
-      insights: Insights.generate(state),
+      insights: (typeof Insights !== 'undefined' && Insights.generate) ? Insights.generate(state) : [],
       sipProgress: _sipProgress(state),
     };
   }
