@@ -1,3 +1,9 @@
+## [3.58.10] — 2026-10-21
+
+- HIG v7: iOS tokens / native feel; Dynamic Type & hit targets where applicable
+- Real-people stories live on hub (`/apps/<slug>/` + `/stories/`)
+- Pitch/presentation/README synced to 3.58.10
+
 ## 3.58.9 — 2026-10-19
 
 - Restore `engines/analytics.js` on the cold path — Hub Home called `Analytics.dashboardMetrics` before deferred load (`Analytics is not defined` CI).

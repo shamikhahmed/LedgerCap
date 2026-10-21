@@ -11,6 +11,15 @@ PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom proj
 
 ---
 
+
+## Real stories
+
+Illustrative day-in-the-life stories (fictional personas) with screenshots and captions:
+
+- App stories: https://shamikhahmed.github.io/apps/ledgercap/
+- All Cap stories: https://shamikhahmed.github.io/stories/
+
+
 ## Features
 
 - **Hub** — Net worth hero, KSE-100 strip, rebalance teaser, market status, quick actions, tools grid

@@ -129,10 +129,22 @@ Feels like a native finance app.
 
 ---
 
+
+---
+
+## Slide — Real people (illustrative)
+
+Three fictional personas show how people use LedgerCap day to day — before/after numbers, timeline screenshots, and a short silent video with captions.
+
+**Stories:** https://shamikhahmed.github.io/apps/ledgercap/  
+**Index:** https://shamikhahmed.github.io/stories/
+
+*Illustrative story. People and data are fictional.*
+
 ## Slide 12 — Close
 
 > *Know your net worth. Own your ledger. Reach financial freedom.*
 
-**LedgerCap** — github.com/shamikhahmed/LedgerCap · **v3.46.0**
+**LedgerCap** — github.com/shamikhahmed/LedgerCap · **v3.58.10**
 
 *Shamikh Ahmed · Karachi*
