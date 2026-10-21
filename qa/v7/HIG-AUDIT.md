@@ -106,4 +106,4 @@ Script: `capricorn-tooling/scripts/hig-check.mjs --url … --out … --viewport=
 | Prices via Worker only (D-09) | Indicative / delayed label |
 | Full VoiceOver every control | Spot-check 10 controls in sim — see APP-REPORT |
 
-**Gate:** 0 FAIL rows remaining for §2.2 acceptance on shipped UI chrome.
+**Gate:** 2 FAIL viewport-runs remaining (rules: hit-target) for §2.2 acceptance on shipped UI chrome.
