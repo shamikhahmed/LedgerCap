@@ -1,0 +1,34 @@
+{
+  "id": "ledgercap-nida",
+  "name": "Nida Farooq",
+  "age": 30,
+  "city": "Islamabad, Pakistan",
+  "role": "SIP logger",
+  "tech": "medium",
+  "accessibility": "standard",
+  "device": "iPhone 15",
+  "goal": "Mutual fund positions and monthly SIP log",
+  "pain_before": [
+    "Scattered notes",
+    "Forgot to log"
+  ],
+  "how_she_uses_it": [
+    "mutual-funds",
+    "psx-holdings"
+  ],
+  "numbers": {
+    "before": {
+      "minutes_lost": 15
+    },
+    "after": {
+      "minutes_lost": 2
+    }
+  },
+  "quote": "Every SIP line is on my phone.",
+  "seed": "qa/v7/personas/ledgercap-nida.seed.json",
+  "features_used": [
+    "mutual-funds",
+    "psx-holdings"
+  ],
+  "fictional": true
+}

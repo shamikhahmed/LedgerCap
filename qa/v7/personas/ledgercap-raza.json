@@ -1,0 +1,34 @@
+{
+  "id": "ledgercap-raza",
+  "name": "Raza Ahmed",
+  "age": 63,
+  "city": "Lahore, Pakistan",
+  "role": "Retiree",
+  "tech": "medium",
+  "accessibility": "uses Larger Text (AX2)",
+  "device": "iPhone 15",
+  "goal": "Dividend log with larger text",
+  "pain_before": [
+    "Scattered notes",
+    "Forgot to log"
+  ],
+  "how_she_uses_it": [
+    "psx-holdings",
+    "research-tools"
+  ],
+  "numbers": {
+    "before": {
+      "minutes_lost": 15
+    },
+    "after": {
+      "minutes_lost": 2
+    }
+  },
+  "quote": "I track dividends. I decide what to do.",
+  "seed": "qa/v7/personas/ledgercap-raza.seed.json",
+  "features_used": [
+    "psx-holdings",
+    "research-tools"
+  ],
+  "fictional": true
+}

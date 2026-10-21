@@ -1,0 +1,34 @@
+{
+  "id": "ledgercap-usman",
+  "name": "Usman Javed",
+  "age": 45,
+  "city": "Karachi, Pakistan",
+  "role": "PSX investor",
+  "tech": "medium",
+  "accessibility": "standard",
+  "device": "iPhone 15",
+  "goal": "Tracks holdings \u2014 never recommends trades",
+  "pain_before": [
+    "Scattered notes",
+    "Forgot to log"
+  ],
+  "how_she_uses_it": [
+    "psx-holdings",
+    "net-worth-pkr"
+  ],
+  "numbers": {
+    "before": {
+      "minutes_lost": 15
+    },
+    "after": {
+      "minutes_lost": 2
+    }
+  },
+  "quote": "I see totals. The app never tells me to buy.",
+  "seed": "qa/v7/personas/ledgercap-usman.seed.json",
+  "features_used": [
+    "psx-holdings",
+    "net-worth-pkr"
+  ],
+  "fictional": true
+}
