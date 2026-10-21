@@ -1395,7 +1395,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   background: var(--psx-surface-1, rgba(255,255,255,0.04));
   border-radius: 12px;
   padding: 14px;
+  min-height: 44px;
+  box-sizing: border-box;
   border: 1px solid var(--psx-border, rgba(255,255,255,0.08));
+}
+button.os-broker-card {
+  min-height: 44px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 .os-broker-name {
   font-size: 0.82rem;
