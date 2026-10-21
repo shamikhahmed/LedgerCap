@@ -1981,7 +1981,7 @@ body.dark .lc-hub-folio__pages .lc-dash-hero,
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-  }
+   min-height:44px; box-sizing:border-box; display:inline-flex; align-items:center; }
   body.lc-desktop-nav .lc-hub-folio__sheet {
     background: var(--lc-folio, var(--lc-f7f4ef));
     border: 1px solid color-mix(in srgb, var(--lc-maroon) 18%, var(--psx-border));
