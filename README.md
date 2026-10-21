@@ -12,7 +12,7 @@ PSX stocks, Meezan Islamic funds, portfolio tracking, and financial freedom proj
 ---
 
 
-## Real stories
+## Example stories
 
 Illustrative day-in-the-life stories (fictional personas) with screenshots and captions:
 
