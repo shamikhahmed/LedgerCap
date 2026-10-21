@@ -742,6 +742,8 @@ body.lc-rtl .bs-panel, body.lc-rtl .lc-sector-card {
   align-items: center;
   gap: 12px;
   width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
   padding: 14px 16px;
   border-radius: var(--lc-radius-md, 14px);
   border: 1px solid var(--psx-border, rgba(255,255,255,.1));

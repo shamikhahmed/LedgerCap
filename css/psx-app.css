@@ -121,9 +121,10 @@ body.psx-app {
 .psx-ticker strong { color: var(--psx-text); }
 .psx-topbar-actions { display: flex; align-items: center; gap: 6px; }
 .psx-icon-btn {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 10px;
   border: 1px solid var(--psx-border); background: var(--psx-bg-muted);
   cursor: pointer; font-size: 15px; display: grid; place-items: center;
+  box-sizing: border-box;
 }
 
 /* Screens */

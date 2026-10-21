@@ -125,12 +125,15 @@ body.lc-pro .psx-ticker {
 }
 
 body.lc-pro .psx-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   border: none;
   background: var(--psx-bg-muted);
   font-size: 13px;
+  box-sizing: border-box;
   transition: transform 0.2s var(--lc-ease), background 0.2s var(--lc-ease);
 }
 
@@ -533,6 +536,10 @@ body.lc-pro .toast {
   border: none;
   background: none;
   padding: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
   text-align: start;
   cursor: pointer;
   font-family: inherit;

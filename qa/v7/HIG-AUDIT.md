@@ -61,6 +61,7 @@ Legend: PASS / FAIL / N/A · Evidence = path or test name.
 | Was | Fix |
 |---|---|
 | No web DT applicator | Added `js/hig-dt.js` + link |
+| Icon/broker/deploy hit <44 | `psx-icon-btn` / `.lc-portfolio-card` / `.lc-deploy-name-btn` → 44 |
 
 ## hig-check evidence
 
@@ -70,10 +71,10 @@ Script: `capricorn-tooling/scripts/hig-check.mjs --url … --out … --viewport=
 
 | Viewport | Light | Dark |
 |---|---|---|
-| iphone-se | pending | pending |
-| iphone-16-pro | pending | pending |
-| ipad-air | FAIL (navigation,hit-target) | pending |
-| macbook-14 | pending | pending |
+| iphone-se | FAIL (hit-target) | FAIL (hit-target) |
+| iphone-16-pro | FAIL (hit-target) | FAIL (hit-target) |
+| ipad-air | FAIL (hit-target) | FAIL (hit-target) |
+| macbook-14 | FAIL (hit-target) | FAIL (hit-target) |
 
 ## Device / chrome checklist (§2.2 layout)
 
@@ -105,4 +106,4 @@ Script: `capricorn-tooling/scripts/hig-check.mjs --url … --out … --viewport=
 | Prices via Worker only (D-09) | Indicative / delayed label |
 | Full VoiceOver every control | Spot-check 10 controls in sim — see APP-REPORT |
 
-**Gate:** 2 FAIL rows remaining for §2.2 acceptance on shipped UI chrome.
+**Gate:** 9 FAIL rows remaining for §2.2 acceptance on shipped UI chrome.
