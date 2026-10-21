@@ -191,6 +191,7 @@ body.psx-app {
 
 .psx-side-btn {
   display: flex; align-items: center; gap: 10px; width: 100%;
+  min-height: 44px; box-sizing: border-box;
   padding: 10px 12px; border: none; border-radius: 10px;
   background: transparent; cursor: pointer; font-family: inherit;
   color: var(--psx-text-2); font-size: 14px; font-weight: 600; text-align: start;
