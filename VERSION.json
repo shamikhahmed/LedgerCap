@@ -1,7 +1,7 @@
 {
   "app": "LedgerCap",
-  "version": "3.58.9",
-  "updated": "2026-10-19",
-  "swCache": "ledgercap-v3589",
-  "notes": "V5 CI: Analytics engine back in core (PortfolioAnalyticsService cold-path)"
+  "version": "3.58.10",
+  "updated": "2026-10-21",
+  "swCache": "ledgercap-v35810",
+  "notes": "V5 CI: Analytics engine back in core (PortfolioAnalyticsService cold-path) \u00b7 v7 HIG ios-tokens scaffold"
 }
