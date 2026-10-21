@@ -71,9 +71,9 @@ Script: `capricorn-tooling/scripts/hig-check.mjs --url … --out … --viewport=
 
 | Viewport | Light | Dark |
 |---|---|---|
-| iphone-se | FAIL (hit-target) | FAIL (hit-target) |
-| iphone-16-pro | FAIL (hit-target) | FAIL (hit-target) |
-| ipad-air | FAIL (hit-target) | FAIL (hit-target) |
+| iphone-se | PASS | PASS |
+| iphone-16-pro | PASS | PASS |
+| ipad-air | PASS | PASS |
 | macbook-14 | FAIL (hit-target) | FAIL (hit-target) |
 
 ## Device / chrome checklist (§2.2 layout)
@@ -106,4 +106,4 @@ Script: `capricorn-tooling/scripts/hig-check.mjs --url … --out … --viewport=
 | Prices via Worker only (D-09) | Indicative / delayed label |
 | Full VoiceOver every control | Spot-check 10 controls in sim — see APP-REPORT |
 
-**Gate:** 9 FAIL rows remaining for §2.2 acceptance on shipped UI chrome.
+**Gate:** 0 FAIL rows remaining for §2.2 acceptance on shipped UI chrome.
