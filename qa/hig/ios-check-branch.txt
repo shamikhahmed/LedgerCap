@@ -1,0 +1,22 @@
+PASS  tab bar + top bar tappable
+PASS  hit areas (tabs ≥44pt, pills ≥34pt + slop)
+PASS  no sideways overflow · home
+PASS  document scrolls (no inner scroller) · home
+PASS  no sideways overflow · market
+PASS  document scrolls (no inner scroller) · market
+PASS  no sideways overflow · funds
+PASS  document scrolls (no inner scroller) · funds
+PASS  no sideways overflow · portfolio
+PASS  document scrolls (no inner scroller) · portfolio
+PASS  no sideways overflow · research
+PASS  document scrolls (no inner scroller) · research
+PASS  no sideways overflow · settings
+PASS  document scrolls (no inner scroller) · settings
+PASS  tab tap navigates (no reload)
+PASS  new screen opens at top
+PASS  page locked behind sheet
+PASS  sheet keeps scroll position
+PASS  inputs ≥16px (no zoom-on-focus)
+PASS  sheet chip tap selects
+PASS  no reload during session
+PASS  SW: no auto skipWaiting/clients.claim

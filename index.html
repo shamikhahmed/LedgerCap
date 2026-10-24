@@ -29,17 +29,17 @@
   <meta name="twitter:title" content="LedgerCap — Pakistani wealth. One ledger.">
   <meta name="twitter:description" content="PSX stocks, Meezan funds, Zakat, net worth in PKR — offline-first by Capricorn Systems.">
   <meta name="twitter:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
-  <noscript>
-    <link rel="stylesheet" href="css/ios-tokens.css" />
-
-</noscript>
+  <!-- HIG design: legacy 3.x CSS sits in @layer legacy under the HIG components (css/app.css, DESIGN.md).
+       Preloads let the browser fetch the @imported files in parallel. -->
+  <link rel="preload" href="css/ios-tokens.css" as="style">
+  <link rel="preload" href="css/psx-app.css" as="style">
+  <link rel="preload" href="css/lc-pro.css" as="style">
+  <link rel="preload" href="css/lc-pro-phase.css" as="style">
+  <link rel="preload" href="css/design/system.css" as="style">
+  <link rel="preload" href="css/design/ledgercap.css" as="style">
   <link rel="stylesheet" href="css/tokens.css?v=1">
-  <link rel="stylesheet" href="css/ios-tokens.css">
-  <link rel="stylesheet" href="css/psx-app.css?v=22">
-  <link rel="stylesheet" href="css/lc-pro.css?v=7">
-  <link rel="stylesheet" href="css/brand-mark.css?v=1">
-  <link rel="stylesheet" href="css/lc-pro-phase.css?v=6">
-  <link rel="stylesheet" href="css/fonts-local.css">
+  <link rel="stylesheet" href="css/design/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
   <script src="js/theme-boot.js"></script>
 </head>
 <body class="psx-app lc-pro" data-theme="dark">
@@ -124,9 +124,13 @@
   <div class="bottom-sheet" id="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="bs-title">
     <div class="bs-backdrop" data-action="App.closeBottomSheet"></div>
     <div class="bs-panel">
-      <div class="bs-title" id="bs-title" style="font-weight:800;margin-bottom:12px"></div>
+      <div class="bs-grabber" aria-hidden="true"></div>
+      <div class="bs-bar">
+        <button type="button" class="bs-bar-cancel" data-action="App.closeBottomSheet">Cancel</button>
+        <div class="bs-title" id="bs-title"></div>
+        <div class="bs-bar-trail"></div>
+      </div>
       <div id="bs-body"></div>
-      <button type="button" class="psx-btn psx-btn-ghost" style="width:100%;margin-top:12px" data-action="App.closeBottomSheet">Close</button>
     </div>
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>

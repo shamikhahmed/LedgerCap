@@ -21,7 +21,8 @@
     "icons:ios": "node scripts/generate-ios-icons.mjs",
     "verify": "npm test",
     "tier1": "node ../capricorn-tooling/shared/testing/tier1.mjs",
-    "axe": "node scripts/capture-axe.mjs"
+    "axe": "node scripts/capture-axe.mjs",
+    "ios:check": "node scripts/ios-behaviour-check.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
