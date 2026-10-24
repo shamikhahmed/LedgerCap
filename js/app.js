@@ -472,7 +472,6 @@ const App = (() => {
     _scheduleAutoRefresh();
     _maybeDemoBanner();
     _maybeInstallHint();
-    _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -805,15 +804,53 @@ const App = (() => {
     if (!sheet) return;
     document.getElementById('bs-title').textContent = title || '';
     document.getElementById('bs-body').innerHTML = content || '';
+    _sheetBar(sheet);
     sheet.classList.add('open');
     _activeSheet = id;
-    sheet.querySelector('.bs-backdrop')?.addEventListener('click', closeBottomSheet);
+    _lockScroll();
+    sheet.querySelector('.bs-backdrop')?.addEventListener('click', () => closeBottomSheet());
   }
 
-  function closeBottomSheet() {
+  /** HIG sheet bar: the body's single trailing primary action moves to the bar (Cancel is always leading). */
+  function _sheetBar(sheet) {
+    const trail = sheet.querySelector('.bs-bar-trail');
+    if (!trail) return;
+    trail.innerHTML = '';
+    const primaries = [...sheet.querySelectorAll('#bs-body > div > .btn-primary:last-child, #bs-body > .btn-primary:last-child')];
+    if (primaries.length === 1) {
+      const btn = primaries[0];
+      btn.classList.add('bs-bar-done');
+      // Bar actions are one word ("Add Transaction" → "Add"); the sheet title carries the rest
+      const label = btn.textContent.trim();
+      if (label.includes(' ')) {
+        btn.setAttribute('aria-label', label);
+        btn.textContent = label.split(' ')[0];
+      }
+      trail.appendChild(btn);
+    }
+  }
+
+  /* iOS ignores overflow:hidden for touch scrolling and jumps when it toggles — pin the body, restore exactly. */
+  let _lockedY = null;
+  function _lockScroll() {
+    if (_lockedY !== null) return;
+    _lockedY = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: -_lockedY + 'px', left: '0', right: '0', width: '100%' });
+  }
+  function _unlockScroll(restoreY) {
+    if (_lockedY === null) return;
+    const y = restoreY == null ? _lockedY : restoreY;
+    _lockedY = null;
+    Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
+    window.scrollTo(0, y);
+  }
+
+  /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
+  function closeBottomSheet(restoreY) {
     const sheet = document.getElementById('bottom-sheet');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
+    _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
   }
 
   function openSellHolding(symbol, broker, type) {
@@ -837,16 +874,16 @@ const App = (() => {
     const brokers = ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
     const globalBrokers = window.GLOBAL_BROKERS || ['IBKR', 'Binance', 'Other'];
     const typeLabels = {
-      BUY: '📈 BUY', SELL: '📉 SELL', INTL_BUY: '🌎 US BUY', INTL_SELL: '🌎 US SELL',
-      CRYPTO_BUY: '₿ CRYPTO BUY', CRYPTO_SELL: '₿ CRYPTO SELL',
-      DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
-      CONTRIBUTION: '🏦 FUND', IPO_SUBSCRIBE: '🚀 IPO',
+      BUY: 'Buy', SELL: 'Sell', INTL_BUY: 'US buy', INTL_SELL: 'US sell',
+      CRYPTO_BUY: 'Crypto buy', CRYPTO_SELL: 'Crypto sell',
+      DIVIDEND: 'Dividend', SALARY: 'Salary',
+      CONTRIBUTION: 'Fund', IPO_SUBSCRIBE: 'IPO',
     };
 
     const content = `
     <div id="tx-form">
-      <div class="type-selector">
-        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
+      <div class="type-selector" role="group" aria-label="Transaction type">
+        ${typeOpts.map(t => `<button type="button" class="type-btn${t === selType ? ' active' : ''}" aria-pressed="${t === selType}" data-type="${t}">${typeLabels[t] || t}</button>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
       <button class="btn-primary" data-action="App._submitTransaction">Add Transaction</button>
@@ -856,8 +893,9 @@ const App = (() => {
 
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.type-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
         const t = btn.dataset.type;
         document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);

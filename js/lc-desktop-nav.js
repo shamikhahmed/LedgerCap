@@ -1,7 +1,7 @@
 'use strict';
-/** Toggle body.lc-desktop-nav at ≥900px — Playwright viewport contract + sidebar/bottom nav */
+/** Toggle body.lc-desktop-nav at ≥700px (Cap fleet: iPad mini → sidebar) — Playwright viewport contract + sidebar/bottom nav */
 (function () {
-  const MQ = window.matchMedia('(min-width: 900px)');
+  const MQ = window.matchMedia('(min-width: 700px)');
   function sync() {
     document.body.classList.toggle('lc-desktop-nav', MQ.matches);
   }

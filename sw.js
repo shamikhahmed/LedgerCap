@@ -1,6 +1,11 @@
 'use strict';
-const CACHE = 'ledgercap-v35810';
+const CACHE = 'ledgercap-v35811';
 const ASSETS = [
+  './css/app.css',
+  './css/design/tokens.css',
+  './css/design/system.css',
+  './css/design/ledgercap.css',
+  './css/ios-tokens.css',
   './css/psx-app.css',
   './css/lc-pro.css',
   './css/lc-pro-phase.css',
@@ -30,14 +35,19 @@ self.addEventListener('install', e => {
       Promise.allSettled(ASSETS.map(a => c.add(a)))
     )
   );
-  self.skipWaiting();
+  // No skipWaiting/clients.claim: a new worker waits for the next cold launch instead of swapping a running app.
+});
+
+// User-initiated "Update" (App.reloadForUpdate) may still ask the waiting worker to take over.
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(
       keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-    )).then(() => self.clients.claim())
+    ))
   );
 });
 

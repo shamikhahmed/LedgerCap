@@ -406,7 +406,7 @@ window.I18N_LOCALES = {
     open: 'Open →',
     addHoldings: 'Add holdings',
     loadDemo: 'Load demo portfolio',
-    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Performance', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'More' },
+    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Portfolio', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'More' },
     theme: { dark: 'Dark', light: 'Light', toggle: 'Toggle theme' },
     lang: { en: 'English', ur: 'اردو', roman: 'Roman Urdu', label: 'Language' },
     install: { title: 'Install LedgerCap', body: 'Safari → Share → Add to Home Screen', browser: 'Works in browser & as app' },
@@ -482,7 +482,7 @@ window.I18N_LOCALES = {
     open: 'کھولیں ←',
     addHoldings: 'ہولڈنگز شامل کریں',
     loadDemo: 'ڈیمو پورٹ فولیو',
-    nav: { hub: 'ہوم', watch: 'واچ لسٹ', funds: 'فنڈز', pnl: 'کارکردگی', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'ریسرچ', more: 'مزید' },
+    nav: { hub: 'ہوم', watch: 'واچ لسٹ', funds: 'فنڈز', pnl: 'پورٹ فولیو', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'ریسرچ', more: 'مزید' },
     theme: { dark: 'ڈارک', light: 'لائٹ', toggle: 'تھیم بدلیں' },
     lang: { en: 'English', ur: 'اردو', roman: 'رومن اردو', label: 'زبان' },
     install: { title: 'لیجرکیپ انسٹال کریں', body: 'Safari → Share → Add to Home Screen', browser: 'براؤزر اور ایپ دونوں میں' },
@@ -555,7 +555,7 @@ window.I18N_LOCALES = {
     open: 'Kholen →',
     addHoldings: 'Holdings shamil karein',
     loadDemo: 'Demo portfolio load karein',
-    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Performance', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'Mazeed' },
+    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Portfolio', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'Mazeed' },
     theme: { dark: 'Dark', light: 'Light', toggle: ' Theme badlein' },
     lang: { en: 'English', ur: 'اردو', roman: 'Roman Urdu', label: 'Zuban' },
     install: { title: 'LedgerCap install karein', body: 'Safari → Share → Add to Home Screen', browser: 'Browser aur app dono mein' },
@@ -3680,7 +3680,10 @@ const LcEvents = (() => {
       return;
     }
     const nav = ev.target.closest('[data-nav]');
-    if (nav?.dataset.nav && window.Navigation) {
+    const inner = ev.target.closest('[data-action]');
+    // A button inside a tappable card (e.g. Sell on a holding) wins over the card's own navigation
+    const actionInsideNav = inner && nav && inner !== nav && nav.contains(inner);
+    if (nav?.dataset.nav && window.Navigation && !actionInsideNav) {
       ev.preventDefault();
       Navigation.go(nav.dataset.nav);
       return;
@@ -3720,7 +3723,26 @@ const LcEvents = (() => {
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
+  /* iOS/WebKit touch adjustment retargets a tap to the nearest node that handles clicks itself; elements served
+   * only by this document-level delegate don't count, so taps landed on nearby buttons. Give each its own no-op. */
+  const _tappable = new WeakSet();
+  const _noop = function () {};
+  const _TAPPABLE_SEL = '[data-action],[data-nav],[data-external-url]';
+  function _markTappable(root) {
+    if (!root || root.nodeType !== 1) return;
+    const mark = (el) => { if (!_tappable.has(el)) { _tappable.add(el); el.addEventListener('click', _noop); } };
+    if (root.matches(_TAPPABLE_SEL)) mark(root);
+    root.querySelectorAll(_TAPPABLE_SEL).forEach(mark);
+  }
+
   function init() {
+    _markTappable(document.body);
+    new MutationObserver((recs) => {
+      for (const r of recs) {
+        if (r.type === 'attributes') _markTappable(r.target);
+        else r.addedNodes.forEach(_markTappable);
+      }
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-action', 'data-nav'] });
     document.addEventListener('click', _onClick, true);
     document.addEventListener('change', _onChange, true);
     document.addEventListener('input', _onInput, true);
@@ -4111,9 +4133,9 @@ window.PsxUI = PsxUI;
 
 ;/* === js/lc-desktop-nav.js === */
 'use strict';
-/** Toggle body.lc-desktop-nav at ≥900px — Playwright viewport contract + sidebar/bottom nav */
+/** Toggle body.lc-desktop-nav at ≥700px (Cap fleet: iPad mini → sidebar) — Playwright viewport contract + sidebar/bottom nav */
 (function () {
-  const MQ = window.matchMedia('(min-width: 900px)');
+  const MQ = window.matchMedia('(min-width: 700px)');
   function sync() {
     document.body.classList.toggle('lc-desktop-nav', MQ.matches);
   }
@@ -4306,7 +4328,9 @@ const Navigation = (() => {
       const el = document.getElementById('screen-' + tabId);
       if (el) {
         el.classList.add('active', 'lc-screen-enter');
-        el.scrollTop = 0;
+        // 6.0: the document scrolls; a new screen opens at the top (also when navigating out of a sheet)
+        if (window.App?.closeBottomSheet && document.getElementById('bottom-sheet')?.classList.contains('open')) App.closeBottomSheet(0);
+        else window.scrollTo(0, 0);
         requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
       }
       document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
@@ -6042,7 +6066,6 @@ const App = (() => {
     _scheduleAutoRefresh();
     _maybeDemoBanner();
     _maybeInstallHint();
-    _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -6375,15 +6398,53 @@ const App = (() => {
     if (!sheet) return;
     document.getElementById('bs-title').textContent = title || '';
     document.getElementById('bs-body').innerHTML = content || '';
+    _sheetBar(sheet);
     sheet.classList.add('open');
     _activeSheet = id;
-    sheet.querySelector('.bs-backdrop')?.addEventListener('click', closeBottomSheet);
+    _lockScroll();
+    sheet.querySelector('.bs-backdrop')?.addEventListener('click', () => closeBottomSheet());
   }
 
-  function closeBottomSheet() {
+  /** HIG sheet bar: the body's single trailing primary action moves to the bar (Cancel is always leading). */
+  function _sheetBar(sheet) {
+    const trail = sheet.querySelector('.bs-bar-trail');
+    if (!trail) return;
+    trail.innerHTML = '';
+    const primaries = [...sheet.querySelectorAll('#bs-body > div > .btn-primary:last-child, #bs-body > .btn-primary:last-child')];
+    if (primaries.length === 1) {
+      const btn = primaries[0];
+      btn.classList.add('bs-bar-done');
+      // Bar actions are one word ("Add Transaction" → "Add"); the sheet title carries the rest
+      const label = btn.textContent.trim();
+      if (label.includes(' ')) {
+        btn.setAttribute('aria-label', label);
+        btn.textContent = label.split(' ')[0];
+      }
+      trail.appendChild(btn);
+    }
+  }
+
+  /* iOS ignores overflow:hidden for touch scrolling and jumps when it toggles — pin the body, restore exactly. */
+  let _lockedY = null;
+  function _lockScroll() {
+    if (_lockedY !== null) return;
+    _lockedY = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: -_lockedY + 'px', left: '0', right: '0', width: '100%' });
+  }
+  function _unlockScroll(restoreY) {
+    if (_lockedY === null) return;
+    const y = restoreY == null ? _lockedY : restoreY;
+    _lockedY = null;
+    Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
+    window.scrollTo(0, y);
+  }
+
+  /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
+  function closeBottomSheet(restoreY) {
     const sheet = document.getElementById('bottom-sheet');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
+    _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
   }
 
   function openSellHolding(symbol, broker, type) {
@@ -6407,16 +6468,16 @@ const App = (() => {
     const brokers = ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
     const globalBrokers = window.GLOBAL_BROKERS || ['IBKR', 'Binance', 'Other'];
     const typeLabels = {
-      BUY: '📈 BUY', SELL: '📉 SELL', INTL_BUY: '🌎 US BUY', INTL_SELL: '🌎 US SELL',
-      CRYPTO_BUY: '₿ CRYPTO BUY', CRYPTO_SELL: '₿ CRYPTO SELL',
-      DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
-      CONTRIBUTION: '🏦 FUND', IPO_SUBSCRIBE: '🚀 IPO',
+      BUY: 'Buy', SELL: 'Sell', INTL_BUY: 'US buy', INTL_SELL: 'US sell',
+      CRYPTO_BUY: 'Crypto buy', CRYPTO_SELL: 'Crypto sell',
+      DIVIDEND: 'Dividend', SALARY: 'Salary',
+      CONTRIBUTION: 'Fund', IPO_SUBSCRIBE: 'IPO',
     };
 
     const content = `
     <div id="tx-form">
-      <div class="type-selector">
-        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
+      <div class="type-selector" role="group" aria-label="Transaction type">
+        ${typeOpts.map(t => `<button type="button" class="type-btn${t === selType ? ' active' : ''}" aria-pressed="${t === selType}" data-type="${t}">${typeLabels[t] || t}</button>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
       <button class="btn-primary" data-action="App._submitTransaction">Add Transaction</button>
@@ -6426,8 +6487,9 @@ const App = (() => {
 
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.type-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
         const t = btn.dataset.type;
         document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);

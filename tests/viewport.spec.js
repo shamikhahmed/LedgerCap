@@ -33,7 +33,8 @@ test.describe('LedgerCap viewport contract', () => {
         const screen = document.querySelector('.psx-screen.active');
         const nav = document.querySelector('.psx-bottom-nav');
         if (!screen || !nav) return false;
-        const scroller = screen.scrollHeight > screen.clientHeight ? screen : document.getElementById('screens');
+        // 6.0: the document scrolls (no inner .psx-screen scroller)
+        const scroller = screen.scrollHeight > screen.clientHeight ? screen : document.scrollingElement;
         scroller.scrollTop = scroller.scrollHeight;
         const last = screen.lastElementChild?.lastElementChild || screen.lastElementChild;
         if (!last) return true;

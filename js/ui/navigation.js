@@ -125,7 +125,9 @@ const Navigation = (() => {
       const el = document.getElementById('screen-' + tabId);
       if (el) {
         el.classList.add('active', 'lc-screen-enter');
-        el.scrollTop = 0;
+        // 6.0: the document scrolls; a new screen opens at the top (also when navigating out of a sheet)
+        if (window.App?.closeBottomSheet && document.getElementById('bottom-sheet')?.classList.contains('open')) App.closeBottomSheet(0);
+        else window.scrollTo(0, 0);
         requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
       }
       document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {

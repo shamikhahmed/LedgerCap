@@ -1,0 +1,1141 @@
+/**
+ * LedgerCap — HIG reskin of the 3.x shell and shared legacy components.
+ * Sits in `@layer components` (above `legacy`), so it wins over 3.x CSS without !important.
+ * Maps psx-* / lc-* / os-* classes onto the ScentCap 3.0 tokens. Docs: DESIGN.md.
+ */
+
+@layer components {
+
+/* ---------- Canvas + document scrolling (iOS) ---------- */
+/* 3.x pinned body (overflow:hidden) and scrolled each absolutely-positioned .psx-screen — iOS showed inner
+   scrollbars, lost rubber-banding and fought the Safari toolbar. The document scrolls now. */
+
+html,
+body,
+body.psx-app {
+  background: var(--bg);
+  color: var(--label);
+  height: auto;
+  min-height: 100%;
+  overflow-y: visible;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  letter-spacing: -0.012em;
+  font-variant-numeric: tabular-nums;
+}
+
+body.psx-app {
+  display: block;
+}
+
+.psx-shell,
+body.lc-pro .psx-shell {
+  max-width: none;
+  min-height: 100dvh;
+  background: var(--bg);
+  border: 0;
+}
+
+.psx-main {
+  overflow: visible;
+  min-height: 100dvh;
+}
+
+.psx-screens,
+:root:fullscreen .psx-screens {
+  position: static;
+  overflow: visible;
+  display: block;
+  min-height: 0;
+}
+
+.psx-screen,
+.psx-screen.active {
+  position: static;
+  inset: auto;
+  overflow: visible;
+  -webkit-overflow-scrolling: auto;
+  background: transparent;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 0 calc(var(--tabbar-h) + 48px + env(safe-area-inset-bottom));
+}
+
+.psx-screen.active {
+  display: block;
+}
+
+@media (min-width: 700px) {
+  .psx-screen,
+  .psx-screen.active {
+    padding: 0 24px 64px;
+  }
+}
+
+/* ---------- Top bar: glass, quiet ---------- */
+
+.psx-topbar,
+body.lc-pro .psx-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: 0;
+  padding: calc(6px + env(safe-area-inset-top)) var(--gutter) 6px;
+  border-bottom: 0.5px solid var(--separator);
+  background: var(--glass-material);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  gap: 10px;
+}
+
+.psx-brand {
+  font-family: var(--font-ui);
+  font-size: var(--t-headline);
+  font-weight: 600;
+  font-variant: normal;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--label);
+  white-space: nowrap;
+}
+
+.lc-ticker-pill {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label-2);
+  font-size: var(--t-footnote);
+  box-shadow: none;
+  position: relative;
+}
+
+.lc-ticker-pill::after {
+  content: "";
+  position: absolute;
+  inset: -5px 0;
+}
+
+.psx-icon-btn {
+  width: var(--hit);
+  height: var(--hit);
+  min-width: var(--hit);
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label);
+  box-shadow: none;
+}
+
+/* ---------- Floating glass tab bar (<700px) ---------- */
+
+.psx-bottom-nav,
+body.lc-pro .psx-bottom-nav {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(14px, calc(env(safe-area-inset-bottom) + 6px));
+  z-index: 40;
+  height: var(--tabbar-h);
+  padding: 0 6px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass-material);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  box-shadow: 0 0 0 0.5px var(--glass-border), 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.psx-nav-btn,
+body.lc-pro .psx-nav-btn {
+  height: calc(var(--tabbar-h) - 10px);
+  min-height: 48px;
+  padding: 0 2px;
+  gap: 2px;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--label-2);
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+}
+
+.psx-nav-btn::before,
+.psx-nav-btn::after {
+  display: none;
+}
+
+.psx-nav-btn.active,
+body.lc-pro .psx-nav-btn.active {
+  color: var(--tint);
+  background: var(--fill);
+}
+
+.psx-nav-icon-wrap,
+.psx-nav-btn.active .psx-nav-icon-wrap {
+  width: auto;
+  height: 26px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  transform: none;
+  color: inherit;
+}
+
+.psx-nav-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.75;
+}
+
+/* ---------- Glass sidebar (≥700px) ---------- */
+
+@media (min-width: 700px) {
+  .psx-shell,
+  body.lc-pro .psx-shell {
+    flex-direction: row;
+    display: flex;
+  }
+  .psx-shell > .psx-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100dvh;
+    overflow-y: auto;
+    width: 248px;
+    min-width: 248px;
+    padding: max(20px, env(safe-area-inset-top)) 12px 16px;
+    border-right: 0.5px solid var(--separator);
+    background: var(--glass-material);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+  }
+  .psx-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .psx-shell .psx-bottom-nav,
+  body.lc-pro .psx-shell .psx-bottom-nav {
+    display: none;
+  }
+}
+
+.psx-side-btn {
+  min-height: var(--hit);
+  padding: 0 12px;
+  gap: 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--label);
+  font-size: var(--t-body);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+.psx-side-btn svg,
+.psx-side-btn .lc-icon {
+  color: var(--tint);
+  opacity: 1;
+}
+
+.psx-side-btn.active {
+  background: var(--tint);
+  color: var(--on-tint);
+  font-weight: 600;
+}
+
+.psx-side-btn.active svg,
+.psx-side-btn.active .lc-icon {
+  color: var(--on-tint);
+}
+
+/* ---------- Banners: one quiet line each ---------- */
+
+.psx-demo {
+  margin: 8px var(--gutter) 0;
+  padding: 6px 6px 6px 14px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--label-2);
+  font-size: var(--t-footnote);
+  box-shadow: var(--shadow-1);
+}
+
+.psx-demo strong {
+  color: var(--label);
+  font-weight: 600;
+}
+
+.lc-demo-dot {
+  background: var(--tint);
+}
+
+#lc-price-health-host > * {
+  margin: 8px var(--gutter) 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--label-2);
+  font-size: var(--t-footnote);
+  box-shadow: var(--shadow-1);
+}
+
+.psx-strip {
+  display: none;
+}
+
+/* ---------- Large titles + sections ---------- */
+
+.lc-screen-head,
+.lc-page-head {
+  padding: 16px var(--gutter) 8px;
+  margin: 0;
+  border: 0;
+  background: none;
+}
+
+.lc-screen-head h1,
+.lc-page-head .lc-section-kicker {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-large);
+  font-weight: 700;
+  font-variant: normal;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  text-transform: none;
+  color: var(--label);
+}
+
+.lc-screen-head h1::after,
+.lc-screen-head::after {
+  display: none;
+}
+
+.lc-screen-head p,
+.lc-page-sub {
+  margin: 4px 0 0;
+  font-size: var(--t-subhead);
+  color: var(--label-2);
+}
+
+.lc-dash {
+  padding: 0;
+}
+
+.lc-dash-section {
+  margin: 28px var(--gutter) 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.lc-dash-section-head {
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+}
+
+.lc-dash-section-head h2,
+.lc-dash-section-head h3,
+.sec-head,
+.sec-title {
+  font-family: var(--font-ui);
+  font-size: var(--t-title3);
+  font-weight: 700;
+  font-variant: normal;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--label);
+}
+
+/* Settings section headers stay iOS-style footnote caps above inset groups */
+#screen-settings .sec-head {
+  margin: 28px var(--gutter) 6px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+}
+
+#screen-settings .sec-title {
+  font-size: var(--t-footnote);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--label-3);
+}
+
+/* ---------- Hero card ---------- */
+
+.lc-dash-hero,
+.psx-hero {
+  margin: 8px var(--gutter) 0;
+  padding: 20px;
+  border: 0;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  color: var(--label);
+}
+
+.lc-dash-hero::before,
+.lc-dash-hero::after {
+  display: none;
+}
+
+.lc-dash-hero-label {
+  font-size: var(--t-footnote);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--label-3);
+}
+
+.lc-dash-hero-val {
+  margin-top: 6px;
+  font-family: var(--font-rounded);
+  font-size: clamp(2.125rem, 9vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--label);
+}
+
+.lc-dash-chip,
+.lc-pulse-pill,
+.lc-range-btn,
+.lc-mover-chip,
+.lc-stale-chip {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label-2);
+  font-size: var(--t-footnote);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.lc-dash-chip.up {
+  color: var(--success);
+}
+
+.lc-range-btn.on,
+.lc-range-btn.active {
+  background: var(--label);
+  color: var(--bg);
+}
+
+/* ---------- Cards → grouped surfaces ---------- */
+
+.lc-tool-card,
+.lc-portfolio-card,
+.lc-sector-card,
+.lc-dash-market-card,
+.lc-holding-inv,
+.psx-card,
+.psx-panel,
+.ios-group {
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--label);
+}
+
+.lc-tool-card::before,
+.lc-portfolio-card::before,
+.lc-holding-inv::before {
+  display: none;
+}
+
+.lc-tool-card strong,
+.lc-portfolio-card strong,
+.lc-holding-inv-sym strong {
+  font-size: var(--t-body);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--label);
+}
+
+.lc-tool-card span,
+.lc-portfolio-card-desc,
+.lc-holding-inv-sub {
+  font-size: var(--t-footnote);
+  color: var(--label-2);
+}
+
+.lc-tool-icon,
+.lc-tool-icon--blue,
+.lc-tool-icon--gold,
+.lc-tool-icon--slate,
+.lc-tool-icon--green,
+.lc-tool-icon--violet,
+.lc-tool-icon--cyan,
+.lc-tool-icon--amber {
+  background: transparent;
+  color: var(--tint);
+  border: 0;
+  box-shadow: none;
+}
+
+.lc-portfolio-card-icon {
+  background: var(--tint-soft);
+  color: var(--tint);
+  border: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+}
+
+.lc-portfolio-card-value,
+.lc-holding-inv-value {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--label);
+}
+
+.lc-pf-pnl-box {
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+}
+
+/* ---------- Buttons ---------- */
+
+.psx-btn,
+.os-btn,
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--hit);
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label);
+  font-family: var(--font-ui);
+  font-size: var(--t-subhead);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  box-shadow: none;
+  text-decoration: none;
+}
+
+.psx-btn-primary,
+.os-btn-primary,
+.btn-primary {
+  background: var(--tint);
+  color: var(--on-tint);
+}
+
+.btn-secondary {
+  background: var(--tint-soft);
+  color: var(--tint);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+}
+
+.lc-link-btn {
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: var(--tint);
+  font-weight: 500;
+  position: relative;
+}
+
+.lc-link-btn::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+/* Theme / language toggles → segmented controls */
+.os-theme-toggle,
+.lc-lang-switch {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--fill);
+}
+
+.os-theme-btn,
+.lc-lang-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--label);
+  font-size: var(--t-subhead);
+  font-weight: 500;
+  box-shadow: none;
+  position: relative;
+}
+
+.os-theme-btn::after,
+.lc-lang-btn::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+.os-theme-btn.active,
+.lc-lang-btn.active,
+.lc-lang-btn.on {
+  background: var(--surface-elevated);
+  color: var(--label);
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .os-theme-btn.active,
+[data-theme="dark"] .lc-lang-btn.active,
+[data-theme="dark"] .lc-lang-btn.on {
+  background: var(--seg-thumb);
+}
+
+/* ---------- Settings rows → inset grouped list ---------- */
+
+.setting-row {
+  min-height: var(--hit);
+  padding: 11px 16px;
+  border: 0;
+  background: var(--surface);
+  position: relative;
+}
+
+.setting-row + .setting-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 0;
+  height: 0.5px;
+  background: var(--separator);
+}
+
+.setting-label {
+  font-size: var(--t-body);
+  font-weight: 400;
+  color: var(--label);
+}
+
+.setting-sub,
+.setting-value {
+  font-size: var(--t-subhead);
+  color: var(--label-2);
+}
+
+/* ---------- Fields ---------- */
+
+.field-label {
+  margin: 0 4px 6px;
+  font-size: var(--t-footnote);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--label-2);
+}
+
+.field-input,
+.field-select,
+.nav-inp,
+.psx-input {
+  min-height: var(--hit);
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--label);
+  font-family: var(--font-ui);
+  box-shadow: none;
+}
+
+.field-input:focus,
+.field-select:focus,
+.nav-inp:focus {
+  border: 0;
+  box-shadow: 0 0 0 3px var(--tint-soft);
+  outline: none;
+}
+
+.field-input::placeholder {
+  color: var(--label-3);
+}
+
+/* ---------- Sheet: grabber + Cancel / Title / Done ---------- */
+
+.bottom-sheet .bs-backdrop {
+  background: var(--scrim);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.bottom-sheet .bs-panel {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 8px var(--gutter) max(24px, env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--bg);
+  box-shadow: var(--shadow-3);
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 700px) {
+  .bottom-sheet .bs-panel {
+    border-radius: 16px;
+  }
+  .bs-grabber {
+    display: none;
+  }
+}
+
+.bs-grabber {
+  width: 36px;
+  height: 5px;
+  margin: 0 auto 6px;
+  border-radius: 999px;
+  background: var(--label-4);
+}
+
+.bs-bar {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) auto minmax(72px, 1fr);
+  align-items: center;
+  min-height: 48px;
+  margin: 0 -8px 8px;
+}
+
+.bs-bar-cancel,
+.bs-bar-trail .bs-bar-done {
+  min-height: var(--hit);
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--tint);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  box-shadow: none;
+  width: auto;
+}
+
+.bs-bar-cancel {
+  justify-self: start;
+  font-weight: 400;
+}
+
+.bs-bar-trail {
+  justify-self: end;
+  display: flex;
+}
+
+.bs-bar-trail .bs-bar-done {
+  font-weight: 600;
+}
+
+.bs-title {
+  max-width: 60vw;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--t-headline);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Transaction type picker: horizontal chips (was an emoji grid) */
+.type-selector {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 calc(var(--gutter) * -1) 12px;
+  padding: 2px var(--gutter) 8px;
+  scrollbar-width: none;
+}
+
+.type-selector::-webkit-scrollbar {
+  display: none;
+}
+
+.type-btn {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label);
+  font-family: var(--font-ui);
+  font-size: var(--t-subhead);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: none;
+  position: relative;
+}
+
+.type-btn::after {
+  content: "";
+  position: absolute;
+  inset: -5px 0;
+}
+
+.type-btn.active {
+  background: var(--label);
+  color: var(--bg);
+}
+
+/* ---------- Toasts, empty states, misc ---------- */
+
+.toast,
+.toast-wrap > * {
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--surface-elevated);
+  color: var(--label);
+  box-shadow: var(--shadow-3), 0 0 0 0.5px var(--glass-border);
+}
+
+.toast-wrap {
+  bottom: calc(var(--tabbar-h) + 24px + env(safe-area-inset-bottom));
+}
+
+.psx-empty {
+  border: 0;
+  background: none;
+}
+
+.psx-empty-title {
+  font-size: var(--t-title3);
+  font-weight: 700;
+  color: var(--label);
+}
+
+.psx-empty-body {
+  font-size: var(--t-subhead);
+  color: var(--label-2);
+}
+
+.t-gain,
+.psx-up,
+.up {
+  color: var(--success);
+}
+
+.t-loss,
+.psx-down,
+.down {
+  color: var(--danger);
+}
+
+/* Splash: system type, no folio theatre */
+.lc-bahi-title,
+.psx-splash-title {
+  font-family: var(--font-ui);
+  font-variant: normal;
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+
+/* Hover only where a pointer can hover (no "stuck" hovered controls after a tap on iPhone) */
+@media (hover: none) {
+  .lc-tool-card:hover,
+  .lc-portfolio-card:hover,
+  .lc-holding-inv:hover,
+  .psx-btn:hover,
+  .os-btn:hover,
+  .psx-side-btn:hover,
+  .psx-nav-btn:hover {
+    transform: none;
+    box-shadow: var(--shadow-1);
+  }
+}
+
+/* ---------- Home hub (was a bahi-khata folio) ---------- */
+
+.lc-hub-folio,
+.lc-hub-folio__pages,
+.lc-hub-folio__sheet,
+.lc-dash--folio,
+body.lc-desktop-nav .lc-hub-folio,
+body.lc-desktop-nav .lc-hub-folio__sheet,
+body.lc-desktop-nav .lc-dash--folio {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+  max-width: none;
+}
+
+.lc-hub-folio__cover,
+body.lc-desktop-nav .lc-hub-folio__cover,
+.lc-hub-folio__sheet::before,
+.lc-hub-folio__sheet::after,
+.lc-hub-folio::before,
+.lc-hub-folio::after {
+  display: none;
+}
+
+.lc-dash-greet {
+  padding: 16px var(--gutter) 4px;
+  margin: 0;
+  border: 0;
+}
+
+.lc-dash-greet::before,
+.lc-dash-greet::after {
+  display: none;
+}
+
+.lc-dash-greet h2 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-footnote);
+  font-weight: 600;
+  font-variant: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--label-3);
+}
+
+.lc-dash-greet p {
+  margin: 2px 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-large);
+  font-weight: 700;
+  font-variant: normal;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  text-transform: none;
+  color: var(--label);
+}
+
+.lc-market-status {
+  margin: 6px var(--gutter) 4px;
+  font-size: var(--t-footnote);
+  color: var(--label-2);
+}
+
+.lc-dash-actions,
+.lc-hub-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 16px var(--gutter) 0;
+}
+
+.lc-hub-quick--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 2px var(--gutter) 6px;
+}
+
+.lc-hub-quick--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.lc-hub-quick .psx-btn {
+  flex-shrink: 0;
+  min-height: 36px;
+  position: relative;
+}
+
+.lc-hub-quick .psx-btn::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+.lc-dash-actions .psx-btn-ghost:first-child {
+  background: var(--tint);
+  color: var(--on-tint);
+}
+
+.lc-dash-market {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px var(--gutter) 0;
+}
+
+.lc-dash-market-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 96px;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.lc-dash-market-card span {
+  font-size: var(--t-footnote);
+  font-weight: 600;
+  color: var(--label-2);
+}
+
+.lc-dash-market-card strong {
+  margin-top: auto;
+  font-family: var(--font-rounded);
+  font-size: var(--t-title2);
+  font-weight: 700;
+  color: var(--label);
+}
+
+.lc-dash-market-card em {
+  font-style: normal;
+  font-size: var(--t-footnote);
+  color: var(--label-3);
+}
+
+/* Stat pills under heroes: small grouped tiles in a scroller */
+.lc-pulse-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 12px 0 0;
+  padding: 2px var(--gutter) 6px;
+}
+
+.lc-pulse-row::-webkit-scrollbar {
+  display: none;
+}
+
+.lc-pulse-pill,
+.lc-pulse-pill--btn {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--label);
+  font-size: var(--t-subhead);
+}
+
+.lc-pulse-pill label {
+  font-size: var(--t-caption);
+  color: var(--label-2);
+}
+
+.lc-pulse-pill b {
+  font-weight: 600;
+  color: var(--label);
+}
+
+.lc-pulse-pill b.psx-up {
+  color: var(--success);
+}
+
+/* ---------- Settings groups (inline-styled 3.x blocks after each .sec-head) ---------- */
+
+#screen-settings .sec-head + div {
+  margin: 0 var(--gutter) !important;
+  padding: 14px 16px !important;
+  border: 0 !important;
+  border-radius: var(--r-md) !important;
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-1);
+}
+
+.lc-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--hit);
+  font-size: var(--t-subhead);
+  color: var(--label);
+}
+
+.field-hint {
+  font-size: var(--t-footnote);
+  color: var(--label-3);
+}
+
+/* ---------- Fit + wrap fixes ---------- */
+
+.type-btn,
+.lc-lang-btn,
+.os-theme-btn,
+.psx-btn,
+.os-btn {
+  white-space: nowrap;
+}
+
+.psx-nav-btn,
+body.lc-pro .psx-nav-btn {
+  font-size: 10px;
+  letter-spacing: -0.01em;
+}
+
+.psx-nav-btn span:not(.psx-nav-icon-wrap) {
+  max-width: 100%;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.toast-wrap {
+  left: var(--gutter);
+  right: var(--gutter);
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast-wrap > * {
+  max-width: 100%;
+}
+
+.lc-dash-greet p {
+  font-size: var(--t-title1);
+}
+
+} /* @layer components */
