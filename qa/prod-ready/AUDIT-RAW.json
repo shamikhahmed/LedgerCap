@@ -4,7 +4,7 @@
     "engine": "chromium",
     "chrome": "/Users/shamikhahmed/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
     "device": "iPhone 15 Pro metrics (defaultBrowserType removed)",
-    "generatedAt": "2026-10-25T10:08:42.219Z",
+    "generatedAt": "2026-10-25T10:26:20.281Z",
     "screenshotCount": 40,
     "maxShots": 40
   },
@@ -13,13 +13,13 @@
     "fail": 1
   },
   "checks": {
-    "pass": 4,
-    "fail": 2,
+    "pass": 6,
+    "fail": 0,
     "items": [
       {
         "name": "csp-pass completed",
         "ok": true,
-        "detail": "0 CSP events, 14 HTTP>=400"
+        "detail": "0 CSP events, 11 HTTP>=400"
       },
       {
         "name": "core: open add transaction sheet",
@@ -28,13 +28,13 @@
       },
       {
         "name": "core: Esc closes add sheet",
-        "ok": false,
+        "ok": true,
         "detail": ""
       },
       {
         "name": "core: settings theme toggle",
-        "ok": false,
-        "detail": "before=dark after=dark want=light"
+        "ok": true,
+        "detail": "before=dark after=light want=light"
       },
       {
         "name": "axe-core available",
@@ -44,7 +44,7 @@
       {
         "name": "axe-core run",
         "ok": true,
-        "detail": "2 violations on home"
+        "detail": "1 violations on home"
       }
     ]
   },
@@ -56,40 +56,12 @@
       "description": "no console errors during ios-check: Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 ()"
     },
     {
-      "severity": "medium",
-      "screen": "risk-audit",
-      "selector": "button[data-action=\"Navigation.goResearchIntel\"]",
-      "description": "dead data-action: Navigation.goResearchIntel (not a function: Navigation.goResearchIntel)",
-      "profile": "demo",
-      "kind": "data-action"
-    },
-    {
-      "severity": "high",
-      "screen": "home",
-      "selector": "#bottom-sheet",
-      "description": "Escape did not close bottom sheet"
-    },
-    {
-      "severity": "high",
-      "screen": "settings",
-      "selector": ".os-theme-btn[data-tab=\"light\"]",
-      "description": "theme toggle failed: stayed dark"
-    },
-    {
       "severity": "a11y",
       "screen": "home",
       "selector": "html",
       "description": "page-has-heading-one: Page should contain a level-one heading",
       "impact": "moderate",
       "html": "<html lang=\"en\" data-theme=\"dark\" data-dt-scale=\"1.00\" dir=\"ltr\" style=\"--dt-scale: 1.000;\" data-app-ready=\"true\">"
-    },
-    {
-      "severity": "a11y",
-      "screen": "home",
-      "selector": "#nav",
-      "description": "region: All page content should be contained by landmarks",
-      "impact": "moderate",
-      "html": "<nav id=\"nav\" class=\"psx-bottom-nav\" role=\"tablist\" aria-label=\"Main\">"
     },
     {
       "severity": "medium",
@@ -133,21 +105,7 @@
     {
       "severity": "medium",
       "screen": "csp-pass",
-      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/int/LUCK",
-      "description": "HTTP 404",
-      "status": 404
-    },
-    {
-      "severity": "medium",
-      "screen": "csp-pass",
       "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
-      "description": "HTTP 502",
-      "status": 502
-    },
-    {
-      "severity": "medium",
-      "screen": "csp-pass",
-      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20Stock%20Exchange%20listed%20companies&symbol=PSX",
       "description": "HTTP 502",
       "status": 502
     },
@@ -160,29 +118,15 @@
     },
     {
       "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20Stock%20Exchange%20listed%20companies&symbol=PSX",
+      "description": "HTTP 502",
+      "status": 502
+    },
+    {
+      "severity": "medium",
       "screen": "empty-scan",
       "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/kse100",
-      "description": "HTTP 404",
-      "status": 404
-    },
-    {
-      "severity": "medium",
-      "screen": "empty-scan",
-      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/HINO",
-      "description": "HTTP 404",
-      "status": 404
-    },
-    {
-      "severity": "medium",
-      "screen": "empty-scan",
-      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PIBTL",
-      "description": "HTTP 404",
-      "status": 404
-    },
-    {
-      "severity": "medium",
-      "screen": "empty-scan",
-      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PICT",
       "description": "HTTP 404",
       "status": 404
     }
@@ -264,18 +208,6 @@
     },
     {
       "screen": "demo-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "demo-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "demo-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "demo-scan",
       "text": "Failed to load resource: the server responded with a status of 502 ()"
     },
     {
@@ -285,30 +217,6 @@
     {
       "screen": "demo-scan",
       "text": "Failed to load resource: the server responded with a status of 502 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
     },
     {
       "screen": "empty-scan",
@@ -376,16 +284,6 @@
     },
     {
       "screen": "csp-pass",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "csp-pass",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/int/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "csp-pass",
       "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
       "status": 404
     },
@@ -401,12 +299,12 @@
     },
     {
       "screen": "csp-pass",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
+      "status": 502
     },
     {
       "screen": "csp-pass",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=KSE-100%20Pakistan%20stock%20market%20PSX&symbol=PSX",
       "status": 502
     },
     {
@@ -415,73 +313,53 @@
       "status": 502
     },
     {
-      "screen": "csp-pass",
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
       "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=KSE-100%20Pakistan%20stock%20market%20PSX&symbol=PSX",
       "status": 502
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/int/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
     },
     {
       "screen": "demo-scan",
       "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
-      "status": 502
-    },
-    {
-      "screen": "demo-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=KSE-100%20Pakistan%20stock%20market%20PSX&symbol=PSX",
       "status": 502
     },
     {
@@ -496,32 +374,7 @@
     },
     {
       "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/HINO",
-      "status": 404
-    },
-    {
-      "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PIBTL",
-      "status": 404
-    },
-    {
-      "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "empty-scan",
       "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
-      "status": 404
-    },
-    {
-      "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
       "status": 404
     },
     {
@@ -546,11 +399,6 @@
     },
     {
       "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
-      "status": 404
-    },
-    {
-      "screen": "empty-scan",
       "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
       "status": 404
     },
@@ -561,7 +409,7 @@
     },
     {
       "screen": "empty-scan",
-      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PICT",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
       "status": 404
     }
   ]

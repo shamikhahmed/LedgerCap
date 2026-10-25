@@ -8,11 +8,11 @@ Scanning empty profile…
 Capturing screenshots…
 
 === SUMMARY ===
-checks: 4 pass / 2 fail
+checks: 6 pass / 0 fail
 ios-check: 23 pass / 1 fail
-findings: 20
+findings: 12
 cspViolations: 0
-httpErrors (>=400): 43
+httpErrors (>=400): 31
 screenshots: 40
 wrote /Users/shamikhahmed/Projects/Cap/Cap-Apps/_workspace/LedgerCap-hig/qa/prod-ready/AUDIT-RAW.json
 wrote /Users/shamikhahmed/Projects/Cap/Cap-Apps/_workspace/LedgerCap-hig/qa/prod-ready/ios-check-chromium.txt

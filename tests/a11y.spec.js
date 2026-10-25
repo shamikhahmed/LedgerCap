@@ -12,7 +12,8 @@ test.describe('LedgerCap accessibility baseline', () => {
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('.psx-skip-link')).toHaveCount(1);
-    await expect(page.locator('#nav[role="tablist"], .psx-bottom-nav[role="tablist"]').first()).toBeVisible();
+    // Bottom nav is a navigation landmark (links), not a tablist
+    await expect(page.locator('nav#nav[aria-label="Main"]')).toBeVisible();
     await expect(page.locator('#screens[role="main"]')).toBeVisible();
     await expect(page.locator('#lc-header-more')).toBeVisible();
     await expect(page.locator('#lc-app-ticker')).toBeVisible();
