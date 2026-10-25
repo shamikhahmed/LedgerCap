@@ -1,28 +1,40 @@
 # LedgerCap — Production-readiness A–Z report
 
 **Branch:** `design/hig-3` · **App:** 3.58.11 · **SW:** `ledgercap-v35811` · **Date:** 2026-10-25  
-**Reviewer baseline:** CSP 0 · ios 23/23 · npm test 32 pass / 2 skip · `AUDIT-RAW.json`.
+**Reviewer baseline:** CSP 0 · ios 23/23 · npm test (node suites) · `AUDIT-RAW.json`.
+
+## Final review (gate fixes)
+
+1. **PSX first** — Official PSX feed is first for PSX symbols when `proxyHealthy()`; Yahoo `.KA` only while the breaker is open or as fallback. Quiet degradation kept.
+2. **Sheet bar label** — Primary moved to the bar keeps its full label (Urdu / multi-word / icons); optional `data-bar-label`. CSS ellipsis tightens.
+3. **Sheet backdrop** — Removed per-open click listener; closes via existing `data-action` + LcEvents.
+4. **boot-deferred version** — Deferred `?v=` from `LEDGERCAP_VERSION` (config ↔ VERSION.json); no hardcoded `3.58.11`.
+5. **PriceHealth copy** — “Market data unavailable…” only when `_LC_MARKET_UNAVAILABLE`; otherwise “Some prices are from the last close (…)”.
+6. **Scroll lock** — Shared ref-counted `LcScrollLock` for bottom sheet, CapConfirm, Cmd-K, and pro modal.
+7. **#rt-search** — Handled on `input` only (no duplicate `change`).
+8. **iOS tappable** — Dropped body-wide MutationObserver; `[data-action],[data-nav]` use `cursor:pointer` (WebKit clickable). ios:check still WebKit-only for reviewer.
+9. **SECURITY Worker** — `trading-board` / `market-watch` served as `text/plain; charset=utf-8` + `X-Content-Type-Options: nosniff` + `Content-Security-Policy: sandbox` (not `text/html` with ACAO `*`). **Owner must `cd worker && wrangler deploy`.**
 
 ## Round 3 summary (≤20 lines)
 
-1. **Dead control** — `Navigation.goResearchIntel` was not a real method; audit + LcEvents early-return failed. Exported real `goResearchIntel()` (Research portfolio mode → research).
-2. **Escape** — Bottom sheet had no Esc handler. Document Esc closes top-most sheet (after dialogs/cmdk); focus returns to opener.
-3. **Theme** — Settings Light/Dark passed the button element into `_setTheme` (rejected). LcEvents now passes `data-tab`; `App.applyTheme` persists `localStorage.theme` + `html[data-theme]`.
-4. **Market proxy** — Live Worker 404s board/timeseries (stale deploy). Repo Worker already proxies PSX; Round 3 adds HTML 200 passthrough for `trading-board` / `market-watch`. Client prefers Yahoo `.KA` + cached prices; skips board scrape when proxy unhealthy; quiet banner: “Market data unavailable — showing last saved prices (time)”.
-5. **axe** — Home large title → `<h1 class="home-value">`; empty home gets `<h1>Home</h1>`; bottom `#nav` is landmark `<nav>` (dropped `role=tablist` override); `#screens` keeps `role="main"`.
-6. **Owner must deploy:** `cd worker && wrangler deploy` (from this branch) so live `ledgercap-psx-proxy` serves timeseries/board/HTML-200. App degrades without deploy; board scrape stays off while proxy unhealthy.
-7. **Tests:** `tests/lc-events-actions.test.js` + `tests/worker/html-board-passthrough.test.mjs`. Node suites green after `npm run bundle`. Re-run browser audit outside sandbox.
+1. **Dead control** — `Navigation.goResearchIntel` exported; Research portfolio → research.
+2. **Escape** — Document Esc closes top-most sheet (after dialogs/cmdk).
+3. **Theme** — Settings Light/Dark via `data-tab`; persists `localStorage.theme` + `html[data-theme]`.
+4. **Market proxy** — Repo Worker proxies PSX; board HTML now safe text/plain. Client prefers PSX when healthy, Yahoo/cache otherwise.
+5. **axe** — Home `<h1>`; bottom `#nav` landmark; `#screens` `role="main"`.
+6. **Owner must deploy:** `cd worker && wrangler deploy` so live proxy serves timeseries + safe board text.
+7. **Tests:** prices-source-order, scroll-lock, version-coherence boot-deferred, worker html-board text/plain, lc-events gates. Re-run browser audit / ios:check outside sandbox.
 
 ## Checklist A–L
 
 | Gate | Status | Evidence |
 |---|---|---|
-| **A. Build & gates** | **FIXED** | Bundle + node units (incl. new action/worker tests). |
+| **A. Build & gates** | **FIXED** | Bundle + node units (incl. final-review tests). |
 | **B. Screen inventory** | **PASS** | `INVENTORY.md`. |
 | **C. Visual pass** | **pending reviewer** | Re-run audit shots. |
-| **D. Interaction pass** | **code FIXED** | Esc / theme / goResearchIntel — browser confirm pending. |
+| **D. Interaction pass** | **code FIXED** | Esc / theme / sheet / scroll lock — browser confirm pending. |
 | **E. Core flows** | **code FIXED** | Same; re-run `prod-ready-audit.mjs`. |
-| **F. iPhone behaviour** | **PASS** (prior) | ios 23/23 WebKit. |
+| **F. iPhone behaviour** | **PASS** (prior) | ios 23/23 WebKit; re-check after cursor:pointer change. |
 | **G. Accessibility** | **code FIXED** | Home h1 + nav landmark; axe re-run pending. |
 | **H–L** | **unchanged / FIXED** | See Round 1–2. |
 
@@ -33,10 +45,12 @@ cd Cap-Apps/_workspace/LedgerCap-hig/worker
 wrangler login   # if token expired
 wrangler deploy
 curl -sS "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/health"
+curl -sS -D- -o /dev/null "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main" | head -20
+# Expect: Content-Type: text/plain; charset=utf-8, X-Content-Type-Options: nosniff, CSP: sandbox
 curl -sS -o /dev/null -w "%{http_code}\n" "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK"
 ```
 
-Expect health 200 and timeseries **200** (JSON or soft empty), not 404.
+Expect health 200, board **text/plain** (not text/html), timeseries **200**.
 
 ## Commands for reviewer
 
