@@ -6481,7 +6481,7 @@ const App = (() => {
     _activeSheet = id;
     _lockScroll();
     _bindSheetEscape();
-    sheet.querySelector('.bs-backdrop')?.addEventListener('click', () => closeBottomSheet());
+    // Backdrop closes via data-action="App.closeBottomSheet" (LcEvents) — do not re-bind per open.
     // Prefer first focusable in the sheet for keyboard users
     const focusEl = sheet.querySelector('.bs-bar-cancel, #bs-body button, #bs-body input, #bs-body select');
     if (focusEl && typeof focusEl.focus === 'function') {
