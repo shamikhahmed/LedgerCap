@@ -4,7 +4,7 @@
     "engine": "chromium",
     "chrome": "/Users/shamikhahmed/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
     "device": "iPhone 15 Pro metrics (defaultBrowserType removed)",
-    "generatedAt": "2026-10-25T09:57:51.465Z",
+    "generatedAt": "2026-10-25T10:08:42.219Z",
     "screenshotCount": 40,
     "maxShots": 40
   },
@@ -13,13 +13,13 @@
     "fail": 1
   },
   "checks": {
-    "pass": 1,
-    "fail": 3,
+    "pass": 4,
+    "fail": 2,
     "items": [
       {
-        "name": "axe-core run",
-        "ok": false,
-        "detail": "page.addScriptTag: Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-xQCKEIIXUvKB8EIo3pvDWtrgwhe8f471VZ69OqT2RQQ='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+        "name": "csp-pass completed",
+        "ok": true,
+        "detail": "0 CSP events, 14 HTTP>=400"
       },
       {
         "name": "core: open add transaction sheet",
@@ -35,6 +35,16 @@
         "name": "core: settings theme toggle",
         "ok": false,
         "detail": "before=dark after=dark want=light"
+      },
+      {
+        "name": "axe-core available",
+        "ok": true,
+        "detail": "/Users/shamikhahmed/Projects/Cap/Cap-Apps/_workspace/node_modules/axe-core/axe.min.js"
+      },
+      {
+        "name": "axe-core run",
+        "ok": true,
+        "detail": "2 violations on home"
       }
     ]
   },
@@ -43,7 +53,7 @@
       "severity": "high",
       "screen": "ios-check",
       "selector": "(suite)",
-      "description": "no console errors during ios-check: Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked. | Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked. | Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked. | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 ()"
+      "description": "no console errors during ios-check: Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 ()"
     },
     {
       "severity": "medium",
@@ -66,16 +76,20 @@
       "description": "theme toggle failed: stayed dark"
     },
     {
-      "severity": "medium",
-      "screen": "demo-scan",
-      "selector": "console",
-      "description": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enabl"
+      "severity": "a11y",
+      "screen": "home",
+      "selector": "html",
+      "description": "page-has-heading-one: Page should contain a level-one heading",
+      "impact": "moderate",
+      "html": "<html lang=\"en\" data-theme=\"dark\" data-dt-scale=\"1.00\" dir=\"ltr\" style=\"--dt-scale: 1.000;\" data-app-ready=\"true\">"
     },
     {
-      "severity": "medium",
-      "screen": "demo-scan",
-      "selector": "console",
-      "description": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hash"
+      "severity": "a11y",
+      "screen": "home",
+      "selector": "#nav",
+      "description": "region: All page content should be contained by landmarks",
+      "impact": "moderate",
+      "html": "<nav id=\"nav\" class=\"psx-bottom-nav\" role=\"tablist\" aria-label=\"Main\">"
     },
     {
       "severity": "medium",
@@ -91,27 +105,86 @@
     },
     {
       "severity": "medium",
-      "screen": "demo-scan",
-      "selector": "console",
-      "description": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-xQCKEIIXUvKB8EIo3pvDWtrgwhe8f471VZ69OqT2RQQ='), or a nonce ('nonce-...') is required to enabl"
-    },
-    {
-      "severity": "medium",
-      "screen": "empty-scan",
-      "selector": "console",
-      "description": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enabl"
-    },
-    {
-      "severity": "medium",
       "screen": "empty-scan",
       "selector": "console",
       "description": "Failed to load resource: the server responded with a status of 404 ()"
     },
     {
       "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/int/LUCK",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
+      "description": "HTTP 502",
+      "status": 502
+    },
+    {
+      "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20Stock%20Exchange%20listed%20companies&symbol=PSX",
+      "description": "HTTP 502",
+      "status": 502
+    },
+    {
+      "severity": "medium",
+      "screen": "csp-pass",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=KSE-100%20Pakistan%20stock%20market%20PSX&symbol=PSX",
+      "description": "HTTP 502",
+      "status": 502
+    },
+    {
+      "severity": "medium",
       "screen": "empty-scan",
-      "selector": "console",
-      "description": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hash"
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/kse100",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "empty-scan",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/HINO",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "empty-scan",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PIBTL",
+      "description": "HTTP 404",
+      "status": 404
+    },
+    {
+      "severity": "medium",
+      "screen": "empty-scan",
+      "selector": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PICT",
+      "description": "HTTP 404",
+      "status": 404
     }
   ],
   "screenshots": [
@@ -159,18 +232,6 @@
   "consoleErrors": [
     {
       "screen": "demo-scan",
-      "text": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "screen": "demo-scan",
-      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
-    },
-    {
-      "screen": "demo-scan",
-      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
-    },
-    {
-      "screen": "demo-scan",
       "text": "Failed to load resource: the server responded with a status of 404 ()"
     },
     {
@@ -226,80 +287,282 @@
       "text": "Failed to load resource: the server responded with a status of 502 ()"
     },
     {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ],
+  "cspViolations": [],
+  "httpErrors": [
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/int/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
+      "status": 502
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20Stock%20Exchange%20listed%20companies&symbol=PSX",
+      "status": 502
+    },
+    {
+      "screen": "csp-pass",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=KSE-100%20Pakistan%20stock%20market%20PSX&symbol=PSX",
+      "status": 502
+    },
+    {
       "screen": "demo-scan",
-      "text": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-xQCKEIIXUvKB8EIo3pvDWtrgwhe8f471VZ69OqT2RQQ='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/int/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20rupee%20economy%20SBP%20inflation&symbol=Macro",
+      "status": 502
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=KSE-100%20Pakistan%20stock%20market%20PSX&symbol=PSX",
+      "status": 502
+    },
+    {
+      "screen": "demo-scan",
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/news/google?q=Pakistan%20Stock%20Exchange%20listed%20companies&symbol=PSX",
+      "status": 502
     },
     {
       "screen": "empty-scan",
-      "text": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/kse100",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/HINO",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PIBTL",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/trading-board/REG/main",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/market-watch",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK",
+      "status": 404
     },
     {
       "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "screen": "empty-scan",
-      "text": "Failed to load resource: the server responded with a status of 404 ()"
+      "url": "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/PICT",
+      "status": 404
     }
   ]
 }
