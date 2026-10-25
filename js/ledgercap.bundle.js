@@ -3755,6 +3755,10 @@ const LcEvents = (() => {
     document.addEventListener('click', _onClick, true);
     document.addEventListener('change', _onChange, true);
     document.addEventListener('input', _onInput, true);
+    /* Keep #rt-search focused so mousedown→blur does not race the click on hits. */
+    document.addEventListener('mousedown', (ev) => {
+      if (ev.target.closest('.lc-search-hit[data-action]')) ev.preventDefault();
+    }, true);
     registerSegment('Announcements', (id) => Announcements?.setTab?.(id));
     registerSegment('Global', (id) => Global?.setTab?.(id));
     registerSegment('PaperTrade', (id) => PaperTrade?.setTab?.(id));
