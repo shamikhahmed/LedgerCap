@@ -16,6 +16,7 @@ const Home = (() => {
 
     if (!hasHoldings) {
       screen.innerHTML = `
+      <div class="lc-screen-head"><h1>Home</h1><p>Start tracking your wealth</p></div>
       ${marketBlock}
       ${M().sectionHead('Portfolio', 'Start here')}
       ${M().emptyState(LcIcons.icon('chart', 28), 'Track PSX like a pro', 'Stocks, Meezan funds, dividends, and net worth — dense tables and live index data, built for Pakistani investors.',
@@ -37,8 +38,8 @@ const Home = (() => {
     ${marketBlock}
 
     <div class="lc-portfolio-hero cap-reveal">
-      <div class="home-label">Portfolio value</div>
-      <div class="home-value">${U().fmt(summary.totalValue)}</div>
+      <div class="home-label" id="home-value-label">Portfolio value</div>
+      <h1 class="home-value" aria-labelledby="home-value-label">${U().fmt(summary.totalValue)}</h1>
       <div class="home-subtitle">
         <span class="os-pill ${dailyPnl >= 0 ? 'gain' : 'loss'}">Today ${dailyPnl >= 0 ? '+' : ''}${U().fmt(dailyPnl)}</span>
         <span class="os-pill ${summary.totalReturn.pct >= 0 ? 'gain' : 'loss'}">All time ${summary.totalReturn.pct >= 0 ? '+' : ''}${U().fmt(summary.totalReturn.pct, { pct: true })}</span>
