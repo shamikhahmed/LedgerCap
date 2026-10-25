@@ -1,56 +1,42 @@
 # LedgerCap — Production-readiness A–Z report
 
 **Branch:** `design/hig-3` · **App:** 3.58.11 · **SW:** `ledgercap-v35811` · **Date:** 2026-10-25  
-**Ports:** 8850 (audit server) · **ios:check:** WebKit-only (`scripts/ios-behaviour-check.mjs`).  
-**Reviewer (outside sandbox):** WebKit ios-check **23/23 PASS**; `npm test` **30 passed / 2 skipped**; audit raw in `qa/prod-ready/AUDIT-RAW.json` (36 console errors, all CSP — addressed in Round 2 below). Agent sandbox still cannot launch browsers; re-verify after Round 2.
+**Reviewer baseline:** CSP 0 · ios 23/23 · npm test 32 pass / 2 skip · `AUDIT-RAW.json`.
+
+## Round 3 summary (≤20 lines)
+
+1. **Dead control** — `Navigation.goResearchIntel` was not a real method; audit + LcEvents early-return failed. Exported real `goResearchIntel()` (Research portfolio mode → research).
+2. **Escape** — Bottom sheet had no Esc handler. Document Esc closes top-most sheet (after dialogs/cmdk); focus returns to opener.
+3. **Theme** — Settings Light/Dark passed the button element into `_setTheme` (rejected). LcEvents now passes `data-tab`; `App.applyTheme` persists `localStorage.theme` + `html[data-theme]`.
+4. **Market proxy** — Live Worker 404s board/timeseries (stale deploy). Repo Worker already proxies PSX; Round 3 adds HTML 200 passthrough for `trading-board` / `market-watch`. Client prefers Yahoo `.KA` + cached prices; skips board scrape when proxy unhealthy; quiet banner: “Market data unavailable — showing last saved prices (time)”.
+5. **axe** — Home large title → `<h1 class="home-value">`; empty home gets `<h1>Home</h1>`; bottom `#nav` is landmark `<nav>` (dropped `role=tablist` override); `#screens` keeps `role="main"`.
+6. **Owner must deploy:** `cd worker && wrangler deploy` (from this branch) so live `ledgercap-psx-proxy` serves timeseries/board/HTML-200. App degrades without deploy; board scrape stays off while proxy unhealthy.
+7. **Tests:** `tests/lc-events-actions.test.js` + `tests/worker/html-board-passthrough.test.mjs`. Node suites green after `npm run bundle`. Re-run browser audit outside sandbox.
 
 ## Checklist A–L
 
 | Gate | Status | Evidence |
 |---|---|---|
-| **A. Build & gates** | **FIXED** | Unit suites + version-coherence (incl. `boot-deferred.js`). Versions aligned **3.58.11** / `ledgercap-v35811`. |
-| **B. Screen inventory** | **PASS** | `qa/prod-ready/INVENTORY.md` (25 routes + chrome). |
-| **C. Visual pass** | **pending reviewer run** | Shots/matrix exist from prior reviewer audit; agent cannot re-capture. Re-run `scripts/prod-ready-audit.mjs`. |
-| **D. Interaction pass** | **pending reviewer run** | Code fixes in (More hub, Research search CSP). Full tap matrix needs Chromium audit re-run. |
-| **E. Core flows** | **pending reviewer run** | Smoke + new Research/CSP Playwright specs authored; browser re-run required to confirm green. |
-| **F. iPhone behaviour** | **PASS** (reviewer) | WebKit ios-check **23/23**. Keep WebKit-only (no engine fallback / `LC_*` path switches). |
-| **G. Accessibility** | **pending reviewer run** | Audit script now injects axe via `bypassCSP: true` context only. Re-run audit / `npm run test:a11y`. |
-| **H. PWA/offline** | **FIXED** | SW precache: theme-boot, hig-dt, pro-modal, **boot-deferred**. No auto skipWaiting/claim. |
-| **I. Performance** | **PASS** (static) | Deferred bundle on demand via external `boot-deferred.js` (CSP-safe). |
-| **J. Robustness & privacy** | **FIXED** (CSP Round 2) | No inline boot script; no Research `oninput`/`onmousedown`. CSP `script-src` stays without `unsafe-inline`. |
-| **K. Content** | **FIXED** | Manifest G-3; demo labelled. |
-| **L. Docs** | **FIXED** | README / HANDOVER / CHANGELOG / this report. |
+| **A. Build & gates** | **FIXED** | Bundle + node units (incl. new action/worker tests). |
+| **B. Screen inventory** | **PASS** | `INVENTORY.md`. |
+| **C. Visual pass** | **pending reviewer** | Re-run audit shots. |
+| **D. Interaction pass** | **code FIXED** | Esc / theme / goResearchIntel — browser confirm pending. |
+| **E. Core flows** | **code FIXED** | Same; re-run `prod-ready-audit.mjs`. |
+| **F. iPhone behaviour** | **PASS** (prior) | ios 23/23 WebKit. |
+| **G. Accessibility** | **code FIXED** | Home h1 + nav landmark; axe re-run pending. |
+| **H–L** | **unchanged / FIXED** | See Round 1–2. |
 
-## Round 2 — CSP / audit (2026-10-25)
+## Owner deploy (Worker)
 
-| Sev | Issue | Fix |
-|---|---|---|
-| High | Inline `<script>` idle-loader in `index.html` blocked by CSP → deferred never defined cleanly | `js/boot-deferred.js` + `<script defer src>` + SW precache |
-| High | Research `oninput` / search-hit `onmousedown` blocked → search dead in production | Remove inline handlers; LcEvents `#rt-search` input + `data-action` hits; mousedown preventDefault on `.lc-search-hit` |
-| Medium | axe `addScriptTag` blocked by meta CSP (route header strip ineffective) | Dedicated context `bypassCSP: true` for axe only; separate non-bypassed CSP pass |
-| Medium | HTTP failures not inventoried | Audit records every response status ≥400 into `AUDIT-RAW.json` (`httpErrors`) |
-| Test | Regression risk | Playwright: Research search filters; no CSP console noise across all VALID screens |
+```bash
+cd Cap-Apps/_workspace/LedgerCap-hig/worker
+wrangler login   # if token expired
+wrangler deploy
+curl -sS "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/health"
+curl -sS -o /dev/null -w "%{http_code}\n" "https://ledgercap-psx-proxy.shamikhahmed.workers.dev/timeseries/eod/LUCK"
+```
 
-**Still needing browser evidence (pending reviewer run):** C visual matrix, D full interaction, E e2e confirmation, G axe findings after bypassCSP fix. Prior AUDIT-RAW CSP console noise should clear once Round 2 is re-audited.
-
-## Defects found & fixed (Round 1)
-
-| Sev | Screen | Cause | Fix commit |
-|---|---|---|---|
-| High | Top bar ⋯ | More opened Settings | `fix(nav): header More opens More hub` |
-| Medium | More hub / sidebar | Missing pilot/paper/compare tools | `fix(nav): sync More hub and sidebar tools` |
-| High | Version/PWA | Version drift across artifacts | `fix(version): align 3.58.11 with SW cache` |
-| Medium | Offline shell | Boot scripts not precached | `fix(sw): precache shell boot scripts` |
-| Medium | Manifest | “Wealth Operating System”; bg mismatch | same version commit |
-| Medium | Calendar / watchlist | Unescaped fields | `fix(a11y): escape calendar and watchlist fields` |
-
-## Test counts
-
-| Suite | Round 1 | Round 2 (expected after reviewer) |
-|---|---|---|
-| Unit (node) | 86 pass (version-coherence) | +2 asserts (boot-deferred) |
-| ios:check WebKit | — | **23/23** (reviewer) |
-| Playwright e2e | +1 More smoke | +2 CSP/Research specs (agent authored; run pending) |
+Expect health 200 and timeseries **200** (JSON or soft empty), not 404.
 
 ## Commands for reviewer
 
