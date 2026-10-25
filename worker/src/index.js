@@ -132,8 +132,16 @@ export default {
 
     return proxyFetch(fetchUrl, { headers: PSX_HEADERS, cf: { cacheTtl: 90 } }, async (text) => {
       const trimmed = text.trim();
+      const isHtml = trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML');
+      // trading-board / market-watch are HTML pages — pass through (200) for client parsers
+      if (isHtml && /^(trading-board|market-watch)/i.test(psxPath)) {
+        return new Response(trimmed, {
+          status: 200,
+          headers: { ...CORS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' },
+        });
+      }
       // Prefer Yahoo series when PSX serves HTML / empty — keep HTTP 200 so browsers stay quiet.
-      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || !trimmed) {
+      if (isHtml || !trimmed) {
         if (yFallbackSym) {
           try {
             const y = await yahooAsPsxSeries(yFallbackSym, path.includes('/int/') ? '5d' : '1y');

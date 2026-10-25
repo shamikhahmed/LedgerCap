@@ -27,6 +27,7 @@ const Prices = (() => {
   function _markProxySuccess() {
     _proxyFailStreak = 0;
     _proxyDownUntil = 0;
+    window._LC_MARKET_UNAVAILABLE = false;
   }
 
   function _markProxyDown(status) {
@@ -35,10 +36,15 @@ const Prices = (() => {
     if (_proxyFailStreak >= 4) _proxyDownUntil = Date.now() + 60000;
     if (!_proxyWarned && _proxyFailStreak >= 2) {
       _proxyWarned = true;
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Live prices slow — using last close where needed', 'warning');
+      window._LC_MARKET_UNAVAILABLE = true;
+      if (typeof PriceHealth !== 'undefined') {
+        try { PriceHealth.mount(); } catch (_) {}
       }
     }
+  }
+
+  function proxyHealthy() {
+    return Date.now() >= _proxyDownUntil && _proxyFailStreak < 2;
   }
 
   function _isHtml(text) {
@@ -211,15 +217,22 @@ const Prices = (() => {
       const chunk = symbols.slice(i, i + batchSize);
       for (const sym of chunk) {
         let parsed = null;
-        if (sessionOpen) {
-          const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
-          parsed = _parseTimeseries(intData, 'psx_int');
+        const y = await _fetchYahoo(sym);
+        if (y && _sanityCheck(sym, y.price)) {
+          results[sym] = y;
+          continue;
         }
-        if (!parsed) {
-          const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
-          parsed = _parseTimeseries(eodData, 'psx_eod');
+        if (proxyHealthy()) {
+          if (sessionOpen) {
+            const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+            parsed = _parseTimeseries(intData, 'psx_int');
+          }
+          if (!parsed) {
+            const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+            parsed = _parseTimeseries(eodData, 'psx_eod');
+          }
+          if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
         }
-        if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
       }
       if (i + batchSize < symbols.length) await _sleep(120);
     }
@@ -358,11 +371,17 @@ const Prices = (() => {
       return r;
     }
 
-    const psx = await fetchPsxSymbol(symbol);
-    if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
-
+    // Yahoo .KA via Worker first — timeseries/board paths 404 on undeployed Worker and spam console.
     const yahoo = await _fetchYahoo(symbol);
     if (yahoo) return yahoo;
+
+    if (proxyHealthy()) {
+      const psx = await fetchPsxSymbol(symbol);
+      if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
+    }
+
+    const cached = (typeof State !== 'undefined' && State.get('prices')?.[symbol]) || null;
+    if (cached?.price > 0) return { symbol, ...cached, source: cached.source || 'cache' };
 
     const fp = (window.FALLBACK_PRICES || {})[symbol];
     return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 } : null;
@@ -574,7 +593,7 @@ const Prices = (() => {
     return n;
   }
 
-  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs };
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs, proxyHealthy };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {

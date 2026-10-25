@@ -39,19 +39,26 @@ const PriceHealth = (() => {
     const pctSeeded = total ? seeded / total : 0;
     // Live prices unavailable when most holdings are seed/fallback or long-stale.
     const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3)
-      || !!(window._LC_SNAPSHOT_META?.stale?.psx);
+      || !!(window._LC_SNAPSHOT_META?.stale?.psx)
+      || !!window._LC_MARKET_UNAVAILABLE;
 
     return { total, seeded, stale, live, pctSeeded, showBanner };
   }
 
-  function _asOfDate() {
+  function _asOfLabel() {
     const snapAt = window._LC_SNAPSHOT_META?.psxAt
       || (typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.meta()?.psxAt : null);
     if (snapAt) {
       const d = new Date(snapAt);
       if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       }
+    }
+    const prices = typeof State !== 'undefined' ? (State.get('prices') || {}) : {};
+    let newest = 0;
+    Object.values(prices).forEach((p) => { if (p?.ts > newest) newest = p.ts; });
+    if (newest) {
+      return new Date(newest).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
     const raw = window.FALLBACK_PRICES_UPDATED;
     if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
@@ -60,7 +67,7 @@ const PriceHealth = (() => {
         return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
       }
     }
-    return raw || 'the last session';
+    return raw || 'last session';
   }
 
   function _onMarketScreen() {
@@ -72,9 +79,9 @@ const PriceHealth = (() => {
 
   function bannerHtml(rep) {
     if (!_onMarketScreen()) return '';
-    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx) return '';
-    const date = _asOfDate();
-    const msg = `Prices are from the last close on ${date}. Live prices aren't available right now.`;
+    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx && !window._LC_MARKET_UNAVAILABLE) return '';
+    const when = _asOfLabel();
+    const msg = `Market data unavailable — showing last saved prices (${when})`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
