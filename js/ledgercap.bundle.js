@@ -1,4 +1,4 @@
-/* LedgerCap CORE — 29 modules — run: npm run bundle */
+/* LedgerCap CORE — 30 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -3478,6 +3478,48 @@ const LcDebounce = (() => {
 })();
 window.LcDebounce = LcDebounce;
 
+;/* === js/ui/scroll-lock.js === */
+'use strict';
+/** Ref-counted body pin for overlays (sheet, Cmd-K, pro modal, CapConfirm). Nested-safe. */
+window.LcScrollLock = (() => {
+  let depth = 0;
+  let lockedY = null;
+  let pendingRestoreY = null;
+
+  function lock() {
+    if (depth === 0) {
+      lockedY = window.scrollY;
+      Object.assign(document.body.style, {
+        position: 'fixed',
+        top: -lockedY + 'px',
+        left: '0',
+        right: '0',
+        width: '100%',
+      });
+    }
+    depth++;
+  }
+
+  /** @param {number} [restoreY] land here on final unlock (e.g. navigate out of a sheet) */
+  function unlock(restoreY) {
+    if (depth === 0) return;
+    if (typeof restoreY === 'number') pendingRestoreY = restoreY;
+    depth--;
+    if (depth > 0) return;
+    const y = pendingRestoreY == null ? lockedY : pendingRestoreY;
+    lockedY = null;
+    pendingRestoreY = null;
+    Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
+    window.scrollTo(0, y);
+  }
+
+  function isLocked() {
+    return depth > 0;
+  }
+
+  return { lock, unlock, isLocked };
+})();
+
 ;/* === js/ui/dialogs.js === */
 'use strict';
 /* Accessible dialogs — replaces native alert/confirm/prompt calls (LDG-P1-04). */
@@ -3535,6 +3577,7 @@ window.LcDebounce = LcDebounce;
       const close = (val) => {
         backdrop.remove();
         window.removeEventListener('keydown', onKey);
+        window.LcScrollLock?.unlock();
         resolve(val);
       };
       const onKey = (e) => {
@@ -3565,6 +3608,7 @@ window.LcDebounce = LcDebounce;
         if (e.target === backdrop) close(input ? null : false);
       });
       document.body.appendChild(backdrop);
+      window.LcScrollLock?.lock();
       window.addEventListener('keydown', onKey);
       (inputEl || h).focus();
     });
@@ -3660,7 +3704,7 @@ const LcEvents = (() => {
     else if (path === 'PaperTrade._submitSell') window.PaperTrade?._submitSell(el);
     else if (path === 'PaperTrade.resetLedger') window.PaperTrade?.resetLedger();
     else if (path === 'LcTerminal.toggle') window.LcTerminal?.toggle();
-    else if (path === 'LcEvents.closeProModal') document.getElementById('proUpgradeModal')?.classList.remove('open');
+    else if (path === 'LcEvents.closeProModal') (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))();
     else if (path === 'openProUpgrade') window.openProUpgrade?.();
     else if (path === 'window.toggleTheme') window.toggleTheme?.();
     else if (path === 'StatementExport.exportCgtPdf') StatementExport?.exportCgtPdf?.();
@@ -3787,7 +3831,12 @@ const LcEvents = (() => {
     registerSegment('PaperTrade', (id) => PaperTrade?.setTab?.(id));
   }
 
-  return { init, registerSegment, _call, closeProModal: () => document.getElementById('proUpgradeModal')?.classList.remove('open') };
+  return {
+    init,
+    registerSegment,
+    _call,
+    closeProModal: () => (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))(),
+  };
 })();
 window.LcEvents = LcEvents;
 
@@ -6454,7 +6503,8 @@ const App = (() => {
       if (document.querySelector('.lc-dialog-backdrop')) return;
       const pro = document.getElementById('proUpgradeModal');
       if (pro?.classList.contains('open')) {
-        pro.classList.remove('open');
+        if (typeof window.closeProModal === 'function') window.closeProModal();
+        else pro.classList.remove('open');
         e.preventDefault();
         return;
       }
@@ -6508,27 +6558,20 @@ const App = (() => {
     }
   }
 
-  /* iOS ignores overflow:hidden for touch scrolling and jumps when it toggles — pin the body, restore exactly. */
-  let _lockedY = null;
   function _lockScroll() {
-    if (_lockedY !== null) return;
-    _lockedY = window.scrollY;
-    Object.assign(document.body.style, { position: 'fixed', top: -_lockedY + 'px', left: '0', right: '0', width: '100%' });
+    window.LcScrollLock?.lock();
   }
   function _unlockScroll(restoreY) {
-    if (_lockedY === null) return;
-    const y = restoreY == null ? _lockedY : restoreY;
-    _lockedY = null;
-    Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
-    window.scrollTo(0, y);
+    window.LcScrollLock?.unlock(typeof restoreY === 'number' ? restoreY : undefined);
   }
 
   /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
   function closeBottomSheet(restoreY, opts) {
     const sheet = document.getElementById('bottom-sheet');
+    const wasOpen = sheet?.classList.contains('open');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
-    _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
+    if (wasOpen) _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
     const opener = _sheetOpener;
     _sheetOpener = null;
     if (opts?.restoreFocus === false) return;

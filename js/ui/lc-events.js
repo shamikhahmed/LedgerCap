@@ -54,7 +54,7 @@ const LcEvents = (() => {
     else if (path === 'PaperTrade._submitSell') window.PaperTrade?._submitSell(el);
     else if (path === 'PaperTrade.resetLedger') window.PaperTrade?.resetLedger();
     else if (path === 'LcTerminal.toggle') window.LcTerminal?.toggle();
-    else if (path === 'LcEvents.closeProModal') document.getElementById('proUpgradeModal')?.classList.remove('open');
+    else if (path === 'LcEvents.closeProModal') (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))();
     else if (path === 'openProUpgrade') window.openProUpgrade?.();
     else if (path === 'window.toggleTheme') window.toggleTheme?.();
     else if (path === 'StatementExport.exportCgtPdf') StatementExport?.exportCgtPdf?.();
@@ -181,6 +181,11 @@ const LcEvents = (() => {
     registerSegment('PaperTrade', (id) => PaperTrade?.setTab?.(id));
   }
 
-  return { init, registerSegment, _call, closeProModal: () => document.getElementById('proUpgradeModal')?.classList.remove('open') };
+  return {
+    init,
+    registerSegment,
+    _call,
+    closeProModal: () => (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))(),
+  };
 })();
 window.LcEvents = LcEvents;

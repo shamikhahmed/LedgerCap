@@ -810,7 +810,8 @@ const App = (() => {
       if (document.querySelector('.lc-dialog-backdrop')) return;
       const pro = document.getElementById('proUpgradeModal');
       if (pro?.classList.contains('open')) {
-        pro.classList.remove('open');
+        if (typeof window.closeProModal === 'function') window.closeProModal();
+        else pro.classList.remove('open');
         e.preventDefault();
         return;
       }
@@ -864,27 +865,20 @@ const App = (() => {
     }
   }
 
-  /* iOS ignores overflow:hidden for touch scrolling and jumps when it toggles — pin the body, restore exactly. */
-  let _lockedY = null;
   function _lockScroll() {
-    if (_lockedY !== null) return;
-    _lockedY = window.scrollY;
-    Object.assign(document.body.style, { position: 'fixed', top: -_lockedY + 'px', left: '0', right: '0', width: '100%' });
+    window.LcScrollLock?.lock();
   }
   function _unlockScroll(restoreY) {
-    if (_lockedY === null) return;
-    const y = restoreY == null ? _lockedY : restoreY;
-    _lockedY = null;
-    Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
-    window.scrollTo(0, y);
+    window.LcScrollLock?.unlock(typeof restoreY === 'number' ? restoreY : undefined);
   }
 
   /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
   function closeBottomSheet(restoreY, opts) {
     const sheet = document.getElementById('bottom-sheet');
+    const wasOpen = sheet?.classList.contains('open');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
-    _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
+    if (wasOpen) _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
     const opener = _sheetOpener;
     _sheetOpener = null;
     if (opts?.restoreFocus === false) return;

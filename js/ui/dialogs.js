@@ -54,6 +54,7 @@
       const close = (val) => {
         backdrop.remove();
         window.removeEventListener('keydown', onKey);
+        window.LcScrollLock?.unlock();
         resolve(val);
       };
       const onKey = (e) => {
@@ -84,6 +85,7 @@
         if (e.target === backdrop) close(input ? null : false);
       });
       document.body.appendChild(backdrop);
+      window.LcScrollLock?.lock();
       window.addEventListener('keydown', onKey);
       (inputEl || h).focus();
     });

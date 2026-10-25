@@ -3965,6 +3965,7 @@ const LcPolish = (() => {
     _ensureCmdk();
     const el = document.getElementById('lc-cmdk');
     if (!el) return;
+    if (!_cmdkOpen) window.LcScrollLock?.lock();
     el.classList.remove('hidden');
     _cmdkOpen = true;
     const inp = document.getElementById('lc-cmdk-input');
@@ -3975,6 +3976,7 @@ const LcPolish = (() => {
   function closeCmdk() {
     const el = document.getElementById('lc-cmdk');
     if (el) el.classList.add('hidden');
+    if (_cmdkOpen) window.LcScrollLock?.unlock();
     _cmdkOpen = false;
   }
 
