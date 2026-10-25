@@ -12,6 +12,7 @@ PASS  no sideways overflow · research
 PASS  document scrolls (no inner scroller) · research
 PASS  no sideways overflow · settings
 PASS  document scrolls (no inner scroller) · settings
+PASS  programmatic scroll lands instantly
 PASS  tab tap navigates (no reload)
 PASS  new screen opens at top
 PASS  page locked behind sheet
