@@ -336,9 +336,9 @@ window.FALLBACK_PRICES_UPDATED = FALLBACK_PRICES_UPDATED;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.58.9',
-  sw: 146,
-  cache: 'ledgercap-v3589',
+  app: '3.58.11',
+  sw: 35811,
+  cache: 'ledgercap-v35811',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -437,6 +437,9 @@ window.I18N_LOCALES = {
       paperTrade: { t: 'Paper trade', d: 'Simulated PSX ledger' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
+      comparison: { t: 'Compare', d: 'Side by side' },
+      performance: { t: 'Performance', d: 'P&L · daily · forecast' },
+      journal: { t: 'Journal', d: 'Investment thesis' },
       calendar: { t: 'Wealth calendar', d: 'Dividends · IPO · corporate' },
       settingsTool: { t: 'Settings', d: 'Theme · language · data · PIN' },
     },
@@ -513,6 +516,9 @@ window.I18N_LOCALES = {
       paperTrade: { t: 'پیپر ٹریڈ', d: 'فرضی PSX لیجر' },
       riskAudit: { t: 'رسک آڈٹ', d: 'ارتکاز · CGT · جھکاؤ' },
       insightsTool: { t: 'بصیرت', d: 'اسکور · بینچ مارک · تاریخ' },
+      comparison: { t: 'موازنہ', d: 'ساتھ ساتھ' },
+      performance: { t: 'کارکردگی', d: 'P&L · روزانہ · پیشن گوئی' },
+      journal: { t: 'جرنل', d: 'سرمایہ کاری تھیسس' },
       calendar: { t: 'ویلتھ کیلنڈر', d: 'ڈیویڈنڈ · IPO · کارپوریٹ' },
       settingsTool: { t: 'سیٹنگز', d: 'تھیم · زبان · ڈیٹا · PIN' },
     },
@@ -579,6 +585,9 @@ window.I18N_LOCALES = {
       paperTrade: { t: 'Paper trade', d: 'Simulated PSX ledger' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
+      comparison: { t: 'Compare', d: 'Side by side' },
+      performance: { t: 'Performance', d: 'P&L · daily · forecast' },
+      journal: { t: 'Journal', d: 'Investment thesis' },
       global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
       commodities: { t: 'Commodities', d: 'Gold · silver · oil · PKR/gram' },
       announcements: { t: 'Announcements', d: 'Dividends · bonus · portfolio news' },
@@ -4224,6 +4233,9 @@ const Navigation = (() => {
     { id: 'signals', labelKey: 'tools.signals.t' },
     { id: 'risk-audit', labelKey: 'tools.riskAudit.t' },
     { id: 'insights', labelKey: 'tools.insightsTool.t' },
+    { id: 'comparison', labelKey: 'tools.comparison.t' },
+    { id: 'performance', labelKey: 'tools.performance.t' },
+    { id: 'journal', labelKey: 'tools.journal.t' },
     { id: 'pilot-tools', labelKey: 'tools.pilotTools.t' },
     { id: 'paper-trade', labelKey: 'tools.paperTrade.t' },
     { id: 'transactions', labelKey: 'tools.transactions.t' },
@@ -6946,7 +6958,8 @@ const App = (() => {
   };
 
   function openHeaderMenu() {
-    if (typeof Navigation !== 'undefined') Navigation.go('settings');
+    /* Top-bar ⋯ is labelled "More" — open the More hub (Settings is one of its tiles). */
+    if (typeof Navigation !== 'undefined') Navigation.go('more');
   }
 
   function renderCurrent() {

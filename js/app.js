@@ -1352,7 +1352,8 @@ const App = (() => {
   };
 
   function openHeaderMenu() {
-    if (typeof Navigation !== 'undefined') Navigation.go('settings');
+    /* Top-bar ⋯ is labelled "More" — open the More hub (Settings is one of its tiles). */
+    if (typeof Navigation !== 'undefined') Navigation.go('more');
   }
 
   function renderCurrent() {

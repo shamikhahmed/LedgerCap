@@ -11872,6 +11872,8 @@ const More = (() => {
     { id: 'comparison', t: 'Compare', d: 'Side by side' },
     { id: 'performance', t: 'Performance', d: 'P&L · daily · forecast' },
     { id: 'journal', t: 'Journal', d: 'Investment thesis' },
+    { id: 'pilot-tools', t: I18n.t('tools.pilotTools.t'), d: I18n.t('tools.pilotTools.d') },
+    { id: 'paper-trade', t: I18n.t('tools.paperTrade.t'), d: I18n.t('tools.paperTrade.d') },
     { id: 'transactions', t: I18n.t('tools.transactions.t'), d: I18n.t('tools.transactions.d') },
     { id: 'settings', t: 'Settings', d: I18n.t('more.sub') },
   ];
@@ -12520,7 +12522,7 @@ const Watchlist = (() => {
             ${w.targetPrice ? `<span>Target ${U.fmt(w.targetPrice)}</span>` : ''}
           </div>
         </div>
-        <div class="rt-wl-price" data-action="Research.open" data-symbol="${w.symbol}">
+        <div class="rt-wl-price" data-action="Research.open" data-symbol="${esc(w.symbol)}">
           <div class="rt-wl-price-val">${U.fmt(quote.price)}</div>
           <div class="${U.chgCls(quote.changePct)} rt-wl-price-chg">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
           <div class="lc-card-sub">${Prices.sourceLabel?.(quote.source) || quote.source || ''}</div>
@@ -12846,6 +12848,7 @@ window.Dividends = Dividends;
 'use strict';
 /** Unified wealth calendar — dividends, IPO, corporate actions (rule-based, offline). */
 const WealthCalendar = (() => {
+  const esc = (v) => (typeof window.esc === 'function' ? window.esc(v) : String(v ?? ''));
   let _month = null;
 
   function _monthKey(d) {
@@ -12935,12 +12938,12 @@ const WealthCalendar = (() => {
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
-          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${e.symbol}">
+          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${esc(e.symbol || '')}">
             <div>
-              <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
-              <div class="lc-market-name">${e.kind} · ${e.detail}</div>
+              <div class="lc-market-sym">${esc(e.date.slice(8))} · ${esc(e.title)}</div>
+              <div class="lc-market-name">${esc(e.kind)} · ${esc(e.detail)}</div>
             </div>
-            <div class="lc-market-meta">${e.symbol}</div>
+            <div class="lc-market-meta">${esc(e.symbol || '')}</div>
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">
