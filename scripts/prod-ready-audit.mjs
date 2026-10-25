@@ -65,8 +65,28 @@ const findings = [];
 const checks = [];
 const screenshots = [];
 const consoleErrors = [];
+const cspViolations = [];
+const httpErrors = [];
 let shotCount = 0;
 const MAX_SHOTS = 40;
+
+function attachHttpRecorder(page, screen = '') {
+  page.on('response', (res) => {
+    const status = res.status();
+    if (status >= 400) {
+      httpErrors.push({ screen, url: res.url(), status });
+    }
+  });
+}
+
+function attachCspConsole(page, screen = '') {
+  page.on('console', (msg) => {
+    const text = msg.text();
+    if (/Content Security Policy|CSP directive|Refused to execute inline|Refused to load/i.test(text)) {
+      cspViolations.push({ screen, text: text.slice(0, 500), source: 'console' });
+    }
+  });
+}
 
 function finding(severity, screen, selector, description, extra = {}) {
   findings.push({ severity, screen, selector, description, ...extra });
@@ -214,10 +234,9 @@ async function scanScreen(page, screen, profile) {
   }
 }
 
-async function runAxeIfPresent(page, screen) {
-  let axePath = null;
+function resolveAxePath() {
   try {
-    axePath = require.resolve('axe-core/axe.min.js');
+    return require.resolve('axe-core/axe.min.js');
   } catch {
     const candidates = [
       path.join(ROOT, 'node_modules/axe-core/axe.min.js'),
@@ -225,43 +244,95 @@ async function runAxeIfPresent(page, screen) {
       path.join(ROOT, '../PrismCap/node_modules/axe-core/axe.min.js'),
       path.join(ROOT, '../../CookCap/node_modules/axe-core/axe.min.js'),
     ];
-    axePath = candidates.find((c) => fs.existsSync(c)) || null;
+    return candidates.find((c) => fs.existsSync(c)) || null;
   }
+}
+
+/**
+ * Axe needs script injection; meta CSP blocks addScriptTag.
+ * Use a dedicated context with bypassCSP: true — never on the CSP-recording pass.
+ */
+async function runAxeIfPresent(browser, screen = 'home') {
+  const axePath = resolveAxePath();
   if (!axePath) {
     check('axe-core available', false, 'not found in node_modules');
     return null;
   }
-  // Strip CSP so injection works
-  await page.route('**/*', async (route) => {
-    try {
-      const response = await route.fetch();
-      const headers = { ...response.headers() };
-      delete headers['content-security-policy'];
-      delete headers['Content-Security-Policy'];
-      await route.fulfill({ response, headers });
-    } catch {
-      await route.continue();
-    }
+  const ctx = await browser.newContext({
+    ...iphone15ProCtx(),
+    viewport: { width: 390, height: 844 },
+    serviceWorkers: 'block',
+    bypassCSP: true,
   });
-  await page.addScriptTag({ path: axePath });
-  const result = await page.evaluate(async () => {
-    // eslint-disable-next-line no-undef
-    return axe.run(document, {
-      resultTypes: ['violations'],
-      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'best-practice'] },
+  const page = await ctx.newPage();
+  try {
+    await boot(page, { theme: 'dark', demo: true });
+    await go(page, screen);
+    await page.addScriptTag({ path: axePath });
+    const result = await page.evaluate(async () => {
+      // eslint-disable-next-line no-undef
+      return axe.run(document, {
+        resultTypes: ['violations'],
+        runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'best-practice'] },
+      });
+    });
+    check('axe-core available', true, axePath);
+    check('axe-core run', true, `${(result.violations || []).length} violations on ${screen}`);
+    for (const v of result.violations || []) {
+      const nodes = (v.nodes || []).slice(0, 5);
+      for (const n of nodes) {
+        finding('a11y', screen, (n.target || []).join(' ') || '(unknown)', `${v.id}: ${v.help}`, {
+          impact: v.impact,
+          html: (n.html || '').slice(0, 120),
+        });
+      }
+    }
+    return result;
+  } finally {
+    await ctx.close();
+  }
+}
+
+/** Non-bypassed pass: record CSP console noise + securitypolicyviolation + HTTP >=400. */
+async function collectCspPass(browser) {
+  const ctx = await browser.newContext({
+    ...iphone15ProCtx(),
+    viewport: { width: 390, height: 844 },
+    serviceWorkers: 'block',
+  });
+  const page = await ctx.newPage();
+  attachHttpRecorder(page, 'csp-pass');
+  attachCspConsole(page, 'csp-pass');
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (e) => {
+      window.__cspViolations = window.__cspViolations || [];
+      window.__cspViolations.push({
+        violatedDirective: e.violatedDirective,
+        effectiveDirective: e.effectiveDirective,
+        blockedURI: e.blockedURI,
+        disposition: e.disposition,
+      });
     });
   });
-  check('axe-core available', true, axePath);
-  for (const v of result.violations || []) {
-    const nodes = (v.nodes || []).slice(0, 5);
-    for (const n of nodes) {
-      finding('a11y', screen, (n.target || []).join(' ') || '(unknown)', `${v.id}: ${v.help}`, {
-        impact: v.impact,
-        html: (n.html || '').slice(0, 120),
-      });
+  await boot(page, { theme: 'dark', demo: true });
+  for (const tab of VALID) {
+    try {
+      await go(page, tab);
+    } catch (e) {
+      finding('high', tab, 'Navigation.go', `csp-pass failed: ${String(e.message || e).split('\n')[0]}`, { profile: 'csp-pass' });
     }
   }
-  return result;
+  const fromDom = await page.evaluate(() => window.__cspViolations || []);
+  for (const v of fromDom) {
+    cspViolations.push({
+      screen: 'csp-pass',
+      text: `${v.violatedDirective || v.effectiveDirective} blocked ${v.blockedURI || '(inline)'}`,
+      source: 'securitypolicyviolation',
+      ...v,
+    });
+  }
+  check('csp-pass completed', true, `${cspViolations.length} CSP events, ${httpErrors.filter((h) => h.screen === 'csp-pass').length} HTTP>=400`);
+  await ctx.close();
 }
 
 /** Chromium adaptation of ios-behaviour-check — writes qa/prod-ready/ios-check-chromium.txt */
@@ -466,6 +537,10 @@ async function main() {
     if (!r.ok) finding('high', 'ios-check', '(suite)', r.name + (r.detail ? `: ${r.detail}` : ''));
   }
 
+  // --- CSP / HTTP>=400 pass (no bypassCSP) ---
+  console.log('Recording CSP violations + HTTP >=400 (non-bypassed)…');
+  await collectCspPass(browser);
+
   // --- Demo profile: visit all VALID screens at 390x844 dark ---
   console.log('Scanning VALID screens (demo)…');
   {
@@ -475,6 +550,8 @@ async function main() {
       serviceWorkers: 'block',
     });
     const page = await ctx.newPage();
+    attachHttpRecorder(page, 'demo-scan');
+    attachCspConsole(page, 'demo-scan');
     page.on('console', (msg) => {
       if (msg.type() === 'error') consoleErrors.push({ screen: 'demo-scan', text: msg.text() });
     });
@@ -490,16 +567,16 @@ async function main() {
       }
     }
 
-    // Axe on home (demo)
-    try {
-      await go(page, 'home');
-      await runAxeIfPresent(page, 'home');
-    } catch (e) {
-      check('axe-core run', false, String(e.message || e).split('\n')[0]);
-    }
-
     await runCoreFlows(page);
     await ctx.close();
+  }
+
+  // --- Axe on dedicated bypassCSP context (does not affect CSP recording) ---
+  console.log('Running axe (bypassCSP context only)…');
+  try {
+    await runAxeIfPresent(browser, 'home');
+  } catch (e) {
+    check('axe-core run', false, String(e.message || e).split('\n')[0]);
   }
 
   // --- Empty profile scan (subset + home/portfolio) ---
@@ -513,6 +590,7 @@ async function main() {
       serviceWorkers: 'block',
     });
     const page = await ctx.newPage();
+    attachHttpRecorder(page, 'empty-scan');
     page.on('console', (msg) => {
       if (msg.type() === 'error') consoleErrors.push({ screen: 'empty-scan', text: msg.text() });
     });
@@ -599,6 +677,22 @@ async function main() {
     finding('medium', e.screen, 'console', e.text.slice(0, 300));
   }
 
+  const seenHttp = new Set();
+  for (const h of httpErrors) {
+    const key = `${h.status}|${h.url}`;
+    if (seenHttp.has(key)) continue;
+    seenHttp.add(key);
+    finding('medium', h.screen || 'http', h.url, `HTTP ${h.status}`, { status: h.status });
+  }
+
+  const seenCsp = new Set();
+  for (const v of cspViolations) {
+    const key = v.text;
+    if (seenCsp.has(key)) continue;
+    seenCsp.add(key);
+    finding('high', v.screen || 'csp', 'CSP', v.text.slice(0, 300), { source: v.source });
+  }
+
   if (owned) await browser.close();
   else await browser.close().catch(() => {});
 
@@ -619,6 +713,8 @@ async function main() {
     findings,
     screenshots: screenshots.map((p) => path.relative(ROOT, p)),
     consoleErrors,
+    cspViolations,
+    httpErrors,
   };
   fs.writeFileSync(path.join(OUT, 'AUDIT-RAW.json'), JSON.stringify(audit, null, 2));
 
@@ -626,6 +722,8 @@ async function main() {
   console.log(`checks: ${pass} pass / ${fail} fail`);
   console.log(`ios-check: ${ios.pass} pass / ${ios.fail} fail`);
   console.log(`findings: ${findings.length}`);
+  console.log(`cspViolations: ${cspViolations.length}`);
+  console.log(`httpErrors (>=400): ${httpErrors.length}`);
   console.log(`screenshots: ${screenshots.length}`);
   console.log(`wrote ${path.join(OUT, 'AUDIT-RAW.json')}`);
   console.log(`wrote ${path.join(OUT, 'ios-check-chromium.txt')}`);
