@@ -1251,7 +1251,10 @@ const Settings = (() => {
     App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
   }
 
-  function _setTheme(theme) {
+  function _setTheme(themeOrEl) {
+    const theme = typeof themeOrEl === 'string'
+      ? themeOrEl
+      : (themeOrEl?.dataset?.tab || themeOrEl?.getAttribute?.('data-tab'));
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
     App.showToast(`${theme === 'light' ? 'Light' : 'Dark'} theme applied`, 'success');
@@ -3531,19 +3534,26 @@ const PriceHealth = (() => {
     const pctSeeded = total ? seeded / total : 0;
     // Live prices unavailable when most holdings are seed/fallback or long-stale.
     const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3)
-      || !!(window._LC_SNAPSHOT_META?.stale?.psx);
+      || !!(window._LC_SNAPSHOT_META?.stale?.psx)
+      || !!window._LC_MARKET_UNAVAILABLE;
 
     return { total, seeded, stale, live, pctSeeded, showBanner };
   }
 
-  function _asOfDate() {
+  function _asOfLabel() {
     const snapAt = window._LC_SNAPSHOT_META?.psxAt
       || (typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.meta()?.psxAt : null);
     if (snapAt) {
       const d = new Date(snapAt);
       if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       }
+    }
+    const prices = typeof State !== 'undefined' ? (State.get('prices') || {}) : {};
+    let newest = 0;
+    Object.values(prices).forEach((p) => { if (p?.ts > newest) newest = p.ts; });
+    if (newest) {
+      return new Date(newest).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
     const raw = window.FALLBACK_PRICES_UPDATED;
     if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
@@ -3552,7 +3562,7 @@ const PriceHealth = (() => {
         return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
       }
     }
-    return raw || 'the last session';
+    return raw || 'last session';
   }
 
   function _onMarketScreen() {
@@ -3564,9 +3574,9 @@ const PriceHealth = (() => {
 
   function bannerHtml(rep) {
     if (!_onMarketScreen()) return '';
-    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx) return '';
-    const date = _asOfDate();
-    const msg = `Prices are from the last close on ${date}. Live prices aren't available right now.`;
+    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx && !window._LC_MARKET_UNAVAILABLE) return '';
+    const when = _asOfLabel();
+    const msg = `Market data unavailable — showing last saved prices (${when})`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
@@ -8951,37 +8961,65 @@ const MarketWatchService = (() => {
     return null;
   }
 
+  function _fromSavedPrice(sym) {
+    const prices = (typeof State !== 'undefined' && State.get('prices')) || {};
+    const p = prices[sym];
+    if (!(p?.price > 0)) return null;
+    const px = p.price;
+    const ldcp = p.prevClose > 0 ? p.prevClose : px;
+    return {
+      symbol: sym,
+      bidVol: 0,
+      bidPrice: px,
+      askVol: 0,
+      askPrice: px,
+      ldcp,
+      volume: 0,
+      spread: 0,
+      fallback: true,
+      asOf: p.ts || null,
+    };
+  }
+
   async function getOrderBook(symbol) {
     const sym = (symbol || '').toUpperCase();
     if (!sym) return null;
     const hit = _cache.get(`ob:${sym}`);
     if (hit && Date.now() - hit.ts < CACHE_MS) return hit.data;
 
-    let html = await _fetchHtml('trading-board/REG/main');
-    if (typeof html !== 'string') html = '';
-    let data = _parseTradingRow(html, sym);
+    // Prefer last saved quote — live Worker often 404s board HTML until redeployed (see REPORT.md).
+    let data = _fromSavedPrice(sym);
 
-    if (!data) {
-      const mw = await _fetchHtml('market-watch');
-      if (typeof mw === 'string') {
-        const row = _parseMarketRow(mw, sym);
-        if (row) {
-          data = {
-            symbol: sym,
-            bidVol: 0,
-            bidPrice: row.close || row.ldcp,
-            askVol: 0,
-            askPrice: row.close || row.ldcp,
-            ldcp: row.ldcp,
-            volume: row.volume,
-            open: row.open,
-            high: row.high,
-            low: row.low,
-            change: row.change,
-            changePct: row.changePct,
-            spread: 0,
-            fallback: true,
-          };
+    // Optional upgrade: scrape board only when proxy looks healthy (avoids console 404 spam).
+    const proxyOk = typeof Prices === 'undefined' || typeof Prices.proxyHealthy !== 'function' || Prices.proxyHealthy();
+    if (proxyOk) {
+      let html = await _fetchHtml('trading-board/REG/main');
+      if (typeof html === 'string' && html.includes('<')) {
+        const board = _parseTradingRow(html, sym);
+        if (board) data = board;
+      }
+      if (!data || data.fallback) {
+        const mw = await _fetchHtml('market-watch');
+        if (typeof mw === 'string' && mw.includes('<')) {
+          const row = _parseMarketRow(mw, sym);
+          if (row) {
+            data = {
+              symbol: sym,
+              bidVol: 0,
+              bidPrice: row.close || row.ldcp,
+              askVol: 0,
+              askPrice: row.close || row.ldcp,
+              ldcp: row.ldcp,
+              volume: row.volume,
+              open: row.open,
+              high: row.high,
+              low: row.low,
+              change: row.change,
+              changePct: row.changePct,
+              spread: 0,
+              fallback: true,
+            };
+          }
         }
       }
     }

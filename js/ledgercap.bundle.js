@@ -1409,6 +1409,7 @@ const Prices = (() => {
   function _markProxySuccess() {
     _proxyFailStreak = 0;
     _proxyDownUntil = 0;
+    window._LC_MARKET_UNAVAILABLE = false;
   }
 
   function _markProxyDown(status) {
@@ -1417,10 +1418,15 @@ const Prices = (() => {
     if (_proxyFailStreak >= 4) _proxyDownUntil = Date.now() + 60000;
     if (!_proxyWarned && _proxyFailStreak >= 2) {
       _proxyWarned = true;
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Live prices slow — using last close where needed', 'warning');
+      window._LC_MARKET_UNAVAILABLE = true;
+      if (typeof PriceHealth !== 'undefined') {
+        try { PriceHealth.mount(); } catch (_) {}
       }
     }
+  }
+
+  function proxyHealthy() {
+    return Date.now() >= _proxyDownUntil && _proxyFailStreak < 2;
   }
 
   function _isHtml(text) {
@@ -1593,15 +1599,22 @@ const Prices = (() => {
       const chunk = symbols.slice(i, i + batchSize);
       for (const sym of chunk) {
         let parsed = null;
-        if (sessionOpen) {
-          const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
-          parsed = _parseTimeseries(intData, 'psx_int');
+        const y = await _fetchYahoo(sym);
+        if (y && _sanityCheck(sym, y.price)) {
+          results[sym] = y;
+          continue;
         }
-        if (!parsed) {
-          const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
-          parsed = _parseTimeseries(eodData, 'psx_eod');
+        if (proxyHealthy()) {
+          if (sessionOpen) {
+            const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+            parsed = _parseTimeseries(intData, 'psx_int');
+          }
+          if (!parsed) {
+            const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+            parsed = _parseTimeseries(eodData, 'psx_eod');
+          }
+          if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
         }
-        if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
       }
       if (i + batchSize < symbols.length) await _sleep(120);
     }
@@ -1740,11 +1753,17 @@ const Prices = (() => {
       return r;
     }
 
-    const psx = await fetchPsxSymbol(symbol);
-    if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
-
+    // Yahoo .KA via Worker first — timeseries/board paths 404 on undeployed Worker and spam console.
     const yahoo = await _fetchYahoo(symbol);
     if (yahoo) return yahoo;
+
+    if (proxyHealthy()) {
+      const psx = await fetchPsxSymbol(symbol);
+      if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
+    }
+
+    const cached = (typeof State !== 'undefined' && State.get('prices')?.[symbol]) || null;
+    if (cached?.price > 0) return { symbol, ...cached, source: cached.source || 'cache' };
 
     const fp = (window.FALLBACK_PRICES || {})[symbol];
     return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 } : null;
@@ -1956,7 +1975,7 @@ const Prices = (() => {
     return n;
   }
 
-  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs };
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs, proxyHealthy };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {
@@ -3651,10 +3670,13 @@ const LcEvents = (() => {
     else if (path === 'LcPolish.openCmdk') window.LcPolish?.openCmdk();
     else if (path === 'Performance.setTab') window.Performance?.setTab(tab);
     else if (path === 'Performance.setHistRange') window.Performance?.setHistRange(tab);
-    else if (path === 'Navigation.goResearchIntel') {
-      Research?.setMode?.('portfolio');
-      Navigation.go('research', false, { portfolioIntel: true });
-    }
+    else if (path === 'Navigation.goResearchIntel') Navigation.goResearchIntel?.();
+    else if (path === 'Settings._setTheme') Settings?._setTheme?.(tab);
+    else if (path === 'Settings._setNumberFormat') Settings?._setNumberFormat?.(tab);
+    else if (path === 'Settings._setDisplayCurrency') Settings?._setDisplayCurrency?.(tab);
+    else if (path === 'Settings._setHaptics') Settings?._setHaptics?.(!!el.checked);
+    else if (path === 'Settings._setLiveStream') Settings?._setLiveStream?.(!!el.checked);
+    else if (path === 'Settings._setSnapshot') Settings?._setSnapshot?.(!!el.checked);
     else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
     else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
     else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
@@ -4255,7 +4277,7 @@ const Navigation = (() => {
 
   function _navBtn(t) {
     const on = t.id === _current;
-    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
+    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" aria-current="${on ? 'page' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
       <span class="psx-nav-icon-wrap" aria-hidden="true">${t.icon}</span>
       <span>${_t(t.labelKey)}</span>
     </button>`;
@@ -4339,6 +4361,7 @@ const Navigation = (() => {
       document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
         b.classList.remove('active');
+        if (b.classList.contains('psx-nav-btn')) b.setAttribute('aria-current', 'false');
         if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
       });
       const el = document.getElementById('screen-' + tabId);
@@ -4351,6 +4374,7 @@ const Navigation = (() => {
       }
       document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
         b.classList.add('active');
+        if (b.classList.contains('psx-nav-btn')) b.setAttribute('aria-current', 'page');
         if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
       });
       if (!silent) {
@@ -4408,7 +4432,16 @@ const Navigation = (() => {
   }
 
   function current() { return _current; }
-  return { init, go, current, applyTheme, TABS };
+
+  /** Portfolio intel entry from Home / Risk audit — real method so data-action resolves. */
+  function goResearchIntel() {
+    if (typeof Research !== 'undefined' && typeof Research.setMode === 'function') {
+      Research.setMode('portfolio');
+    }
+    go('research', false, { portfolioIntel: true });
+  }
+
+  return { init, go, goResearchIntel, current, applyTheme, TABS };
 })();
 window.Navigation = Navigation;
 
@@ -6408,17 +6441,51 @@ const App = (() => {
     showToast('Alert removed', 'info');
   }
 
+  let _sheetOpener = null;
+  let _escBound = false;
+
+  function _bindSheetEscape() {
+    if (_escBound) return;
+    _escBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Top-most first: CapConfirm / pro modal own their listeners; skip if present
+      if (document.querySelector('.lc-dialog-backdrop')) return;
+      const pro = document.getElementById('proUpgradeModal');
+      if (pro?.classList.contains('open')) {
+        pro.classList.remove('open');
+        e.preventDefault();
+        return;
+      }
+      const cmdk = document.getElementById('lc-cmdk');
+      if (cmdk && !cmdk.classList.contains('hidden')) return;
+      const sheet = document.getElementById('bottom-sheet');
+      if (sheet?.classList.contains('open')) {
+        e.preventDefault();
+        closeBottomSheet();
+      }
+    });
+  }
+
   function openBottomSheet(id, title, content) {
-    closeBottomSheet();
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeBottomSheet(undefined, { restoreFocus: false });
     const sheet = document.getElementById('bottom-sheet');
     if (!sheet) return;
+    _sheetOpener = opener;
     document.getElementById('bs-title').textContent = title || '';
     document.getElementById('bs-body').innerHTML = content || '';
     _sheetBar(sheet);
     sheet.classList.add('open');
     _activeSheet = id;
     _lockScroll();
+    _bindSheetEscape();
     sheet.querySelector('.bs-backdrop')?.addEventListener('click', () => closeBottomSheet());
+    // Prefer first focusable in the sheet for keyboard users
+    const focusEl = sheet.querySelector('.bs-bar-cancel, #bs-body button, #bs-body input, #bs-body select');
+    if (focusEl && typeof focusEl.focus === 'function') {
+      requestAnimationFrame(() => { try { focusEl.focus(); } catch (_) {} });
+    }
   }
 
   /** HIG sheet bar: the body's single trailing primary action moves to the bar (Cancel is always leading). */
@@ -6456,11 +6523,17 @@ const App = (() => {
   }
 
   /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
-  function closeBottomSheet(restoreY) {
+  function closeBottomSheet(restoreY, opts) {
     const sheet = document.getElementById('bottom-sheet');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
     _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
+    const opener = _sheetOpener;
+    _sheetOpener = null;
+    if (opts?.restoreFocus === false) return;
+    if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+      requestAnimationFrame(() => { try { opener.focus(); } catch (_) {} });
+    }
   }
 
   function openSellHolding(symbol, broker, type) {
@@ -6950,7 +7023,9 @@ const App = (() => {
   }
 
   function applyTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
     State.update(s => { s.settings.theme = theme; });
+    try { localStorage.setItem('theme', theme); } catch (_) {}
     _applyTheme(theme);
   }
 
@@ -6958,7 +7033,6 @@ const App = (() => {
     const current = document.body.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     App.applyTheme(next);
-    localStorage.setItem('theme', next);
   };
 
   function openHeaderMenu() {
