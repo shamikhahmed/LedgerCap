@@ -798,17 +798,51 @@ const App = (() => {
     showToast('Alert removed', 'info');
   }
 
+  let _sheetOpener = null;
+  let _escBound = false;
+
+  function _bindSheetEscape() {
+    if (_escBound) return;
+    _escBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Top-most first: CapConfirm / pro modal own their listeners; skip if present
+      if (document.querySelector('.lc-dialog-backdrop')) return;
+      const pro = document.getElementById('proUpgradeModal');
+      if (pro?.classList.contains('open')) {
+        pro.classList.remove('open');
+        e.preventDefault();
+        return;
+      }
+      const cmdk = document.getElementById('lc-cmdk');
+      if (cmdk && !cmdk.classList.contains('hidden')) return;
+      const sheet = document.getElementById('bottom-sheet');
+      if (sheet?.classList.contains('open')) {
+        e.preventDefault();
+        closeBottomSheet();
+      }
+    });
+  }
+
   function openBottomSheet(id, title, content) {
-    closeBottomSheet();
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeBottomSheet(undefined, { restoreFocus: false });
     const sheet = document.getElementById('bottom-sheet');
     if (!sheet) return;
+    _sheetOpener = opener;
     document.getElementById('bs-title').textContent = title || '';
     document.getElementById('bs-body').innerHTML = content || '';
     _sheetBar(sheet);
     sheet.classList.add('open');
     _activeSheet = id;
     _lockScroll();
+    _bindSheetEscape();
     sheet.querySelector('.bs-backdrop')?.addEventListener('click', () => closeBottomSheet());
+    // Prefer first focusable in the sheet for keyboard users
+    const focusEl = sheet.querySelector('.bs-bar-cancel, #bs-body button, #bs-body input, #bs-body select');
+    if (focusEl && typeof focusEl.focus === 'function') {
+      requestAnimationFrame(() => { try { focusEl.focus(); } catch (_) {} });
+    }
   }
 
   /** HIG sheet bar: the body's single trailing primary action moves to the bar (Cancel is always leading). */
@@ -846,11 +880,17 @@ const App = (() => {
   }
 
   /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
-  function closeBottomSheet(restoreY) {
+  function closeBottomSheet(restoreY, opts) {
     const sheet = document.getElementById('bottom-sheet');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
     _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
+    const opener = _sheetOpener;
+    _sheetOpener = null;
+    if (opts?.restoreFocus === false) return;
+    if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+      requestAnimationFrame(() => { try { opener.focus(); } catch (_) {} });
+    }
   }
 
   function openSellHolding(symbol, broker, type) {
@@ -1340,7 +1380,9 @@ const App = (() => {
   }
 
   function applyTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
     State.update(s => { s.settings.theme = theme; });
+    try { localStorage.setItem('theme', theme); } catch (_) {}
     _applyTheme(theme);
   }
 
@@ -1348,7 +1390,6 @@ const App = (() => {
     const current = document.body.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     App.applyTheme(next);
-    localStorage.setItem('theme', next);
   };
 
   function openHeaderMenu() {
