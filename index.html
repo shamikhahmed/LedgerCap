@@ -136,14 +136,14 @@
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
   <script defer src="js/brand/colors.js"></script>
-  <script defer src="js/ledgercap.bundle.js?v=3.58.9"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.58.11"></script>
   <script defer src="js/pro-modal.js"></script>
   <script>
   /* Idle-load non-Home bundle well after first paint (v5 §3d TBT).
      Demo must NOT kick ASAP — that parsed ~460KB during LH (mobile 43).
      E2E / nav still call __lcEnsureDeferred() on demand. */
   (function () {
-    var src = 'js/ledgercap.deferred.js?v=3.58.9';
+    var src = 'js/ledgercap.deferred.js?v=3.58.11';
     var p = null;
     window.__lcEnsureDeferred = function () {
       if (window.__LC_DEFERRED_READY__) return Promise.resolve();
