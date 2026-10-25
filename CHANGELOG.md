@@ -8,6 +8,17 @@
 - SW no longer `skipWaiting`/`clients.claim` on install (user-initiated update still can) · cache `ledgercap-v35811`
 - `scripts/ios-behaviour-check.mjs` (`npm run ios:check`): origin/main 8 FAIL → 22/22 PASS · gate `tests/hig-design.spec.js`
 
+## [3.58.11] — 2026-10-25 — Production-readiness audit (HIG 3)
+
+- Align `VERSION.json` / `LEDGERCAP_VERSION` / `package.json` / `manifest.json` / index cache-bust with SW `ledgercap-v35811`
+- Fix: header ⋯ **More** opened Settings — now opens `#more` hub; More hub + sidebar list pilot-tools / paper-trade / compare / performance / journal
+- SW precache `theme-boot.js`, `hig-dt.js`, `pro-modal.js` for offline shell
+- Manifest: drop “Wealth Operating System” (G-3); `background_color` → `#000000` (matches `--bg`)
+- Escape wealth-calendar event fields; watchlist `data-symbol` uses `esc()`
+- Gates: `tests/version-coherence.test.js`; smoke: header More → More hub
+- `scripts/prod-ready-audit.mjs` + Chromium fallback on `ios:check` (`LC_IOS_BROWSER=chromium`) — browser evidence blocked in Cursor sandbox; prior HIG ios-check 22/22 retained
+- Docs: README / HANDOVER / `qa/prod-ready/REPORT.md` + `INVENTORY.md`
+
 ## [3.58.10] — 2026-10-21
 
 - HIG v7: iOS tokens / native feel; Dynamic Type & hit targets where applicable

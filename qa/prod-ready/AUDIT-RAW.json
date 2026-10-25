@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "base": "http://127.0.0.1:8850/",
+    "engine": "chromium",
+    "status": "blocked",
+    "blockReason": "Chromium headless launch SIGABRT in Cursor sandbox (mach_port_rendezvous Permission denied / kill EPERM). required_permissions=[all] repeatedly rejected; WebKit also aborts in this environment. Scripts are ready: node scripts/prod-ready-audit.mjs",
+    "chrome": "/Users/shamikhahmed/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+    "device": "iPhone 15 Pro metrics (defaultBrowserType removed)",
+    "generatedAt": "2026-10-25T09:50:00.000Z",
+    "screenshotCount": 0,
+    "maxShots": 40,
+    "scriptsReady": [
+      "scripts/prod-ready-audit.mjs",
+      "scripts/ios-behaviour-check.mjs (LC_IOS_BROWSER=chromium | webkit.launch fallback)"
+    ]
+  },
+  "iosCheck": { "pass": 0, "fail": 0, "ran": false },
+  "checks": { "pass": 0, "fail": 0, "items": [] },
+  "findings": [
+    {
+      "severity": "blocker",
+      "screen": "(environment)",
+      "selector": "chromium.launch",
+      "description": "Cannot run visual/interaction audit: Google Chrome for Testing aborts under Cursor seatbelt (SIGABRT). Re-run outside sandbox: qa/prod-ready/run-audit.command or node scripts/prod-ready-audit.mjs with PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL=0 and LC_CHROME_PATH set."
+    }
+  ],
+  "screenshots": [],
+  "consoleErrors": []
+}
