@@ -88,4 +88,13 @@ test.describe('LedgerCap smoke', () => {
     await page.getByRole('button', { name: /Tax & Rebalance/i }).click();
     await expect(page.locator('#screen-pilot-tools.active')).toBeVisible({ timeout: 10000 });
   });
+
+  test('header More opens More hub (not Settings)', async ({ page }) => {
+    await page.goto('/?demo=1');
+    await waitForNavReady(page);
+    await page.locator('#lc-header-more').click();
+    await expect(page.locator('#screen-more.active')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: /Paper trade/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Tax & Rebalance/i })).toBeVisible();
+  });
 });
