@@ -1,29 +1,305 @@
 {
   "meta": {
-    "base": "http://127.0.0.1:8850/",
+    "base": "http://127.0.0.1:8851/",
     "engine": "chromium",
-    "status": "blocked",
-    "blockReason": "Chromium headless launch SIGABRT in Cursor sandbox (mach_port_rendezvous Permission denied / kill EPERM). required_permissions=[all] repeatedly rejected; WebKit also aborts in this environment. Scripts are ready: node scripts/prod-ready-audit.mjs",
     "chrome": "/Users/shamikhahmed/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
     "device": "iPhone 15 Pro metrics (defaultBrowserType removed)",
-    "generatedAt": "2026-10-25T09:50:00.000Z",
-    "screenshotCount": 0,
-    "maxShots": 40,
-    "scriptsReady": [
-      "scripts/prod-ready-audit.mjs",
-      "scripts/ios-behaviour-check.mjs (LC_IOS_BROWSER=chromium | webkit.launch fallback)"
+    "generatedAt": "2026-10-25T09:57:51.465Z",
+    "screenshotCount": 40,
+    "maxShots": 40
+  },
+  "iosCheck": {
+    "pass": 23,
+    "fail": 1
+  },
+  "checks": {
+    "pass": 1,
+    "fail": 3,
+    "items": [
+      {
+        "name": "axe-core run",
+        "ok": false,
+        "detail": "page.addScriptTag: Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-xQCKEIIXUvKB8EIo3pvDWtrgwhe8f471VZ69OqT2RQQ='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+      },
+      {
+        "name": "core: open add transaction sheet",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "core: Esc closes add sheet",
+        "ok": false,
+        "detail": ""
+      },
+      {
+        "name": "core: settings theme toggle",
+        "ok": false,
+        "detail": "before=dark after=dark want=light"
+      }
     ]
   },
-  "iosCheck": { "pass": 0, "fail": 0, "ran": false },
-  "checks": { "pass": 0, "fail": 0, "items": [] },
   "findings": [
     {
-      "severity": "blocker",
-      "screen": "(environment)",
-      "selector": "chromium.launch",
-      "description": "Cannot run visual/interaction audit: Google Chrome for Testing aborts under Cursor seatbelt (SIGABRT). Re-run outside sandbox: qa/prod-ready/run-audit.command or node scripts/prod-ready-audit.mjs with PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL=0 and LC_CHROME_PATH set."
+      "severity": "high",
+      "screen": "ios-check",
+      "selector": "(suite)",
+      "description": "no console errors during ios-check: Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked. | Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked. | Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked. | Failed to load resource: the server responded with a status of 404 () | Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "severity": "medium",
+      "screen": "risk-audit",
+      "selector": "button[data-action=\"Navigation.goResearchIntel\"]",
+      "description": "dead data-action: Navigation.goResearchIntel (not a function: Navigation.goResearchIntel)",
+      "profile": "demo",
+      "kind": "data-action"
+    },
+    {
+      "severity": "high",
+      "screen": "home",
+      "selector": "#bottom-sheet",
+      "description": "Escape did not close bottom sheet"
+    },
+    {
+      "severity": "high",
+      "screen": "settings",
+      "selector": ".os-theme-btn[data-tab=\"light\"]",
+      "description": "theme toggle failed: stayed dark"
+    },
+    {
+      "severity": "medium",
+      "screen": "demo-scan",
+      "selector": "console",
+      "description": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enabl"
+    },
+    {
+      "severity": "medium",
+      "screen": "demo-scan",
+      "selector": "console",
+      "description": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hash"
+    },
+    {
+      "severity": "medium",
+      "screen": "demo-scan",
+      "selector": "console",
+      "description": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "severity": "medium",
+      "screen": "demo-scan",
+      "selector": "console",
+      "description": "Failed to load resource: the server responded with a status of 502 ()"
+    },
+    {
+      "severity": "medium",
+      "screen": "demo-scan",
+      "selector": "console",
+      "description": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-xQCKEIIXUvKB8EIo3pvDWtrgwhe8f471VZ69OqT2RQQ='), or a nonce ('nonce-...') is required to enabl"
+    },
+    {
+      "severity": "medium",
+      "screen": "empty-scan",
+      "selector": "console",
+      "description": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enabl"
+    },
+    {
+      "severity": "medium",
+      "screen": "empty-scan",
+      "selector": "console",
+      "description": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "severity": "medium",
+      "screen": "empty-scan",
+      "selector": "console",
+      "description": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hash"
     }
   ],
-  "screenshots": [],
-  "consoleErrors": []
+  "screenshots": [
+    "qa/prod-ready/shots/01-empty-390-light-home.png",
+    "qa/prod-ready/shots/02-empty-390-light-portfolio.png",
+    "qa/prod-ready/shots/03-375x812-light-home.png",
+    "qa/prod-ready/shots/04-375x812-light-portfolio.png",
+    "qa/prod-ready/shots/05-375x812-dark-home.png",
+    "qa/prod-ready/shots/06-375x812-dark-settings.png",
+    "qa/prod-ready/shots/07-390x844-light-home.png",
+    "qa/prod-ready/shots/08-390x844-light-market.png",
+    "qa/prod-ready/shots/09-390x844-light-funds.png",
+    "qa/prod-ready/shots/10-390x844-light-portfolio.png",
+    "qa/prod-ready/shots/11-390x844-light-research.png",
+    "qa/prod-ready/shots/12-390x844-light-settings.png",
+    "qa/prod-ready/shots/13-390x844-light-add.png",
+    "qa/prod-ready/shots/14-390x844-dark-home.png",
+    "qa/prod-ready/shots/15-390x844-dark-portfolio.png",
+    "qa/prod-ready/shots/16-390x844-dark-settings.png",
+    "qa/prod-ready/shots/17-390x844-dark-add.png",
+    "qa/prod-ready/shots/18-390x844-dark-more.png",
+    "qa/prod-ready/shots/19-430x932-light-home.png",
+    "qa/prod-ready/shots/20-430x932-light-portfolio.png",
+    "qa/prod-ready/shots/21-430x932-dark-home.png",
+    "qa/prod-ready/shots/22-430x932-dark-market.png",
+    "qa/prod-ready/shots/23-744x1133-dark-home.png",
+    "qa/prod-ready/shots/24-744x1133-dark-portfolio.png",
+    "qa/prod-ready/shots/25-744x1133-dark-settings.png",
+    "qa/prod-ready/shots/26-1180x820-dark-home.png",
+    "qa/prod-ready/shots/27-1180x820-dark-portfolio.png",
+    "qa/prod-ready/shots/28-1180x820-dark-settings.png",
+    "qa/prod-ready/shots/29-1440x900-dark-home.png",
+    "qa/prod-ready/shots/30-1440x900-dark-portfolio.png",
+    "qa/prod-ready/shots/31-390x844-dark-global.png",
+    "qa/prod-ready/shots/32-390x844-dark-commodities.png",
+    "qa/prod-ready/shots/33-390x844-dark-announcements.png",
+    "qa/prod-ready/shots/34-390x844-dark-zakat.png",
+    "qa/prod-ready/shots/35-390x844-dark-import.png",
+    "qa/prod-ready/shots/36-390x844-dark-screener.png",
+    "qa/prod-ready/shots/37-390x844-dark-watchlist.png",
+    "qa/prod-ready/shots/38-390x844-dark-dividends.png",
+    "qa/prod-ready/shots/39-390x844-dark-calendar.png",
+    "qa/prod-ready/shots/40-390x844-dark-transactions.png"
+  ],
+  "consoleErrors": [
+    {
+      "screen": "demo-scan",
+      "text": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 502 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 502 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Failed to load resource: the server responded with a status of 502 ()"
+    },
+    {
+      "screen": "demo-scan",
+      "text": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-xQCKEIIXUvKB8EIo3pvDWtrgwhe8f471VZ69OqT2RQQ='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-gXFIT+Pdab93yN35SOFcwJImC9fkbxIDx0/HfLpQ9jI='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' https://s3.tradingview.com https://s.tradingview.com'. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "screen": "empty-scan",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ]
 }
