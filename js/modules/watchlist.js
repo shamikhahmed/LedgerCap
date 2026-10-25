@@ -67,7 +67,7 @@ const Watchlist = (() => {
             ${w.targetPrice ? `<span>Target ${U.fmt(w.targetPrice)}</span>` : ''}
           </div>
         </div>
-        <div class="rt-wl-price" data-action="Research.open" data-symbol="${w.symbol}">
+        <div class="rt-wl-price" data-action="Research.open" data-symbol="${esc(w.symbol)}">
           <div class="rt-wl-price-val">${U.fmt(quote.price)}</div>
           <div class="${U.chgCls(quote.changePct)} rt-wl-price-chg">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
           <div class="lc-card-sub">${Prices.sourceLabel?.(quote.source) || quote.source || ''}</div>
