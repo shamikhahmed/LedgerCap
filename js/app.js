@@ -472,7 +472,6 @@ const App = (() => {
     _scheduleAutoRefresh();
     _maybeDemoBanner();
     _maybeInstallHint();
-    _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -799,21 +798,93 @@ const App = (() => {
     showToast('Alert removed', 'info');
   }
 
-  function openBottomSheet(id, title, content) {
-    closeBottomSheet();
-    const sheet = document.getElementById('bottom-sheet');
-    if (!sheet) return;
-    document.getElementById('bs-title').textContent = title || '';
-    document.getElementById('bs-body').innerHTML = content || '';
-    sheet.classList.add('open');
-    _activeSheet = id;
-    sheet.querySelector('.bs-backdrop')?.addEventListener('click', closeBottomSheet);
+  let _sheetOpener = null;
+  let _escBound = false;
+
+  function _bindSheetEscape() {
+    if (_escBound) return;
+    _escBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Top-most first: CapConfirm / pro modal own their listeners; skip if present
+      if (document.querySelector('.lc-dialog-backdrop')) return;
+      const pro = document.getElementById('proUpgradeModal');
+      if (pro?.classList.contains('open')) {
+        if (typeof window.closeProModal === 'function') window.closeProModal();
+        else pro.classList.remove('open');
+        e.preventDefault();
+        return;
+      }
+      const cmdk = document.getElementById('lc-cmdk');
+      if (cmdk && !cmdk.classList.contains('hidden')) return;
+      const sheet = document.getElementById('bottom-sheet');
+      if (sheet?.classList.contains('open')) {
+        e.preventDefault();
+        closeBottomSheet();
+      }
+    });
   }
 
-  function closeBottomSheet() {
+  function openBottomSheet(id, title, content) {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeBottomSheet(undefined, { restoreFocus: false });
     const sheet = document.getElementById('bottom-sheet');
+    if (!sheet) return;
+    _sheetOpener = opener;
+    document.getElementById('bs-title').textContent = title || '';
+    document.getElementById('bs-body').innerHTML = content || '';
+    _sheetBar(sheet);
+    sheet.classList.add('open');
+    _activeSheet = id;
+    _lockScroll();
+    _bindSheetEscape();
+    // Backdrop closes via data-action="App.closeBottomSheet" (LcEvents) — do not re-bind per open.
+    // Prefer first focusable in the sheet for keyboard users
+    const focusEl = sheet.querySelector('.bs-bar-cancel, #bs-body button, #bs-body input, #bs-body select');
+    if (focusEl && typeof focusEl.focus === 'function') {
+      requestAnimationFrame(() => { try { focusEl.focus(); } catch (_) {} });
+    }
+  }
+
+  /** HIG sheet bar: the body's single trailing primary action moves to the bar (Cancel is always leading). */
+  function _sheetBar(sheet) {
+    const trail = sheet.querySelector('.bs-bar-trail');
+    if (!trail) return;
+    trail.innerHTML = '';
+    const primaries = [...sheet.querySelectorAll('#bs-body > div > .btn-primary:last-child, #bs-body > .btn-primary:last-child')];
+    if (primaries.length === 1) {
+      const btn = primaries[0];
+      btn.classList.add('bs-bar-done');
+      // Keep full label (Urdu / multi-word / icons). Optional data-bar-label overrides display text.
+      const barLabel = btn.getAttribute('data-bar-label');
+      if (barLabel != null && barLabel !== '') {
+        if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', btn.textContent.trim() || barLabel);
+        btn.textContent = barLabel;
+      }
+      trail.appendChild(btn);
+    }
+  }
+
+  function _lockScroll() {
+    window.LcScrollLock?.lock();
+  }
+  function _unlockScroll(restoreY) {
+    window.LcScrollLock?.unlock(typeof restoreY === 'number' ? restoreY : undefined);
+  }
+
+  /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
+  function closeBottomSheet(restoreY, opts) {
+    const sheet = document.getElementById('bottom-sheet');
+    const wasOpen = sheet?.classList.contains('open');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
+    if (wasOpen) _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
+    const opener = _sheetOpener;
+    _sheetOpener = null;
+    if (opts?.restoreFocus === false) return;
+    if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+      requestAnimationFrame(() => { try { opener.focus(); } catch (_) {} });
+    }
   }
 
   function openSellHolding(symbol, broker, type) {
@@ -837,16 +908,16 @@ const App = (() => {
     const brokers = ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
     const globalBrokers = window.GLOBAL_BROKERS || ['IBKR', 'Binance', 'Other'];
     const typeLabels = {
-      BUY: '📈 BUY', SELL: '📉 SELL', INTL_BUY: '🌎 US BUY', INTL_SELL: '🌎 US SELL',
-      CRYPTO_BUY: '₿ CRYPTO BUY', CRYPTO_SELL: '₿ CRYPTO SELL',
-      DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
-      CONTRIBUTION: '🏦 FUND', IPO_SUBSCRIBE: '🚀 IPO',
+      BUY: 'Buy', SELL: 'Sell', INTL_BUY: 'US buy', INTL_SELL: 'US sell',
+      CRYPTO_BUY: 'Crypto buy', CRYPTO_SELL: 'Crypto sell',
+      DIVIDEND: 'Dividend', SALARY: 'Salary',
+      CONTRIBUTION: 'Fund', IPO_SUBSCRIBE: 'IPO',
     };
 
     const content = `
     <div id="tx-form">
-      <div class="type-selector">
-        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
+      <div class="type-selector" role="group" aria-label="Transaction type">
+        ${typeOpts.map(t => `<button type="button" class="type-btn${t === selType ? ' active' : ''}" aria-pressed="${t === selType}" data-type="${t}">${typeLabels[t] || t}</button>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
       <button class="btn-primary" data-action="App._submitTransaction">Add Transaction</button>
@@ -856,8 +927,9 @@ const App = (() => {
 
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.type-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
         const t = btn.dataset.type;
         document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);
@@ -1302,7 +1374,9 @@ const App = (() => {
   }
 
   function applyTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
     State.update(s => { s.settings.theme = theme; });
+    try { localStorage.setItem('theme', theme); } catch (_) {}
     _applyTheme(theme);
   }
 
@@ -1310,11 +1384,11 @@ const App = (() => {
     const current = document.body.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     App.applyTheme(next);
-    localStorage.setItem('theme', next);
   };
 
   function openHeaderMenu() {
-    if (typeof Navigation !== 'undefined') Navigation.go('settings');
+    /* Top-bar ⋯ is labelled "More" — open the More hub (Settings is one of its tiles). */
+    if (typeof Navigation !== 'undefined') Navigation.go('more');
   }
 
   function renderCurrent() {

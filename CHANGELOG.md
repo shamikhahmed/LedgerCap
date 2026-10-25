@@ -1,3 +1,24 @@
+## [Unreleased] — HIG design (ScentCap 3.0 system)
+
+- Apple-HIG redesign: `css/design/tokens.css` (semantic light/dark/increased-contrast tokens, brass accent `#d4af37` / `#806614`, bridge for `--psx-*` / `--lc-*`), `css/design/system.css` (`ui-*` primitives), `css/design/ledgercap.css` (shell + shared-class reskin); 3.x CSS demoted to `@layer legacy` via `css/app.css`
+- Shell: floating glass tab bar, sticky glass sidebar from 700 px (was 900), glass top bar; folio/serif small-caps chrome retired for SF type; tab "Performance" → "Portfolio" (matches the screen)
+- Home hub, Portfolio, Settings, Add transaction sheet restyled; sheet gets grabber + Cancel / Title / Add bar; type picker is a chip row without emoji
+- iPhone (Safari + Home Screen PWA): document scrolling (no inner `.psx-screen` scrollers), body pinned under sheets with exact restore, pull-to-refresh removed (fired on ordinary swipes), ≥16px fields, `touch-action`, hover guards, own click listener on every `data-action`/`data-nav` element
+- Fix: **Sell** on a holding card opened Research (card `data-nav` beat the button's `data-action`)
+- SW no longer `skipWaiting`/`clients.claim` on install (user-initiated update still can) · cache `ledgercap-v35811`
+- `scripts/ios-behaviour-check.mjs` (`npm run ios:check`): origin/main 8 FAIL → 22/22 PASS · gate `tests/hig-design.spec.js`
+
+## [3.58.11] — 2026-10-25 — Production-readiness audit (HIG 3)
+
+- Align `VERSION.json` / `LEDGERCAP_VERSION` / `package.json` / `manifest.json` / index cache-bust with SW `ledgercap-v35811`
+- Fix: header ⋯ **More** opened Settings — now opens `#more` hub; More hub + sidebar list pilot-tools / paper-trade / compare / performance / journal
+- SW precache `theme-boot.js`, `hig-dt.js`, `pro-modal.js` for offline shell
+- Manifest: drop “Wealth Operating System” (G-3); `background_color` → `#000000` (matches `--bg`)
+- Escape wealth-calendar event fields; watchlist `data-symbol` uses `esc()`
+- Gates: `tests/version-coherence.test.js`; smoke: header More → More hub
+- `scripts/prod-ready-audit.mjs` + Chromium fallback on `ios:check` (`LC_IOS_BROWSER=chromium`) — browser evidence blocked in Cursor sandbox; prior HIG ios-check 22/22 retained
+- Docs: README / HANDOVER / `qa/prod-ready/REPORT.md` + `INVENTORY.md`
+
 ## [3.58.10] — 2026-10-21
 
 - HIG v7: iOS tokens / native feel; Dynamic Type & hit targets where applicable

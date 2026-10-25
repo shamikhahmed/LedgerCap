@@ -88,37 +88,65 @@ const MarketWatchService = (() => {
     return null;
   }
 
+  function _fromSavedPrice(sym) {
+    const prices = (typeof State !== 'undefined' && State.get('prices')) || {};
+    const p = prices[sym];
+    if (!(p?.price > 0)) return null;
+    const px = p.price;
+    const ldcp = p.prevClose > 0 ? p.prevClose : px;
+    return {
+      symbol: sym,
+      bidVol: 0,
+      bidPrice: px,
+      askVol: 0,
+      askPrice: px,
+      ldcp,
+      volume: 0,
+      spread: 0,
+      fallback: true,
+      asOf: p.ts || null,
+    };
+  }
+
   async function getOrderBook(symbol) {
     const sym = (symbol || '').toUpperCase();
     if (!sym) return null;
     const hit = _cache.get(`ob:${sym}`);
     if (hit && Date.now() - hit.ts < CACHE_MS) return hit.data;
 
-    let html = await _fetchHtml('trading-board/REG/main');
-    if (typeof html !== 'string') html = '';
-    let data = _parseTradingRow(html, sym);
+    // Prefer last saved quote — live Worker often 404s board HTML until redeployed (see REPORT.md).
+    let data = _fromSavedPrice(sym);
 
-    if (!data) {
-      const mw = await _fetchHtml('market-watch');
-      if (typeof mw === 'string') {
-        const row = _parseMarketRow(mw, sym);
-        if (row) {
-          data = {
-            symbol: sym,
-            bidVol: 0,
-            bidPrice: row.close || row.ldcp,
-            askVol: 0,
-            askPrice: row.close || row.ldcp,
-            ldcp: row.ldcp,
-            volume: row.volume,
-            open: row.open,
-            high: row.high,
-            low: row.low,
-            change: row.change,
-            changePct: row.changePct,
-            spread: 0,
-            fallback: true,
-          };
+    // Optional upgrade: scrape board only when proxy looks healthy (avoids console 404 spam).
+    const proxyOk = typeof Prices === 'undefined' || typeof Prices.proxyHealthy !== 'function' || Prices.proxyHealthy();
+    if (proxyOk) {
+      let html = await _fetchHtml('trading-board/REG/main');
+      if (typeof html === 'string' && html.includes('<')) {
+        const board = _parseTradingRow(html, sym);
+        if (board) data = board;
+      }
+      if (!data || data.fallback) {
+        const mw = await _fetchHtml('market-watch');
+        if (typeof mw === 'string' && mw.includes('<')) {
+          const row = _parseMarketRow(mw, sym);
+          if (row) {
+            data = {
+              symbol: sym,
+              bidVol: 0,
+              bidPrice: row.close || row.ldcp,
+              askVol: 0,
+              askPrice: row.close || row.ldcp,
+              ldcp: row.ldcp,
+              volume: row.volume,
+              open: row.open,
+              high: row.high,
+              low: row.low,
+              change: row.change,
+              changePct: row.changePct,
+              spread: 0,
+              fallback: true,
+            };
+          }
         }
       }
     }

@@ -29,6 +29,7 @@ const CORE = [
   'js/services/psx-session.js',
   'js/services/price-snapshot.js',
   'js/ui/debounce.js',
+  'js/ui/scroll-lock.js',
   'js/ui/dialogs.js',
   'js/ui/lc-events.js',
   'js/ui/icons.js',

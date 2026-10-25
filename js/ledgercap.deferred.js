@@ -1251,7 +1251,10 @@ const Settings = (() => {
     App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
   }
 
-  function _setTheme(theme) {
+  function _setTheme(themeOrEl) {
+    const theme = typeof themeOrEl === 'string'
+      ? themeOrEl
+      : (themeOrEl?.dataset?.tab || themeOrEl?.getAttribute?.('data-tab'));
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
     App.showToast(`${theme === 'light' ? 'Light' : 'Dark'} theme applied`, 'success');
@@ -3531,19 +3534,26 @@ const PriceHealth = (() => {
     const pctSeeded = total ? seeded / total : 0;
     // Live prices unavailable when most holdings are seed/fallback or long-stale.
     const showBanner = pctSeeded >= 0.4 || (stale > 0 && stale >= total * 0.3)
-      || !!(window._LC_SNAPSHOT_META?.stale?.psx);
+      || !!(window._LC_SNAPSHOT_META?.stale?.psx)
+      || !!window._LC_MARKET_UNAVAILABLE;
 
     return { total, seeded, stale, live, pctSeeded, showBanner };
   }
 
-  function _asOfDate() {
+  function _asOfLabel() {
     const snapAt = window._LC_SNAPSHOT_META?.psxAt
       || (typeof PriceSnapshotService !== 'undefined' ? PriceSnapshotService.meta()?.psxAt : null);
     if (snapAt) {
       const d = new Date(snapAt);
       if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       }
+    }
+    const prices = typeof State !== 'undefined' ? (State.get('prices') || {}) : {};
+    let newest = 0;
+    Object.values(prices).forEach((p) => { if (p?.ts > newest) newest = p.ts; });
+    if (newest) {
+      return new Date(newest).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
     const raw = window.FALLBACK_PRICES_UPDATED;
     if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
@@ -3552,7 +3562,7 @@ const PriceHealth = (() => {
         return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
       }
     }
-    return raw || 'the last session';
+    return raw || 'last session';
   }
 
   function _onMarketScreen() {
@@ -3564,9 +3574,12 @@ const PriceHealth = (() => {
 
   function bannerHtml(rep) {
     if (!_onMarketScreen()) return '';
-    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx) return '';
-    const date = _asOfDate();
-    const msg = `Prices are from the last close on ${date}. Live prices aren't available right now.`;
+    if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx && !window._LC_MARKET_UNAVAILABLE) return '';
+    const when = _asOfLabel();
+    // Match copy to cause: hard unavailable vs calm last-close / seeded holdings.
+    const msg = window._LC_MARKET_UNAVAILABLE
+      ? `Market data unavailable — showing last saved prices (${when})`
+      : `Some prices are from the last close (${when})`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>
@@ -3952,6 +3965,7 @@ const LcPolish = (() => {
     _ensureCmdk();
     const el = document.getElementById('lc-cmdk');
     if (!el) return;
+    if (!_cmdkOpen) window.LcScrollLock?.lock();
     el.classList.remove('hidden');
     _cmdkOpen = true;
     const inp = document.getElementById('lc-cmdk-input');
@@ -3962,6 +3976,7 @@ const LcPolish = (() => {
   function closeCmdk() {
     const el = document.getElementById('lc-cmdk');
     if (el) el.classList.add('hidden');
+    if (_cmdkOpen) window.LcScrollLock?.unlock();
     _cmdkOpen = false;
   }
 
@@ -8951,37 +8966,65 @@ const MarketWatchService = (() => {
     return null;
   }
 
+  function _fromSavedPrice(sym) {
+    const prices = (typeof State !== 'undefined' && State.get('prices')) || {};
+    const p = prices[sym];
+    if (!(p?.price > 0)) return null;
+    const px = p.price;
+    const ldcp = p.prevClose > 0 ? p.prevClose : px;
+    return {
+      symbol: sym,
+      bidVol: 0,
+      bidPrice: px,
+      askVol: 0,
+      askPrice: px,
+      ldcp,
+      volume: 0,
+      spread: 0,
+      fallback: true,
+      asOf: p.ts || null,
+    };
+  }
+
   async function getOrderBook(symbol) {
     const sym = (symbol || '').toUpperCase();
     if (!sym) return null;
     const hit = _cache.get(`ob:${sym}`);
     if (hit && Date.now() - hit.ts < CACHE_MS) return hit.data;
 
-    let html = await _fetchHtml('trading-board/REG/main');
-    if (typeof html !== 'string') html = '';
-    let data = _parseTradingRow(html, sym);
+    // Prefer last saved quote — live Worker often 404s board HTML until redeployed (see REPORT.md).
+    let data = _fromSavedPrice(sym);
 
-    if (!data) {
-      const mw = await _fetchHtml('market-watch');
-      if (typeof mw === 'string') {
-        const row = _parseMarketRow(mw, sym);
-        if (row) {
-          data = {
-            symbol: sym,
-            bidVol: 0,
-            bidPrice: row.close || row.ldcp,
-            askVol: 0,
-            askPrice: row.close || row.ldcp,
-            ldcp: row.ldcp,
-            volume: row.volume,
-            open: row.open,
-            high: row.high,
-            low: row.low,
-            change: row.change,
-            changePct: row.changePct,
-            spread: 0,
-            fallback: true,
-          };
+    // Optional upgrade: scrape board only when proxy looks healthy (avoids console 404 spam).
+    const proxyOk = typeof Prices === 'undefined' || typeof Prices.proxyHealthy !== 'function' || Prices.proxyHealthy();
+    if (proxyOk) {
+      let html = await _fetchHtml('trading-board/REG/main');
+      if (typeof html === 'string' && html.includes('<')) {
+        const board = _parseTradingRow(html, sym);
+        if (board) data = board;
+      }
+      if (!data || data.fallback) {
+        const mw = await _fetchHtml('market-watch');
+        if (typeof mw === 'string' && mw.includes('<')) {
+          const row = _parseMarketRow(mw, sym);
+          if (row) {
+            data = {
+              symbol: sym,
+              bidVol: 0,
+              bidPrice: row.close || row.ldcp,
+              askVol: 0,
+              askPrice: row.close || row.ldcp,
+              ldcp: row.ldcp,
+              volume: row.volume,
+              open: row.open,
+              high: row.high,
+              low: row.low,
+              change: row.change,
+              changePct: row.changePct,
+              spread: 0,
+              fallback: true,
+            };
+          }
         }
       }
     }
@@ -11872,6 +11915,8 @@ const More = (() => {
     { id: 'comparison', t: 'Compare', d: 'Side by side' },
     { id: 'performance', t: 'Performance', d: 'P&L · daily · forecast' },
     { id: 'journal', t: 'Journal', d: 'Investment thesis' },
+    { id: 'pilot-tools', t: I18n.t('tools.pilotTools.t'), d: I18n.t('tools.pilotTools.d') },
+    { id: 'paper-trade', t: I18n.t('tools.paperTrade.t'), d: I18n.t('tools.paperTrade.d') },
     { id: 'transactions', t: I18n.t('tools.transactions.t'), d: I18n.t('tools.transactions.d') },
     { id: 'settings', t: 'Settings', d: I18n.t('more.sub') },
   ];
@@ -11970,7 +12015,7 @@ const Research = (() => {
         || (window.CRYPTO_ASSETS || []).find(x => x.symbol === s)
         || [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === s);
       const name = meta?.name || '';
-      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${esc(s)}')">
+      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" data-action="Research.pickSymbol" data-symbol="${esc(s)}">
         <strong>${esc(s)}</strong><span>${esc(name)}</span>
       </button>`;
     }).join('');
@@ -12321,7 +12366,7 @@ const Research = (() => {
           </div>
           ${_modeSegment()}
           <div class="lc-search-wrap">
-            <input type="search" placeholder="Search US, PSX, crypto…" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" oninput="Research._onSearch(this.value)" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
+            <input type="search" placeholder="Search US, PSX, crypto…" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
             <div id="rt-search-results" class="lc-search-results" role="listbox"></div>
           </div>
           <div class="lc-empty-state">
@@ -12383,7 +12428,7 @@ const Research = (() => {
         </div>
         ${_modeSegment()}
         <div class="lc-search-wrap">
-          <input type="search" placeholder="Search symbol — type to shortlist" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" oninput="Research._onSearch(this.value)" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
+          <input type="search" placeholder="Search symbol — type to shortlist" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
           <div id="rt-search-results" class="lc-search-results" role="listbox">${_searchHitsHtml(_searchQ ? _catalogSearch(_searchQ) : [])}</div>
         </div>
         <div class="lc-research-hero">
@@ -12520,7 +12565,7 @@ const Watchlist = (() => {
             ${w.targetPrice ? `<span>Target ${U.fmt(w.targetPrice)}</span>` : ''}
           </div>
         </div>
-        <div class="rt-wl-price" data-action="Research.open" data-symbol="${w.symbol}">
+        <div class="rt-wl-price" data-action="Research.open" data-symbol="${esc(w.symbol)}">
           <div class="rt-wl-price-val">${U.fmt(quote.price)}</div>
           <div class="${U.chgCls(quote.changePct)} rt-wl-price-chg">${U.fmt(quote.changePct, { pct: true, signed: true })}</div>
           <div class="lc-card-sub">${Prices.sourceLabel?.(quote.source) || quote.source || ''}</div>
@@ -12846,6 +12891,7 @@ window.Dividends = Dividends;
 'use strict';
 /** Unified wealth calendar — dividends, IPO, corporate actions (rule-based, offline). */
 const WealthCalendar = (() => {
+  const esc = (v) => (typeof window.esc === 'function' ? window.esc(v) : String(v ?? ''));
   let _month = null;
 
   function _monthKey(d) {
@@ -12935,12 +12981,12 @@ const WealthCalendar = (() => {
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
-          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${e.symbol}">
+          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${esc(e.symbol || '')}">
             <div>
-              <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
-              <div class="lc-market-name">${e.kind} · ${e.detail}</div>
+              <div class="lc-market-sym">${esc(e.date.slice(8))} · ${esc(e.title)}</div>
+              <div class="lc-market-name">${esc(e.kind)} · ${esc(e.detail)}</div>
             </div>
-            <div class="lc-market-meta">${e.symbol}</div>
+            <div class="lc-market-meta">${esc(e.symbol || '')}</div>
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">

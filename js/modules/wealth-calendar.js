@@ -1,6 +1,7 @@
 'use strict';
 /** Unified wealth calendar — dividends, IPO, corporate actions (rule-based, offline). */
 const WealthCalendar = (() => {
+  const esc = (v) => (typeof window.esc === 'function' ? window.esc(v) : String(v ?? ''));
   let _month = null;
 
   function _monthKey(d) {
@@ -90,12 +91,12 @@ const WealthCalendar = (() => {
       </div>
       <div class="lc-dash-section">
         ${monthEv.length ? monthEv.map(e => `
-          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${e.symbol}">
+          <button type="button" class="lc-market-row cap-reveal" data-action="Research.open" data-symbol="${esc(e.symbol || '')}">
             <div>
-              <div class="lc-market-sym">${e.date.slice(8)} · ${e.title}</div>
-              <div class="lc-market-name">${e.kind} · ${e.detail}</div>
+              <div class="lc-market-sym">${esc(e.date.slice(8))} · ${esc(e.title)}</div>
+              <div class="lc-market-name">${esc(e.kind)} · ${esc(e.detail)}</div>
             </div>
-            <div class="lc-market-meta">${e.symbol}</div>
+            <div class="lc-market-meta">${esc(e.symbol || '')}</div>
           </button>`).join('') : '<p class="lc-empty-note">No events this month — check Dividends or add IPO dates in Pilot Tools.</p>'}
       </div>
       <div class="lc-dash-actions">

@@ -1,4 +1,4 @@
-/* LedgerCap CORE — 29 modules — run: npm run bundle */
+/* LedgerCap CORE — 30 modules — run: npm run bundle */
 ;/* === js/data/holdings.js === */
 'use strict';
 
@@ -336,9 +336,9 @@ window.FALLBACK_PRICES_UPDATED = FALLBACK_PRICES_UPDATED;
 'use strict';
 /** Bump app + sw + cache together (also sync VERSION.json). */
 window.LEDGERCAP_VERSION = {
-  app: '3.58.9',
-  sw: 146,
-  cache: 'ledgercap-v3589',
+  app: '3.58.11',
+  sw: 35811,
+  cache: 'ledgercap-v35811',
 };
 
 /** LedgerCap runtime config — Cloudflare Worker proxy for live PSX/Yahoo quotes (default Capricorn Worker pre-filled). Portfolio stays on-device. */
@@ -406,7 +406,7 @@ window.I18N_LOCALES = {
     open: 'Open →',
     addHoldings: 'Add holdings',
     loadDemo: 'Load demo portfolio',
-    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Performance', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'More' },
+    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Portfolio', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'More' },
     theme: { dark: 'Dark', light: 'Light', toggle: 'Toggle theme' },
     lang: { en: 'English', ur: 'اردو', roman: 'Roman Urdu', label: 'Language' },
     install: { title: 'Install LedgerCap', body: 'Safari → Share → Add to Home Screen', browser: 'Works in browser & as app' },
@@ -437,6 +437,9 @@ window.I18N_LOCALES = {
       paperTrade: { t: 'Paper trade', d: 'Simulated PSX ledger' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
+      comparison: { t: 'Compare', d: 'Side by side' },
+      performance: { t: 'Performance', d: 'P&L · daily · forecast' },
+      journal: { t: 'Journal', d: 'Investment thesis' },
       calendar: { t: 'Wealth calendar', d: 'Dividends · IPO · corporate' },
       settingsTool: { t: 'Settings', d: 'Theme · language · data · PIN' },
     },
@@ -482,7 +485,7 @@ window.I18N_LOCALES = {
     open: 'کھولیں ←',
     addHoldings: 'ہولڈنگز شامل کریں',
     loadDemo: 'ڈیمو پورٹ فولیو',
-    nav: { hub: 'ہوم', watch: 'واچ لسٹ', funds: 'فنڈز', pnl: 'کارکردگی', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'ریسرچ', more: 'مزید' },
+    nav: { hub: 'ہوم', watch: 'واچ لسٹ', funds: 'فنڈز', pnl: 'پورٹ فولیو', market: 'مارکیٹ', portfolio: 'پورٹ فولیو', analyze: 'ریسرچ', more: 'مزید' },
     theme: { dark: 'ڈارک', light: 'لائٹ', toggle: 'تھیم بدلیں' },
     lang: { en: 'English', ur: 'اردو', roman: 'رومن اردو', label: 'زبان' },
     install: { title: 'لیجرکیپ انسٹال کریں', body: 'Safari → Share → Add to Home Screen', browser: 'براؤزر اور ایپ دونوں میں' },
@@ -513,6 +516,9 @@ window.I18N_LOCALES = {
       paperTrade: { t: 'پیپر ٹریڈ', d: 'فرضی PSX لیجر' },
       riskAudit: { t: 'رسک آڈٹ', d: 'ارتکاز · CGT · جھکاؤ' },
       insightsTool: { t: 'بصیرت', d: 'اسکور · بینچ مارک · تاریخ' },
+      comparison: { t: 'موازنہ', d: 'ساتھ ساتھ' },
+      performance: { t: 'کارکردگی', d: 'P&L · روزانہ · پیشن گوئی' },
+      journal: { t: 'جرنل', d: 'سرمایہ کاری تھیسس' },
       calendar: { t: 'ویلتھ کیلنڈر', d: 'ڈیویڈنڈ · IPO · کارپوریٹ' },
       settingsTool: { t: 'سیٹنگز', d: 'تھیم · زبان · ڈیٹا · PIN' },
     },
@@ -555,7 +561,7 @@ window.I18N_LOCALES = {
     open: 'Kholen →',
     addHoldings: 'Holdings shamil karein',
     loadDemo: 'Demo portfolio load karein',
-    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Performance', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'Mazeed' },
+    nav: { hub: 'Home', watch: 'Watchlist', funds: 'Funds', pnl: 'Portfolio', market: 'Market', portfolio: 'Portfolio', analyze: 'Research', more: 'Mazeed' },
     theme: { dark: 'Dark', light: 'Light', toggle: ' Theme badlein' },
     lang: { en: 'English', ur: 'اردو', roman: 'Roman Urdu', label: 'Zuban' },
     install: { title: 'LedgerCap install karein', body: 'Safari → Share → Add to Home Screen', browser: 'Browser aur app dono mein' },
@@ -579,6 +585,9 @@ window.I18N_LOCALES = {
       paperTrade: { t: 'Paper trade', d: 'Simulated PSX ledger' },
       riskAudit: { t: 'Risk audit', d: 'Concentration · CGT · drift' },
       insightsTool: { t: 'Insights', d: 'Score · benchmark · history' },
+      comparison: { t: 'Compare', d: 'Side by side' },
+      performance: { t: 'Performance', d: 'P&L · daily · forecast' },
+      journal: { t: 'Journal', d: 'Investment thesis' },
       global: { t: 'Global markets', d: 'US stocks · crypto · USD/PKR' },
       commodities: { t: 'Commodities', d: 'Gold · silver · oil · PKR/gram' },
       announcements: { t: 'Announcements', d: 'Dividends · bonus · portfolio news' },
@@ -1400,6 +1409,7 @@ const Prices = (() => {
   function _markProxySuccess() {
     _proxyFailStreak = 0;
     _proxyDownUntil = 0;
+    window._LC_MARKET_UNAVAILABLE = false;
   }
 
   function _markProxyDown(status) {
@@ -1408,10 +1418,15 @@ const Prices = (() => {
     if (_proxyFailStreak >= 4) _proxyDownUntil = Date.now() + 60000;
     if (!_proxyWarned && _proxyFailStreak >= 2) {
       _proxyWarned = true;
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Live prices slow — using last close where needed', 'warning');
+      window._LC_MARKET_UNAVAILABLE = true;
+      if (typeof PriceHealth !== 'undefined') {
+        try { PriceHealth.mount(); } catch (_) {}
       }
     }
+  }
+
+  function proxyHealthy() {
+    return Date.now() >= _proxyDownUntil && _proxyFailStreak < 2;
   }
 
   function _isHtml(text) {
@@ -1584,15 +1599,23 @@ const Prices = (() => {
       const chunk = symbols.slice(i, i + batchSize);
       for (const sym of chunk) {
         let parsed = null;
-        if (sessionOpen) {
-          const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
-          parsed = _parseTimeseries(intData, 'psx_int');
+        // Official PSX first while proxy is healthy; Yahoo .KA while breaker is open or as fallback.
+        if (proxyHealthy()) {
+          if (sessionOpen) {
+            const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
+            parsed = _parseTimeseries(intData, 'psx_int');
+          }
+          if (!parsed) {
+            const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
+            parsed = _parseTimeseries(eodData, 'psx_eod');
+          }
+          if (parsed && _sanityCheck(sym, parsed.price)) {
+            results[sym] = { ...parsed, symbol: sym };
+            continue;
+          }
         }
-        if (!parsed) {
-          const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
-          parsed = _parseTimeseries(eodData, 'psx_eod');
-        }
-        if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
+        const y = await _fetchYahoo(sym);
+        if (y && _sanityCheck(sym, y.price)) results[sym] = y;
       }
       if (i + batchSize < symbols.length) await _sleep(120);
     }
@@ -1731,11 +1754,17 @@ const Prices = (() => {
       return r;
     }
 
-    const psx = await fetchPsxSymbol(symbol);
-    if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
+    // Official PSX feed first when proxy is healthy; Yahoo .KA while breaker is open or as fallback.
+    if (proxyHealthy()) {
+      const psx = await fetchPsxSymbol(symbol);
+      if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
+    }
 
     const yahoo = await _fetchYahoo(symbol);
     if (yahoo) return yahoo;
+
+    const cached = (typeof State !== 'undefined' && State.get('prices')?.[symbol]) || null;
+    if (cached?.price > 0) return { symbol, ...cached, source: cached.source || 'cache' };
 
     const fp = (window.FALLBACK_PRICES || {})[symbol];
     return fp ? { symbol, price: fp, prevClose: fp * 0.999, source: 'fallback', ts: Date.now() - 86400000 } : null;
@@ -1947,7 +1976,7 @@ const Prices = (() => {
     return n;
   }
 
-  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs };
+  return { fetchStock, fetchSymbol: fetchStock, fetchKSE100, fetchAll, formatTs, sourceLabel, priceBadge, fetchPsxSymbol, fetchIntlSymbol, fetchCryptoSymbol, fetchGlobalQuote, fetchAllGlobal, fetchPriceSeries, applySnapshotPsx, applySnapshotUs, proxyHealthy };
 })();
 window.Prices = Prices;
 window.YAHOO_SYMBOL_MAP = {
@@ -3449,6 +3478,48 @@ const LcDebounce = (() => {
 })();
 window.LcDebounce = LcDebounce;
 
+;/* === js/ui/scroll-lock.js === */
+'use strict';
+/** Ref-counted body pin for overlays (sheet, Cmd-K, pro modal, CapConfirm). Nested-safe. */
+window.LcScrollLock = (() => {
+  let depth = 0;
+  let lockedY = null;
+  let pendingRestoreY = null;
+
+  function lock() {
+    if (depth === 0) {
+      lockedY = window.scrollY;
+      Object.assign(document.body.style, {
+        position: 'fixed',
+        top: -lockedY + 'px',
+        left: '0',
+        right: '0',
+        width: '100%',
+      });
+    }
+    depth++;
+  }
+
+  /** @param {number} [restoreY] land here on final unlock (e.g. navigate out of a sheet) */
+  function unlock(restoreY) {
+    if (depth === 0) return;
+    if (typeof restoreY === 'number') pendingRestoreY = restoreY;
+    depth--;
+    if (depth > 0) return;
+    const y = pendingRestoreY == null ? lockedY : pendingRestoreY;
+    lockedY = null;
+    pendingRestoreY = null;
+    Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
+    window.scrollTo(0, y);
+  }
+
+  function isLocked() {
+    return depth > 0;
+  }
+
+  return { lock, unlock, isLocked };
+})();
+
 ;/* === js/ui/dialogs.js === */
 'use strict';
 /* Accessible dialogs — replaces native alert/confirm/prompt calls (LDG-P1-04). */
@@ -3506,6 +3577,7 @@ window.LcDebounce = LcDebounce;
       const close = (val) => {
         backdrop.remove();
         window.removeEventListener('keydown', onKey);
+        window.LcScrollLock?.unlock();
         resolve(val);
       };
       const onKey = (e) => {
@@ -3536,6 +3608,7 @@ window.LcDebounce = LcDebounce;
         if (e.target === backdrop) close(input ? null : false);
       });
       document.body.appendChild(backdrop);
+      window.LcScrollLock?.lock();
       window.addEventListener('keydown', onKey);
       (inputEl || h).focus();
     });
@@ -3631,7 +3704,7 @@ const LcEvents = (() => {
     else if (path === 'PaperTrade._submitSell') window.PaperTrade?._submitSell(el);
     else if (path === 'PaperTrade.resetLedger') window.PaperTrade?.resetLedger();
     else if (path === 'LcTerminal.toggle') window.LcTerminal?.toggle();
-    else if (path === 'LcEvents.closeProModal') document.getElementById('proUpgradeModal')?.classList.remove('open');
+    else if (path === 'LcEvents.closeProModal') (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))();
     else if (path === 'openProUpgrade') window.openProUpgrade?.();
     else if (path === 'window.toggleTheme') window.toggleTheme?.();
     else if (path === 'StatementExport.exportCgtPdf') StatementExport?.exportCgtPdf?.();
@@ -3642,10 +3715,13 @@ const LcEvents = (() => {
     else if (path === 'LcPolish.openCmdk') window.LcPolish?.openCmdk();
     else if (path === 'Performance.setTab') window.Performance?.setTab(tab);
     else if (path === 'Performance.setHistRange') window.Performance?.setHistRange(tab);
-    else if (path === 'Navigation.goResearchIntel') {
-      Research?.setMode?.('portfolio');
-      Navigation.go('research', false, { portfolioIntel: true });
-    }
+    else if (path === 'Navigation.goResearchIntel') Navigation.goResearchIntel?.();
+    else if (path === 'Settings._setTheme') Settings?._setTheme?.(tab);
+    else if (path === 'Settings._setNumberFormat') Settings?._setNumberFormat?.(tab);
+    else if (path === 'Settings._setDisplayCurrency') Settings?._setDisplayCurrency?.(tab);
+    else if (path === 'Settings._setHaptics') Settings?._setHaptics?.(!!el.checked);
+    else if (path === 'Settings._setLiveStream') Settings?._setLiveStream?.(!!el.checked);
+    else if (path === 'Settings._setSnapshot') Settings?._setSnapshot?.(!!el.checked);
     else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
     else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
     else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
@@ -3680,7 +3756,10 @@ const LcEvents = (() => {
       return;
     }
     const nav = ev.target.closest('[data-nav]');
-    if (nav?.dataset.nav && window.Navigation) {
+    const inner = ev.target.closest('[data-action]');
+    // A button inside a tappable card (e.g. Sell on a holding) wins over the card's own navigation
+    const actionInsideNav = inner && nav && inner !== nav && nav.contains(inner);
+    if (nav?.dataset.nav && window.Navigation && !actionInsideNav) {
       ev.preventDefault();
       Navigation.go(nav.dataset.nav);
       return;
@@ -3706,7 +3785,7 @@ const LcEvents = (() => {
       _call(el.dataset.actionChange, el, ev);
       return;
     }
-    if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
+    // #rt-search is input-only (avoid double-fire with _onInput)
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
@@ -3720,16 +3799,28 @@ const LcEvents = (() => {
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
+  /* iOS/WebKit retargets taps to the nearest cursor:pointer / clickable node. CSS
+   * [data-action],[data-nav],[data-external-url]{cursor:pointer} keeps delegate targets
+   * tappable without a body-wide MutationObserver + per-node no-op listeners. */
   function init() {
     document.addEventListener('click', _onClick, true);
     document.addEventListener('change', _onChange, true);
     document.addEventListener('input', _onInput, true);
+    /* Keep #rt-search focused so mousedown→blur does not race the click on hits. */
+    document.addEventListener('mousedown', (ev) => {
+      if (ev.target.closest('.lc-search-hit[data-action]')) ev.preventDefault();
+    }, true);
     registerSegment('Announcements', (id) => Announcements?.setTab?.(id));
     registerSegment('Global', (id) => Global?.setTab?.(id));
     registerSegment('PaperTrade', (id) => PaperTrade?.setTab?.(id));
   }
 
-  return { init, registerSegment, _call, closeProModal: () => document.getElementById('proUpgradeModal')?.classList.remove('open') };
+  return {
+    init,
+    registerSegment,
+    _call,
+    closeProModal: () => (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))(),
+  };
 })();
 window.LcEvents = LcEvents;
 
@@ -4111,9 +4202,9 @@ window.PsxUI = PsxUI;
 
 ;/* === js/lc-desktop-nav.js === */
 'use strict';
-/** Toggle body.lc-desktop-nav at ≥900px — Playwright viewport contract + sidebar/bottom nav */
+/** Toggle body.lc-desktop-nav at ≥700px (Cap fleet: iPad mini → sidebar) — Playwright viewport contract + sidebar/bottom nav */
 (function () {
-  const MQ = window.matchMedia('(min-width: 900px)');
+  const MQ = window.matchMedia('(min-width: 700px)');
   function sync() {
     document.body.classList.toggle('lc-desktop-nav', MQ.matches);
   }
@@ -4202,6 +4293,9 @@ const Navigation = (() => {
     { id: 'signals', labelKey: 'tools.signals.t' },
     { id: 'risk-audit', labelKey: 'tools.riskAudit.t' },
     { id: 'insights', labelKey: 'tools.insightsTool.t' },
+    { id: 'comparison', labelKey: 'tools.comparison.t' },
+    { id: 'performance', labelKey: 'tools.performance.t' },
+    { id: 'journal', labelKey: 'tools.journal.t' },
     { id: 'pilot-tools', labelKey: 'tools.pilotTools.t' },
     { id: 'paper-trade', labelKey: 'tools.paperTrade.t' },
     { id: 'transactions', labelKey: 'tools.transactions.t' },
@@ -4217,7 +4311,7 @@ const Navigation = (() => {
 
   function _navBtn(t) {
     const on = t.id === _current;
-    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
+    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" aria-current="${on ? 'page' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
       <span class="psx-nav-icon-wrap" aria-hidden="true">${t.icon}</span>
       <span>${_t(t.labelKey)}</span>
     </button>`;
@@ -4301,16 +4395,20 @@ const Navigation = (() => {
       document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
         b.classList.remove('active');
+        if (b.classList.contains('psx-nav-btn')) b.setAttribute('aria-current', 'false');
         if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
       });
       const el = document.getElementById('screen-' + tabId);
       if (el) {
         el.classList.add('active', 'lc-screen-enter');
-        el.scrollTop = 0;
+        // 6.0: the document scrolls; a new screen opens at the top (also when navigating out of a sheet)
+        if (window.App?.closeBottomSheet && document.getElementById('bottom-sheet')?.classList.contains('open')) App.closeBottomSheet(0);
+        else window.scrollTo(0, 0);
         requestAnimationFrame(() => el.classList.remove('lc-screen-enter'));
       }
       document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
         b.classList.add('active');
+        if (b.classList.contains('psx-nav-btn')) b.setAttribute('aria-current', 'page');
         if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
       });
       if (!silent) {
@@ -4368,7 +4466,16 @@ const Navigation = (() => {
   }
 
   function current() { return _current; }
-  return { init, go, current, applyTheme, TABS };
+
+  /** Portfolio intel entry from Home / Risk audit — real method so data-action resolves. */
+  function goResearchIntel() {
+    if (typeof Research !== 'undefined' && typeof Research.setMode === 'function') {
+      Research.setMode('portfolio');
+    }
+    go('research', false, { portfolioIntel: true });
+  }
+
+  return { init, go, goResearchIntel, current, applyTheme, TABS };
 })();
 window.Navigation = Navigation;
 
@@ -6042,7 +6149,6 @@ const App = (() => {
     _scheduleAutoRefresh();
     _maybeDemoBanner();
     _maybeInstallHint();
-    _wirePullToRefresh();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         PinVault?.noteBackground?.();
@@ -6369,21 +6475,93 @@ const App = (() => {
     showToast('Alert removed', 'info');
   }
 
-  function openBottomSheet(id, title, content) {
-    closeBottomSheet();
-    const sheet = document.getElementById('bottom-sheet');
-    if (!sheet) return;
-    document.getElementById('bs-title').textContent = title || '';
-    document.getElementById('bs-body').innerHTML = content || '';
-    sheet.classList.add('open');
-    _activeSheet = id;
-    sheet.querySelector('.bs-backdrop')?.addEventListener('click', closeBottomSheet);
+  let _sheetOpener = null;
+  let _escBound = false;
+
+  function _bindSheetEscape() {
+    if (_escBound) return;
+    _escBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Top-most first: CapConfirm / pro modal own their listeners; skip if present
+      if (document.querySelector('.lc-dialog-backdrop')) return;
+      const pro = document.getElementById('proUpgradeModal');
+      if (pro?.classList.contains('open')) {
+        if (typeof window.closeProModal === 'function') window.closeProModal();
+        else pro.classList.remove('open');
+        e.preventDefault();
+        return;
+      }
+      const cmdk = document.getElementById('lc-cmdk');
+      if (cmdk && !cmdk.classList.contains('hidden')) return;
+      const sheet = document.getElementById('bottom-sheet');
+      if (sheet?.classList.contains('open')) {
+        e.preventDefault();
+        closeBottomSheet();
+      }
+    });
   }
 
-  function closeBottomSheet() {
+  function openBottomSheet(id, title, content) {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeBottomSheet(undefined, { restoreFocus: false });
     const sheet = document.getElementById('bottom-sheet');
+    if (!sheet) return;
+    _sheetOpener = opener;
+    document.getElementById('bs-title').textContent = title || '';
+    document.getElementById('bs-body').innerHTML = content || '';
+    _sheetBar(sheet);
+    sheet.classList.add('open');
+    _activeSheet = id;
+    _lockScroll();
+    _bindSheetEscape();
+    // Backdrop closes via data-action="App.closeBottomSheet" (LcEvents) — do not re-bind per open.
+    // Prefer first focusable in the sheet for keyboard users
+    const focusEl = sheet.querySelector('.bs-bar-cancel, #bs-body button, #bs-body input, #bs-body select');
+    if (focusEl && typeof focusEl.focus === 'function') {
+      requestAnimationFrame(() => { try { focusEl.focus(); } catch (_) {} });
+    }
+  }
+
+  /** HIG sheet bar: the body's single trailing primary action moves to the bar (Cancel is always leading). */
+  function _sheetBar(sheet) {
+    const trail = sheet.querySelector('.bs-bar-trail');
+    if (!trail) return;
+    trail.innerHTML = '';
+    const primaries = [...sheet.querySelectorAll('#bs-body > div > .btn-primary:last-child, #bs-body > .btn-primary:last-child')];
+    if (primaries.length === 1) {
+      const btn = primaries[0];
+      btn.classList.add('bs-bar-done');
+      // Keep full label (Urdu / multi-word / icons). Optional data-bar-label overrides display text.
+      const barLabel = btn.getAttribute('data-bar-label');
+      if (barLabel != null && barLabel !== '') {
+        if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', btn.textContent.trim() || barLabel);
+        btn.textContent = barLabel;
+      }
+      trail.appendChild(btn);
+    }
+  }
+
+  function _lockScroll() {
+    window.LcScrollLock?.lock();
+  }
+  function _unlockScroll(restoreY) {
+    window.LcScrollLock?.unlock(typeof restoreY === 'number' ? restoreY : undefined);
+  }
+
+  /** @param {number} [restoreY] land here instead of the pre-sheet position (navigation out of a sheet) */
+  function closeBottomSheet(restoreY, opts) {
+    const sheet = document.getElementById('bottom-sheet');
+    const wasOpen = sheet?.classList.contains('open');
     if (sheet) sheet.classList.remove('open');
     _activeSheet = null;
+    if (wasOpen) _unlockScroll(typeof restoreY === 'number' ? restoreY : null);
+    const opener = _sheetOpener;
+    _sheetOpener = null;
+    if (opts?.restoreFocus === false) return;
+    if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+      requestAnimationFrame(() => { try { opener.focus(); } catch (_) {} });
+    }
   }
 
   function openSellHolding(symbol, broker, type) {
@@ -6407,16 +6585,16 @@ const App = (() => {
     const brokers = ['Rafi', 'AKD', 'CDC', 'Meezan', 'Other'];
     const globalBrokers = window.GLOBAL_BROKERS || ['IBKR', 'Binance', 'Other'];
     const typeLabels = {
-      BUY: '📈 BUY', SELL: '📉 SELL', INTL_BUY: '🌎 US BUY', INTL_SELL: '🌎 US SELL',
-      CRYPTO_BUY: '₿ CRYPTO BUY', CRYPTO_SELL: '₿ CRYPTO SELL',
-      DIVIDEND: '💰 DIV', SALARY: '💼 SALARY',
-      CONTRIBUTION: '🏦 FUND', IPO_SUBSCRIBE: '🚀 IPO',
+      BUY: 'Buy', SELL: 'Sell', INTL_BUY: 'US buy', INTL_SELL: 'US sell',
+      CRYPTO_BUY: 'Crypto buy', CRYPTO_SELL: 'Crypto sell',
+      DIVIDEND: 'Dividend', SALARY: 'Salary',
+      CONTRIBUTION: 'Fund', IPO_SUBSCRIBE: 'IPO',
     };
 
     const content = `
     <div id="tx-form">
-      <div class="type-selector">
-        ${typeOpts.map(t => `<div class="type-btn${t === selType ? ' active' : ''}" data-type="${t}">${typeLabels[t] || t}</div>`).join('')}
+      <div class="type-selector" role="group" aria-label="Transaction type">
+        ${typeOpts.map(t => `<button type="button" class="type-btn${t === selType ? ' active' : ''}" aria-pressed="${t === selType}" data-type="${t}">${typeLabels[t] || t}</button>`).join('')}
       </div>
       <div id="tx-fields">${_txFields(selType, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings)}</div>
       <button class="btn-primary" data-action="App._submitTransaction">Add Transaction</button>
@@ -6426,8 +6604,9 @@ const App = (() => {
 
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.type-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
         const t = btn.dataset.type;
         document.getElementById('tx-fields').innerHTML = _txFields(t, symbol, broker, allSymbols, allWithFunds, brokers, globalBrokers, currentHoldings);
         _bindFieldListeners(t);
@@ -6872,7 +7051,9 @@ const App = (() => {
   }
 
   function applyTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
     State.update(s => { s.settings.theme = theme; });
+    try { localStorage.setItem('theme', theme); } catch (_) {}
     _applyTheme(theme);
   }
 
@@ -6880,11 +7061,11 @@ const App = (() => {
     const current = document.body.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     App.applyTheme(next);
-    localStorage.setItem('theme', next);
   };
 
   function openHeaderMenu() {
-    if (typeof Navigation !== 'undefined') Navigation.go('settings');
+    /* Top-bar ⋯ is labelled "More" — open the More hub (Settings is one of its tiles). */
+    if (typeof Navigation !== 'undefined') Navigation.go('more');
   }
 
   function renderCurrent() {

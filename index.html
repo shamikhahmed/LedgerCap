@@ -29,17 +29,17 @@
   <meta name="twitter:title" content="LedgerCap — Pakistani wealth. One ledger.">
   <meta name="twitter:description" content="PSX stocks, Meezan funds, Zakat, net worth in PKR — offline-first by Capricorn Systems.">
   <meta name="twitter:image" content="https://shamikhahmed.github.io/assets/screenshots/ledgercap.png">
-  <noscript>
-    <link rel="stylesheet" href="css/ios-tokens.css" />
-
-</noscript>
+  <!-- HIG design: legacy 3.x CSS sits in @layer legacy under the HIG components (css/app.css, DESIGN.md).
+       Preloads let the browser fetch the @imported files in parallel. -->
+  <link rel="preload" href="css/ios-tokens.css" as="style">
+  <link rel="preload" href="css/psx-app.css" as="style">
+  <link rel="preload" href="css/lc-pro.css" as="style">
+  <link rel="preload" href="css/lc-pro-phase.css" as="style">
+  <link rel="preload" href="css/design/system.css" as="style">
+  <link rel="preload" href="css/design/ledgercap.css" as="style">
   <link rel="stylesheet" href="css/tokens.css?v=1">
-  <link rel="stylesheet" href="css/ios-tokens.css">
-  <link rel="stylesheet" href="css/psx-app.css?v=22">
-  <link rel="stylesheet" href="css/lc-pro.css?v=7">
-  <link rel="stylesheet" href="css/brand-mark.css?v=1">
-  <link rel="stylesheet" href="css/lc-pro-phase.css?v=6">
-  <link rel="stylesheet" href="css/fonts-local.css">
+  <link rel="stylesheet" href="css/design/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
   <script src="js/theme-boot.js"></script>
 </head>
 <body class="psx-app lc-pro" data-theme="dark">
@@ -116,7 +116,7 @@
         <div id="screen-import" class="psx-screen"></div>
       </div>
 
-      <nav id="nav" class="psx-bottom-nav" role="tablist" aria-label="Main"></nav>
+      <nav id="nav" class="psx-bottom-nav" aria-label="Main"></nav>
     </div>
   </div>
   <div id="lc-price-announcer" class="lc-sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -124,38 +124,21 @@
   <div class="bottom-sheet" id="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="bs-title">
     <div class="bs-backdrop" data-action="App.closeBottomSheet"></div>
     <div class="bs-panel">
-      <div class="bs-title" id="bs-title" style="font-weight:800;margin-bottom:12px"></div>
+      <div class="bs-grabber" aria-hidden="true"></div>
+      <div class="bs-bar">
+        <button type="button" class="bs-bar-cancel" data-action="App.closeBottomSheet">Cancel</button>
+        <div class="bs-title" id="bs-title"></div>
+        <div class="bs-bar-trail"></div>
+      </div>
       <div id="bs-body"></div>
-      <button type="button" class="psx-btn psx-btn-ghost" style="width:100%;margin-top:12px" data-action="App.closeBottomSheet">Close</button>
     </div>
   </div>
   <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
   <script defer src="js/brand/colors.js"></script>
-  <script defer src="js/ledgercap.bundle.js?v=3.58.9"></script>
+  <script defer src="js/ledgercap.bundle.js?v=3.58.11"></script>
   <script defer src="js/pro-modal.js"></script>
-  <script>
-  /* Idle-load non-Home bundle well after first paint (v5 §3d TBT).
-     Demo must NOT kick ASAP — that parsed ~460KB during LH (mobile 43).
-     E2E / nav still call __lcEnsureDeferred() on demand. */
-  (function () {
-    var src = 'js/ledgercap.deferred.js?v=3.58.9';
-    var p = null;
-    window.__lcEnsureDeferred = function () {
-      if (window.__LC_DEFERRED_READY__) return Promise.resolve();
-      if (p) return p;
-      p = new Promise(function (resolve, reject) {
-        var s = document.createElement('script');
-        s.src = src;
-        s.onload = function () { window.__LC_DEFERRED_READY__ = true; resolve(); };
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-      return p;
-    };
-    /* No auto-kick — LH TBT includes idle timeout. Nav / E2E call __lcEnsureDeferred. */
-  })();
-  </script>
+  <script defer src="js/boot-deferred.js?v=3.58.11"></script>
 
 <!-- Support modal (no paywall until Stripe) -->
 <div id="proUpgradeModal" class="lc-pro-modal" role="dialog" aria-modal="true" aria-label="Support LedgerCap">

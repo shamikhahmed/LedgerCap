@@ -54,7 +54,7 @@ const LcEvents = (() => {
     else if (path === 'PaperTrade._submitSell') window.PaperTrade?._submitSell(el);
     else if (path === 'PaperTrade.resetLedger') window.PaperTrade?.resetLedger();
     else if (path === 'LcTerminal.toggle') window.LcTerminal?.toggle();
-    else if (path === 'LcEvents.closeProModal') document.getElementById('proUpgradeModal')?.classList.remove('open');
+    else if (path === 'LcEvents.closeProModal') (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))();
     else if (path === 'openProUpgrade') window.openProUpgrade?.();
     else if (path === 'window.toggleTheme') window.toggleTheme?.();
     else if (path === 'StatementExport.exportCgtPdf') StatementExport?.exportCgtPdf?.();
@@ -65,10 +65,13 @@ const LcEvents = (() => {
     else if (path === 'LcPolish.openCmdk') window.LcPolish?.openCmdk();
     else if (path === 'Performance.setTab') window.Performance?.setTab(tab);
     else if (path === 'Performance.setHistRange') window.Performance?.setHistRange(tab);
-    else if (path === 'Navigation.goResearchIntel') {
-      Research?.setMode?.('portfolio');
-      Navigation.go('research', false, { portfolioIntel: true });
-    }
+    else if (path === 'Navigation.goResearchIntel') Navigation.goResearchIntel?.();
+    else if (path === 'Settings._setTheme') Settings?._setTheme?.(tab);
+    else if (path === 'Settings._setNumberFormat') Settings?._setNumberFormat?.(tab);
+    else if (path === 'Settings._setDisplayCurrency') Settings?._setDisplayCurrency?.(tab);
+    else if (path === 'Settings._setHaptics') Settings?._setHaptics?.(!!el.checked);
+    else if (path === 'Settings._setLiveStream') Settings?._setLiveStream?.(!!el.checked);
+    else if (path === 'Settings._setSnapshot') Settings?._setSnapshot?.(!!el.checked);
     else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
     else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
     else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
@@ -103,7 +106,10 @@ const LcEvents = (() => {
       return;
     }
     const nav = ev.target.closest('[data-nav]');
-    if (nav?.dataset.nav && window.Navigation) {
+    const inner = ev.target.closest('[data-action]');
+    // A button inside a tappable card (e.g. Sell on a holding) wins over the card's own navigation
+    const actionInsideNav = inner && nav && inner !== nav && nav.contains(inner);
+    if (nav?.dataset.nav && window.Navigation && !actionInsideNav) {
       ev.preventDefault();
       Navigation.go(nav.dataset.nav);
       return;
@@ -129,7 +135,7 @@ const LcEvents = (() => {
       _call(el.dataset.actionChange, el, ev);
       return;
     }
-    if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
+    // #rt-search is input-only (avoid double-fire with _onInput)
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
@@ -143,15 +149,27 @@ const LcEvents = (() => {
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
+  /* iOS/WebKit retargets taps to the nearest cursor:pointer / clickable node. CSS
+   * [data-action],[data-nav],[data-external-url]{cursor:pointer} keeps delegate targets
+   * tappable without a body-wide MutationObserver + per-node no-op listeners. */
   function init() {
     document.addEventListener('click', _onClick, true);
     document.addEventListener('change', _onChange, true);
     document.addEventListener('input', _onInput, true);
+    /* Keep #rt-search focused so mousedown→blur does not race the click on hits. */
+    document.addEventListener('mousedown', (ev) => {
+      if (ev.target.closest('.lc-search-hit[data-action]')) ev.preventDefault();
+    }, true);
     registerSegment('Announcements', (id) => Announcements?.setTab?.(id));
     registerSegment('Global', (id) => Global?.setTab?.(id));
     registerSegment('PaperTrade', (id) => PaperTrade?.setTab?.(id));
   }
 
-  return { init, registerSegment, _call, closeProModal: () => document.getElementById('proUpgradeModal')?.classList.remove('open') };
+  return {
+    init,
+    registerSegment,
+    _call,
+    closeProModal: () => (window.closeProModal || (() => document.getElementById('proUpgradeModal')?.classList.remove('open')))(),
+  };
 })();
 window.LcEvents = LcEvents;

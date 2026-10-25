@@ -873,7 +873,10 @@ const Settings = (() => {
     App.showToast(on ? 'Haptics on' : 'Haptics off', 'success');
   }
 
-  function _setTheme(theme) {
+  function _setTheme(themeOrEl) {
+    const theme = typeof themeOrEl === 'string'
+      ? themeOrEl
+      : (themeOrEl?.dataset?.tab || themeOrEl?.getAttribute?.('data-tab'));
     if (theme !== 'light' && theme !== 'dark') return;
     App.applyTheme(theme);
     App.showToast(`${theme === 'light' ? 'Light' : 'Dark'} theme applied`, 'success');

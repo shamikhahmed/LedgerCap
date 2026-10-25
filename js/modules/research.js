@@ -67,7 +67,7 @@ const Research = (() => {
         || (window.CRYPTO_ASSETS || []).find(x => x.symbol === s)
         || [...(window.RAFI_STOCKS || []), ...(window.AKD_STOCKS || [])].find(x => x.symbol === s);
       const name = meta?.name || '';
-      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" onmousedown="event.preventDefault();Research.pickSymbol('${esc(s)}')">
+      return `<button type="button" class="lc-search-hit${s === _symbol ? ' on' : ''}" data-action="Research.pickSymbol" data-symbol="${esc(s)}">
         <strong>${esc(s)}</strong><span>${esc(name)}</span>
       </button>`;
     }).join('');
@@ -418,7 +418,7 @@ const Research = (() => {
           </div>
           ${_modeSegment()}
           <div class="lc-search-wrap">
-            <input type="search" placeholder="Search US, PSX, crypto…" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" oninput="Research._onSearch(this.value)" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
+            <input type="search" placeholder="Search US, PSX, crypto…" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
             <div id="rt-search-results" class="lc-search-results" role="listbox"></div>
           </div>
           <div class="lc-empty-state">
@@ -480,7 +480,7 @@ const Research = (() => {
         </div>
         ${_modeSegment()}
         <div class="lc-search-wrap">
-          <input type="search" placeholder="Search symbol — type to shortlist" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" oninput="Research._onSearch(this.value)" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
+          <input type="search" placeholder="Search symbol — type to shortlist" id="rt-search" value="${_searchQ.replace(/"/g, '&quot;')}" autocomplete="off" aria-label="Search symbols" aria-controls="rt-search-results">
           <div id="rt-search-results" class="lc-search-results" role="listbox">${_searchHitsHtml(_searchQ ? _catalogSearch(_searchQ) : [])}</div>
         </div>
         <div class="lc-research-hero">
