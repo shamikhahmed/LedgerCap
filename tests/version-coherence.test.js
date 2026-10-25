@@ -16,6 +16,7 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const cfg = fs.readFileSync(path.join(root, 'js/data/config.js'), 'utf8');
 const bundle = fs.readFileSync(path.join(root, 'js/ledgercap.bundle.js'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const boot = fs.readFileSync(path.join(root, 'js/boot-deferred.js'), 'utf8');
 
 const swCache = (sw.match(/const CACHE = '([^']+)'/) || [])[1];
 const cfgApp = (cfg.match(/app:\s*'([^']+)'/) || [])[1];
@@ -38,6 +39,14 @@ check('SW precaches pro-modal.js', /pro-modal\.js/.test(sw));
 check('SW precaches boot-deferred.js', /boot-deferred\.js/.test(sw));
 check('index loads boot-deferred.js (no inline idle-load script)', /boot-deferred\.js\?v=/.test(index) && !/<script>\s*\/\* Idle-load/.test(index));
 check('SW no auto skipWaiting/clients.claim', !/^\s*self\.skipWaiting\(\);|clients\.claim\(\)/m.test(sw));
+check(
+  'boot-deferred derives deferred ?v= from LEDGERCAP_VERSION (matches VERSION via config)',
+  /LEDGERCAP_VERSION/.test(boot)
+    && /ledgercap\.deferred\.js/.test(boot)
+    && !/ledgercap\.deferred\.js\?v=\d+\.\d+\.\d+/.test(boot)
+    && cfgApp === ver.version,
+  ver.version,
+);
 
 if (failed) {
   console.error(`\nversion-coherence: ${failed} failed`);
