@@ -39,7 +39,7 @@ const Navigation = (() => {
 
   function _navBtn(t) {
     const on = t.id === _current;
-    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
+    return `<button type="button" class="psx-nav-btn${on ? ' active' : ''}" aria-current="${on ? 'page' : 'false'}" data-tab="${t.id}" aria-label="${_t(t.labelKey)}">
       <span class="psx-nav-icon-wrap" aria-hidden="true">${t.icon}</span>
       <span>${_t(t.labelKey)}</span>
     </button>`;
@@ -123,6 +123,7 @@ const Navigation = (() => {
       document.querySelectorAll('.psx-screen').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.psx-nav-btn, .psx-side-btn[data-tab]').forEach(b => {
         b.classList.remove('active');
+        if (b.classList.contains('psx-nav-btn')) b.setAttribute('aria-current', 'false');
         if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'false');
       });
       const el = document.getElementById('screen-' + tabId);
@@ -135,6 +136,7 @@ const Navigation = (() => {
       }
       document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => {
         b.classList.add('active');
+        if (b.classList.contains('psx-nav-btn')) b.setAttribute('aria-current', 'page');
         if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', 'true');
       });
       if (!silent) {
@@ -192,6 +194,15 @@ const Navigation = (() => {
   }
 
   function current() { return _current; }
-  return { init, go, current, applyTheme, TABS };
+
+  /** Portfolio intel entry from Home / Risk audit — real method so data-action resolves. */
+  function goResearchIntel() {
+    if (typeof Research !== 'undefined' && typeof Research.setMode === 'function') {
+      Research.setMode('portfolio');
+    }
+    go('research', false, { portfolioIntel: true });
+  }
+
+  return { init, go, goResearchIntel, current, applyTheme, TABS };
 })();
 window.Navigation = Navigation;

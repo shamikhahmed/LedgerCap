@@ -65,10 +65,13 @@ const LcEvents = (() => {
     else if (path === 'LcPolish.openCmdk') window.LcPolish?.openCmdk();
     else if (path === 'Performance.setTab') window.Performance?.setTab(tab);
     else if (path === 'Performance.setHistRange') window.Performance?.setHistRange(tab);
-    else if (path === 'Navigation.goResearchIntel') {
-      Research?.setMode?.('portfolio');
-      Navigation.go('research', false, { portfolioIntel: true });
-    }
+    else if (path === 'Navigation.goResearchIntel') Navigation.goResearchIntel?.();
+    else if (path === 'Settings._setTheme') Settings?._setTheme?.(tab);
+    else if (path === 'Settings._setNumberFormat') Settings?._setNumberFormat?.(tab);
+    else if (path === 'Settings._setDisplayCurrency') Settings?._setDisplayCurrency?.(tab);
+    else if (path === 'Settings._setHaptics') Settings?._setHaptics?.(!!el.checked);
+    else if (path === 'Settings._setLiveStream') Settings?._setLiveStream?.(!!el.checked);
+    else if (path === 'Settings._setSnapshot') Settings?._setSnapshot?.(!!el.checked);
     else if (path === 'Hub.openPortfolio') Hub?.openPortfolio?.(tab);
     else if (path === 'App.deletePortfolio') App?.deletePortfolio?.(tab);
     else if (path === 'App.openAddForPortfolio') App?.openAddForPortfolio?.(tab);
