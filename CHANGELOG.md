@@ -1,3 +1,12 @@
+## [Unreleased] — Marketing + docs refresh (`marketing/3.58.11`)
+
+- Shared `site/site.css` on HIG brass tokens; rewrite `landing.html`, `pitch.html`, `presentation.html`, `privacy.html`; add `support.html`, `terms.html`
+- Walkthrough slot: `<video preload="none" poster>` + `site/walkthrough.vtt` (no autoplay with sound)
+- Fictional personas labelled on landing/pitch (Usman, Nida, Raza)
+- `qa/marketing/capture.sh` — gallery webps → `shots/{dark,light}/{iphone,ipad,mac}/`, App Store PNGs, walkthrough, optional Lighthouse
+- README / HANDOVER point at this marketing release
+- **Phase B:** wired capture outputs (150 hub shots, 16 App Store PNGs, walkthrough mp4/poster/VTT); gallery manifests 3.58.11; `qa/marketing/HUB-MEDIA.md`; `scripts/hig-guards.mjs` + `qa/release/run-checks.sh`
+
 ## [Unreleased] — HIG design (ScentCap 3.0 system)
 
 - Apple-HIG redesign: `css/design/tokens.css` (semantic light/dark/increased-contrast tokens, brass accent `#d4af37` / `#806614`, bridge for `--psx-*` / `--lc-*`), `css/design/system.css` (`ui-*` primitives), `css/design/ledgercap.css` (shell + shared-class reskin); 3.x CSS demoted to `@layer legacy` via `css/app.css`

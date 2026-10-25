@@ -1,46 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#c9a227">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#806614" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#d4af37" media="(prefers-color-scheme: dark)">
 <title>Privacy Policy — LedgerCap</title>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0B0E11;color:#EAECEF;line-height:1.65;padding:24px;max-width:720px;margin:0 auto}
-a{color:#c9a227}
-nav{margin-bottom:28px;font-size:14px}
-nav a{margin-right:12px;color:#848E9C}
-h1{font-size:1.75rem;margin:24px 0 12px;letter-spacing:-.02em}
-h2{font-size:1.15rem;margin:20px 0 8px;color:#c9a227}
-p,li{font-size:15px;color:#848E9C;margin-bottom:10px}
-ul{margin:8px 0 16px 20px}
-table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:14px}
-th,td{border:1px solid rgba(255,255,255,.12);padding:8px;text-align:left;color:#848E9C}
-th{color:#EAECEF}
-code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:.9em}
-footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#848E9C}
-</style>
-<link rel="stylesheet" href="css/tokens.capricorn-core.css">
+<meta name="description" content="LedgerCap privacy: on-device portfolio, Worker-backed prices, no accounts or analytics.">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="site/site.css">
 </head>
 <body>
-<nav>
-  <a href="landing.html">← LedgerCap</a>
-  <a href="index.html">App</a>
-</nav>
-<article>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="landing.html"><img src="site/mark.svg" alt="" width="26" height="26">LedgerCap</a>
+  <nav aria-label="Site">
+    <a href="landing.html">Home</a>
+    <a href="terms.html">Terms</a>
+    <a href="support.html">Support</a>
+    <a class="btn btn--sm" href="./">Open app</a>
+  </nav>
+</div></header>
+
+<main id="main" class="article">
   <h1>LedgerCap privacy</h1>
-  <p><strong>Effective:</strong> 14 October 2026 · Published by Capricorn Systems, Karachi, Pakistan</p>
-  <p>LedgerCap works on your device. We don't have accounts, analytics, ads or tracking, and we don't sell data. Portfolio holdings stay on your device.</p>
+  <p class="meta">Effective 25 October 2026 · Version 3.58.11 · Capricorn Systems, Karachi, Pakistan</p>
+
+  <h2>Summary</h2>
+  <p>LedgerCap works on your device. There are no accounts, analytics SDKs, ads, or trackers. Portfolio holdings stay on your device. Indicative market prices may be fetched through Capricorn’s Cloudflare Worker.</p>
 
   <h2>What stays on your device</h2>
   <ul>
-    <li>Holdings, watchlists, journals, preferences, and optional Telegram bot token in <strong>localStorage</strong> / <strong>IndexedDB</strong>.</li>
-    <li>Cached market snapshots for offline display.</li>
+    <li>Holdings, watchlists, journals, preferences, and optional Telegram bot token in <strong>localStorage</strong> / <strong>IndexedDB</strong></li>
+    <li>Cached market snapshots for offline display</li>
+    <li>PIN vault material when you enable a security PIN</li>
   </ul>
 
-  <h2>What leaves your device</h2>
-  <p>Live and indicative prices use a Capricorn Cloudflare Worker (D-09). The browser does <strong>not</strong> call Yahoo or PSX directly. Prices may be delayed or indicative — nothing here is investment advice.</p>
+  <h2>What may leave your device</h2>
   <table>
     <thead><tr><th>Service</th><th>What is sent</th><th>Why</th><th>When</th></tr></thead>
     <tbody>
@@ -54,7 +50,7 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.0
         <td>GitHub Pages</td>
         <td>Normal browser request metadata for static app files</td>
         <td>Host the PWA</td>
-        <td>First visit / SW asset refresh</td>
+        <td>First visit / service-worker asset refresh</td>
       </tr>
       <tr>
         <td><code>api.telegram.org</code> (optional)</td>
@@ -70,10 +66,10 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.0
       </tr>
     </tbody>
   </table>
-  <p>Upstream PSX (<code>dps.psx.com.pk</code>) and Yahoo feeds are reached <strong>via the Worker only</strong>, not from your browser.</p>
+  <p>Upstream PSX and Yahoo feeds are reached <strong>via the Worker only</strong>, not from your browser. Prices may be delayed or indicative — nothing here is investment advice.</p>
 
   <h2>Your controls</h2>
-  <p>Export / erase portfolio data from Settings. Remove or mask any Telegram token in Settings. Clearing site data deletes local holdings.</p>
+  <p>Export or erase portfolio data from Settings. Remove or mask any Telegram token in Settings. Clearing site data deletes local holdings.</p>
 
   <h2>Children</h2>
   <p>LedgerCap is intended for a general audience aged 13 and over.</p>
@@ -82,11 +78,15 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.0
   <p>LedgerCap is for tracking and education. Prices may be delayed or indicative. Nothing here is investment advice.</p>
 
   <h2>Changes</h2>
-  <p>We'll update this page and its effective date if anything changes.</p>
+  <p>We will update this page and its effective date if anything changes.</p>
 
   <h2>Contact</h2>
-  <p><a href="https://shamikhahmed.github.io/support.html">Support</a> · No personal support email is published (G-4).</p>
-</article>
-<footer>© 2026 Capricorn Systems · <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a></footer>
+  <p><a href="support.html">Support</a> · <a href="terms.html">Terms</a> · No personal support email is published (G-4).</p>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 Capricorn Systems · LedgerCap 3.58.11</span>
+  <nav aria-label="Legal"><a href="landing.html">Home</a><a href="support.html">Support</a><a href="terms.html">Terms</a></nav>
+</div></footer>
 </body>
 </html>

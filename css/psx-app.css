@@ -49,7 +49,7 @@ body.psx-app {
   background: var(--psx-bg);
   color: var(--psx-text);
   min-height: 100dvh;
-  overflow: hidden;
+  overflow: visible; /* document scrolls — see css/design/ledgercap.css */
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
@@ -394,7 +394,7 @@ body.psx-app {
 .psx-search input {
   width: 100%; padding: 12px 14px; border-radius: var(--psx-radius-sm);
   border: 1px solid var(--psx-border); background: var(--psx-bg-card);
-  color: var(--psx-text); font-size: 15px; font-family: inherit;
+  color: var(--psx-text); font-size: 16px; font-family: inherit;
 }
 
 .psx-sym-row {
@@ -495,7 +495,7 @@ body.psx-app {
 .field-input, .comp-select {
   width: 100%; padding: 11px 12px; border-radius: var(--psx-radius-sm);
   border: 1px solid var(--psx-border); background: var(--psx-bg-card);
-  color: var(--psx-text); font-size: 15px; font-family: inherit;
+  color: var(--psx-text); font-size: 16px; font-family: inherit;
 }
 .field-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .field-row .field { flex: 1; min-width: 120px; }
@@ -780,7 +780,7 @@ body.psx-app {
 /* ── Comparison screen ── */
 .comp-header { padding: 0 20px 14px; }
 .comp-selectors { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 16px; }
-.comp-select { width: 100%; padding: 8px 12px; border-radius: var(--psx-radius-sm); border: 1px solid var(--psx-border); background: var(--psx-bg-card); color: var(--psx-text); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.comp-select { width: 100%; padding: 8px 12px; border-radius: var(--psx-radius-sm); border: 1px solid var(--psx-border); background: var(--psx-bg-card); color: var(--psx-text); font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 16px; }
 .comp-card { background: var(--psx-bg-card); border: 1px solid var(--psx-border); border-radius: var(--psx-radius); padding: 16px; }
 .comp-card-title { font-size: 16px; font-weight: 800; color: var(--psx-accent); margin-bottom: 12px; }
@@ -1502,7 +1502,7 @@ button.os-broker-card {
   border: 1px solid var(--psx-border, rgba(255,255,255,0.12));
   background: var(--psx-surface-1, rgba(255,255,255,0.05));
   color: var(--psx-text, var(--lc-f0f4ff));
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   font-family: inherit;
   appearance: none;

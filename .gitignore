@@ -10,3 +10,5 @@ skills-lock.json
 # Perfection v3: keep device-qa JSON; PNGs local-only (§6 baseline)
 qa/perfection/**/*.png
 build/
+qa/marketing/video-raw/
+qa/marketing/lighthouse/

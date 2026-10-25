@@ -1,28 +1,7 @@
-# LedgerCap — Privacy Policy
+# LedgerCap Privacy
 
-**Last updated:** June 10, 2026
+Canonical policy: **[privacy.html](privacy.html)** (effective 25 October 2026 · v3.58.11).
 
-LedgerCap is an offline-first Progressive Web App. **Your data stays on your device** unless you explicitly export it.
+**Summary:** No accounts, ads, or analytics. Portfolio stays on-device. Indicative market prices may be fetched via Capricorn’s Cloudflare Worker. Optional Telegram uses your own bot token. TradingView frames where charts are shown.
 
-## What we collect
-- **Nothing by default.** No accounts, analytics SDKs, or third-party trackers ship in this app.
-- Optional features (e.g. VaultCap LLM import) send data only when you enable them and supply your own API key at runtime.
-
-## Storage
-- App state is stored in **localStorage** and/or **IndexedDB** in your browser.
-- Uninstalling or clearing site data removes local copies.
-
-## Network
-- Live price or proxy features may call endpoints you configure (e.g. LedgerCap PSX proxy).
-- GitHub Pages serves static files only — no server-side access to your vault.
-
-## Children
-- DeePonyCap is child-friendly; still, parents should supervise device sharing and exports.
-
-## Contact
-Built by Capricorn Systems — issues via the LedgerCap GitHub repository.
-
-
-## Fonts
-
-Typography is self-hosted (woff2 in-repo). No Google Fonts requests.
+Support: [support.html](support.html) · fleet [support page](https://shamikhahmed.github.io/support.html) (G-4 — no personal email).

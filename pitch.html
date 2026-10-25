@@ -1,440 +1,117 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#c9a227">
-<title>LedgerCap — Pitch Deck</title>
-<link rel="stylesheet" href="css/fonts-pitch.css">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--accent:#f59e0b;--bg:#0B0E11;--bg2:#12161C;--bg3:#1E2329;--bg4:#2B3139;
-  --orange:#c9a227;--green:#0ECB81;--red:#F6465D;--gold:#c9a227;
-  --text:#EAECEF;--muted:#848E9C;--dim:#5E6673;font-size:16px}
-html{scroll-behavior:smooth}
-body{font-family:Inter,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;font-variant-numeric:tabular-nums}
-.slide{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:72px 40px;position:relative;text-align:center;overflow:hidden}
-@media(max-width:600px){.slide{padding:64px 22px}}
-.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
-.reveal.visible{opacity:1;transform:none}
-.reveal-left{opacity:0;transform:translateX(-50px);transition:opacity .8s,transform .8s}
-.reveal-left.visible{opacity:1;transform:none}
-.reveal-right{opacity:0;transform:translateX(50px);transition:opacity .8s,transform .8s}
-.reveal-right.visible{opacity:1;transform:none}
-.delay-1{transition-delay:.1s}.delay-2{transition-delay:.2s}.delay-3{transition-delay:.35s}.delay-4{transition-delay:.5s}
-#nav-dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:8px}
-.nav-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.2);cursor:pointer;transition:all .3s}
-.nav-dot.active{background:var(--orange);transform:scale(1.4)}
-#export-btn{position:fixed;top:16px;right:16px;z-index:100;background:rgba(255,255,255,.06);border:1px solid var(--bg4);color:var(--text);padding:8px 16px;border-radius:99px;font-size:12px;cursor:pointer;font-family:inherit}
-h1{font-size:clamp(3rem,12vw,7rem);font-weight:900;letter-spacing:-.05em;line-height:1}
-h2{font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;margin-bottom:1rem}
-.sub{color:var(--muted);font-size:clamp(1rem,2.2vw,1.2rem);max-width:580px;line-height:1.7;margin:0 auto 2rem}
-.badges{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.badge{background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.25);border-radius:99px;padding:10px 18px;font-size:.85rem;font-weight:600}
-.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:760px;width:100%;margin-top:2rem;text-align:left}
-@media(max-width:600px){.cards{grid-template-columns:1fr}}
-.card{background:var(--bg2);border:1px solid var(--bg4);border-radius:14px;padding:20px;transition:border-color .3s,transform .3s}
-.card:hover{border-color:rgba(255,107,53,.4);transform:translateY(-4px)}
-.card h3{font-size:1rem;margin-bottom:.4rem}
-.card p{font-size:.85rem;color:var(--muted);line-height:1.55}
-.btn-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:2rem}
-.btn{padding:16px 28px;border-radius:10px;font-weight:700;font-size:.95rem;text-decoration:none;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
-.btn-p{background:var(--orange);color:#fff;box-shadow:0 8px 28px rgba(201,162,39,0.3)}
-.btn-s{background:var(--bg2);border:1px solid var(--bg4);color:var(--text)}
-.section-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-bottom:2rem}
-.gain{color:var(--green);font-weight:700}.loss{color:var(--red);font-weight:700}
-/* terminal mock */
-.terminal{width:min(100%,340px);border-radius:14px;overflow:hidden;border:1px solid var(--bg4);
-  box-shadow:0 20px 50px rgba(0,0,0,0.4);text-align:left;margin:0 auto;background:var(--bg)}
-.term-h{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bg4);
-  font-size: 11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.term-b{padding:14px}
-.nw{font-size:2rem;font-weight:800;letter-spacing:-.03em}
-.pnl{display:flex;gap:10px;margin:10px 0}
-.pnl-b{flex:1;background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;padding:8px}
-.pnl-l{font-size: 11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
-.hold{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bg4);font-size:11px}
-.hold:last-child{border-bottom:none}
-.btag{font-size: 11px;font-weight:700;padding:2px 5px;border-radius:3px;background:var(--bg4);color:var(--orange);margin-right:4px}
-.ticker-o{overflow:hidden;border-top:1px solid var(--bg4);padding:5px 0;margin-top:8px}
-.ticker{display:flex;gap:16px;white-space:nowrap;font-size: 11px;font-weight:600;animation:ticker 18s linear infinite}
-@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.fab-t{display:flex;flex-wrap:wrap;gap:5px}
-.fab-t span{padding:5px 8px;border-radius:5px;font-size: 11px;font-weight:700;background:var(--bg3);border:1px solid var(--bg4)}
-.fab-t .buy{border-color:rgba(14,203,129,.4);color:var(--green)}
-.fab-t .sell{border-color:rgba(246,70,93,.4);color:var(--red)}
-.prog{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:6px}
-.prog-f{height:100%;background:linear-gradient(90deg,var(--orange),var(--gold));width:34%}
-.steps{display:flex;flex-wrap:wrap;justify-content:center;max-width:800px}
-.step{flex:1;min-width:180px;padding:20px 14px;text-align:center}
-.step-n{font-size:2.5rem;font-weight:900;color:var(--orange);opacity:.25}
-.trust{max-width:560px;margin:2rem auto 0;padding:20px 24px;border-radius:14px;
-  background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2);font-weight:600;line-height:1.6}
-.persona-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:720px;width:100%}
-@media(max-width:600px){.persona-grid{grid-template-columns:1fr}}
-#s1{background:var(--bg)}
-#s1-grad{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(255,107,53,.12) 0%,transparent 70%)}
-.s1-text{font-size:clamp(3.5rem,12vw,8rem);font-weight:900;letter-spacing:-.05em;color:var(--text)}
-@media print{#nav-dots,#export-btn{display:none!important}.slide{page-break-after:always;min-height:100vh}.reveal,.reveal-left,.reveal-right{opacity:1!important;transform:none!important}}
-
-.deck-shot{display:block;width:100%;height:auto;margin:0;object-fit:cover;object-position:top center}
-.phone-b:has(.deck-shot),.phone-body:has(.deck-shot),.phone-screen:has(.deck-shot),.phone-inner:has(.deck-shot),.term-b:has(.deck-shot){padding:0!important;min-height:0!important;overflow:hidden}
-.term-b .deck-shot{border-radius:0 0 12px 12px}
-.deck-shot-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:1.5rem 0}
-.deck-shot-frame{width:min(100%,280px);border-radius:24px;overflow:hidden;border:2px solid rgba(255,255,255,.12);box-shadow:0 20px 50px rgba(0,0,0,.35)}
-
-
-.qr-section{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:1.75rem}
-.qr-box{width:168px;height:168px;background:#fffaf3;border-radius:18px;padding:8px;display:flex;align-items:center;justify-content:center;border:2px solid #c9a227;box-shadow:0 12px 40px rgba(0,0,0,.35),0 0 0 1px rgba(201,162,39,.28)}
-.qr-box img{width:148px;height:148px;display:block;border-radius:10px}
-.qr-label{font-size:.75rem;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase}
-
-</style>
-
-  <link rel="stylesheet" href="css/tokens.capricorn-core.css">
-  <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/vendor/ScrollTrigger.min.js"></script>
-  <script src="js/capricorn-scene.js"></script>
-  </head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About LedgerCap — Capricorn Systems</title>
+<meta name="description" content="Why LedgerCap exists, how it works today, and where it is going.">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="site/site.css">
+</head>
 <body>
-<div class="cap-scroll-progress" aria-hidden="true"></div>
-<div id="nav-dots"></div>
-<button id="export-btn" data-action="window.print">⬇ Export PDF</button>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="landing.html"><img src="site/mark.svg" alt="" width="26" height="26">LedgerCap</a>
+  <nav aria-label="Site">
+    <a href="landing.html">Home</a>
+    <a href="presentation.html">Presentation</a>
+    <a class="btn btn--sm" href="./">Open app</a>
+  </nav>
+</div></header>
 
-<section class="slide" id="s1">
-  <div id="s1-grad"></div>
-  <div style="position:relative;z-index:2">
-    <div class="reveal" style="margin-bottom:.5rem"><img src="assets/icons/icon-mark.svg" alt="" width="72" height="72"></div>
-    <h1 class="s1-text reveal delay-1">LedgerCap</h1>
-    <p class="sub reveal delay-2">Pakistani wealth. One ledger.</p>
-    <p class="sub reveal delay-3" style="font-size:.9rem">PSX, funds, Zakat, net worth — terminal-grade, phone-native, private.</p>
-    <p class="reveal delay-4" style="color:var(--dim);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase">Scroll to explore ↓</p>
-  </div>
-</section>
+<main id="main">
+<section class="hero"><div class="wrap">
+  <p class="eyebrow">About LedgerCap</p>
+  <h1 style="max-width:18ch">Track your PSX stocks and mutual funds in one place.</h1>
+  <p class="lead">A private on-device ledger for Pakistani investors — PSX, Meezan funds, portfolio P&amp;L, and research tools that educate without tipping.</p>
+</div></section>
 
-<section class="slide" id="s2">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal">Pakistani wealth is <span style="color:var(--accent)">scattered.</span></h2>
-    <p class="sub reveal delay-1">US portfolio apps ignore PSX, Meezan funds, and PKR-native Zakat.</p>
-    <div class="cards">
-      <div class="card reveal-left delay-1"><h3>US portfolio apps ignore PSX</h3><p>US portfolio apps ignore PSX, Meezan funds, and PKR-native Zakat.</p></div>
-      <div class="card reveal-right delay-2"><h3>Brokerage portals are read-only</h3><p>Brokerage portals are read-only — you still spreadsheet everything manually.</p></div>
-      <div class="card reveal-left delay-3"><h3>Wealth dashboards want cloud keys</h3><p>Wealth dashboards want API keys and cloud aggregation of your net worth.</p></div>
+<section style="background:var(--surface)"><div class="wrap">
+  <div class="row">
+    <div>
+      <p class="eyebrow">The problem</p>
+      <h2>Holdings scattered. Prices unclear.</h2>
+      <ul class="list">
+        <li>Broker apps show trades; spreadsheets drift out of date.</li>
+        <li>Funds and stocks live in different places; net worth is a guess.</li>
+        <li>Most tools push advice. People often just want an honest ledger.</li>
+      </ul>
     </div>
+    <div class="row-media"><div class="phone"><img src="site/wealth-home-demo.webp" alt="LedgerCap home screen" width="600" height="1298" loading="lazy" decoding="async"></div></div>
   </div>
-</section>
-
-<section class="slide" id="s3">
-  <div style="max-width:700px;width:100%">
-    <h2 class="reveal section-title" id="s3-cycler">One ledger. Every market.</h2>
-    <p class="sub reveal delay-2" style="color:var(--orange);font-weight:700">There had to be a better way.</p>
+  <div class="row row--flip">
+    <div>
+      <p class="eyebrow">The product</p>
+      <h2>What ships today (3.58.11).</h2>
+      <ul class="list">
+        <li><b>Hub</b> — net worth, KSE-100 strip, market status, tools grid</li>
+        <li><b>Markets</b> — PSX stock watch, Meezan funds, watchlist, global &amp; commodities via Worker</li>
+        <li><b>Portfolio</b> — holdings, transactions, dividends, calendar, Zakat</li>
+        <li><b>Research</b> — analyzer, screener, signals, paper trade, journal</li>
+        <li><b>Backup</b> — JSON export, PIN-encrypted <code>.ledgercap.enc</code>, optional Worker cloud sync</li>
+      </ul>
+    </div>
+    <div class="row-media"><div class="phone"><img src="site/wealth-portfolio-demo.webp" alt="LedgerCap portfolio screen" width="600" height="1298" loading="lazy" decoding="async"></div></div>
   </div>
-</section>
+</div></section>
 
-<section class="slide" id="s4">
-  <div style="max-width:720px;width:100%">
-    <div class="reveal" style="font-size:clamp(1.1rem,2.8vw,1.6rem);font-weight:700;line-height:1.5;margin-bottom:.75rem">What if <span style="color:var(--orange)">transactions were truth</span> — and the dashboard just viewed them?</div>
-    <div class="reveal delay-2" style="font-size:clamp(1.1rem,2.8vw,1.6rem);font-weight:700;line-height:1.5;margin-bottom:.75rem">What if PSX prices were <span class="gain">live on your iPhone</span> — via a tiny proxy?</div>
-    <div class="reveal delay-3" style="font-size:clamp(1.1rem,2.8vw,1.6rem);font-weight:700;line-height:1.5">What if financial freedom had a <span style="color:var(--gold)">countdown</span>?</div>
+<section><div class="wrap center">
+  <p class="eyebrow">By the numbers</p>
+  <h2>Built to be honest.</h2>
+  <div class="stats">
+    <div class="stat"><b>0</b><span>accounts, ads or trackers</span></div>
+    <div class="stat"><b>1</b><span>Cloudflare Worker for prices</span></div>
+    <div class="stat"><b>3</b><span>languages: EN · اردو · Roman Urdu</span></div>
+    <div class="stat"><b>PKR</b><span>first-class net worth</span></div>
   </div>
-</section>
+</div></section>
 
-<section class="slide" id="s5">
-  <div style="max-width:800px;width:100%">
-    <h1 class="reveal" style="font-size:clamp(3rem,10vw,5.5rem)">LedgerCap</h1>
-    <p class="sub reveal delay-1">Bloomberg-quality clarity, phone-native, no account required.</p>
-    <div class="badges reveal delay-2">
-      <span class="badge">PWA</span><span class="badge">Private</span><span class="badge">Offline</span><span class="badge">PSX</span>
-    </div>
+<section style="background:var(--surface)"><div class="wrap">
+  <p class="eyebrow">Principles</p>
+  <h2>Calm tracking. Clear disclaimers.</h2>
+  <div class="grid3">
+    <div class="card"><h3>Local-first</h3><p>Portfolio data stays on the device. Market prices are indicative and may be delayed.</p></div>
+    <div class="card"><h3>No advice</h3><p>LedgerCap is for tracking and education. Nothing here is investment advice.</p></div>
+    <div class="card"><h3>HIG shell</h3><p>Apple-style tokens, brass accent, light and dark, 44pt targets — same system as Cap 3.0 apps.</p></div>
   </div>
-</section>
+</div></section>
 
-<section class="slide" id="s6">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal section-title">Ledger-first by design.</h2>
-    <div class="steps">
-      <div class="step reveal-left delay-1"><div class="step-n">01</div><div class="step-icon" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="28" height="28"></div><h3>Log</h3><p>Buy · Sell · Contribution · Salary</p></div>
-      <div class="step reveal delay-2"><div class="step-n">02</div><div class="step-icon" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="28" height="28"></div><h3>Recalculate</h3><p>Cost basis · P&L · weights</p></div>
-      <div class="step reveal-right delay-3"><div class="step-n">03</div><div class="step-icon" aria-hidden="true"><img src="assets/icons/icon-mark.svg" alt="" width="28" height="28"></div><h3>View</h3><p>Dashboard · insights · freedom</p></div>
-    </div>
+<section><div class="wrap">
+  <p class="eyebrow">Stories</p>
+  <h2>Fictional examples.</h2>
+  <p class="fictional">Fictional examples — not testimonials</p>
+  <div class="quotes" style="text-align:left">
+    <figure class="quote"><blockquote>“It tracks. It does not tip.”</blockquote><cite>Usman Malik · Karachi · <strong>Fictional example</strong></cite></figure>
+    <figure class="quote"><blockquote>“The SIP is a line, not a lecture.”</blockquote><cite>Nida Khan · Islamabad · <strong>Fictional example</strong></cite></figure>
+    <figure class="quote"><blockquote>“She can see it without taking the file away.”</blockquote><cite>Raza Ahmed · Lahore · <strong>Fictional example</strong></cite></figure>
   </div>
-</section>
+</div></section>
 
-<section class="slide" id="s7">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal section-title">Dashboard — net worth hero.</h2>
-    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem">
-      <div class="term-h">Dashboard · Live</div>
-      <div class="term-b"><img class="deck-shot" src="https://shamikhahmed.github.io/assets/screenshots/ledgercap-2.png" alt="LedgerCap PKR dashboard" width="280" height="606" loading="lazy" decoding="async"></div></div>
-      </div>
-    </div>
-    <p class="sub reveal delay-2">Green <span class="gain">#0ECB81</span> · Red <span class="loss">#F6465D</span> · scrolling PSX ticker row</p>
+<section style="background:var(--surface)"><div class="wrap">
+  <p class="eyebrow">Roadmap</p>
+  <h2>What’s next.</h2>
+  <ul class="list" style="max-width:720px">
+    <li><b>Now</b> — 3.58.11 HIG shell, Worker-backed prices, PWA on every device.</li>
+    <li><b>Next</b> — refreshed marketing media, gallery sync to the Cap hub, Worker ops when wrangler is available.</li>
+    <li><b>Later</b> — dividend calendar polish, NAV hardening — still PWA-only (G-1).</li>
+  </ul>
+  <div class="actions">
+    <a class="btn" href="./">Try LedgerCap</a>
+    <a class="btn btn--ghost" href="support.html">Support</a>
   </div>
-</section>
+</div></section>
+</main>
 
-<section class="slide" id="s8">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal section-title">Portfolio by custodian.</h2>
-    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem">
-      <div class="term-h">Holdings</div>
-      <div class="term-b"><img class="deck-shot" src="https://shamikhahmed.github.io/assets/screenshots/ledgercap-3.png" alt="LedgerCap net worth terminal" width="280" height="606" loading="lazy" decoding="async"></div>
-        <div class="hold"><span><span class="btag">Rafi</span>ENGROH</span><span class="gain">+12.4%</span></div>
-        <div class="hold"><span><span class="btag">Rafi</span>HBL</span><span class="gain">+8.1%</span></div>
-        <div style="font-size: 11px;font-weight:700;color:var(--orange);margin:8px 0 4px">AKD · 8 STOCKS</div>
-        <div class="hold"><span><span class="btag">AKD</span>LUCK</span><span class="gain">+15.2%</span></div>
-        <div style="font-size: 11px;font-weight:700;color:var(--orange);margin:8px 0 4px">MEEZAN · 7 FUNDS</div>
-        <div class="hold"><span><span class="btag">Meezan</span>MIIETF</span><span class="gain">+6.8%</span></div>
-      </div>
-    </div>
-    <div class="badges reveal delay-2">
-      <span class="badge">Rafi PSX</span><span class="badge">AKD PSX</span><span class="badge">Meezan Islamic</span>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s9">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal section-title">Transaction FAB types.</h2>
-    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem;max-width:280px">
-      <div class="term-h">+ Add Transaction</div>
-      <div class="term-b"><img class="deck-shot" src="https://shamikhahmed.github.io/assets/screenshots/ledgercap-4.png" alt="LedgerCap PSX portfolio" width="280" height="606" loading="lazy" decoding="async"></div>
-      </div>
-    </div>
-    <div class="cards reveal delay-2">
-      <div class="card"><h3>Buy / Sell</h3><p>Shares and fund units with auto cost basis.</p></div>
-      <div class="card"><h3>Contribution</h3><p>Monthly investment tracking for streaks.</p></div>
-      <div class="card"><h3>Salary</h3><p>Income log feeds freedom projections.</p></div>
-      <div class="card"><h3>Ledger engine</h3><p>Recalculates portfolio totals on every entry.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s10">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal section-title">Financial freedom progress.</h2>
-    <div class="terminal reveal delay-1" style="margin-bottom:1.5rem;max-width:300px">
-      <div class="term-h">Freedom Tracker</div>
-      <div class="term-b"><img class="deck-shot" src="https://shamikhahmed.github.io/assets/screenshots/ledgercap-5.png" alt="LedgerCap transaction log" width="280" height="606" loading="lazy" decoding="async"></div>
-        <div style="font-size:1.1rem;font-weight:700;margin-bottom:10px">₨ 3,600,000 / yr</div>
-        <div class="pnl-l">Progress</div>
-        <div class="prog"><div class="prog-f"></div></div>
-        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size: 11px;color:var(--muted)">
-          <span>34%</span><span>~8.2 years</span>
-        </div>
-        <div style="margin-top:10px;font-size: 11px"><span style="color:var(--gold)">🔥</span> 14-month contribution streak</div>
-      </div>
-    </div>
-    <p class="sub reveal delay-2">Set target · log salary · watch months-to-freedom shrink</p>
-  </div>
-</section>
-
-<section class="slide" id="s11">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal section-title">Live PSX prices.</h2>
-    <div class="cards">
-      <div class="card reveal delay-1"><h3>PSX holdings</h3><p>Track your Pakistan Stock Exchange equities. Clean numbers, nothing stripped away.</p></div>
-      <div class="card reveal delay-2"><h3>Meezan funds</h3><p>Islamic fund positions tracked alongside your conventional holdings.</p></div>
-      <div class="card reveal delay-3"><h3>Zakat calculator</h3><p>Calculates Zakat from your actual holdings — not a generic estimate.</p></div>
-      <div class="card reveal delay-4"><h3>IPO tracker</h3><p>Watch new issues without refreshing a broker site.</p></div>
-    </div>
-</div>
-    <div class="trust reveal delay-4">Worker sees only public ticker URLs. No brokerage credentials. No accounts.</div>
-  </div>
-</section>
-
-<section class="slide" id="s12">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal section-title">Built for Pakistani investors.</h2>
-    <div class="persona-grid">
-      <div class="card reveal-left delay-1"><h3>📈 PSX holders</h3><p>Multi-broker equity portfolios with live P&L.</p></div>
-      <div class="card reveal-right delay-2"><h3>🕌 Fund investors</h3><p>Meezan Islamic mutual funds alongside stocks.</p></div>
-      <div class="card reveal-left delay-3"><h3>🎯 FI planners</h3><p>Freedom projection at your contribution rate.</p></div>
-      <div class="card reveal-right delay-4"><h3>🔒 Privacy-first</h3><p>Ledger on device — export JSON anytime.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s-zakat">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Zakat on investments</h2>
-    <p class="sub reveal delay-1">Shariah-filtered stocks + Meezan funds · nisab from gold price in Settings</p>
-    <div class="grid-2 reveal delay-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left;margin-top:24px">
-      <div style="background:var(--bg2);border:1px solid var(--bg4);border-radius:12px;padding:20px">
-        <div style="font-size:.7rem;color:var(--green);font-weight:700;margin-bottom:8px">SHIPPED</div>
-        <div style="font-weight:700;margin-bottom:6px">Live Zakat panel</div>
-        <div style="font-size:.85rem;color:var(--muted);line-height:1.6">Settings calculates nisab (87.48g gold), zakatable Shariah holdings, and 2.5% due — with scholar disclaimer.</div>
-      </div>
-      <div style="background:var(--bg2);border:1px solid var(--bg4);border-radius:12px;padding:20px">
-        <div style="font-size:.7rem;color:var(--orange);font-weight:700;margin-bottom:8px">LEDGER</div>
-        <div style="font-weight:700;margin-bottom:6px">Holdings seed UI</div>
-        <div style="font-size:.85rem;color:var(--muted);line-height:1.6">One tap loads Rafi + AKD + Meezan demo ledger — fork for your portfolio in minutes.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s-reports">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Reports & IPO readiness</h2>
-    <p class="sub reveal delay-1">Monthly P&amp;L, SIP tracker, financial freedom date — not just a holdings list</p>
-    <div class="reveal delay-2" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px">
-      <span class="pill" style="padding:8px 16px;background:var(--bg3);border-radius:99px;font-size:.8rem">PSX live + fallback prices</span>
-      <span class="pill" style="padding:8px 16px;background:var(--bg3);border-radius:99px;font-size:.8rem">Meezan NAV manual override</span>
-      <span class="pill" style="padding:8px 16px;background:var(--bg3);border-radius:99px;font-size:.8rem">Real-return projections</span>
-      <span class="pill" style="padding:8px 16px;background:var(--bg3);border-radius:99px;font-size:.8rem">Export .ledgercap backup</span>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s-security">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Security & compliance posture</h2>
-    <p class="sub reveal delay-1">Ledger never touches our servers — PSX proxy sees public tickers only</p>
-    <div class="cards reveal delay-2">
-      <div class="card"><h3>🔐 Local ledger</h3><p>AES-equivalent trust model: your JSON backup is the source of truth on device.</p></div>
-      <div class="card"><h3>☁️ PSX Worker</h3><p>Cloudflare edge fetches Yahoo/public quotes — no brokerage login, no OAuth.</p></div>
-      <div class="card"><h3>🕌 Zakat disclaimer</h3><p>Scholar-reviewed formulas with explicit estimate labels — not fatwa software.</p></div>
-      <div class="card"><h3>📋 SECP awareness</h3><p>Not a licensed broker — personal portfolio tool for informed investors.</p></div>
-    </div>
-    <div class="trust reveal delay-3">PRIVACY.md · SECURITY.md · truth-audit clean — investor diligence ready.</div>
-  </div>
-</section>
-
-<section class="slide" id="s-compete">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Competitive landscape</h2>
-    <div class="cards reveal delay-1">
-      <div class="card"><h3>Excel / Sheets</h3><p>Flexible but manual — no live PSX, no freedom countdown, drifts instantly.</p></div>
-      <div class="card"><h3>Broker apps</h3><p>Single-custodian view — Rafi user can't see Meezan funds beside AKD.</p></div>
-      <div class="card"><h3>International tools</h3><p>Mint, Personal Capital — no PKR, no PSX, no Islamic fund NAV workflows.</p></div>
-      <div class="card"><h3>LedgerCap</h3><p>Unified net worth · multi-broker · Zakat panel · freedom date · offline PWA.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s-tech">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Technical moat</h2>
-    <p class="sub reveal delay-1">Ledger engine recalculates on every transaction — holdings are views, not edits</p>
-    <div class="badges reveal delay-2" style="margin-bottom:1rem">
-      <span class="badge">Vanilla JS</span><span class="badge">Worker proxy</span><span class="badge">Symbol map</span><span class="badge">.ledgercap export</span>
-    </div>
-    <div class="cards reveal delay-3">
-      <div class="card"><h3>📒 Transaction truth</h3><p>Buy/sell/contribution/salary events — immutable audit trail feel.</p></div>
-      <div class="card"><h3>🌱 Seed UI</h3><p>One tap loads Rafi + AKD + Meezan demo — fork for your portfolio.</p></div>
-      <div class="card"><h3>📴 Offline charts</h3><p>Last-known prices + manual NAV override when proxy unavailable.</p></div>
-      <div class="card"><h3>📱 430px native</h3><p>Tabular nums, safe areas, iPhone-first bottom nav.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s-roadmap">
-  <div style="max-width:900px;width:100%">
-    <h2 class="reveal">Roadmap & monetization</h2>
-    <div class="steps reveal delay-1">
-      <div class="step"><div class="step-n">Now</div><h3>PWA live</h3><p>GitHub Pages · holdings seed · Zakat panel</p></div>
-      <div class="step"><div class="step-n">Q3</div><h3>Capacitor</h3><p>TestFlight for Karachi power users</p></div>
-      <div class="step"><div class="step-n">Q4</div><h3>Pro export</h3><p>PDF reports · tax worksheets (PK)</p></div>
-    </div>
-    <p class="sub reveal delay-2" style="margin-top:1.5rem">Freemium: core ledger free forever · Pro = advanced reports + encrypted cloud backup (opt-in).</p>
-  </div>
-</section>
-
-<section class="slide" id="s-family">
-  <div style="max-width:800px;width:100%">
-    <h2 class="reveal">Part of the OS family</h2>
-    <p class="sub reveal delay-1">VaultCap holds identity & banks · LedgerCap holds investments · same offline-first DNA</p>
-    <div class="badges reveal delay-2">
-      <span class="badge">VaultCap</span><span class="badge">PulseCap</span><span class="badge">PrismCap</span>
-      <span class="badge">SteadyCap</span><span class="badge">LedgerCap</span><span class="badge">DeePonyCap</span>
-    </div>
-    <p class="sub reveal delay-3" style="font-size:.85rem;margin-top:1rem">Cross-sell: VaultCap finance module ↔ LedgerCap holdings import (roadmap).</p>
-  </div>
-</section>
-
-<section class="slide" id="s13">
-  <div style="max-width:700px;width:100%">
-    <div style="width:100px;height:100px;border-radius:50%;background:var(--bg3);border:2px solid var(--orange);
-      display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 1.5rem" class="reveal">SA</div>
-    <h2 class="reveal delay-1">Shamikh Ahmed</h2>
-    <p class="sub reveal delay-2" style="font-style:italic;border-left:3px solid var(--orange);padding-left:16px;text-align:left">
-      "Pakistani wealth is split across brokers, funds, and spreadsheets — LedgerCap brings Bloomberg clarity to your phone."
-    </p>
-    <p class="sub reveal delay-3" style="font-size:.9rem">Karachi · Part of the OS family</p>
-  </div>
-</section>
-
-<section class="slide" id="s-biz">
-  <div style="max-width:820px;width:100%;position:relative">
-    <div class="overline reveal">Business model</div>
-    <h2 class="reveal delay-1">Local ledger → <span style="color:var(--orange)">premium tools</span></h2>
-    <div class="cards reveal delay-2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:24px">
-      <div class="card" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px"><h3 style="color:var(--orange);margin-bottom:8px">Free core</h3><p style="color:var(--text2);font-size:.9rem;line-height:1.5">PSX holdings, Zakat, income — fully offline.</p></div>
-      <div class="card" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px"><h3 style="color:var(--orange);margin-bottom:8px">Pro analytics</h3><p style="color:var(--text2);font-size:.9rem;line-height:1.5">Tax packs, export to CA formats, IPO alerts.</p></div>
-      <div class="card" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px"><h3 style="color:var(--orange);margin-bottom:8px">PSX proxy</h3><p style="color:var(--text2);font-size:.9rem;line-height:1.5">Optional Cloudflare Worker — prices only, no holdings upload.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s-roadmap-b">
-  <div style="max-width:820px;width:100%;position:relative">
-    <div class="overline reveal">Roadmap</div>
-    <h2 class="reveal delay-1">Pakistan-first, <span style="color:var(--orange)">global-ready</span></h2>
-    <p class="sub reveal delay-2">Meezan funds · PSX · Zakat engine today — multi-currency export tomorrow.</p>
-    <div class="cards reveal delay-3" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:20px;text-align:left">
-      <div style="padding:14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)"><strong style="color:var(--orange)">Now</strong><br><span style="color:var(--text2);font-size:.85rem">Demo seed, investor hub pages, Playwright QA</span></div>
-      <div style="padding:14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)"><strong style="color:var(--orange)">Next</strong><br><span style="color:var(--text2);font-size:.85rem">Capacitor shell, biometric lock, PDF statements</span></div>
-      <div style="padding:14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)"><strong style="color:var(--orange)">Later</strong><br><span style="color:var(--text2);font-size:.85rem">Family portfolios, CA white-label, Stripe Pro</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide" id="s14">
-  <div style="max-width:800px;width:100%;position:relative">
-    <div style="position:absolute;inset:-72px -40px;background:radial-gradient(ellipse 80% 80% at 50% 50%,rgba(255,107,53,.1) 0%,transparent 70%);pointer-events:none"></div>
-    <h1 class="reveal" style="font-size:clamp(2.2rem,7vw,4rem);position:relative">Know your net worth.</h1>
-    <p class="sub reveal delay-1" style="position:relative">Your complete net worth in PKR — one app, offline, no brokerage portal needed.</p>
-    <div class="btn-row reveal delay-2" style="position:relative">
-      <a class="btn btn-p" href="https://shamikhahmed.github.io/LedgerCap/" target="_blank" rel="noopener"><img src="assets/icons/icon-mark.svg" alt="" width="18" height="18" style="vertical-align:-3px;margin-right:8px">Open LedgerCap</a>
-      <a class="btn btn-s" href="presentation.html"><img src="assets/icons/icon-mark.svg" alt="" width="16" height="16" style="vertical-align:-2px;margin-right:6px;opacity:.85">Presentation</a>
-      <a class="btn btn-s" href="landing.html"><img src="assets/icons/icon-mark.svg" alt="" width="16" height="16" style="vertical-align:-2px;margin-right:6px;opacity:.85">Landing</a>
-      <a class="btn btn-s" href="privacy.html"><img src="assets/icons/icon-mark.svg" alt="" width="16" height="16" style="vertical-align:-2px;margin-right:6px;opacity:.85">Privacy</a>
-    </div>
-    <div class="qr-section reveal delay-3">
-      <div class="qr-box">
-        <img src="assets/qr-ledgercap.png" width="148" height="148" alt="QR code — open LedgerCap on your phone" decoding="async">
-      </div>
-      <span class="qr-label">Scan to open on your phone</span>
-    </div>
-    <p class="reveal delay-3" style="margin-top:2.5rem;font-size:.75rem;color:var(--dim);position:relative">© 2026 Shamikh Ahmed · shamikhahmed.github.io/LedgerCap</p>
-  </div>
-</section>
-
-<script>
-const slides=document.querySelectorAll('.slide'),navDots=document.getElementById('nav-dots');
-let currentSlide=0;
-slides.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i===0?' active':'');d.addEventListener('click',()=>slides[i].scrollIntoView({behavior:'smooth'}));navDots.appendChild(d)});
-function updateDots(){let idx=0;slides.forEach((s,i)=>{if(Math.abs(s.getBoundingClientRect().top)<innerHeight/2)idx=i});currentSlide=idx;navDots.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===idx))}
-addEventListener('scroll',updateDots,{passive:true});
-document.addEventListener('keydown',e=>{
-  if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();if(currentSlide<slides.length-1)slides[currentSlide+1].scrollIntoView({behavior:'smooth'})}
-  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();if(currentSlide>0)slides[currentSlide-1].scrollIntoView({behavior:'smooth'})}
-});
-let ty=0;addEventListener('touchstart',e=>{ty=e.touches[0].clientY},{passive:true});
-addEventListener('touchend',e=>{const dy=ty-e.changedTouches[0].clientY;if(Math.abs(dy)>50){if(dy>0&&currentSlide<slides.length-1)slides[currentSlide+1].scrollIntoView({behavior:'smooth'});else if(dy<0&&currentSlide>0)slides[currentSlide-1].scrollIntoView({behavior:'smooth'})}},{passive:true});
-const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.15});
-document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>obs.observe(el));
-const cyclerTexts=['Your spreadsheet is lying to you.','Broker apps don\'t show the full picture.','Freedom date? Nobody calculates it.','Your ledger deserves better.'];
-let ci=0,cyclerOn=false;
-const secObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&e.target.id==='s3'&&!cyclerOn){cyclerOn=true;setInterval(()=>{const el=document.getElementById('s3-cycler');if(!el)return;el.style.opacity='0';setTimeout(()=>{ci=(ci+1)%cyclerTexts.length;el.textContent=cyclerTexts[ci];el.style.opacity='1'},400)},2500)}}),{threshold:.3});
-slides.forEach(s=>secObs.observe(s));
-setTimeout(()=>document.querySelectorAll('#s1 .reveal').forEach(el=>el.classList.add('visible')),100);
-</script>
-
-  <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/vendor/ScrollTrigger.min.js"></script>
-  <script src="js/capricorn-scene.js"></script>
-  <script src="js/capricorn-pitch.js"></script>
-<p class="anim" style="margin-top:18px;font-size:14px"><a href="https://shamikhahmed.github.io/apps/ledgercap/" style="color:inherit">Example stories · LedgerCap</a> · <a href="https://shamikhahmed.github.io/stories/" style="color:inherit">All examples</a></p>
+<footer><div class="wrap">
+  <span>© 2026 Capricorn Systems · LedgerCap 3.58.11</span>
+  <nav aria-label="Legal">
+    <a href="landing.html">Home</a>
+    <a href="support.html">Support</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+  </nav>
+</div></footer>
 </body>
 </html>
