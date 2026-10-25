@@ -28,6 +28,13 @@ body.psx-app {
   display: block;
 }
 
+/* WebKit tap retargeting: cursor:pointer marks delegate targets as clickable (replaces MutationObserver no-ops). */
+[data-action],
+[data-nav],
+[data-external-url] {
+  cursor: pointer;
+}
+
 .psx-shell,
 body.lc-pro .psx-shell {
   max-width: none;

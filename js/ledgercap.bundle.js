@@ -3799,26 +3799,10 @@ const LcEvents = (() => {
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
-  /* iOS/WebKit touch adjustment retargets a tap to the nearest node that handles clicks itself; elements served
-   * only by this document-level delegate don't count, so taps landed on nearby buttons. Give each its own no-op. */
-  const _tappable = new WeakSet();
-  const _noop = function () {};
-  const _TAPPABLE_SEL = '[data-action],[data-nav],[data-external-url]';
-  function _markTappable(root) {
-    if (!root || root.nodeType !== 1) return;
-    const mark = (el) => { if (!_tappable.has(el)) { _tappable.add(el); el.addEventListener('click', _noop); } };
-    if (root.matches(_TAPPABLE_SEL)) mark(root);
-    root.querySelectorAll(_TAPPABLE_SEL).forEach(mark);
-  }
-
+  /* iOS/WebKit retargets taps to the nearest cursor:pointer / clickable node. CSS
+   * [data-action],[data-nav],[data-external-url]{cursor:pointer} keeps delegate targets
+   * tappable without a body-wide MutationObserver + per-node no-op listeners. */
   function init() {
-    _markTappable(document.body);
-    new MutationObserver((recs) => {
-      for (const r of recs) {
-        if (r.type === 'attributes') _markTappable(r.target);
-        else r.addedNodes.forEach(_markTappable);
-      }
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-action', 'data-nav'] });
     document.addEventListener('click', _onClick, true);
     document.addEventListener('change', _onChange, true);
     document.addEventListener('input', _onInput, true);

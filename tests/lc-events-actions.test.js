@@ -16,6 +16,7 @@ const home = fs.readFileSync(path.join(root, 'js/modules/home.js'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const worker = fs.readFileSync(path.join(root, 'worker/src/index.js'), 'utf8');
 const health = fs.readFileSync(path.join(root, 'js/services/price-health.js'), 'utf8');
+const designCss = fs.readFileSync(path.join(root, 'css/design/ledgercap.css'), 'utf8');
 
 check('Navigation exports goResearchIntel', /function goResearchIntel\s*\(/.test(nav) && /return \{ init, go, goResearchIntel,/.test(nav));
 check('lc-events routes Settings._setTheme via data-tab', /path === 'Settings\._setTheme'\) Settings\?\._setTheme\?\.\(tab\)/.test(events));
@@ -27,5 +28,7 @@ check('Screens use role=main landmark', /id="screens"[^>]*role="main"/.test(inde
 check('Worker HTML passthrough for trading-board', /trading-board\|market-watch/.test(worker));
 check('PriceHealth unavailable copy gated on _LC_MARKET_UNAVAILABLE', /_LC_MARKET_UNAVAILABLE[\s\S]*Market data unavailable — showing last saved prices/.test(health));
 check('PriceHealth stale/seeded uses last-close copy', /Some prices are from the last close/.test(health));
+check('lc-events has no body-wide MutationObserver for tappable', !/new MutationObserver/.test(events));
+check('design CSS marks data-action/data-nav as cursor:pointer', /\[data-action\],\s*\[data-nav\],\s*\[data-external-url\]\s*\{[^}]*cursor:\s*pointer/.test(designCss));
 
 process.exit(failed ? 1 : 0);
