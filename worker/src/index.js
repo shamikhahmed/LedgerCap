@@ -133,11 +133,18 @@ export default {
     return proxyFetch(fetchUrl, { headers: PSX_HEADERS, cf: { cacheTtl: 90 } }, async (text) => {
       const trimmed = text.trim();
       const isHtml = trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML');
-      // trading-board / market-watch are HTML pages — pass through (200) for client parsers
+      // trading-board / market-watch are HTML pages — pass through as text (not renderable on worker origin).
+      // Client parsers read res.text(); ACAO * must not serve executable text/html.
       if (isHtml && /^(trading-board|market-watch)/i.test(psxPath)) {
         return new Response(trimmed, {
           status: 200,
-          headers: { ...CORS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' },
+          headers: {
+            ...CORS,
+            'Content-Type': 'text/plain; charset=utf-8',
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': 'sandbox',
+            'Cache-Control': 'public, max-age=60',
+          },
         });
       }
       // Prefer Yahoo series when PSX serves HTML / empty — keep HTTP 200 so browsers stay quiet.
