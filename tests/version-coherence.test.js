@@ -35,6 +35,8 @@ check('manifest description avoids wealth OS (G-3)', !/wealth\s+operating\s+syst
 check('SW precaches theme-boot.js', /theme-boot\.js/.test(sw));
 check('SW precaches hig-dt.js', /hig-dt\.js/.test(sw));
 check('SW precaches pro-modal.js', /pro-modal\.js/.test(sw));
+check('SW precaches boot-deferred.js', /boot-deferred\.js/.test(sw));
+check('index loads boot-deferred.js (no inline idle-load script)', /boot-deferred\.js\?v=/.test(index) && !/<script>\s*\/\* Idle-load/.test(index));
 check('SW no auto skipWaiting/clients.claim', !/^\s*self\.skipWaiting\(\);|clients\.claim\(\)/m.test(sw));
 
 if (failed) {

@@ -25,6 +25,7 @@ const ASSETS = [
   './js/theme-boot.js',
   './js/hig-dt.js',
   './js/pro-modal.js',
+  './js/boot-deferred.js',
   './js/ledgercap.bundle.js',
   './js/ledgercap.deferred.js',
   './shared/telegram-brief.mjs',
