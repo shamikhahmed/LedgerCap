@@ -3785,7 +3785,7 @@ const LcEvents = (() => {
       _call(el.dataset.actionChange, el, ev);
       return;
     }
-    if (el.id === 'rt-search' && window.Research?._onSearch) Research._onSearch(el.value);
+    // #rt-search is input-only (avoid double-fire with _onInput)
     if (el.id === 'global-search' && window.Global?._onSearch) Global._onSearch(el.value);
   }
 
