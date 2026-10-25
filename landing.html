@@ -1,121 +1,161 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="description" content="PSX, funds, Zakat, net worth — Worker-backed live quotes, dense tables, private on-device ledger.">
-  <meta name="theme-color" content="#c9a227">
-  <title>LedgerCap — PSX + US stocks · one ledger</title>
-  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon-180.png" sizes="180x180">
-  <link rel="stylesheet" href="css/tokens.capricorn-core.css">
-  <link rel="stylesheet" href="css/ledger-os.css">
-  <link rel="stylesheet" href="css/home-market.css?v=3">
-  <link rel="stylesheet" href="css/ledger-v4.css?v=1">
-  <style>
-    :root { --os-accent: #c9a227; }
-    body { background: var(--os-bg); color: var(--os-text); }
-    a { color: inherit; text-decoration: none; }
-    .nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-      padding: 14px 20px; padding-top: calc(14px + env(safe-area-inset-top));
-      display: flex; justify-content: space-between; align-items: center;
-      background: color-mix(in srgb, var(--os-bg) 92%, transparent);
-      backdrop-filter: blur(20px); border-bottom: 1px solid var(--os-border);
-    }
-    .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
-    .logo span { color: var(--os-accent); }
-    .btn {
-      padding: 11px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
-      border: none; cursor: pointer; font-family: inherit;
-    }
-    .btn-p { background: var(--os-accent); color: #fff; }
-    .btn-s { background: var(--os-bg-card); border: 1px solid var(--os-border); color: var(--os-text); }
-    .hero {
-      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 100px 24px 60px; text-align: center;
-    }
-    h1 {
-      font-size: clamp(28px, 6vw, 44px); font-weight: 800; letter-spacing: -0.03em;
-      margin-bottom: 14px; line-height: 1.1;
-    }
-    .sub {
-      font-size: 16px; color: var(--os-text-secondary); max-width: 520px;
-      line-height: 1.6; margin-bottom: 28px;
-    }
-    .hero-strip {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px; width: 100%; max-width: 720px; margin: 28px 0 32px;
-    }
-    .section { padding: 64px 24px; max-width: 960px; margin: 0 auto; }
-    footer {
-      padding: 36px 24px; text-align: center; border-top: 1px solid var(--os-border);
-      color: var(--os-text-tertiary); font-size: 13px;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerCap — Track your PSX stocks and mutual funds in one place</title>
+<meta name="description" content="Track your PSX stocks and mutual funds in one place. PSX holdings, Meezan funds, and net worth in PKR — Worker-backed prices, private on your phone.">
+<link rel="canonical" href="https://shamikhahmed.github.io/LedgerCap/landing.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LedgerCap — Track your PSX stocks and mutual funds in one place">
+<meta property="og:description" content="PSX holdings, Meezan funds, and net worth in PKR — Worker-backed prices, private on your phone.">
+<meta property="og:image" content="https://shamikhahmed.github.io/LedgerCap/site/walkthrough-poster.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon-180.png" sizes="180x180">
+<link rel="stylesheet" href="site/site.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LedgerCap","description":"Track your PSX stocks and mutual funds in one place.","applicationCategory":"FinanceApplication","operatingSystem":"Web, iOS, iPadOS, macOS, Android (PWA)","offers":{"@type":"Offer","price":"0","priceCurrency":"PKR"},"softwareVersion":"3.58.11","url":"https://shamikhahmed.github.io/LedgerCap/","publisher":{"@type":"Organization","name":"Capricorn Systems"}}</script>
 </head>
-<body data-theme="dark" class="lc-v4">
-  <nav class="nav">
-    <div class="logo">Ledger<span>Cap</span></div>
-    <div style="display:flex;gap:8px">
-      <a href="https://github.com/shamikhahmed/LedgerCap" class="btn btn-s">GitHub</a>
-      <a href="index.html" class="btn btn-p">Open app</a>
-    </div>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="landing.html"><img src="site/mark.svg" alt="" width="26" height="26">LedgerCap</a>
+  <nav aria-label="Site">
+    <a href="#features">Features</a>
+    <a href="#privacy">Privacy</a>
+    <a href="pitch.html">About</a>
+    <a class="btn btn--sm" href="./">Open app</a>
   </nav>
+</div></header>
 
-  <section class="hero">
-    <div class="lc-live-badge" style="margin-bottom:20px">
-      <span class="lc-live-dot" aria-hidden="true"></span>Live quotes via Cloudflare Worker · portfolio stays on-device
+<main id="main">
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <p class="eyebrow">LedgerCap 3.58 · Free</p>
+    <h1>Track your PSX stocks and mutual funds in one place.</h1>
+    <p class="lead">Holdings, Meezan funds, and net worth in PKR — Worker-backed market prices, portfolio private on your device.</p>
+    <div class="actions">
+      <a class="btn" href="./">Open LedgerCap</a>
+      <a class="btn btn--ghost" href="./?demo=1">See a sample portfolio</a>
     </div>
-    <h1>Pakistan wealth + global markets<br>in one terminal</h1>
-    <p class="sub">PSX, Meezan funds, S&amp;P 500 US stocks, crypto, Zakat, dividends, and research — dense tables, Worker-backed market data, offline ledger on your device.</p>
+    <p class="muted" style="margin-top:18px">Works in any browser and installs to your Home Screen. Prices may be delayed or indicative — not investment advice.</p>
+  </div>
+  <div class="phones" aria-hidden="true">
+    <div class="phone phone--a"><img src="site/wealth-home-demo.webp" alt="" width="600" height="1298" decoding="async" fetchpriority="high"></div>
+    <div class="phone phone--b"><img src="site/wealth-portfolio-demo.webp" alt="" width="600" height="1298" loading="lazy" decoding="async"></div>
+  </div>
+</div></section>
 
-    <div class="hero-strip">
-      <div class="lc-index-card">
-        <div class="lc-index-label">KSE-100</div>
-        <div class="lc-index-value" style="font-size:1.4rem">Live index</div>
-        <div class="lc-index-meta"><span class="t-gain">Updated on refresh</span></div>
-      </div>
-      <div class="lc-index-card">
-        <div class="lc-index-label">Holdings</div>
-        <div class="lc-index-value" style="font-size:1.4rem">Dense tables</div>
-        <div class="lc-index-meta"><span>Stocks &amp; funds</span></div>
-      </div>
-      <div class="lc-index-card">
-        <div class="lc-index-label">Dividends</div>
-        <div class="lc-index-value" style="font-size:1.4rem">Income OS</div>
-        <div class="lc-index-meta"><span>Calendar &amp; forecast</span></div>
-      </div>
+<section id="features"><div class="wrap center">
+  <p class="eyebrow">What it does</p>
+  <h2>One ledger. Clear numbers.</h2>
+  <p class="lead">Built for Pakistani investors who want tracking and education — not tips.</p>
+  <div class="grid3" style="text-align:left">
+    <div class="card"><div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h3>Wealth hub</h3><p>Net worth in PKR, KSE-100 strip, market status, and quick actions on one calm home screen.</p></div>
+    <div class="card"><div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6"/></svg></div><h3>PSX stock watch</h3><p>Sector tables with live or cached prices via Capricorn’s Cloudflare Worker, plus an Islamic filter.</p></div>
+    <div class="card"><div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Meezan funds</h3><p>Islamic fund NAV table with 1Y / 3Y / yield — next to your stock holdings.</p></div>
+    <div class="card"><div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="10" width="3" height="9"/><rect x="12" y="7" width="3" height="12"/><rect x="17" y="12" width="3" height="7"/></svg></div><h3>Portfolio &amp; ledger</h3><p>Holding cards with P&amp;L, search and sort, and a transactions list with undo after add.</p></div>
+    <div class="card"><div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h3>Research &amp; screener</h3><p>Plain-English research tools and filters (P/E, yield, growth) — for education, not advice.</p></div>
+    <div class="card"><div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Private by design</h3><p>No account. Portfolio stays on your device. Optional PIN, JSON export, and encrypted backup.</p></div>
+  </div>
+</div></section>
+
+<section style="background:var(--surface)"><div class="wrap">
+  <div class="row">
+    <div><p class="eyebrow">Home</p><h2>See net worth before the noise.</h2>
+      <ul class="list">
+        <li>PKR hero with today’s change</li>
+        <li>KSE-100 strip and market status in plain language</li>
+        <li>Quick links to portfolio, markets, and tools</li>
+        <li>English · اردو · Roman Urdu</li>
+      </ul>
     </div>
-
-    <a href="index.html?demo=1"><button class="btn btn-p" style="font-size:16px;padding:14px 28px">Open LedgerCap →</button></a>
-    <p style="margin-top:14px;font-size:13px;color:var(--os-text-tertiary)">Free · offline PWA · no account required</p>
-  </section>
-
-  <section class="section">
-    <div class="lc-section-kicker" style="text-align:center;margin-bottom:8px">Platform <span>· 9 tools</span></div>
-    <h2 style="text-align:center;font-size:clamp(22px,4vw,32px);font-weight:800;margin-bottom:24px">Everything a Pakistani investor needs</h2>
-    <div class="lc-tools-grid" style="padding:0">
-      <div class="lc-tool-card" style="cursor:default"><strong>Stock watch</strong><span>Worker-backed PSX prices · sector grouped</span></div>
-      <div class="lc-tool-card" style="cursor:default"><strong>Fund NAVs</strong><span>Meezan &amp; AMC holdings</span></div>
-      <div class="lc-tool-card" style="cursor:default"><strong>Loss tracking</strong><span>P&amp;L per position in PKR</span></div>
-      <div class="lc-tool-card" style="cursor:default"><strong>Research</strong><span>Charts · DMA · fundamentals</span></div>
-      <div class="lc-tool-card" style="cursor:default"><strong>Dividends</strong><span>Yield · calendar · growth</span></div>
-      <div class="lc-tool-card" style="cursor:default"><strong>Global</strong><span>511 US symbols · crypto · FX</span></div>
-      <div class="lc-tool-card" style="cursor:default"><strong>Zakat</strong><span>Shariah holdings · nisab</span></div>
+    <div class="row-media"><div class="phone"><img src="site/wealth-home-demo.webp" alt="LedgerCap home screen showing net worth and market strip" width="600" height="1298" loading="lazy" decoding="async"></div></div>
+  </div>
+  <div class="row row--flip">
+    <div><p class="eyebrow">Portfolio</p><h2>Holdings with honest P&amp;L.</h2>
+      <ul class="list">
+        <li>Investify-style cards or a dense table</li>
+        <li>Per-symbol refresh and Sell shortcut</li>
+        <li>Cost basis and gains in PKR</li>
+      </ul>
     </div>
-  </section>
+    <div class="row-media"><div class="phone"><img src="site/wealth-portfolio-demo.webp" alt="LedgerCap portfolio screen with holding cards" width="600" height="1298" loading="lazy" decoding="async"></div></div>
+  </div>
+  <div class="row">
+    <div><p class="eyebrow">Markets</p><h2>PSX and funds in one feed.</h2>
+      <ul class="list">
+        <li>Stock watch by sector</li>
+        <li>Meezan Islamic fund NAVs</li>
+        <li>Worker-backed quotes with cached fallback when offline</li>
+      </ul>
+    </div>
+    <div class="row-media"><div class="phone"><img src="site/markets-market-demo.webp" alt="LedgerCap stock watch screen" width="600" height="1298" loading="lazy" decoding="async"></div></div>
+  </div>
+</div></section>
 
-  <footer>
-    <p>LedgerCap © 2026 Capricorn Systems · <span id="lc-landing-ver">v3.56.0</span></p>
-    <p style="margin-top:8px;font-size:12px;color:var(--os-text-tertiary)">PIN lock · Telegram briefs · Rule-based signals · Offline PWA</p>
-    <p style="margin-top:8px">
-      <a href="index.html">App</a> ·
-      <a href="privacy.html">Privacy</a> ·
-      <a href="changelog.html">Changelog</a> ·
-      <a href="presentation.html">Presentation</a> ·
-      <a href="https://github.com/shamikhahmed/LedgerCap">GitHub</a>
-    </p>
-  </footer>
+<section><div class="wrap center">
+  <p class="eyebrow">See it in motion</p>
+  <h2>Thirty seconds with LedgerCap.</h2>
+  <div class="video">
+    <video controls playsinline preload="none" poster="site/walkthrough-poster.webp" width="1920" height="1080">
+      <source src="site/walkthrough.mp4" type="video/mp4">
+      <track kind="captions" src="site/walkthrough.vtt" srclang="en" label="English" default>
+      Your browser can’t play this video.
+    </video>
+  </div>
+  <p class="muted" style="margin-top:14px">No autoplay with sound. Captions included.</p>
+</div></section>
+
+<section style="background:var(--surface)"><div class="wrap center">
+  <p class="eyebrow">Made for every screen</p>
+  <h2>Clear on iPhone, iPad, and Mac.</h2>
+  <div class="ipad"><img src="site/ipad-home.webp" alt="LedgerCap home on a larger screen" width="1200" height="900" loading="lazy" decoding="async"></div>
+</div></section>
+
+<section><div class="wrap center">
+  <p class="eyebrow">Stories</p>
+  <h2>How people might use it.</h2>
+  <p class="fictional" style="justify-content:center">Fictional examples</p>
+  <div class="quotes">
+    <figure class="quote">
+      <blockquote>“It tracks. It does not tip.”</blockquote>
+      <cite>Usman Malik — 45 · Karachi · PSX portfolio without advice · <strong>Fictional example</strong></cite>
+    </figure>
+    <figure class="quote">
+      <blockquote>“The SIP is a line, not a lecture.”</blockquote>
+      <cite>Nida Khan — 30 · Islamabad · Funds and a monthly SIP log · <strong>Fictional example</strong></cite>
+    </figure>
+    <figure class="quote">
+      <blockquote>“She can see it without taking the file away.”</blockquote>
+      <cite>Raza Ahmed — 63 · Lahore · Retirement holdings and dividends · <strong>Fictional example</strong></cite>
+    </figure>
+  </div>
+  <p class="muted" style="margin-top:16px">Illustrative stories with fictional people and numbers. <a href="https://shamikhahmed.github.io/apps/ledgercap/">Full examples on the Cap hub</a>.</p>
+</div></section>
+
+<section id="privacy" style="background:var(--surface)"><div class="wrap center">
+  <p class="eyebrow">Privacy</p>
+  <h2>Your ledger stays yours.</h2>
+  <p class="lead">No account, no ads, no analytics. Holdings live on your device. Market prices come from Capricorn’s Cloudflare Worker only when you open market screens.</p>
+  <div class="actions" style="justify-content:center">
+    <a class="btn" href="./">Open LedgerCap</a>
+    <a class="btn btn--ghost" href="privacy.html">Read the privacy policy</a>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 Capricorn Systems · LedgerCap 3.58.11</span>
+  <nav aria-label="Legal">
+    <a href="pitch.html">About</a>
+    <a href="presentation.html">Presentation</a>
+    <a href="support.html">Support</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+  </nav>
+</div></footer>
 </body>
 </html>
