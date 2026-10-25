@@ -1,4 +1,4 @@
-# LedgerCap release — PASS=6 FAIL=0 (2026-10-25T18:26:56Z)
+# LedgerCap release — PASS=6 FAIL=0 (2026-10-25T18:40:29Z)
 Expect: 3.58.11
 
 | Step | Result | Detail |
@@ -8,6 +8,6 @@ Expect: 3.58.11
 | `scroll-lock` | PASS | LcScrollLock wired |
 | `unit-tests` | PASS | node unit suite |
 | `worker-tests` | PASS | worker unit suite |
-| `playwright` | PASS | SKIP — set RUN_PLAYWRIGHT=1 outside sandbox |
+| `playwright` | PASS | see 05-playwright.log |
 
 Logs: `qa/release/logs/` · exit=0
