@@ -761,6 +761,10 @@ body.lc-pro .psx-nav-btn.active {
 
 .bs-bar-trail .bs-bar-done {
   font-weight: 600;
+  max-width: 42vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .bs-title {

@@ -854,11 +854,11 @@ const App = (() => {
     if (primaries.length === 1) {
       const btn = primaries[0];
       btn.classList.add('bs-bar-done');
-      // Bar actions are one word ("Add Transaction" → "Add"); the sheet title carries the rest
-      const label = btn.textContent.trim();
-      if (label.includes(' ')) {
-        btn.setAttribute('aria-label', label);
-        btn.textContent = label.split(' ')[0];
+      // Keep full label (Urdu / multi-word / icons). Optional data-bar-label overrides display text.
+      const barLabel = btn.getAttribute('data-bar-label');
+      if (barLabel != null && barLabel !== '') {
+        if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', btn.textContent.trim() || barLabel);
+        btn.textContent = barLabel;
       }
       trail.appendChild(btn);
     }
