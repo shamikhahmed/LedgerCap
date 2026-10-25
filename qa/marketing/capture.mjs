@@ -14,6 +14,28 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const require = createRequire(import.meta.url);
 
+/** Resize a webp to `width` px (landing LCP). Falls back to copy if cwebp/sips missing. */
+function resizeWebpWidth(src, dest, width, quality = 82) {
+  const tmpDir = join(ROOT, 'qa', 'marketing', '.tmp-resize');
+  mkdirSync(tmpDir, { recursive: true });
+  const png = join(tmpDir, `in-${process.pid}.png`);
+  const scaled = join(tmpDir, `out-${process.pid}.png`);
+  try {
+    const d = spawnSync('dwebp', [src, '-o', png], { encoding: 'utf8' });
+    if (d.status !== 0) throw new Error(d.stderr || 'dwebp failed');
+    const s = spawnSync('sips', ['--resampleWidth', String(width), png, '--out', scaled], { encoding: 'utf8' });
+    if (s.status !== 0) throw new Error(s.stderr || 'sips failed');
+    const c = spawnSync('cwebp', ['-q', String(quality), scaled, '-o', dest], { encoding: 'utf8' });
+    if (c.status !== 0) throw new Error(c.stderr || 'cwebp failed');
+  } catch {
+    copyFileSync(src, dest);
+  } finally {
+    for (const f of [png, scaled]) {
+      try { unlinkSync(f); } catch { /* ignore */ }
+    }
+  }
+}
+
 function loadPlaywright() {
   const candidates = [
     join(ROOT, 'node_modules', 'playwright'),
@@ -301,10 +323,10 @@ async function captureWalkthrough(browser) {
   const poster = join(SITE, 'walkthrough-poster.jpg');
   const posterWebp = join(SITE, 'walkthrough-poster.webp');
 
-  // Poster from home shot if present
+  // Poster from home shot if present (landing-sized)
   const homeShot = join(SHOTS, 'dark', 'iphone', 'wealth-home-demo.webp');
   if (existsSync(homeShot)) {
-    copyFileSync(homeShot, posterWebp);
+    resizeWebpWidth(homeShot, posterWebp, 540, 78);
   }
 
   const ff = spawnSync('ffmpeg', [
@@ -405,7 +427,7 @@ async function main() {
   const lighthouse = runLighthouse();
   writeSummary({ gallery, appstore, walkthrough, lighthouse, version });
 
-  // Seed site hero from fresh dark iphone shots when present
+  // Seed site hero from fresh dark shots, resized for landing LCP (≤540w phone / 900w iPad).
   for (const name of [
     'wealth-home-demo.webp',
     'wealth-portfolio-demo.webp',
@@ -414,10 +436,12 @@ async function main() {
     'research-research-demo.webp',
   ]) {
     const src = join(SHOTS, 'dark', 'iphone', name);
-    if (existsSync(src)) copyFileSync(src, join(SITE, name));
+    if (existsSync(src)) resizeWebpWidth(src, join(SITE, name), 540);
   }
   const ipadHome = join(SHOTS, 'dark', 'ipad', 'wealth-home-demo.webp');
-  if (existsSync(ipadHome)) copyFileSync(ipadHome, join(SITE, 'ipad-home.webp'));
+  if (existsSync(ipadHome)) resizeWebpWidth(ipadHome, join(SITE, 'ipad-home.webp'), 900);
+  const posterSrc = join(SHOTS, 'dark', 'iphone', 'wealth-home-demo.webp');
+  if (existsSync(posterSrc)) resizeWebpWidth(posterSrc, join(SITE, 'walkthrough-poster.webp'), 540);
 
   if (gallery.fail || appstore.fail) process.exitCode = 1;
 }
