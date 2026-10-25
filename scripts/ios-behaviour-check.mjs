@@ -1,22 +1,12 @@
 #!/usr/bin/env node
 /**
- * iPhone behaviour check (Cap fleet mobile bugs), adapted from ScentCap scripts/ios-behaviour-check.mjs.
+ * iPhone/WebKit behaviour check (Cap fleet mobile bugs), adapted from ScentCap scripts/ios-behaviour-check.mjs.
  * Usage: npm run serve  →  node scripts/ios-behaviour-check.mjs [baseUrl]   (default http://127.0.0.1:8769/)
  * Checks: tab bar + header tappable, no sideways overflow, the document (not an inner box) scrolls,
  * navigation opens at top without reloading, sheets keep the page position, inputs ≥16px, SW doesn't self-activate.
- *
- * Browser: WebKit by default. Set LC_IOS_BROWSER=chromium, or when webkit.launch fails, falls back to
- * Chromium with iPhone 15 Pro metrics (defaultBrowserType stripped). Uses PLAYWRIGHT_BROWSERS_PATH Chrome
- * for Testing when present. Optional LC_CDP_URL / LC_CHROME_PATH.
  */
+import { webkit, devices } from '@playwright/test';
 import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-
-process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.join(os.homedir(), 'Library/Caches/ms-playwright');
-process.env.PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL = '0';
-
-const { webkit, chromium, devices } = await import('@playwright/test');
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8769/';
 const results = [];
@@ -29,46 +19,13 @@ const step = async (name, fn) => {
   }
 };
 
-const CHROME = process.env.LC_CHROME_PATH
-  || path.join(os.homedir(), 'Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
-
-function iphone15ProChromiumDevice() {
-  const d = { ...devices['iPhone 15 Pro'] };
-  delete d.defaultBrowserType;
-  return d;
-}
-
-async function launchChromium() {
-  if (process.env.LC_CDP_URL) {
-    const browser = await chromium.connectOverCDP(process.env.LC_CDP_URL);
-    return { browser, engine: 'chromium-cdp', device: iphone15ProChromiumDevice(), owned: false };
-  }
-  const opts = { headless: true };
-  if (fs.existsSync(CHROME)) opts.executablePath = CHROME;
-  const browser = await chromium.launch(opts);
-  return { browser, engine: 'chromium', device: iphone15ProChromiumDevice(), owned: true };
-}
-
-async function launchBrowser() {
-  const preferChromium = String(process.env.LC_IOS_BROWSER || '').toLowerCase() === 'chromium';
-  if (preferChromium) return launchChromium();
-  try {
-    const browser = await webkit.launch();
-    return { browser, engine: 'webkit', device: devices['iPhone 15 Pro'], owned: true };
-  } catch (e) {
-    console.error(`webkit.launch failed (${String(e.message || e).split('\n')[0]}); falling back to Chromium`);
-    return launchChromium();
-  }
-}
-
-const { browser, engine, device, owned } = await launchBrowser();
-console.log(`ios-behaviour-check engine=${engine}`);
-const ctx = await browser.newContext({ ...device, serviceWorkers: 'block' });
+const browser = await webkit.launch();
+const ctx = await browser.newContext({ ...devices['iPhone 15 Pro'], serviceWorkers: 'block' });
 const page = await ctx.newPage();
 page.setDefaultTimeout(8000);
 await page.addInitScript(() => localStorage.setItem('lc_whats_new_seen', '99'));
 
-await page.goto(BASE.includes('?') ? BASE : BASE.replace(/\/?$/, '/') + '?demo=1');
+await page.goto(BASE + '?demo=1');
 await page.waitForFunction(() => typeof window.__lcEnsureDeferred === 'function' && typeof Navigation !== 'undefined', { timeout: 45000 });
 await page.evaluate(async () => {
   await window.__lcEnsureDeferred();
@@ -131,9 +88,10 @@ await step('navigation by tapping', async () => {
 // 4. Sheet keeps the page position (Portfolio → Sell on a visible holding → Cancel)
 let smallInputs = 0;
 await step('sheet flow', async () => {
+  // Put the 3rd holding's Sell button mid-screen so the tap needs no scrolling
   await page.evaluate(() => {
     const btn = document.querySelectorAll('#screen-portfolio .lc-link-btn--sell')[2];
-    if (btn) window.scrollTo(0, btn.getBoundingClientRect().top + scrollY - innerHeight / 2);
+    window.scrollTo(0, btn.getBoundingClientRect().top + scrollY - innerHeight / 2);
   });
   await page.waitForTimeout(300);
   const before = await page.evaluate(() => scrollY);
@@ -143,8 +101,6 @@ await step('sheet flow', async () => {
       return r.top > 120 && r.bottom < innerHeight - 120;
     }),
   );
-  const sellCount = await page.locator('#screen-portfolio .lc-link-btn--sell').count();
-  if (sellCount === 0) throw new Error('no Sell buttons on portfolio');
   await page.locator('#screen-portfolio .lc-link-btn--sell').nth(Math.max(0, idx)).tap();
   await page.locator('#bottom-sheet.open .bs-panel').waitFor();
   await page.waitForTimeout(300);
@@ -175,10 +131,7 @@ check('no reload during session', (await page.evaluate(() => window.__noReload))
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 check('SW: no auto skipWaiting/clients.claim', !/^\s*self\.skipWaiting\(\);|clients\.claim\(\)/m.test(sw));
 
-await ctx.close();
-if (owned) await browser.close();
-else await browser.close().catch(() => {});
-
+await browser.close();
 let fail = 0;
 for (const r of results) {
   if (!r.ok) fail++;
