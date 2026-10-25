@@ -217,11 +217,7 @@ const Prices = (() => {
       const chunk = symbols.slice(i, i + batchSize);
       for (const sym of chunk) {
         let parsed = null;
-        const y = await _fetchYahoo(sym);
-        if (y && _sanityCheck(sym, y.price)) {
-          results[sym] = y;
-          continue;
-        }
+        // Official PSX first while proxy is healthy; Yahoo .KA while breaker is open or as fallback.
         if (proxyHealthy()) {
           if (sessionOpen) {
             const intData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/int/${sym}`);
@@ -231,8 +227,13 @@ const Prices = (() => {
             const eodData = await _fetchRaw(`https://dps.psx.com.pk/timeseries/eod/${sym}`);
             parsed = _parseTimeseries(eodData, 'psx_eod');
           }
-          if (parsed && _sanityCheck(sym, parsed.price)) results[sym] = { ...parsed, symbol: sym };
+          if (parsed && _sanityCheck(sym, parsed.price)) {
+            results[sym] = { ...parsed, symbol: sym };
+            continue;
+          }
         }
+        const y = await _fetchYahoo(sym);
+        if (y && _sanityCheck(sym, y.price)) results[sym] = y;
       }
       if (i + batchSize < symbols.length) await _sleep(120);
     }
@@ -371,14 +372,14 @@ const Prices = (() => {
       return r;
     }
 
-    // Yahoo .KA via Worker first — timeseries/board paths 404 on undeployed Worker and spam console.
-    const yahoo = await _fetchYahoo(symbol);
-    if (yahoo) return yahoo;
-
+    // Official PSX feed first when proxy is healthy; Yahoo .KA while breaker is open or as fallback.
     if (proxyHealthy()) {
       const psx = await fetchPsxSymbol(symbol);
       if (psx && _sanityCheck(symbol, psx.price)) return { symbol, ...psx };
     }
+
+    const yahoo = await _fetchYahoo(symbol);
+    if (yahoo) return yahoo;
 
     const cached = (typeof State !== 'undefined' && State.get('prices')?.[symbol]) || null;
     if (cached?.price > 0) return { symbol, ...cached, source: cached.source || 'cache' };
