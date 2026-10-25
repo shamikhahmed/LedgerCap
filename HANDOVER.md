@@ -12,11 +12,12 @@ Track your PSX stocks and mutual funds in one place. (Never “wealth OS” / �
 **Repo:** https://github.com/shamikhahmed/LedgerCap  
 **Stack:** Vanilla JS PWA + Cloudflare Worker price proxy (KV market snapshot). Playwright tests. Brass accent HIG shell (`DESIGN.md`).  
 **Data:** Local browser storage for portfolio; Worker for indicative market prices (D-09). Prices may be delayed — not investment advice (§4.2).  
-**Marketing:** `landing.html` / `pitch.html` / `presentation.html` / `support.html` / `privacy.html` / `terms.html` + `site/site.css`. Capture: `bash qa/marketing/capture.sh`.
+**Marketing:** `landing.html` / `pitch.html` / `presentation.html` / `support.html` / `privacy.html` / `terms.html` + `site/site.css`. Capture: `bash qa/marketing/capture.sh`. Hub copy list: `qa/marketing/HUB-MEDIA.md`.
 
 ## Run & verify
 ```bash
 python3 -m http.server 8850   # or 8769 (playwright default)
+node scripts/hig-guards.mjs   # standing rules 1–4 (also first step of qa/release/run-checks.sh)
 npm test                      # unit + version-coherence + playwright
 npm run ios:check             # WebKit; or LC_IOS_BROWSER=chromium …
 npm run bundle                # after editing js/modules or js/data — commits bundled JS

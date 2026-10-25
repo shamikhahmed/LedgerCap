@@ -253,6 +253,7 @@ const PinLock = (() => {
     root.classList.remove('hidden');
     root.setAttribute('aria-hidden', 'false');
     document.body.classList.add('lc-pin-active');
+    window.LcScrollLock?.lock();
     _digits = '';
     _renderDots();
     _setError('');
@@ -265,6 +266,7 @@ const PinLock = (() => {
     root.classList.add('hidden');
     root.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('lc-pin-active');
+    window.LcScrollLock?.unlock();
     _digits = '';
     _gatePromise = null;
   }

@@ -35,9 +35,8 @@
   }
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; }
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
   * { animation: none !important; transition: none !important; }
 }
 body {
@@ -49,8 +48,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 img, video { max-width: 100%; display: block; }
-a { color: var(--tint); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: var(--tint); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+.nav a, .brand, .btn { text-decoration: none; }
+.nav a:hover, .brand:hover { text-decoration: underline; }
 :focus-visible {
   outline: 3px solid color-mix(in srgb, var(--tint) 70%, transparent);
   outline-offset: 2px;

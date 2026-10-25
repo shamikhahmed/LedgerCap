@@ -12,6 +12,18 @@ Source of truth:
 | `css/design/ledgercap.css` | Reskin of 3.x shell + shared classes (`.psx-*`, `.lc-*`, `.os-*`, settings, sheet) | `@layer components` |
 | `css/app.css` | Cascade orchestrator: 3.x CSS demoted to `@layer legacy` (files preloaded in `index.html`) | render-blocking |
 
+### Scroll exceptions (inner overflow allowed)
+
+Documented leaves only — everything else uses document scroll (`css/design/ledgercap.css` overrides legacy `.psx-screen` scrollers):
+
+| Selector | Why |
+|---|---|
+| `.psx-sidebar` | Sticky desktop sidebar chrome (≥700px) |
+| `.ui-sheet` | Modal sheet body |
+| `.deck` | Presentation deck leaf (`presentation.html`) |
+| `.sg-rail` | Horizontal gallery rail (x-axis only) |
+| `.lc-cmdk-list` | Command palette results |
+
 ## Principles
 
 1. **Content first.** Numbers and names carry the screen; surfaces are grey/white (light) or black/graphite (dark).

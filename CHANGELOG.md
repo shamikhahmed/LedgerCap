@@ -5,6 +5,7 @@
 - Fictional personas labelled on landing/pitch (Usman, Nida, Raza)
 - `qa/marketing/capture.sh` — gallery webps → `shots/{dark,light}/{iphone,ipad,mac}/`, App Store PNGs, walkthrough, optional Lighthouse
 - README / HANDOVER point at this marketing release
+- **Phase B:** wired capture outputs (150 hub shots, 16 App Store PNGs, walkthrough mp4/poster/VTT); gallery manifests 3.58.11; `qa/marketing/HUB-MEDIA.md`; `scripts/hig-guards.mjs` + `qa/release/run-checks.sh`
 
 ## [Unreleased] — HIG design (ScentCap 3.0 system)
 

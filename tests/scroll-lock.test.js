@@ -23,6 +23,9 @@ check('CapConfirm dialogs use LcScrollLock', /LcScrollLock\?\.lock/.test(dialogs
 check('Cmd-K uses LcScrollLock', /LcScrollLock\?\.lock/.test(polish) && /LcScrollLock\?\.unlock/.test(polish));
 check('Pro modal uses LcScrollLock', /LcScrollLock\?\.lock/.test(pro) && /LcScrollLock\?\.unlock/.test(pro));
 
+const pin = fs.readFileSync(path.join(root, 'js/modules/pin-lock.js'), 'utf8');
+check('PIN lock uses LcScrollLock', /LcScrollLock\?\.lock/.test(pin) && /LcScrollLock\?\.unlock/.test(pin));
+
 if (failed) {
   console.error(`\nscroll-lock: ${failed} failed`);
   process.exit(1);
