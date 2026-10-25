@@ -81,7 +81,10 @@ const PriceHealth = (() => {
     if (!_onMarketScreen()) return '';
     if (!rep?.showBanner && !window._LC_SNAPSHOT_META?.stale?.psx && !window._LC_MARKET_UNAVAILABLE) return '';
     const when = _asOfLabel();
-    const msg = `Market data unavailable — showing last saved prices (${when})`;
+    // Match copy to cause: hard unavailable vs calm last-close / seeded holdings.
+    const msg = window._LC_MARKET_UNAVAILABLE
+      ? `Market data unavailable — showing last saved prices (${when})`
+      : `Some prices are from the last close (${when})`;
     return `<div class="lc-price-health" role="status">
       <span class="lc-price-health-msg">${msg}</span>
       <button type="button" class="lc-price-health-dismiss" data-action="PriceHealth.dismiss" aria-label="Dismiss">${typeof LcIcons !== 'undefined' ? LcIcons.icon('x', 14) : '×'}</button>

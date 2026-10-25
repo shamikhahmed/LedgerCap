@@ -25,6 +25,7 @@ check('Home empty state has h1', /<h1>Home<\/h1>/.test(home));
 check('Bottom nav is landmark <nav> without role=tablist', /<nav id="nav" class="psx-bottom-nav" aria-label="Main"><\/nav>/.test(index));
 check('Screens use role=main landmark', /id="screens"[^>]*role="main"/.test(index));
 check('Worker HTML passthrough for trading-board', /trading-board\|market-watch/.test(worker));
-check('PriceHealth quiet unavailable copy', /Market data unavailable — showing last saved prices/.test(health));
+check('PriceHealth unavailable copy gated on _LC_MARKET_UNAVAILABLE', /_LC_MARKET_UNAVAILABLE[\s\S]*Market data unavailable — showing last saved prices/.test(health));
+check('PriceHealth stale/seeded uses last-close copy', /Some prices are from the last close/.test(health));
 
 process.exit(failed ? 1 : 0);
