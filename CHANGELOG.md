@@ -1,3 +1,7 @@
+## Motion craft — 2026-11-26
+
+- Motion contract: re-synced `capricorn-core.css` + `capricorn-motion.js` from `capricorn-tooling/shared/design-system` (tokens `--cap-dur-*`, splash, view transitions). App shells keep `data-cap-app="1"` instant reveals (no marketing scrub). See `docs/MOTION.md`.
+
 ## [Unreleased] — Marketing + docs refresh (`marketing/3.58.11`)
 
 - Shared `site/site.css` on HIG brass tokens; rewrite `landing.html`, `pitch.html`, `presentation.html`, `privacy.html`; add `support.html`, `terms.html`

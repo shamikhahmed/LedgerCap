@@ -43,3 +43,9 @@ Prod-ready report: `qa/prod-ready/REPORT.md`. Inventory: `qa/prod-ready/INVENTOR
 - Binding: Cap-Apps `docs/audit-2026-09-14/DECISIONS.md` (D-09, §4.1, §4.2, G-3, G-4)
 - Changelog: `CHANGELOG.md`
 - Design: `DESIGN.md`
+
+## Motion contract (2026-11-26)
+
+- Motion contract: re-synced `capricorn-core.css` + `capricorn-motion.js` from `capricorn-tooling/shared/design-system` (tokens `--cap-dur-*`, splash, view transitions). App shells keep `data-cap-app="1"` instant reveals (no marketing scrub). See `docs/MOTION.md`.
+
+Source: `../capricorn-tooling/shared/design-system/` via `node scripts/sync-design-system.mjs`.

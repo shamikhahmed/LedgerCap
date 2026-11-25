@@ -1,7 +1,8 @@
 {
   "app": "LedgerCap",
   "version": "3.58.11",
-  "updated": "2026-10-25",
+  "updated": "2026-11-26",
   "swCache": "ledgercap-v35811",
-  "notes": "Prod-ready audit: version/SW/manifest coherence · More hub nav · SW precache shell scripts · XSS escapes"
+  "notes": "Prod-ready audit: version/SW/manifest coherence · More hub nav · SW precache shell scripts · XSS escapes",
+  "motionContract": "capricorn-tooling/shared/design-system/MOTION.md"
 }
