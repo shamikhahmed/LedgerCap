@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T12:40:05.289Z",
+  "generatedAt": "2026-11-25T19:51:42.853Z",
   "themes": [
     "dark",
     "light"
@@ -27,16 +27,7 @@
               "desktop": "light/desktop/primary/home.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/home-scroll.png",
-              "desktop": "dark/desktop/primary/home-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/home-scroll.png",
-              "desktop": "light/desktop/primary/home-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "market",
@@ -51,16 +42,7 @@
               "desktop": "light/desktop/primary/market.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/market-scroll.png",
-              "desktop": "dark/desktop/primary/market-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/market-scroll.png",
-              "desktop": "light/desktop/primary/market-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "funds",
@@ -75,14 +57,7 @@
               "desktop": "light/desktop/primary/funds.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/funds-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/funds-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "portfolio",
@@ -97,16 +72,7 @@
               "desktop": "light/desktop/primary/portfolio.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/portfolio-scroll.png",
-              "desktop": "dark/desktop/primary/portfolio-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/portfolio-scroll.png",
-              "desktop": "light/desktop/primary/portfolio-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "research",
@@ -121,16 +87,7 @@
               "desktop": "light/desktop/primary/research.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/research-scroll.png",
-              "desktop": "dark/desktop/primary/research-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/research-scroll.png",
-              "desktop": "light/desktop/primary/research-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "research-portfolio",
@@ -145,16 +102,7 @@
               "desktop": "light/desktop/primary/research-portfolio.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/research-portfolio-scroll.png",
-              "desktop": "dark/desktop/primary/research-portfolio-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/research-portfolio-scroll.png",
-              "desktop": "light/desktop/primary/research-portfolio-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "research-stock",
@@ -169,16 +117,7 @@
               "desktop": "light/desktop/primary/research-stock.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/primary/research-stock-scroll.png",
-              "desktop": "dark/desktop/primary/research-stock-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/primary/research-stock-scroll.png",
-              "desktop": "light/desktop/primary/research-stock-scroll.png"
-            }
-          }
+          "scroll": {}
         }
       ]
     },
@@ -200,14 +139,7 @@
               "desktop": "light/desktop/tools/more.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/more-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/more-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "global",
@@ -222,16 +154,7 @@
               "desktop": "light/desktop/tools/global.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/global-scroll.png",
-              "desktop": "dark/desktop/tools/global-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/global-scroll.png",
-              "desktop": "light/desktop/tools/global-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "commodities",
@@ -246,16 +169,7 @@
               "desktop": "light/desktop/tools/commodities.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/commodities-scroll.png",
-              "desktop": "dark/desktop/tools/commodities-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/commodities-scroll.png",
-              "desktop": "light/desktop/tools/commodities-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "announcements",
@@ -270,16 +184,7 @@
               "desktop": "light/desktop/tools/announcements.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/announcements-scroll.png",
-              "desktop": "dark/desktop/tools/announcements-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/announcements-scroll.png",
-              "desktop": "light/desktop/tools/announcements-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "zakat",
@@ -294,14 +199,7 @@
               "desktop": "light/desktop/tools/zakat.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/zakat-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/zakat-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "import",
@@ -331,16 +229,7 @@
               "desktop": "light/desktop/tools/screener.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/screener-scroll.png",
-              "desktop": "dark/desktop/tools/screener-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/screener-scroll.png",
-              "desktop": "light/desktop/tools/screener-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "dividends",
@@ -355,16 +244,7 @@
               "desktop": "light/desktop/tools/dividends.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/dividends-scroll.png",
-              "desktop": "dark/desktop/tools/dividends-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/dividends-scroll.png",
-              "desktop": "light/desktop/tools/dividends-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "calendar",
@@ -379,14 +259,7 @@
               "desktop": "light/desktop/tools/calendar.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/calendar-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/calendar-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "watchlist",
@@ -401,14 +274,7 @@
               "desktop": "light/desktop/tools/watchlist.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/watchlist-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/watchlist-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "signals",
@@ -423,16 +289,7 @@
               "desktop": "light/desktop/tools/signals.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/signals-scroll.png",
-              "desktop": "dark/desktop/tools/signals-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/signals-scroll.png",
-              "desktop": "light/desktop/tools/signals-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "risk-audit",
@@ -447,16 +304,7 @@
               "desktop": "light/desktop/tools/risk-audit.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/risk-audit-scroll.png",
-              "desktop": "dark/desktop/tools/risk-audit-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/risk-audit-scroll.png",
-              "desktop": "light/desktop/tools/risk-audit-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "insights",
@@ -471,16 +319,7 @@
               "desktop": "light/desktop/tools/insights.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/insights-scroll.png",
-              "desktop": "dark/desktop/tools/insights-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/insights-scroll.png",
-              "desktop": "light/desktop/tools/insights-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "pilot-tools",
@@ -495,16 +334,7 @@
               "desktop": "light/desktop/tools/pilot-tools.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/pilot-tools-scroll.png",
-              "desktop": "dark/desktop/tools/pilot-tools-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/pilot-tools-scroll.png",
-              "desktop": "light/desktop/tools/pilot-tools-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "paper-trade",
@@ -519,14 +349,7 @@
               "desktop": "light/desktop/tools/paper-trade.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/paper-trade-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/paper-trade-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "transactions",
@@ -541,16 +364,7 @@
               "desktop": "light/desktop/tools/transactions.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/transactions-scroll.png",
-              "desktop": "dark/desktop/tools/transactions-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/transactions-scroll.png",
-              "desktop": "light/desktop/tools/transactions-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "comparison",
@@ -580,16 +394,7 @@
               "desktop": "light/desktop/tools/performance.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/performance-scroll.png",
-              "desktop": "dark/desktop/tools/performance-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/performance-scroll.png",
-              "desktop": "light/desktop/tools/performance-scroll.png"
-            }
-          }
+          "scroll": {}
         },
         {
           "id": "journal",
@@ -619,16 +424,7 @@
               "desktop": "light/desktop/tools/settings.png"
             }
           },
-          "scroll": {
-            "dark": {
-              "mobile": "dark/mobile/tools/settings-scroll.png",
-              "desktop": "dark/desktop/tools/settings-scroll.png"
-            },
-            "light": {
-              "mobile": "light/mobile/tools/settings-scroll.png",
-              "desktop": "light/desktop/tools/settings-scroll.png"
-            }
-          }
+          "scroll": {}
         }
       ]
     },
