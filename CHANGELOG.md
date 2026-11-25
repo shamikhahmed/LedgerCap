@@ -1,6 +1,7 @@
 ## Motion craft — 2026-11-26
 
 - Motion contract: re-synced `capricorn-core.css` + `capricorn-motion.js` from `capricorn-tooling/shared/design-system` (tokens `--cap-dur-*`, splash, view transitions). App shells keep `data-cap-app="1"` instant reveals (no marketing scrub). See `docs/MOTION.md`.
+- Gallery: `npm run gallery` refresh after motion — **83** screens (primary/tools/scroll-bottom/settings/sheets/system/marketing) × dark/light × mobile/desktop; manifest `generatedAt` **2026-11-25T19:51:42.853Z**; embedded `screen-gallery.html`.
 
 ## [Unreleased] — Marketing + docs refresh (`marketing/3.58.11`)
 

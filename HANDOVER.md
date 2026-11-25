@@ -1,7 +1,7 @@
 # LedgerCap — Handover
 
 > Read this + `ROADMAP.md` + `~/Capricorn-Brain/01 Projects/LedgerCap.md` before working here.  
-> Last updated: 2026-10-25 · Active branch: `marketing/3.58.11` (post-release marketing + docs)
+> Last updated: 2026-11-26 · Gallery regen post-motion · Active app: `3.58.11`
 
 ## What this is
 Track your PSX stocks and mutual funds in one place. (Never “wealth OS” / “operating system” — G-3.)
@@ -49,3 +49,9 @@ Prod-ready report: `qa/prod-ready/REPORT.md`. Inventory: `qa/prod-ready/INVENTOR
 - Motion contract: re-synced `capricorn-core.css` + `capricorn-motion.js` from `capricorn-tooling/shared/design-system` (tokens `--cap-dur-*`, splash, view transitions). App shells keep `data-cap-app="1"` instant reveals (no marketing scrub). See `docs/MOTION.md`.
 
 Source: `../capricorn-tooling/shared/design-system/` via `node scripts/sync-design-system.mjs`.
+
+## Screen gallery
+
+- `npm run gallery` — Playwright matrix → `assets/screenshots/{dark,light}/{mobile,desktop}/` + embed `screen-gallery.html`
+- Latest: **83** screens × dark/light × mobile/desktop · v3.58.11 · captured **2026-11-25T19:51:42.853Z** (post-motion craft)
+- Offline: `npm run gallery:open` · Server: `npm run gallery:view`
