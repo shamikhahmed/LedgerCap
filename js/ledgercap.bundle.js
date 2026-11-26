@@ -5965,10 +5965,28 @@ const App = (() => {
 
   function _hideSplash() {
     const el = document.getElementById('splash');
-    setTimeout(() => {
-      if (el) el.classList.add('hide');
+    if (!el) {
       _markAppReady();
-    }, 480);
+      return;
+    }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('pointerdown', onSkip);
+      window.removeEventListener('keydown', onSkip);
+      el.classList.add('hide');
+      _markAppReady();
+      try { sessionStorage.setItem('ledgercap_splash_seen', '1'); } catch (_) {}
+    };
+    const onSkip = () => finish();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let seen = false;
+    try { seen = sessionStorage.getItem('ledgercap_splash_seen') === '1'; } catch (_) {}
+    const hold = reduced || seen ? 0 : 480;
+    window.addEventListener('pointerdown', onSkip);
+    window.addEventListener('keydown', onSkip);
+    setTimeout(finish, hold);
   }
 
   function dismissInstall() {

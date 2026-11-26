@@ -16,6 +16,7 @@ const ASSETS = [
   './assets/icons/icon-maskable-192.png', './assets/icons/icon-maskable-512.png',
   './assets/icons/apple-touch-icon-180.png',
   './css/fonts-local.css',
+  './css/cap-motion-tokens.css',
   './css/tokens.css',
   './assets/fonts/cinzel.woff2',
   './assets/fonts/source-sans-3.woff2',
